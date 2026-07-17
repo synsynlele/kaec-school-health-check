@@ -1,0 +1,16 @@
+export const SITE = {
+  name: "KAEC School Health Check",
+  shortName: "KAEC",
+  tagline: "Know the Health of Your School in Minutes.",
+  description:
+    "KAEC School Health Check is a free AI-powered diagnostic for school owners and leaders. Answer a structured assessment and receive a professional school health report with scores, analysis and a 90-day improvement plan.",
+  email: "hello@kaec.education",
+  location: "Lagos, Nigeria",
+};
+
+export function appUrl(path = ""): string {
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  return `${base}${path}`;
+}
