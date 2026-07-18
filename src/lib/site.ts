@@ -4,8 +4,10 @@ export const SITE = {
   tagline: "Know the Health of Your School in Minutes.",
   description:
     "KAEC School Health Check is a free AI-powered diagnostic for school owners and leaders. Answer a structured assessment and receive a professional school health report with scores, analysis and a 90-day improvement plan.",
-  email: "hello@kaec.education",
-  location: "Lagos, Nigeria",
+  email: "kaecng@gmail.com",
+  location: "43 Isuti road, Lagos, Nigeria",
+  website: "www.kaecng.name.ng",
+  phone: "08061190801",
 };
 
 export function appUrl(path = ""): string {

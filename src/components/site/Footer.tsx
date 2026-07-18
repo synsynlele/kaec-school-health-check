@@ -58,6 +58,15 @@ export function Footer() {
               <li className="flex items-center gap-2.5">
                 <MapPin className="size-4 shrink-0 text-brand-600" />
                 {SITE.location}
+                {SITE.website}
+              </li>
+<li className="flex items-center gap-2.5">
+                <MapPin className="size-4 shrink-0 text-brand-600" />
+                {SITE.website}
+              </li>
+<li className="flex items-center gap-2.5">
+                <MapPin className="size-4 shrink-0 text-brand-600" />
+                {SITE.phone}
               </li>
             </ul>
           </div>

@@ -285,7 +285,7 @@ export function About() {
             <p className="mt-4 text-base leading-relaxed text-slate-600">
               When your report surfaces challenges you want help with, our consultants are here:
               implementation support, staff training, leadership coaching and full school-transformation
-              programmes. The diagnosis is free. The decision to act is yours.
+              programmes. The diagnosis is free. The decision to act is yours. Learn more about KAEC at www.kaecng.name.ng or call 08061190801.
             </p>
           </Reveal>
           <div className="space-y-4">
