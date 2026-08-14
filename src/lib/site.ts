@@ -1,9 +1,11 @@
 export const SITE = {
   name: "KAEC School Health Check",
   shortName: "KAEC",
+  companyName: "KAEC-NG",
+  companyCategory: "Human Potential Development Company",
   tagline: "Know the Health of Your School in Minutes.",
   description:
-    "KAEC School Health Check is a free AI-powered diagnostic for school owners and leaders. Answer a structured assessment and receive a professional school health report with scores, analysis and a 90-day improvement plan.",
+    "KAEC School Health Check is the free diagnostic front door to KHP-OS, built by KAEC-NG — a Human Potential Development Company helping people and institutions Discover, Develop and Deploy Potential.",
   email: "kaecng@gmail.com",
   location: "43 Isuti road, Lagos, Nigeria",
   website: "www.kaecng.name.ng",

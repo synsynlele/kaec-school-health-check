@@ -2,10 +2,9 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Hero } from "@/components/landing/Hero";
 import { Faq } from "@/components/landing/Faq";
+import { CompanyAbout, CompanyContact } from "@/components/landing/CompanyPositioning";
 import {
-  About,
   Benefits,
-  ContactSection,
   HowItWorks,
   Receive,
   StatsStrip,
@@ -27,8 +26,8 @@ export default async function LandingPage() {
         <Benefits />
         <Receive />
         <Faq />
-        <About />
-        <ContactSection />
+        <CompanyAbout />
+        <CompanyContact />
       </main>
       <Footer />
     </>
