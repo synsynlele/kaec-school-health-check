@@ -12,7 +12,8 @@
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
     "validate:stage1c": "node scripts/validate-stage1c.mjs",
-    "validate:stage2": "node scripts/validate-stage2.mjs"
+    "validate:stage2": "node scripts/validate-stage2.mjs",
+    "validate:stage3": "node scripts/validate-stage3.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
