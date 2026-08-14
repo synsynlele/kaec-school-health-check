@@ -33,13 +33,12 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [workspace, setWorkspace] = useState<KhposWorkspaceSnapshot | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    supabase ? "" : "KHP-OS sign-in is not configured.",
+  );
 
   useEffect(() => {
-    if (!supabase) {
-      setError("KHP-OS sign-in is not configured.");
-      return;
-    }
+    if (!supabase) return;
 
     let active = true;
     void supabase.auth.getSession().then(async ({ data }) => {
