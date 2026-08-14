@@ -52,7 +52,6 @@ export function QuestionStepper({ assessmentId, initialAnswers, startIndex }: Pr
   const [direction, setDirection] = useState(1);
   const pendingRef = useRef<Set<string>>(new Set());
   const answersRef = useRef(answers);
-  answersRef.current = answers;
 
   const question = QUESTIONS[idx];
   const answeredCount = useMemo(
@@ -114,7 +113,9 @@ export function QuestionStepper({ assessmentId, initialAnswers, startIndex }: Pr
 
   const select = useCallback(
     (qid: string, score: number) => {
-      setAnswers((prev) => ({ ...prev, [qid]: score }));
+      const nextAnswers = { ...answersRef.current, [qid]: score };
+      answersRef.current = nextAnswers;
+      setAnswers(nextAnswers);
       const next = new Set(pendingRef.current).add(qid);
       pendingRef.current = next;
       setPending(next);
