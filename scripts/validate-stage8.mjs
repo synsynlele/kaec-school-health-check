@@ -6,7 +6,7 @@ const required = [
   "src/app/api/khpos/integrations/pipupath/receive/route.ts",
   "src/components/khpos/HumanPotentialIntelligenceWorkspace.tsx",
   "src/app/khpos/[organisationId]/human-potential-intelligence/page.tsx",
-  "supabase/migrations/20260814211700_stage8_pipupath_integration.sql",
+  "supabase/migrations/20260814202903_stage8_pipupath_integration.sql",
   "docs/KHPOS_STAGE8_PIPUPATH_INTEGRATION.md",
 ];
 

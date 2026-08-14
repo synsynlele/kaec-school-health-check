@@ -78,6 +78,29 @@ expectContains("next.config.ts", [
   'value: "DENY"',
 ]);
 
+expectContains("src/app/page.tsx", [
+  "CompanyAbout",
+  "CompanyContact",
+]);
+expectContains("src/components/landing/CompanyPositioning.tsx", [
+  "Human Potential Development Company",
+  "Discover, Develop and Deploy Potential",
+  "not a traditional consulting firm",
+  "KAEC School Health Check (KSHC)",
+  "KHP-OS",
+]);
+expectContains("src/lib/site.ts", [
+  'companyName: "KAEC-NG"',
+  'companyCategory: "Human Potential Development Company"',
+  "Discover, Develop and Deploy Potential",
+]);
+expectContains("src/app/contact/page.tsx", [
+  "Contact KAEC-NG",
+  "institutional transformation",
+  "Human Potential Development",
+  "KHP-OS",
+]);
+
 expectContains("scripts/test-core.mjs", ["scripts/validate-stage10.mjs"]);
 
 console.log("Stage 10 Platform Governance & Production Readiness structural checks passed.");
