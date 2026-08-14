@@ -6,7 +6,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test-core.mjs",
+    "test:scoring": "node scripts/test-scoring.mjs",
+    "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
+    "validate:stage1b": "node scripts/validate-stage1b.mjs",
+    "validate:stage1c": "node scripts/validate-stage1c.mjs",
+    "validate:stage2": "node scripts/validate-stage2.mjs",
+    "validate:stage3": "node scripts/validate-stage3.mjs",
+    "validate:stage4": "node scripts/validate-stage4.mjs",
+    "validate:stage9": "node scripts/validate-stage9.mjs",
+    "validate:stage10": "node scripts/validate-stage10.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

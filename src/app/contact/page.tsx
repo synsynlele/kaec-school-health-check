@@ -8,9 +8,9 @@ import { ContactForm } from "@/components/site/ContactForm";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contact KAEC",
+  title: "Contact KAEC-NG",
   description:
-    "Book a consultation, request staff training, or talk to the KAEC team about transforming your school. We reply within one working day.",
+    "Talk to KAEC-NG about institutional transformation, capability development, KHP-OS deployment, staff development or partnerships.",
 };
 
 const TYPES = ["consultation", "training", "talk", "general"] as const;
@@ -18,20 +18,20 @@ type RequestType = (typeof TYPES)[number];
 
 const HEADINGS: Record<RequestType, { title: string; sub: string }> = {
   consultation: {
-    title: "Book a consultation",
-    sub: "Tell us about your school and what you are working on. A senior KAEC consultant will reply within one working day to arrange a call.",
+    title: "Discuss institutional transformation",
+    sub: "Tell us about your school, what the evidence is showing and what you are trying to improve. A KAEC-NG team member will reply within one working day to identify the right next step.",
   },
   training: {
-    title: "Request staff training",
-    sub: "From classroom practice to leadership routines — tell us what your team needs, and we will propose a practical programme.",
+    title: "Request capability development",
+    sub: "From classroom practice to leadership routines — tell us what your people need to become more capable, and we will identify the right development pathway.",
   },
   talk: {
-    title: "Talk to KAEC",
-    sub: "Questions about your health report, our methods or where to start? Send a message — a human reads every one.",
+    title: "Talk to KAEC-NG",
+    sub: "Questions about your health report, KHP-OS, our Human Potential Development approach or where to start? Send a message — a human reads every one.",
   },
   general: {
-    title: "Contact KAEC",
-    sub: "Consultations, training, partnerships or press — this inbox reaches the whole team.",
+    title: "Contact KAEC-NG",
+    sub: "Institutional transformation, capability development, platform deployment, partnerships or press — this inbox reaches the KAEC-NG team.",
   },
 };
 
@@ -76,7 +76,7 @@ export default async function ContactPage({
                   <a href={`mailto:${SITE.email}`} className="mt-1 block text-sm font-medium text-brand-700 hover:underline">
                     {SITE.email}
                   </a>
-                  <p className="mt-1 text-sm text-slate-500">Every message reaches a consultant, not a bot.</p>
+                  <p className="mt-1 text-sm text-slate-500">Every message reaches the KAEC-NG team, not a bot.</p>
                 </div>
               </Card>
               <Card className="flex items-start gap-4 p-6">
@@ -86,7 +86,7 @@ export default async function ContactPage({
                 <div>
                   <h2 className="font-bold text-slate-900">Where we work</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Based in {SITE.location} — supporting schools across Africa and beyond, on site and remotely.
+                    Based in {SITE.location} — building Human Potential Development systems for institutions in Africa and beyond, on site and remotely.
                   </p>
                 </div>
               </Card>
@@ -95,13 +95,13 @@ export default async function ContactPage({
                   <BookOpenCheck className="size-5 text-mint-700" />
                 </span>
                 <div>
-                  <h2 className="font-bold text-slate-900">Starting with data?</h2>
+                  <h2 className="font-bold text-slate-900">Starting with diagnosis?</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    The strongest conversations start from your school&apos;s own numbers.{" "}
+                    The transformation journey starts with knowing where your school really is.{" "}
                     <Link href="/assessment" className="font-semibold text-brand-700 hover:underline">
-                      Run the free Health Check
+                      Run the free KSHC
                     </Link>{" "}
-                    first — it takes ten minutes.
+                    first — it takes about ten minutes.
                   </p>
                 </div>
               </Card>
@@ -112,8 +112,7 @@ export default async function ContactPage({
                 <div>
                   <h2 className="font-bold">What happens next</h2>
                   <p className="mt-1 text-sm leading-relaxed text-brand-100">
-                    We read your message, review your context, and reply with honest next steps — even
-                    when that step is simply, “you don&apos;t need us yet.”
+                    We read your message, review your context and identify the most useful next step — whether that is KSHC, KHP-OS, capability development, a partnership conversation or simply more time to build internally.
                   </p>
                 </div>
               </Card>
