@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Activity,
@@ -103,7 +104,10 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   }
 
   const baseline = workspace.baseline;
-  const location = [workspace.organisation.state, workspace.organisation.country].filter(Boolean).join(", ");
+  const priorityCount = workspace.transformation.activePriorityCount;
+  const location = [workspace.organisation.state, workspace.organisation.country]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -131,6 +135,11 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
+            {priorityCount > 0 && (
+              <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
+                Focus agenda {priorityCount}/3
+              </span>
+            )}
           </div>
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -141,7 +150,11 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 backdrop-blur">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-200">Current transformation position</p>
-              <p className="mt-1 text-lg font-black">Diagnosis complete → Prioritisation next</p>
+              <p className="mt-1 text-lg font-black">
+                {priorityCount > 0
+                  ? `${priorityCount} ${priorityCount === 1 ? "priority" : "priorities"} approved → Intervention planning active`
+                  : "Diagnosis interpreted → Prioritisation ready"}
+              </p>
             </div>
           </div>
         </div>
@@ -160,15 +173,19 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Target className="size-6 text-amber-600" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Primary attention area</p>
-            <p className="mt-2 text-xl font-black text-slate-900">{baseline?.priorityArea ?? "Not yet identified"}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">This remains a diagnostic signal until leadership approves transformation priorities.</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Approved transformation focus</p>
+            <p className="mt-2 text-4xl font-black text-slate-900">{priorityCount}<span className="text-lg text-slate-400">/3</span></p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {priorityCount > 0
+                ? "Leadership has converted diagnostic evidence into institutional commitments."
+                : "Diagnostic signals are not commitments until leadership approves them."}
+            </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-mint-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Institutional record</p>
             <p className="mt-2 text-xl font-black text-slate-900">Baseline preserved</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">KSHC framework v{baseline?.frameworkVersion ?? "1.0"} is now attached to this permanent school identity.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">KSHC framework v{baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.</p>
           </div>
         </section>
 
@@ -176,14 +193,14 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Transformation lifecycle</p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight">Your first KHP-OS cycle has started.</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-tight">Your first KHP-OS cycle is moving.</h2>
             </div>
             <span className="text-xs font-semibold text-slate-400">AI may propose. Humans decide. The system records.</span>
           </div>
           <div className="mt-7 grid gap-3 md:grid-cols-3 lg:grid-cols-9">
             {TRANSFORMATION_STAGES.map((stage, index) => {
-              const done = index === 0;
-              const current = index === 1 || index === 2;
+              const done = index <= 1 || (priorityCount > 0 && index === 2);
+              const current = priorityCount > 0 ? index === 3 : index === 2;
               return (
                 <div key={stage} className={`rounded-2xl border p-3 ${done ? "border-mint-200 bg-mint-50" : current ? "border-brand-200 bg-brand-50" : "border-slate-200 bg-slate-50"}`}>
                   {done ? <CheckCircle2 className="size-4 text-mint-700" /> : <Circle className={`size-4 ${current ? "text-brand-600" : "text-slate-300"}`} />}
@@ -194,11 +211,11 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Diagnostic priorities</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Diagnostic signals</p>
                 <h2 className="mt-2 text-2xl font-black">What KSHC says deserves leadership attention</h2>
               </div>
               <Target className="size-7 text-brand-700" />
@@ -221,18 +238,24 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
 
           <div className="rounded-[30px] bg-slate-950 p-6 text-white shadow-sm sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-mint-300">Next operating layer</p>
-            <h2 className="mt-3 text-2xl font-black">Approve the few priorities that matter most.</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-mint-300">Priority & Intervention Engine</p>
+            <h2 className="mt-3 text-2xl font-black">
+              {priorityCount > 0 ? "Run the focused transformation agenda." : "Approve the few priorities that matter most."}
+            </h2>
             <p className="mt-4 text-sm leading-6 text-slate-300">
-              KSHC can identify many recommendations. KHP-OS will convert them into a small, human-approved transformation agenda with owners, interventions, evidence and review dates.
+              KHP-OS ranks recorded KSHC gaps, maps each one to the intervention library, and asks authorised leaders to approve no more than three active priorities.
             </p>
             <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm font-bold">Stage 2 — Priority & Intervention intelligence</p>
-              <p className="mt-2 text-xs leading-5 text-slate-400">The command centre is live now. Priority approval is the next capability to be activated.</p>
+              <p className="text-sm font-bold">Focus is a system rule, not a suggestion.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">Evidence can surface many weaknesses. The institutional agenda is deliberately capped at three commitments per baseline.</p>
             </div>
-            <div className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-mint-300">
-              Diagnosis is no longer the end <ArrowRight className="size-4" />
-            </div>
+            <Link
+              href={`/khpos/${organisationId}/priorities`}
+              className="mt-7 inline-flex items-center gap-2 rounded-full bg-mint-300 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-mint-200"
+            >
+              {priorityCount > 0 ? "Open transformation agenda" : "Build transformation agenda"}
+              <ArrowRight className="size-4" />
+            </Link>
           </div>
         </section>
 

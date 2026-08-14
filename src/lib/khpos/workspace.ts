@@ -68,6 +68,10 @@ export interface KhposWorkspaceSnapshot {
     day60: Array<{ task: string; outcome: string }>;
     day90: Array<{ task: string; outcome: string }>;
   };
+  transformation: {
+    activePriorityCount: number;
+    activeInterventionCount: number;
+  };
 }
 
 export async function getKhposWorkspaceSnapshot(
@@ -123,6 +127,15 @@ export async function getKhposWorkspaceSnapshot(
     report = reports[0]?.full_report ?? {};
   }
 
+  const [activePriorities, activeInterventions] = await Promise.all([
+    serviceFetch<Array<{ id: string }>>(
+      `khpos_priorities?organisation_id=eq.${encodeURIComponent(organisationId)}&status=in.(approved,active)&select=id&limit=4`,
+    ),
+    serviceFetch<Array<{ id: string }>>(
+      `khpos_organisation_interventions?organisation_id=eq.${encodeURIComponent(organisationId)}&status=in.(approved,planned,active,under_review)&select=id&limit=4`,
+    ),
+  ]);
+
   return {
     organisation: {
       id: organisation.id,
@@ -149,6 +162,10 @@ export async function getKhposWorkspaceSnapshot(
       day30: report.plan30 ?? [],
       day60: report.plan60 ?? [],
       day90: report.plan90 ?? [],
+    },
+    transformation: {
+      activePriorityCount: activePriorities.length,
+      activeInterventionCount: activeInterventions.length,
     },
   };
 }
