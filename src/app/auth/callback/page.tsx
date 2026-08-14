@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [message, setMessage] = useState("Completing secure sign-in…");
 
@@ -17,6 +16,7 @@ export default function AuthCallbackPage() {
       return;
     }
 
+    const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
     const rawNext = searchParams.get("next") ?? "/";
     const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
@@ -46,7 +46,7 @@ export default function AuthCallbackPage() {
     return () => {
       active = false;
     };
-  }, [router, searchParams, supabase]);
+  }, [router, supabase]);
 
   return (
     <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
