@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Mail, Sparkles, Target, TrendingUp, Users } from "lucide-react";
+import { BarChart3, Mail, Sparkles, Target, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ContactForm } from "@/components/site/ContactForm";
 import { Reveal } from "@/components/site/Reveal";
@@ -35,7 +35,7 @@ export function CompanyAbout() {
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-600">
               KAEC-NG builds systems that help people and institutions <strong>Discover, Develop and Deploy Potential</strong>.
-              We are not a traditional consulting firm. We create practical frameworks, intelligence systems and operating
+              As a Human Potential Development Company, we create practical frameworks, intelligence systems and operating
               platforms that turn potential into measurable capability, contribution and improvement.
             </p>
             <p className="mt-4 text-base leading-relaxed text-slate-600">

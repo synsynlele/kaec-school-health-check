@@ -52,7 +52,7 @@ export function ContactForm({ defaultType = "general" }: ContactFormProps) {
         <CheckCircle2 className="size-12 text-mint-600" />
         <h3 className="mt-4 text-xl font-bold text-slate-900">Message received</h3>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600">
-          Thank you — the KAEC team will reach out within one working day. Meanwhile, your free
+          Thank you — the KAEC-NG team will reach out within one working day. Meanwhile, your free
           School Health Check is always available.
         </p>
         <Button variant="outline" className="mt-6" onClick={() => setStatus("idle")}>
@@ -85,9 +85,9 @@ export function ContactForm({ defaultType = "general" }: ContactFormProps) {
       <div className="space-y-2">
         <Label htmlFor="cf-type">I want to</Label>
         <Select id="cf-type" name="requestType" defaultValue={defaultType}>
-          <option value="consultation">Book a consultation</option>
-          <option value="training">Request staff training</option>
-          <option value="talk">Talk to KAEC about my school</option>
+          <option value="consultation">Discuss institutional transformation</option>
+          <option value="training">Request capability development</option>
+          <option value="talk">Talk to KAEC-NG about my school</option>
           <option value="general">Ask a general question</option>
         </Select>
       </div>
@@ -98,7 +98,7 @@ export function ContactForm({ defaultType = "general" }: ContactFormProps) {
           name="message"
           required
           minLength={5}
-          placeholder="Tell us briefly about your school and what you need help with…"
+          placeholder="Tell us briefly what your school is trying to improve or develop…"
         />
       </div>
       {status === "error" && (
