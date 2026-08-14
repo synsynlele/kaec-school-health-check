@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Check, Download, Link2, Printer } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function ActionsBar({ assessmentId }: { assessmentId: string }) {
   const [copied, setCopied] = useState(false);
+  const [khposReturnTo, setKhposReturnTo] = useState("");
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("khpos_return_to") ?? "";
+    if (stored.startsWith("/khpos/") && stored.endsWith("/improvement")) {
+      setKhposReturnTo(stored);
+    }
+  }, []);
 
   async function copyLink() {
     try {
@@ -20,12 +28,22 @@ export function ActionsBar({ assessmentId }: { assessmentId: string }) {
 
   return (
     <div className="no-print flex flex-wrap items-center gap-2.5">
-      <Link
-        href={`/activate/${assessmentId}`}
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-mint-400 px-6 text-sm font-extrabold text-slate-950 shadow-[0_6px_16px_rgb(52_211_153/0.22)] transition-all hover:-translate-y-0.5 hover:bg-mint-300"
-      >
-        Activate KHP-OS <ArrowRight className="size-4" />
-      </Link>
+      {khposReturnTo ? (
+        <Link
+          href={khposReturnTo}
+          onClick={() => sessionStorage.removeItem("khpos_return_to")}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-mint-400 px-6 text-sm font-extrabold text-slate-950 shadow-[0_6px_16px_rgb(52_211_153/0.22)] transition-all hover:-translate-y-0.5 hover:bg-mint-300"
+        >
+          Return to Improvement Intelligence <ArrowRight className="size-4" />
+        </Link>
+      ) : (
+        <Link
+          href={`/activate/${assessmentId}`}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-mint-400 px-6 text-sm font-extrabold text-slate-950 shadow-[0_6px_16px_rgb(52_211_153/0.22)] transition-all hover:-translate-y-0.5 hover:bg-mint-300"
+        >
+          Activate KHP-OS <ArrowRight className="size-4" />
+        </Link>
+      )}
       <a
         href={`/api/report/${assessmentId}/pdf`}
         download
