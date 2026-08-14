@@ -37,11 +37,11 @@ assert.match(stateSync, /trg_sync_kshc_assessment_status/i);
 assert.match(stateSync, /new\.status := 'completed'/i);
 
 const claimHelper = readFileSync("src/lib/khpos/claim.ts", "utf8");
-assert.match(claimHelper, /claim_kshc_assessment/);
-assert.match(claimHelper, /Authorization: `Bearer \$\{accessToken\}`/);
+assert.match(claimHelper, /claim_kshc_assessment(?:_server)?/);
+assert.match(claimHelper, /SUPABASE_SERVICE_ROLE_KEY/);
 
 const claimRoute = readFileSync("src/app/api/khpos/claim/[id]/route.ts", "utf8");
-assert.match(claimRoute, /authorization\.match/);
+assert.match(claimRoute, /bearerTokenFromRequest|authorization\.match/);
 assert.match(claimRoute, /claimKshcAssessment/);
 
 console.log("KHP-OS Stage 1B structural validation passed.");
