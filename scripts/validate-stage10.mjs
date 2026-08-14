@@ -58,6 +58,13 @@ expectContains("src/lib/khpos/platform-admin.ts", [
   "governanceChangesUnlocked",
 ]);
 
+expectContains("src/lib/supabase/client.ts", [
+  "KHPOS_SUPABASE_PUBLIC_URL_FALLBACK",
+  "KHPOS_SUPABASE_PUBLISHABLE_KEY_FALLBACK",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY, which is never exposed here",
+]);
+
 expectContains("src/app/api/khpos/admin/route.ts", [
   "bearerTokenFromRequest",
   "verifyKhposAccessToken",
