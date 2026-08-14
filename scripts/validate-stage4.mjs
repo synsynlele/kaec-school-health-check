@@ -53,7 +53,7 @@ assert.match(evidence, /sufficiencyScore: Math\.min\(65/);
 assert.match(evidence, /khpos_record_evidence_assessment_server/);
 assert.match(evidence, /createSignedUrl\(submission\.storage_path, 300\)/);
 assert.match(evidence, /Never claim the file is unquestionably authentic/);
-assert.match(evidence, /not merely activity/i);
+assert.match(evidence, /Strong evidence should demonstrate implementation or an outcome/);
 
 assert.match(route, /bearerTokenFromRequest/);
 assert.match(route, /verifyKhposAccessToken/);
