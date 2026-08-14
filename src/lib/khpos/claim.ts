@@ -16,7 +16,7 @@ export async function claimKshcAssessment(
   user: { id: string; email: string },
 ): Promise<string> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new KhposClaimError("KHP-OS activation is not configured.", 503);
+    throw new KhposClaimError("KHP-OS partnership requests are not configured.", 503);
   }
 
   const response = await fetch(
@@ -39,13 +39,13 @@ export async function claimKshcAssessment(
 
   const body = await response.text();
   if (!response.ok) {
-    let message = "This assessment could not be activated.";
+    let message = "This school could not be submitted for KHP-OS partnership review.";
     try {
       const parsed = JSON.parse(body) as { message?: string };
       if (parsed.message?.includes("email does not match")) {
         message = "Use the same Google or email account used for this KSHC assessment.";
       } else if (parsed.message?.includes("completed report")) {
-        message = "Complete the KSHC report before activating KHP-OS.";
+        message = "Complete the KSHC report before requesting KHP-OS partnership.";
       } else if (parsed.message?.includes("Assessment not found")) {
         message = "Assessment not found.";
       } else if (parsed.message?.includes("verified user")) {
@@ -66,7 +66,7 @@ export async function claimKshcAssessment(
   }
 
   if (!organisationId) {
-    throw new KhposClaimError("KHP-OS activation returned no organisation.", 500);
+    throw new KhposClaimError("The partnership request returned no institution.", 500);
   }
 
   return organisationId;

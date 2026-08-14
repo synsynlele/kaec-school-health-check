@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Handshake, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { createBrowserSupabaseClient, createEmailLinkSupabaseClient } from "@/lib/supabase/client";
 
 function GoogleMark() {
@@ -19,19 +19,17 @@ function GoogleMark() {
 export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [state, setState] = useState<"checking" | "signed_out" | "claiming" | "error">(
+  const [state, setState] = useState<"checking" | "signed_out" | "requesting" | "error">(
     supabase ? "checking" : "error",
   );
-  const [error, setError] = useState(
-    supabase ? "" : "KHP-OS sign-in is not configured yet.",
-  );
+  const [error, setError] = useState(supabase ? "" : "Account sign-in is not configured yet.");
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [emailBusy, setEmailBusy] = useState(false);
 
-  const claim = useCallback(
+  const requestPartnership = useCallback(
     async (accessToken: string) => {
-      setState("claiming");
+      setState("requesting");
       setError("");
       try {
         const response = await fetch(`/api/khpos/claim/${assessmentId}`, {
@@ -44,11 +42,11 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
           error?: string;
         };
         if (!response.ok || !body.ok || !body.organisationId) {
-          throw new Error(body.error ?? "KHP-OS activation failed.");
+          throw new Error(body.error ?? "Partnership request failed.");
         }
-        router.replace(`/khpos/${body.organisationId}`);
-      } catch (claimError) {
-        setError(claimError instanceof Error ? claimError.message : "KHP-OS activation failed.");
+        router.replace(`/khpos/partnership/${body.organisationId}`);
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : "Partnership request failed.");
         setState("error");
       }
     },
@@ -57,21 +55,16 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
 
   useEffect(() => {
     if (!supabase) return;
-
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      if (data.session?.access_token) {
-        void claim(data.session.access_token);
-      } else {
-        setState("signed_out");
-      }
+      if (data.session?.access_token) void requestPartnership(data.session.access_token);
+      else setState("signed_out");
     });
-
     return () => {
       active = false;
     };
-  }, [claim, supabase]);
+  }, [requestPartnership, supabase]);
 
   async function continueWithGoogle() {
     if (!supabase) return;
@@ -93,7 +86,7 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
     if (!email.trim()) return;
     const emailClient = createEmailLinkSupabaseClient();
     if (!emailClient) {
-      setError("Email sign-in is not configured yet.");
+      setError("Email account access is not configured yet.");
       setState("error");
       return;
     }
@@ -107,32 +100,32 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
     });
     setEmailBusy(false);
     if (authError) {
-      setError("We could not send the sign-in link. Please try again.");
+      setError("We could not send the secure account link. Please try again.");
       setState("error");
       return;
     }
     setEmailSent(true);
   }
 
-  const busy = state === "checking" || state === "claiming";
+  const busy = state === "checking" || state === "requesting";
 
   return (
     <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
       <section>
         <div className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-brand-800">
-          <ShieldCheck className="size-4" /> KHP-OS | Schools
+          <Handshake className="size-4" /> KAEC-NG partnership
         </div>
         <h1 className="mt-5 max-w-2xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-          Your school health report was the diagnosis. Now begin the transformation.
+          Your school health report is the diagnosis. Partnership unlocks the transformation system.
         </h1>
         <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
-          Activate a secure institutional workspace where this KSHC baseline becomes the first record in your school&apos;s improvement journey.
+          Verify ownership of this KSHC report and submit the institution for KAEC-NG partnership review. Creating an account does not automatically activate KHP-OS.
         </p>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           {[
-            ["Baseline preserved", "Your completed KSHC becomes institutional history."],
-            ["Secure ownership", "Only the verified assessment email can activate it."],
-            ["One improvement loop", "Diagnosis flows into priorities, action, evidence and review."],
+            ["KSHC stays open", "Your diagnostic account and report remain available without partnership."],
+            ["Ownership verified", "Only the verified assessment email can submit this school."],
+            ["KAEC-NG approves access", "KHP-OS membership remains pending until partnership approval."],
           ].map(([title, detail]) => (
             <div key={title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <CheckCircle2 className="size-5 text-mint-600" />
@@ -149,7 +142,7 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
             <LockKeyhole className="size-5" />
           </span>
           <div>
-            <h2 className="text-xl font-extrabold text-slate-950">Activate your school workspace</h2>
+            <h2 className="text-xl font-extrabold text-slate-950">Request KHP-OS partnership</h2>
             <p className="mt-1 text-sm text-slate-500">Use the same email entered during this KSHC assessment.</p>
           </div>
         </div>
@@ -158,76 +151,42 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
           <div className="mt-8 flex min-h-48 flex-col items-center justify-center rounded-2xl bg-slate-50 text-center">
             <Loader2 className="size-8 animate-spin text-brand-700" />
             <p className="mt-4 text-sm font-bold text-slate-800">
-              {state === "claiming" ? "Securing your KHP-OS workspace…" : "Checking your sign-in…"}
+              {state === "requesting" ? "Submitting the institution for KAEC-NG review…" : "Checking your account…"}
             </p>
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={continueWithGoogle}
-              className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md"
-            >
+            <button type="button" onClick={continueWithGoogle} className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md">
               <GoogleMark /> Continue with Google <ArrowRight className="size-4" />
             </button>
-            <p className="mt-3 text-center text-xs font-medium text-slate-400">
-              Recommended for the fastest and most secure activation.
-            </p>
+            <p className="mt-3 text-center text-xs font-medium text-slate-400">Recommended. First-time users receive a free KSHC account.</p>
 
-            <div className="my-7 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-              <span className="h-px flex-1 bg-slate-200" /> or use email <span className="h-px flex-1 bg-slate-200" />
-            </div>
+            <div className="my-7 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400"><span className="h-px flex-1 bg-slate-200" /> or use email <span className="h-px flex-1 bg-slate-200" /></div>
 
             {emailSent ? (
               <div className="rounded-2xl border border-mint-200 bg-mint-50 p-5">
                 <Mail className="size-5 text-mint-700" />
                 <p className="mt-2 text-sm font-bold text-slate-900">Check your email</p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  We sent a secure sign-in link to <span className="font-semibold">{email}</span>.
-                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">We sent a secure account link to <span className="font-semibold">{email}</span>.</p>
               </div>
             ) : (
               <form onSubmit={continueWithEmail} className="space-y-3">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500" htmlFor="activation-email">
-                  Email fallback
-                </label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500" htmlFor="activation-email">Email</label>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <input
-                    id="activation-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="school@email.com"
-                    className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
-                  />
-                  <button
-                    type="submit"
-                    disabled={emailBusy}
-                    className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                  >
-                    {emailBusy ? "Sending…" : "Email me a link"}
-                  </button>
+                  <input id="activation-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="school@email.com" className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+                  <button type="submit" disabled={emailBusy} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60">{emailBusy ? "Sending…" : "Email me a link"}</button>
                 </div>
               </form>
             )}
           </>
         )}
 
-        {error && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium leading-6 text-red-700">
-            {error}
-            {state === "error" && (
-              <button type="button" className="ml-2 font-extrabold underline" onClick={() => setState("signed_out")}>
-                Try another account
-              </button>
-            )}
-          </div>
-        )}
+        {error && <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium leading-6 text-red-700">{error}{state === "error" && <button type="button" className="ml-2 font-extrabold underline" onClick={() => setState("signed_out")}>Try another account</button>}</div>}
 
-        <p className="mt-7 text-center text-[11px] leading-5 text-slate-400">
-          Google sign-in creates an account automatically for first-time users and signs returning users into the same KHP-OS identity.
-        </p>
+        <div className="mt-7 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-500">
+          <ShieldCheck className="mb-2 size-4 text-brand-700" />
+          Account verification only establishes identity. KHP-OS access is created only when KAEC-NG changes the institution&apos;s partnership status to <strong>active</strong>.
+        </div>
       </section>
     </div>
   );
