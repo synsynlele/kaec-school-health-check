@@ -6,7 +6,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test-core.mjs",
+    "test:scoring": "node scripts/test-scoring.mjs",
+    "validate:khpos": "node scripts/validate-khpos-foundation.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
