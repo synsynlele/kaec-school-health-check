@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -49,37 +49,42 @@ export function PriorityInterventionWorkspace({
   );
   const [busyKey, setBusyKey] = useState("");
 
-  const loadWorkspace = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.auth.getSession();
-    const accessToken = data.session?.access_token;
-    if (!accessToken) {
-      setError("Your session has ended. Return to the Command Centre and sign in again.");
-      return;
-    }
-
-    const response = await fetch(`/api/khpos/priorities/${organisationId}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-    const body = (await response.json()) as {
-      ok?: boolean;
-      workspace?: KhposPriorityWorkspace;
-      error?: string;
-    };
-
-    if (!response.ok || !body.ok || !body.workspace) {
-      setError(body.error ?? "The transformation agenda could not be loaded.");
-      return;
-    }
-
-    setWorkspace(body.workspace);
-    setError("");
-  }, [organisationId, supabase]);
-
   useEffect(() => {
-    void loadWorkspace();
-  }, [loadWorkspace]);
+    if (!supabase) return;
+
+    let active = true;
+    void supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
+      const accessToken = data.session?.access_token;
+      if (!accessToken) {
+        setError("Your session has ended. Return to the Command Centre and sign in again.");
+        return;
+      }
+
+      const response = await fetch(`/api/khpos/priorities/${organisationId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      const body = (await response.json()) as {
+        ok?: boolean;
+        workspace?: KhposPriorityWorkspace;
+        error?: string;
+      };
+
+      if (!active) return;
+      if (!response.ok || !body.ok || !body.workspace) {
+        setError(body.error ?? "The transformation agenda could not be loaded.");
+        return;
+      }
+
+      setWorkspace(body.workspace);
+      setError("");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [organisationId, supabase]);
 
   async function mutateAgenda(
     payload:
