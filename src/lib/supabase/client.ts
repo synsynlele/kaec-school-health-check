@@ -2,11 +2,27 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 
 let browserClient: SupabaseClient | null = null;
 
+/**
+ * KHP-OS browser authentication requires only Supabase's public project URL
+ * and publishable key. These values are intentionally safe to ship in the
+ * browser bundle; all privileged KHP-OS data access remains server-mediated
+ * through SUPABASE_SERVICE_ROLE_KEY, which is never exposed here.
+ *
+ * Vercel NEXT_PUBLIC_* variables remain the preferred override so the public
+ * configuration can be rotated without changing application code.
+ */
+const KHPOS_SUPABASE_PUBLIC_URL_FALLBACK =
+  "https://rlpciatblisxnuuiekkf.supabase.co";
+const KHPOS_SUPABASE_PUBLISHABLE_KEY_FALLBACK =
+  "sb_publishable_mQdDxi-PTdN5AgpmC8k1Mw_0k5rQ_7u";
+
 function browserConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? KHPOS_SUPABASE_PUBLIC_URL_FALLBACK;
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    KHPOS_SUPABASE_PUBLISHABLE_KEY_FALLBACK;
   return { url, key };
 }
 
