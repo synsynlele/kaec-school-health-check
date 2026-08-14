@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { claimKshcAssessment, KhposClaimError } from "@/lib/khpos/claim";
+import {
+  bearerTokenFromRequest,
+  KhposAuthError,
+  verifyKhposAccessToken,
+} from "@/lib/khpos/auth";
 
 export const runtime = "nodejs";
 
@@ -13,9 +18,8 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Assessment not found." }, { status: 404 });
   }
 
-  const authorization = req.headers.get("authorization") ?? "";
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-  if (!match?.[1]) {
+  const accessToken = bearerTokenFromRequest(req);
+  if (!accessToken) {
     return NextResponse.json(
       { ok: false, error: "Sign in before activating KHP-OS." },
       { status: 401 },
@@ -23,10 +27,11 @@ export async function POST(
   }
 
   try {
-    const organisationId = await claimKshcAssessment(id, match[1]);
+    const user = await verifyKhposAccessToken(accessToken);
+    const organisationId = await claimKshcAssessment(id, user);
     return NextResponse.json({ ok: true, organisationId });
   } catch (error) {
-    if (error instanceof KhposClaimError) {
+    if (error instanceof KhposAuthError || error instanceof KhposClaimError) {
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: error.status },
