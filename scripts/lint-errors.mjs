@@ -10,7 +10,7 @@ const run = spawnSync(eslintBin, [".", "--format", "json"], {
 });
 
 if (run.error) {
-  console.error(run.error);
+  console.error(`::error::${String(run.error)}`);
   process.exit(1);
 }
 
@@ -18,9 +18,18 @@ let results;
 try {
   results = JSON.parse(run.stdout || "[]");
 } catch {
-  console.error(run.stdout || run.stderr || "ESLint failed without readable output.");
+  const detail = (run.stderr || run.stdout || "ESLint failed without readable output.")
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+  console.error(`::error::${detail}`);
   process.exit(1);
 }
+
+const escape = (value) => String(value)
+  .replaceAll("%", "%25")
+  .replaceAll("\r", "%0D")
+  .replaceAll("\n", "%0A");
 
 const errors = results.flatMap((result) =>
   result.messages
@@ -36,7 +45,9 @@ for (const result of results) {
 
 if (errors.length) {
   for (const error of errors) {
-    console.error(`error ${error.filePath}:${error.line ?? 0}:${error.column ?? 0} ${error.message} ${error.ruleId ?? ""}`);
+    console.error(
+      `::error file=${escape(error.filePath)},line=${error.line ?? 1},col=${error.column ?? 1}::${escape(error.message)} (${escape(error.ruleId ?? "eslint")})`,
+    );
   }
   console.error(`ESLint found ${errors.length} error(s).`);
   process.exit(1);
