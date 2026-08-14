@@ -10,6 +10,7 @@ for (const script of [
   "scripts/validate-stage5.mjs",
   "scripts/validate-stage6.mjs",
   "scripts/validate-stage7.mjs",
+  "scripts/validate-stage8.mjs",
   "scripts/test-scoring.mjs",
 ]) {
   const run = spawnSync(process.execPath, [script], { stdio: "inherit" });
