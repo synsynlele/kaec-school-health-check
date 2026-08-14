@@ -10,10 +10,13 @@ export function ActionsBar({ assessmentId }: { assessmentId: string }) {
   const [khposReturnTo, setKhposReturnTo] = useState("");
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("khpos_return_to") ?? "";
-    if (stored.startsWith("/khpos/") && stored.endsWith("/improvement")) {
-      setKhposReturnTo(stored);
-    }
+    const timer = window.setTimeout(() => {
+      const stored = sessionStorage.getItem("khpos_return_to") ?? "";
+      if (stored.startsWith("/khpos/") && stored.endsWith("/improvement")) {
+        setKhposReturnTo(stored);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function copyLink() {
