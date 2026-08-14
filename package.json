@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test-core.mjs",
     "test:scoring": "node scripts/test-scoring.mjs",
-    "validate:khpos": "node scripts/validate-khpos-foundation.mjs"
+    "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
+    "validate:stage1b": "node scripts/validate-stage1b.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
