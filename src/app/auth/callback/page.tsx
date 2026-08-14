@@ -8,13 +8,12 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [message, setMessage] = useState("Completing secure sign-in…");
+  const [message, setMessage] = useState(
+    supabase ? "Completing secure sign-in…" : "Sign-in is not configured.",
+  );
 
   useEffect(() => {
-    if (!supabase) {
-      setMessage("Sign-in is not configured.");
-      return;
-    }
+    if (!supabase) return;
 
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
@@ -51,7 +50,7 @@ export default function AuthCallbackPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
       <div className="text-center">
-        <Loader2 className="mx-auto size-9 animate-spin text-mint-400" />
+        {supabase && <Loader2 className="mx-auto size-9 animate-spin text-mint-400" />}
         <h1 className="mt-5 text-xl font-extrabold">KHP-OS | Schools</h1>
         <p className="mt-2 text-sm text-slate-300">{message}</p>
       </div>
