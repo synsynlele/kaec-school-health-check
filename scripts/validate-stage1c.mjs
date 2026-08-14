@@ -21,7 +21,10 @@ assert.match(activation, /provider:\s*"google"/);
 assert.match(activation, /Continue with Google/);
 assert.match(activation, /signInWithOtp/);
 assert.match(activation, /createEmailLinkSupabaseClient/);
-assert.ok(activation.indexOf("Continue with Google") < activation.indexOf("Email fallback"), "Google must be the primary visible auth path");
+assert.ok(
+  activation.indexOf("Continue with Google") < activation.indexOf('htmlFor="activation-email"'),
+  "Google must be the primary visible auth path",
+);
 assert.match(activation, /\/auth\/callback\?next=/);
 assert.match(activation, /\/api\/khpos\/claim\/\$\{assessmentId\}/);
 
@@ -53,7 +56,8 @@ assert.match(workspace, /user_id=eq/);
 assert.match(workspace, /status=eq\.active/);
 
 const actions = readFileSync("src/components/report/ActionsBar.tsx", "utf8");
-assert.match(actions, /Activate KHP-OS/);
+assert.match(actions, /Request KHP-OS Partnership/);
+assert.doesNotMatch(actions, />Activate KHP-OS</);
 assert.match(actions, /\/activate\/\$\{assessmentId\}/);
 
-console.log("KHP-OS Stage 1C structural validation passed: Google-first activation and secure workspace bridge are present.");
+console.log("KHP-OS Stage 1C structural validation passed: Google-first identity and secure partnership bridge are present.");

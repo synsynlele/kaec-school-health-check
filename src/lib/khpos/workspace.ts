@@ -51,6 +51,7 @@ export interface KhposWorkspaceSnapshot {
     state: string | null;
     schoolType: string | null;
     schoolLevel: string | null;
+    partnerStatus: "active";
   };
   membership: { role: string };
   baseline: {
@@ -83,7 +84,10 @@ export async function getKhposWorkspaceSnapshot(
   );
 
   if (!membership[0]) {
-    throw new KhposWorkspaceError("You do not have access to this school workspace.", 403);
+    throw new KhposWorkspaceError(
+      "KHP-OS access requires both an active KAEC-NG partnership and an active school membership.",
+      403,
+    );
   }
 
   const organisations = await serviceFetch<
@@ -94,14 +98,21 @@ export async function getKhposWorkspaceSnapshot(
       state: string | null;
       school_type: string | null;
       school_level: string | null;
+      partner_status: string;
     }>
   >(
-    `organisations?id=eq.${encodeURIComponent(organisationId)}&select=id,name,country,state,school_type,school_level&limit=1`,
+    `organisations?id=eq.${encodeURIComponent(organisationId)}&select=id,name,country,state,school_type,school_level,partner_status&limit=1`,
   );
 
   const organisation = organisations[0];
   if (!organisation) {
     throw new KhposWorkspaceError("School workspace not found.", 404);
+  }
+  if (organisation.partner_status !== "active") {
+    throw new KhposWorkspaceError(
+      "This institution does not currently have an active KAEC-NG partnership.",
+      403,
+    );
   }
 
   const assessments = await serviceFetch<
@@ -144,6 +155,7 @@ export async function getKhposWorkspaceSnapshot(
       state: organisation.state,
       schoolType: organisation.school_type,
       schoolLevel: organisation.school_level,
+      partnerStatus: "active",
     },
     membership: { role: membership[0].role },
     baseline: latest

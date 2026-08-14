@@ -21,26 +21,29 @@ export async function POST(
   const accessToken = bearerTokenFromRequest(req);
   if (!accessToken) {
     return NextResponse.json(
-      { ok: false, error: "Sign in before activating KHP-OS." },
-      { status: 401 },
+      { ok: false, error: "Sign in before requesting KHP-OS partnership." },
+      { status: 401, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 
   try {
     const user = await verifyKhposAccessToken(accessToken);
     const organisationId = await claimKshcAssessment(id, user);
-    return NextResponse.json({ ok: true, organisationId });
+    return NextResponse.json(
+      { ok: true, organisationId },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (error) {
     if (error instanceof KhposAuthError || error instanceof KhposClaimError) {
       return NextResponse.json(
         { ok: false, error: error.message },
-        { status: error.status },
+        { status: error.status, headers: { "Cache-Control": "private, no-store" } },
       );
     }
-    console.error("[khpos] assessment claim failed:", error);
+    console.error("[khpos] partnership request failed:", error);
     return NextResponse.json(
-      { ok: false, error: "KHP-OS activation failed. Please try again." },
-      { status: 500 },
+      { ok: false, error: "KHP-OS partnership request failed. Please try again." },
+      { status: 500, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 }

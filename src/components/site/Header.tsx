@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, LogIn, Menu, UserPlus, X } from "lucide-react";
 import { Logo } from "./Logo";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -37,17 +37,17 @@ export function Header() {
           : "bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" aria-label="KAEC School Health Check — home" className="shrink-0">
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center lg:flex" aria-label="Primary">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              className="rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               {item.label}
             </Link>
@@ -56,8 +56,23 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <Link
+            href="/account"
+            className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 lg:inline-flex"
+          >
+            <LogIn className="size-4" /> Sign in
+          </Link>
+          <Link
+            href="/account"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "hidden xl:inline-flex",
+            )}
+          >
+            <UserPlus className="size-4" /> Create account
+          </Link>
+          <Link
             href="/assessment"
-            className={cn(buttonVariants(), "hidden sm:inline-flex")}
+            className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}
           >
             Start Free Assessment
             <ArrowRight className="size-4" />
@@ -95,7 +110,23 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              <div className="pt-2">
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Link
+                  href="/account"
+                  onClick={() => setOpen(false)}
+                  className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={() => setOpen(false)}
+                  className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+                >
+                  Create account
+                </Link>
+              </div>
+              <div className="pt-1">
                 <Link
                   href="/assessment"
                   onClick={() => setOpen(false)}

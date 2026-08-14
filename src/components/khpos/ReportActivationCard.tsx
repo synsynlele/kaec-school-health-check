@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Orbit } from "lucide-react";
+import { ArrowRight, CheckCircle2, Handshake, Orbit } from "lucide-react";
 
 export function ReportActivationCard({ assessmentId }: { assessmentId: string }) {
   return (
@@ -12,25 +12,25 @@ export function ReportActivationCard({ assessmentId }: { assessmentId: string })
         <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-mint-300">
-              <Orbit className="size-4" /> Continue into KHP-OS
+              <Orbit className="size-4" /> Continue with KAEC-NG
             </div>
             <h2 className="mt-4 max-w-2xl text-2xl font-black tracking-tight sm:text-3xl">
-              Do not let this report become another document in a folder.
+              Ready to turn this diagnosis into institutional transformation?
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Activate a secure institutional workspace and turn this diagnosis into priorities, interventions, implementation, evidence, review and measurable improvement.
+              Request a KAEC-NG partnership. Your verified KSHC report becomes the proposed baseline, but KHP-OS access begins only after KAEC-NG approves the institution.
             </p>
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-300">
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> Preserve this baseline</span>
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> Build institutional history</span>
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> Google sign-in first</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> KSHC stays free</span>
+              <span className="inline-flex items-center gap-1.5"><Handshake className="size-4 text-mint-400" /> Partnership approval required</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> No automatic KHP-OS access</span>
             </div>
           </div>
           <Link
             href={`/activate/${assessmentId}`}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-mint-400 px-7 py-3.5 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 hover:bg-mint-300"
           >
-            Activate KHP-OS <ArrowRight className="size-4" />
+            Request KHP-OS Partnership <ArrowRight className="size-4" />
           </Link>
         </div>
       </div>
