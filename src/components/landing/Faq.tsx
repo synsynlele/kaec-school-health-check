@@ -10,7 +10,7 @@ import { SectionHeading } from "@/components/site/SectionHeading";
 const FAQS = [
   {
     q: "Is the School Health Check really free?",
-    a: "Yes — the assessment, the full AI report, the PDF download and the AI Coach are completely free, with no account required. KAEC offers optional paid support afterwards (consulting, training, implementation) for schools that want help executing their plan, but nothing is locked behind payment.",
+    a: "Yes — the assessment, the full AI report, the PDF download and the AI Coach are completely free, with no account required. KAEC-NG offers optional paid Human Potential Development and institutional transformation support afterwards — including KHP-OS deployment, capability development and implementation support — but nothing in KSHC is locked behind payment.",
   },
   {
     q: "How long does the assessment take?",
@@ -26,11 +26,11 @@ const FAQS = [
   },
   {
     q: "How accurate is an AI diagnosis?",
-    a: "The AI does not guess — it analyses the honest ratings you give against KAEC's school-improvement framework, the same structure our consultants use in paid diagnostics. The more candid your answers, the sharper the report. Many leaders describe it as, 'uncomfortably accurate.'",
+    a: "The AI does not guess — it analyses the honest ratings you give against KAEC-NG's school-improvement framework, the same institutional diagnostic structure behind KHP-OS. The more candid your answers, the sharper the report. Many leaders describe it as 'uncomfortably accurate.'",
   },
   {
     q: "What if our school scores badly?",
-    a: "Then the tool has already paid off — you now know exactly where to invest. Every report includes quick wins for this week and a sequenced 30/60/90-day plan sized for real school budgets. And if you want a partner for the turnaround, KAEC's team is one message away.",
+    a: "Then the tool has already paid off — you now know exactly where to invest. Every report includes quick wins for this week and a sequenced 30/60/90-day plan sized for real school budgets. If you want to continue beyond diagnosis, KHP-OS gives your institution a structured path from priority to verified improvement, with the KAEC-NG team available when human support is useful.",
   },
 ];
 

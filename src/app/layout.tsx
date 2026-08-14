@@ -15,8 +15,10 @@ export const metadata: Metadata = {
     "school improvement",
     "AI school report",
     "school diagnostic",
-    "KAEC",
-    "education consultancy",
+    "KAEC-NG",
+    "human potential development",
+    "institutional transformation",
+    "KHP-OS",
     "school assessment",
   ],
   openGraph: {

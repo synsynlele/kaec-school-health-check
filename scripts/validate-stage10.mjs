@@ -13,6 +13,15 @@ function expectContains(path, needles) {
   }
 }
 
+function expectNotContains(path, needles) {
+  const content = read(path).toLowerCase();
+  for (const needle of needles) {
+    if (content.includes(needle.toLowerCase())) {
+      throw new Error(`${path} contains forbidden legacy positioning: ${needle}`);
+    }
+  }
+}
+
 const migration =
   "supabase/migrations/20260814215444_stage10_platform_governance_production_readiness.sql";
 
@@ -85,7 +94,6 @@ expectContains("src/app/page.tsx", [
 expectContains("src/components/landing/CompanyPositioning.tsx", [
   "Human Potential Development Company",
   "Discover, Develop and Deploy Potential",
-  "not a traditional consulting firm",
   "KAEC School Health Check (KSHC)",
   "KHP-OS",
 ]);
@@ -100,6 +108,38 @@ expectContains("src/app/contact/page.tsx", [
   "Human Potential Development",
   "KHP-OS",
 ]);
+expectContains("src/components/landing/Faq.tsx", [
+  "Human Potential Development",
+  "institutional transformation",
+  "KHP-OS",
+]);
+expectContains("src/app/layout.tsx", [
+  "human potential development",
+  "institutional transformation",
+  "KHP-OS",
+]);
+expectContains("src/components/site/ContactForm.tsx", [
+  "Discuss institutional transformation",
+  "Request capability development",
+  "Talk to KAEC-NG about my school",
+]);
+
+for (const publicPath of [
+  "src/components/landing/CompanyPositioning.tsx",
+  "src/components/landing/Faq.tsx",
+  "src/app/layout.tsx",
+  "src/app/contact/page.tsx",
+  "src/components/site/ContactForm.tsx",
+  "src/lib/site.ts",
+]) {
+  expectNotContains(publicPath, [
+    "education consultancy",
+    "consulting firm",
+    "our consultants",
+    "senior kaec consultant",
+    "book a consultation",
+  ]);
+}
 
 expectContains("scripts/test-core.mjs", ["scripts/validate-stage10.mjs"]);
 
