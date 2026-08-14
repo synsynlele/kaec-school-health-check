@@ -31,16 +31,14 @@ const statusView = {
 
 export function PartnershipStatusWorkspace({ organisationId }: { organisationId: string }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [state, setState] = useState<"loading" | "signed_out" | "ready" | "error">("loading");
+  const [state, setState] = useState<"loading" | "signed_out" | "ready" | "error">(
+    supabase ? "loading" : "error",
+  );
   const [partnership, setPartnership] = useState<KhposPartnerSnapshot | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(supabase ? "" : "Account sign-in is not configured.");
 
   useEffect(() => {
-    if (!supabase) {
-      setError("Account sign-in is not configured.");
-      setState("error");
-      return;
-    }
+    if (!supabase) return;
     let active = true;
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;

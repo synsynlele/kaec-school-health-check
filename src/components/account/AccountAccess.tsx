@@ -29,21 +29,19 @@ const statusCopy = {
 
 export function AccountAccess() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [state, setState] = useState<"checking" | "signed_out" | "ready">("checking");
+  const [state, setState] = useState<"checking" | "signed_out" | "ready">(
+    supabase ? "checking" : "signed_out",
+  );
   const [email, setEmail] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [partnerships, setPartnerships] = useState<KhposPartnerSnapshot[]>([]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(supabase ? "" : "Account sign-in is not configured.");
 
   useEffect(() => {
-    if (!supabase) {
-      setError("Account sign-in is not configured.");
-      setState("signed_out");
-      return;
-    }
+    if (!supabase) return;
     let active = true;
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
