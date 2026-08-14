@@ -15,7 +15,8 @@
     "validate:stage2": "node scripts/validate-stage2.mjs",
     "validate:stage3": "node scripts/validate-stage3.mjs",
     "validate:stage4": "node scripts/validate-stage4.mjs",
-    "validate:stage9": "node scripts/validate-stage9.mjs"
+    "validate:stage9": "node scripts/validate-stage9.mjs",
+    "validate:stage10": "node scripts/validate-stage10.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

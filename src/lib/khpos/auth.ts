@@ -1,9 +1,13 @@
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVER_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+export type KhposAuthenticatorAssuranceLevel = "aal1" | "aal2";
+
 export interface VerifiedKhposUser {
   id: string;
   email: string;
+  aal: KhposAuthenticatorAssuranceLevel;
+  provider: string | null;
 }
 
 export class KhposAuthError extends Error {
@@ -20,6 +24,21 @@ export function bearerTokenFromRequest(request: Request): string | null {
   const authorization = request.headers.get("authorization") ?? "";
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
+}
+
+function assuranceLevelFromVerifiedToken(
+  accessToken: string,
+): KhposAuthenticatorAssuranceLevel {
+  try {
+    const payloadPart = accessToken.split(".")[1];
+    if (!payloadPart) return "aal1";
+    const payload = JSON.parse(
+      Buffer.from(payloadPart, "base64url").toString("utf8"),
+    ) as { aal?: string };
+    return payload.aal === "aal2" ? "aal2" : "aal1";
+  } catch {
+    return "aal1";
+  }
 }
 
 export async function verifyKhposAccessToken(
@@ -45,6 +64,7 @@ export async function verifyKhposAccessToken(
     id?: string;
     email?: string;
     email_confirmed_at?: string | null;
+    app_metadata?: { provider?: string };
   };
 
   const email = user.email?.trim().toLowerCase();
@@ -52,5 +72,10 @@ export async function verifyKhposAccessToken(
     throw new KhposAuthError("A verified email is required to use KHP-OS.", 403);
   }
 
-  return { id: user.id, email };
+  return {
+    id: user.id,
+    email,
+    aal: assuranceLevelFromVerifiedToken(accessToken),
+    provider: user.app_metadata?.provider ?? null,
+  };
 }
