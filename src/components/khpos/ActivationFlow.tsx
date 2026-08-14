@@ -19,8 +19,12 @@ function GoogleMark() {
 export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [state, setState] = useState<"checking" | "signed_out" | "claiming" | "error">("checking");
-  const [error, setError] = useState("");
+  const [state, setState] = useState<"checking" | "signed_out" | "claiming" | "error">(
+    supabase ? "checking" : "error",
+  );
+  const [error, setError] = useState(
+    supabase ? "" : "KHP-OS sign-in is not configured yet.",
+  );
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [emailBusy, setEmailBusy] = useState(false);
@@ -52,11 +56,7 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
   );
 
   useEffect(() => {
-    if (!supabase) {
-      setError("KHP-OS sign-in is not configured yet.");
-      setState("error");
-      return;
-    }
+    if (!supabase) return;
 
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
