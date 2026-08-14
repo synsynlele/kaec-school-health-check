@@ -52,7 +52,8 @@ assert.match(workspace, /organisation_memberships\?/);
 assert.match(workspace, /user_id=eq/);
 assert.match(workspace, /status=eq\.active/);
 
-const report = readFileSync("src/app/report/[id]/page.tsx", "utf8");
-assert.match(report, /ReportActivationCard/);
+const actions = readFileSync("src/components/report/ActionsBar.tsx", "utf8");
+assert.match(actions, /Activate KHP-OS/);
+assert.match(actions, /\/activate\/\$\{assessmentId\}/);
 
 console.log("KHP-OS Stage 1C structural validation passed: Google-first activation and secure workspace bridge are present.");
