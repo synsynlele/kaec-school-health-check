@@ -27,8 +27,8 @@ jobs:
       - name: Foundation and scoring tests
         run: npm test
 
-      - name: Lint
-        run: npm run lint -- --quiet
+      - name: Lint errors
+        run: node scripts/lint-errors.mjs
 
       - name: Typecheck
         run: npm run typecheck
