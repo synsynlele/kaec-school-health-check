@@ -82,7 +82,7 @@ expectContains("src/components/khpos/AdminConsoleWorkspace.tsx", [
   "Platform governance is separate from school authority.",
 ]);
 
-expectContains("src/app/khpos/[organisationId]/page.tsx", [
+expectContains("src/components/khpos/SchoolWorkspaceNav.tsx", [
   'href="/khpos/admin"',
   "Admin Console",
 ]);

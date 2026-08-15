@@ -113,10 +113,10 @@ export function PortfolioIntelligenceWorkspace() {
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link
-            href="/"
+            href="/khpos/admin"
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
           >
-            <ArrowLeft className="size-4" /> KSHC / KHP-OS
+            <ArrowLeft className="size-4" /> Admin Dashboard
           </Link>
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, Handshake, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, Gauge, Handshake, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "KHP-OS Secure Access",
@@ -20,7 +20,7 @@ export default function KhposAccessPage() {
         <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300">
           Any school can use KSHC and create a free account. KHP-OS workspaces are available only to institutions with an active KAEC-NG partnership and authorised school membership.
         </p>
-        <div className="mt-9 grid gap-5 lg:grid-cols-3">
+        <div className="mt-9 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
           <Link href="/khpos/admin" className="group rounded-[28px] border border-mint-300/20 bg-white/5 p-6 transition hover:border-mint-300/50 hover:bg-white/10">
             <ShieldCheck className="size-8 text-mint-300" />
             <h2 className="mt-5 text-2xl font-black">KAEC-NG Admin Console</h2>
@@ -32,6 +32,12 @@ export default function KhposAccessPage() {
             <h2 className="mt-5 text-2xl font-black">Partnership Registry</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">Approve, suspend, reactivate or end institutional KHP-OS access. MFA is required for changes.</p>
             <span className="mt-6 inline-flex items-center gap-2 text-sm font-black text-amber-300">Manage school partnerships <ArrowRight className="size-4 transition group-hover:translate-x-1" /></span>
+          </Link>
+          <Link href="/khpos/portfolio" className="group rounded-[28px] border border-brand-300/20 bg-white/5 p-6 transition hover:border-brand-300/50 hover:bg-white/10">
+            <Gauge className="size-8 text-brand-200" />
+            <h2 className="mt-5 text-2xl font-black">Portfolio Intelligence</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">Cross-institution transformation oversight for authorised KAEC-NG platform custodians.</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm font-black text-brand-200">Open Portfolio Intelligence <ArrowRight className="size-4 transition group-hover:translate-x-1" /></span>
           </Link>
           <Link href="/account" className="group rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-white/25 hover:bg-white/10">
             <Building2 className="size-8 text-white" />
