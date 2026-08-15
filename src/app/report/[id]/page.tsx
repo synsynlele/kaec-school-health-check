@@ -8,7 +8,6 @@ import {
   Eye,
   GraduationCap,
   HeartPulse,
-  Lightbulb,
   ListChecks,
   Medal,
   MessageSquareHeart,
@@ -97,6 +96,7 @@ export default async function ReportPage({
 
   const { report, school } = stored;
   const rating = ratingFor(report.overallScore);
+  const aiEnhanced = report.engine === "openai";
 
   return (
     <>
@@ -114,7 +114,7 @@ export default async function ReportPage({
                 <HeartPulse className="size-3.5" /> KAEC School Health Report
               </Badge>
               <Badge className="border-white/20 bg-white/10 text-white hover:bg-white/10">
-                <Sparkles className="size-3.5" /> AI-generated · {formatDate(report.generatedAt)}
+                <Sparkles className="size-3.5" /> {aiEnhanced ? "AI-enhanced narrative" : "KSHC diagnostic engine"} · {formatDate(report.generatedAt)}
               </Badge>
             </div>
             <h1 className="mt-5 max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl">
@@ -134,6 +134,15 @@ export default async function ReportPage({
         </section>
 
         <div className="mx-auto max-w-6xl space-y-16 px-4 py-14 sm:px-6 sm:py-16">
+          {!aiEnhanced && (
+            <Card className="no-print border-amber-200 bg-amber-50 p-5 sm:p-6">
+              <p className="text-sm font-extrabold text-amber-950">KSHC diagnostic-engine narrative</p>
+              <p className="mt-1.5 max-w-4xl text-sm leading-6 text-amber-900/80">
+                AI narrative enhancement was unavailable when this report was generated. The scores remain deterministic and authoritative; this narrative was produced by KSHC&apos;s fallback diagnostic engine and can be AI-enhanced later without changing the assessment scores.
+              </p>
+            </Card>
+          )}
+
           {/* ── Score & executive summary ─────────────────────── */}
           <section className="print-clean avoid-break">
             <SectionHeading
@@ -167,7 +176,7 @@ export default async function ReportPage({
             <SectionHeading
               icon={Radar}
               title="Department Scores"
-              description="All eleven areas of school health, benchmarked on KAEC's framework. Green bars are strengths to protect; anything amber or below deserves a named owner."
+              description="All eleven areas of school health, scored on KAEC's framework. Strong areas are assets to protect; lower-scoring areas need evidence, ownership and deliberate improvement."
             />
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <Card className="print-clean avoid-break p-7 sm:p-9">
@@ -207,7 +216,7 @@ export default async function ReportPage({
                   }))}
                 />
                 <p className="mt-2 text-center text-xs text-slate-400">
-                  Balanced shapes are healthy schools — spikes tell you where to focus.
+                  The radar shape shows relative balance across the eleven areas; large gaps show where to investigate first.
                 </p>
               </Card>
             </div>
@@ -259,7 +268,7 @@ export default async function ReportPage({
             <SectionHeading
               icon={Target}
               title="Priority Areas"
-              description="Three areas where focused effort pays back fastest. Everything else in this plan flows from these."
+              description="The three lowest-scoring areas selected for first attention. The improvement plan is sequenced around these constraints."
             />
             <div className="grid gap-5 md:grid-cols-3">
               {report.priorityAreas.map((p, i) => (
@@ -284,7 +293,7 @@ export default async function ReportPage({
             <SectionHeading
               icon={Eye}
               title="Area-by-Area Analysis"
-              description="The AI's read on each department of your school, written for leadership — not for a filing cabinet."
+              description={aiEnhanced ? "AI-enhanced interpretation of each school-health area, grounded in the completed KSHC responses and fixed scores." : "KSHC diagnostic interpretation of each school-health area, grounded in the completed responses and fixed scores."}
             />
             <div className="grid gap-4 md:grid-cols-2">
               {report.chapterAnalyses.map((c) => {
@@ -315,8 +324,8 @@ export default async function ReportPage({
           <section>
             <SectionHeading
               icon={ListChecks}
-              title="AI Recommendations"
-              description="Prioritised, effort-rated moves — sequenced so the cheapest, highest-leverage fixes come first."
+              title={aiEnhanced ? "AI-Enhanced Recommendations" : "Diagnostic Recommendations"}
+              description="Prioritised, effort-rated moves sequenced around the school's lowest-scoring systems and current operating context."
             />
             <Card className="print-clean divide-y divide-slate-100 p-0">
               {report.recommendations.map((rec, i) => {
@@ -348,7 +357,7 @@ export default async function ReportPage({
             <SectionHeading
               icon={Zap}
               title="Quick Wins"
-              description="Start these this week. They cost almost nothing and each one makes the next fix easier."
+              description="Low-cost actions designed to create visible movement while the deeper systems are being installed."
             />
             <div className="grid gap-5 sm:grid-cols-2">
               {report.quickWins.map((qw, i) => (
@@ -370,7 +379,7 @@ export default async function ReportPage({
             <SectionHeading
               icon={CalendarCheck}
               title="Your 90-Day Improvement Plan"
-              description="Three phases. Give every task an owner and a date, then review weekly — that discipline is the whole secret."
+              description="Three phases. Give every task an owner, date and evidence requirement, then review progress weekly so implementation remains auditable."
             />
             <div className="grid gap-5 lg:grid-cols-3">
               {(
@@ -431,7 +440,7 @@ export default async function ReportPage({
             </Card>
           </section>
 
-          {/* ── Contact CTA ───────────────────────────────────── */}
+          {/* ── KHP-OS continuation ───────────────────────────── */}
           <section className="no-print">
             <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600 px-7 py-12 text-center text-white shadow-lift sm:px-12">
               <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -441,24 +450,23 @@ export default async function ReportPage({
               <div className="relative">
                 <MessageSquareHeart className="mx-auto size-10 text-white/90" />
                 <h2 className="mx-auto mt-4 max-w-lg text-2xl font-extrabold tracking-tight sm:text-3xl">
-                  Need help transforming your school?
+                  Turn diagnosis into institutional transformation.
                 </h2>
-                <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-brand-100">
-                  Your report is the diagnosis. KAEC's consultants can deliver the treatment —
-                  implementation support, staff training and leadership coaching.
+                <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-relaxed text-brand-100">
+                  KSHC identifies where the institution stands. KHP-OS continues the journey through prioritisation, intervention, implementation, evidence, review, reassessment and continuous improvement.
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
                   <Link
-                    href="/contact?type=consultation"
+                    href={`/activate/${id}`}
                     className="rounded-full bg-white px-7 py-3 text-sm font-bold text-brand-800 shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
                   >
-                    Book Consultation
+                    Request KHP-OS Partnership
                   </Link>
                   <Link
-                    href="/contact?type=training"
+                    href="/khpos"
                     className="rounded-full border border-white/40 bg-white/10 px-7 py-3 text-sm font-bold text-white backdrop-blur transition-all hover:bg-white/20"
                   >
-                    Request Training
+                    Explore KHP-OS
                   </Link>
                   <Link
                     href="/contact?type=talk"
