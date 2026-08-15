@@ -35,8 +35,11 @@ expect("src/app/api/assessments/[id]/analyze/route.ts", [
 expect("src/app/api/health/route.ts", [
   "openAiConfigurationStatus",
   "probeOpenAiConnection",
+  "generateReport",
   'url.searchParams.get("probe") === "1"',
+  'url.searchParams.get("reportProbe") === "1"',
   'process.env.VERCEL_ENV !== "production"',
+  'report.engine === "openai"',
   '"Cache-Control": "no-store"',
 ]);
 
@@ -46,4 +49,4 @@ expect("src/app/api/health/ai/route.ts", [
   "Live AI probing is disabled",
 ]);
 
-console.log("KSHC OpenAI observability and fallback contracts passed.");
+console.log("KSHC OpenAI observability, connectivity and report-pipeline contracts passed.");
