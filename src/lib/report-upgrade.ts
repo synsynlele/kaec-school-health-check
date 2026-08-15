@@ -20,7 +20,10 @@ export type ReportUpgradeResult =
 function sameScores(before: ReportData, after: ReportData): boolean {
   if (before.overallScore !== after.overallScore) return false;
   const previous = new Map(before.departmentScores.map((item) => [item.chapter, item.score]));
-  return after.departmentScores.every((item) => previous.get(item.chapter) === item.score);
+  return (
+    before.departmentScores.length === after.departmentScores.length &&
+    after.departmentScores.every((item) => previous.get(item.chapter) === item.score)
+  );
 }
 
 function retryAllowed(report: ReportData): boolean {
@@ -36,57 +39,77 @@ function retryAllowed(report: ReportData): boolean {
   return !Number.isFinite(generated) || Date.now() - generated >= FAILURE_RETRY_MS;
 }
 
-async function replaceReportNarrative(
+async function replaceSupabaseReportNarrative(
   assessmentId: string,
   report: ReportData,
 ): Promise<void> {
-  const payload = {
-    executive_summary: report.executiveSummary,
-    strengths: report.strengths,
-    weaknesses: report.weaknesses,
-    recommendations: report.recommendations,
-    ninety_day_plan: {
-      plan30: report.plan30,
-      plan60: report.plan60,
-      plan90: report.plan90,
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/kshc_replace_report_narrative_server`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY!,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
     },
-    full_report: report,
-  };
-
-  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/reports?assessment_id=eq.${encodeURIComponent(assessmentId)}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Report narrative replacement failed (${response.status}).`);
-    }
-    return;
+    body: JSON.stringify({
+      p_assessment_id: assessmentId,
+      p_full_report: report,
+    }),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Report narrative replacement failed (${response.status}): ${detail.slice(0, 300)}`);
   }
+}
 
+async function replacePostgresReportNarrative(
+  assessmentId: string,
+  report: ReportData,
+): Promise<void> {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 1,
     connectionTimeoutMillis: 8000,
   });
+  const client = await pool.connect();
   try {
-    await pool.query(
-      `UPDATE reports
-       SET executive_summary=$2,
-           strengths=$3,
-           weaknesses=$4,
-           recommendations=$5,
-           ninety_day_plan=$6,
-           full_report=$7
+    await client.query("BEGIN");
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS kshc_report_versions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        assessment_id uuid NOT NULL,
+        version_number integer NOT NULL,
+        engine text NOT NULL DEFAULT 'engine',
+        full_report jsonb NOT NULL,
+        archived_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (assessment_id, version_number)
+      )
+    `);
+    const current = await client.query<{ full_report: ReportData }>(
+      "SELECT full_report FROM reports WHERE assessment_id=$1 FOR UPDATE",
+      [assessmentId],
+    );
+    if (!current.rows.length) throw new Error("Report not found during narrative replacement.");
+    if (!sameScores(current.rows[0].full_report, report)) {
+      throw new Error("KSHC report upgrade blocked because authoritative scores changed.");
+    }
+    const version = await client.query<{ next_version: number }>(
+      "SELECT COALESCE(MAX(version_number),0)+1 AS next_version FROM kshc_report_versions WHERE assessment_id=$1",
+      [assessmentId],
+    );
+    const nextVersion = Number(version.rows[0]?.next_version ?? 1);
+    await client.query(
+      `INSERT INTO kshc_report_versions (assessment_id,version_number,engine,full_report)
+       VALUES ($1,$2,$3,$4)`,
+      [assessmentId, nextVersion, current.rows[0].full_report.engine, JSON.stringify(current.rows[0].full_report)],
+    );
+    await client.query(
+      `UPDATE reports SET
+        executive_summary=$2,
+        strengths=$3,
+        weaknesses=$4,
+        recommendations=$5,
+        ninety_day_plan=$6,
+        full_report=$7
        WHERE assessment_id=$1`,
       [
         assessmentId,
@@ -94,18 +117,34 @@ async function replaceReportNarrative(
         JSON.stringify(report.strengths),
         JSON.stringify(report.weaknesses),
         JSON.stringify(report.recommendations),
-        JSON.stringify(payload.ninety_day_plan),
+        JSON.stringify({ plan30: report.plan30, plan60: report.plan60, plan90: report.plan90 }),
         JSON.stringify(report),
       ],
     );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
   } finally {
+    client.release();
     await pool.end();
   }
 }
 
+async function replaceReportNarrative(
+  assessmentId: string,
+  report: ReportData,
+): Promise<void> {
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    return replaceSupabaseReportNarrative(assessmentId, report);
+  }
+  return replacePostgresReportNarrative(assessmentId, report);
+}
+
 /**
- * Upgrades a legacy/fallback report to OpenAI narrative without reassessment,
- * without changing scores and without creating another analytics record.
+ * Upgrades a legacy/fallback report to OpenAI narrative without reassessment
+ * and without creating another analytics record. The previous report revision
+ * is archived first so the narrative history remains auditable.
  */
 export async function upgradeStoredReportIfNeeded(
   assessmentId: string,
