@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { openAiConfigurationStatus } from "@/lib/kshc-ai-report";
 import { storageBackend } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -9,6 +10,7 @@ export async function GET() {
     ok: true,
     service: "kaec-school-health-check",
     backend: storageBackend(),
+    ai: openAiConfigurationStatus(),
     time: new Date().toISOString(),
   });
 }

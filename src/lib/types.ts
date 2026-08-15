@@ -19,8 +19,8 @@ export interface SchoolInfo {
 export interface AnswerRecord {
   questionId: string;
   chapter: ChapterKey;
-  score: number; // 1–5
-  answer: string; // label chosen e.g. "Strong"
+  score: number;
+  answer: string;
 }
 
 export interface ReportItem {
@@ -66,10 +66,24 @@ export interface DepartmentScore {
   summary: string;
 }
 
+export type ReportGenerationStatus =
+  | "openai_success"
+  | "ai_not_configured"
+  | "ai_incomplete_assessment"
+  | "ai_schema_failed"
+  | "ai_api_failed";
+
+export interface ReportGenerationMeta {
+  aiStatus: ReportGenerationStatus;
+  model: string;
+  attempts: number;
+  detail?: string;
+}
+
 export interface ReportData {
   schemaVersion: number;
   schoolName: string;
-  overallScore: number; // 0–100
+  overallScore: number;
   healthRating: string;
   priorityArea: string;
   executiveSummary: string;
@@ -87,6 +101,7 @@ export interface ReportData {
   closingMessage: string;
   generatedAt: string;
   engine: "openai" | "engine";
+  generation?: ReportGenerationMeta;
 }
 
 export interface AssessmentState {
