@@ -4,15 +4,6 @@ function read(path) {
   return fs.readFileSync(path, "utf8");
 }
 
-function expect(path, needles) {
-  const source = read(path);
-  for (const needle of needles) {
-    if (!source.includes(needle)) {
-      throw new Error(`${path} is missing KSHC report-integrity contract: ${needle}`);
-    }
-  }
-}
-
 const upgrade = read("src/lib/report-upgrade.ts");
 for (const needle of [
   "sameScores",
@@ -26,17 +17,19 @@ if (upgrade.includes("INSERT INTO analytics")) {
   throw new Error("Report narrative upgrade must never create another analytics record.");
 }
 
-expect("src/app/report/[id]/layout.tsx", [
+const layout = read("src/app/report/[id]/layout.tsx");
+for (const needle of [
   "upgradeStoredReportIfNeeded",
   'result === "upgraded"',
   "redirect(`/report/${id}?ai=upgraded`)",
-]);
+]) {
+  if (!layout.includes(needle)) throw new Error(`Report upgrade layout is missing: ${needle}`);
+}
 
-expect("src/lib/report-quality.ts", [
-  "sanitizeFallbackReport",
-  "uniqueByTitle",
-  "not through a predicted future score",
-]);
+const quality = read("src/lib/report-quality.ts");
+for (const needle of ["sanitizeFallbackReport", "uniqueByTitle", "not through a predicted future score"]) {
+  if (!quality.includes(needle)) throw new Error(`Fallback quality guard is missing: ${needle}`);
+}
 
 const migration = read("supabase/migrations/20260815111400_kshc_report_narrative_versioning.sql");
 for (const needle of [
@@ -51,12 +44,7 @@ for (const needle of [
 }
 
 const page = read("src/app/report/[id]/page.tsx");
-for (const forbidden of [
-  "AI-generated ·",
-  'title="AI Recommendations"',
-  "KAEC's consultants",
-  "Book Consultation",
-]) {
+for (const forbidden of ["AI-generated ·", 'title="AI Recommendations"', "KAEC's consultants", "Book Consultation"]) {
   if (page.includes(forbidden)) throw new Error(`Report page contains misleading/legacy copy: ${forbidden}`);
 }
 for (const required of [
@@ -83,4 +71,17 @@ for (const required of [
   if (!pdf.includes(required)) throw new Error(`PDF is missing provenance/date guard: ${required}`);
 }
 
-console.log("KSHC report integrity checks passed: score-preserving versioned upgrades, truthful provenance and fallback hygiene are present.");
+const legacyAi = read("src/lib/ai.ts");
+if (legacyAi.includes("generateReport")) {
+  throw new Error("Legacy src/lib/ai.ts must not contain or export a second report generator.");
+}
+const coach = read("src/lib/kshc-ai-coach.ts");
+for (const required of ["gpt-4.1-mini-2025-04-14", "deterministic fallback used", "CoachStreamResult"]) {
+  if (!coach.includes(required)) throw new Error(`Coach AI boundary is missing: ${required}`);
+}
+const coachRoute = read("src/app/api/report/[id]/coach/route.ts");
+for (const required of ["X-KSHC-Coach-Engine", "X-KSHC-Coach-Model", "@/lib/kshc-ai-coach"]) {
+  if (!coachRoute.includes(required)) throw new Error(`Coach route observability is missing: ${required}`);
+}
+
+console.log("KSHC report integrity checks passed: score-preserving versioned upgrades, truthful provenance, fallback hygiene and a single report-intelligence engine are present.");
