@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AccountAccess } from "@/components/account/AccountAccess";
+import { AccountEntry } from "@/components/account/AccountEntry";
 
 export const metadata: Metadata = {
   title: "Account | KAEC School Health Check",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AccountPage() {
-  return <AccountAccess />;
+  return <AccountEntry />;
 }
