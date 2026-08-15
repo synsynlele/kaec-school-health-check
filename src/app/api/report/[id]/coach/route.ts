@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { buildCoachSystemPrompt, streamCoachReply } from "@/lib/ai";
+import { buildCoachSystemPrompt, streamCoachReply } from "@/lib/kshc-ai-coach";
 import { getReport } from "@/lib/storage";
 import { badRequest, clientIp, notFound, serverError, UUID_RE } from "@/lib/http";
 import type { CoachMessage } from "@/lib/types";
@@ -8,17 +8,16 @@ import type { CoachMessage } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/* Lightweight in-memory rate limit: 30 coach messages per 10 minutes per IP. */
 const buckets = new Map<string, { count: number; reset: number }>();
 function allowed(ip: string): boolean {
   const now = Date.now();
-  const b = buckets.get(ip);
-  if (!b || b.reset < now) {
+  const bucket = buckets.get(ip);
+  if (!bucket || bucket.reset < now) {
     buckets.set(ip, { count: 1, reset: now + 10 * 60 * 1000 });
     return true;
   }
-  if (b.count >= 30) return false;
-  b.count += 1;
+  if (bucket.count >= 30) return false;
+  bucket.count += 1;
   return true;
 }
 
@@ -36,7 +35,6 @@ const BodySchema = z.object({
     .default([]),
 });
 
-/** AI Coach chat — streams plaintext tokens with the report as context. */
 export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
@@ -44,7 +42,7 @@ export async function POST(
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return notFound("Report not found.");
   if (!allowed(clientIp(req))) {
-    return new Response("You have sent many questions in a short time. Please pause for a few minutes and try again.", {
+    return new Response("You have sent many questions in a short time. Please wait a few minutes and try again.", {
       status: 429,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
@@ -65,23 +63,25 @@ export async function POST(
 
     const history: CoachMessage[] = parsed.data.history.slice(-8);
     const system = buildCoachSystemPrompt(stored.school, stored.report);
-    const stream = await streamCoachReply(
+    const result = await streamCoachReply(
       system,
       history,
       parsed.data.message,
       stored.report,
     );
 
-    return new Response(stream, {
+    return new Response(result.stream, {
       status: 200,
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
+        "X-KSHC-Coach-Engine": result.engine,
+        "X-KSHC-Coach-Model": result.model ?? "deterministic-fallback",
       },
     });
-  } catch (err) {
-    console.error("[kaec] coach failed:", err);
+  } catch (error) {
+    console.error("[kshc][ai_coach] route failed", error);
     return serverError("The coach is unavailable right now. Please try again.");
   }
 }
