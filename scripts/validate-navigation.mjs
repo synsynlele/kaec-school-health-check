@@ -54,4 +54,21 @@ requireText(schoolNav, 'href="/khpos/admin"', "School workspace Admin Console ac
 const schoolLayout = read("src/app/khpos/[organisationId]/layout.tsx");
 requireText(schoolLayout, "SchoolWorkspaceNav", "School workspace layout");
 
+const commandCentre = read("src/components/khpos/CommandCentre.tsx");
+requireText(commandCentre, "View full KSHC report", "School workspace KSHC report access");
+requireText(commandCentre, "/report/${baseline.assessmentId}", "School workspace KSHC report route");
+
+const partnershipStatus = read("src/components/khpos/PartnershipStatusWorkspace.tsx");
+requireText(partnershipStatus, "Open KHP-OS", "Partnership primary action");
+requireText(partnershipStatus, "bg-mint-300", "Partnership primary action contrast");
+
+const globalStyles = read("src/app/globals.css");
+for (const token of [
+  "--color-mint-200:",
+  "--color-mint-300:",
+  "--color-mint-400:",
+]) {
+  requireText(globalStyles, token, "KHP-OS mint contrast palette");
+}
+
 console.log("Navigation contract validated.");

@@ -9,6 +9,7 @@ import {
   Building2,
   CheckCircle2,
   Circle,
+  FileText,
   Gauge,
   Loader2,
   LogOut,
@@ -82,7 +83,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-400" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">Opening institutional command centre…</p>
+          <p className="mt-4 text-sm font-semibold text-slate-200">Opening institutional command centre…</p>
         </div>
       </main>
     );
@@ -94,7 +95,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         <div className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <ShieldCheck className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">KHP-OS access could not be confirmed</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-200">{error}</p>
           <button onClick={() => router.push("/")} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
             Return to KSHC
           </button>
@@ -122,7 +123,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               <p className="truncate text-sm font-extrabold text-white">Institutional Command Centre</p>
             </div>
           </div>
-          <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10">
+          <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-xs font-bold text-slate-100 transition hover:bg-white/10">
             <LogOut className="size-4" /> Sign out
           </button>
         </div>
@@ -131,12 +132,12 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold">Baseline activated</span>
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
+            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">Baseline activated</span>
+            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
             {priorityCount > 0 && (
-              <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
+              <span className="rounded-full border border-mint-300/40 bg-mint-300/15 px-3 py-1 text-xs font-bold text-mint-200">
                 Focus agenda {priorityCount}/3
               </span>
             )}
@@ -148,8 +149,8 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                 {[workspace.organisation.schoolType, workspace.organisation.schoolLevel, location].filter(Boolean).join(" · ")}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 backdrop-blur">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-200">Current transformation position</p>
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-100">Current transformation position</p>
               <p className="mt-1 text-lg font-black">
                 {priorityCount > 0
                   ? `${priorityCount} ${priorityCount === 1 ? "priority" : "priorities"} approved → Intervention planning active`
@@ -164,18 +165,28 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Gauge className="size-6 text-brand-700" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">KSHC baseline</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">KSHC baseline</p>
             <div className="mt-1 flex items-end gap-2">
               <span className="text-4xl font-black tracking-tight">{baseline?.overallScore ?? "—"}</span>
-              {baseline?.overallScore !== null && baseline?.overallScore !== undefined && <span className="pb-1 text-sm font-bold text-slate-400">/100</span>}
+              {baseline?.overallScore !== null && baseline?.overallScore !== undefined && <span className="pb-1 text-sm font-bold text-slate-600">/100</span>}
             </div>
-            <p className="mt-2 text-sm font-semibold text-slate-600">{baseline?.healthRating ?? "Baseline awaiting completion"}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-700">{baseline?.healthRating ?? "Baseline awaiting completion"}</p>
+            {baseline && (
+              <Link
+                href={`/report/${baseline.assessmentId}`}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                <FileText className="size-4" />
+                View full KSHC report
+                <ArrowRight className="size-4" />
+              </Link>
+            )}
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Target className="size-6 text-amber-600" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Approved transformation focus</p>
-            <p className="mt-2 text-4xl font-black text-slate-900">{priorityCount}<span className="text-lg text-slate-400">/3</span></p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">Approved transformation focus</p>
+            <p className="mt-2 text-4xl font-black text-slate-900">{priorityCount}<span className="text-lg text-slate-600">/3</span></p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               {priorityCount > 0
                 ? "Leadership has converted diagnostic evidence into institutional commitments."
                 : "Diagnostic signals are not commitments until leadership approves them."}
@@ -183,9 +194,9 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-mint-700" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Institutional record</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">Institutional record</p>
             <p className="mt-2 text-xl font-black text-slate-900">Baseline preserved</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">KSHC framework v{baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">KSHC framework v{baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.</p>
           </div>
         </section>
 
@@ -195,7 +206,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Transformation lifecycle</p>
               <h2 className="mt-2 text-2xl font-black tracking-tight">Your first KHP-OS cycle is moving.</h2>
             </div>
-            <span className="text-xs font-semibold text-slate-400">AI may propose. Humans decide. The system records.</span>
+            <span className="text-xs font-semibold text-slate-600">AI may propose. Humans decide. The system records.</span>
           </div>
           <div className="mt-7 grid gap-3 md:grid-cols-3 lg:grid-cols-9">
             {TRANSFORMATION_STAGES.map((stage, index) => {
@@ -203,7 +214,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               const current = priorityCount > 0 ? index === 3 : index === 2;
               return (
                 <div key={stage} className={`rounded-2xl border p-3 ${done ? "border-mint-200 bg-mint-50" : current ? "border-brand-200 bg-brand-50" : "border-slate-200 bg-slate-50"}`}>
-                  {done ? <CheckCircle2 className="size-4 text-mint-700" /> : <Circle className={`size-4 ${current ? "text-brand-600" : "text-slate-300"}`} />}
+                  {done ? <CheckCircle2 className="size-4 text-mint-700" /> : <Circle className={`size-4 ${current ? "text-brand-600" : "text-slate-500"}`} />}
                   <p className="mt-2 text-xs font-extrabold text-slate-800">{stage}</p>
                 </div>
               );
@@ -227,13 +238,13 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                     <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-950 text-xs font-black text-white">{index + 1}</span>
                     <div>
                       <p className="font-extrabold text-slate-900">{priority.title}</p>
-                      <p className="mt-1.5 text-sm leading-6 text-slate-500">{priority.why}</p>
-                      <p className="mt-3 text-sm leading-6"><span className="font-extrabold text-brand-700">Diagnostic first step:</span> <span className="text-slate-600">{priority.firstStep}</span></p>
+                      <p className="mt-1.5 text-sm leading-6 text-slate-600">{priority.why}</p>
+                      <p className="mt-3 text-sm leading-6"><span className="font-extrabold text-brand-700">Diagnostic first step:</span> <span className="text-slate-700">{priority.firstStep}</span></p>
                     </div>
                   </div>
                 </div>
               ))}
-              {!workspace.priorityAreas.length && <p className="text-sm text-slate-500">No structured priority areas were stored with this baseline report.</p>}
+              {!workspace.priorityAreas.length && <p className="text-sm text-slate-600">No structured priority areas were stored with this baseline report.</p>}
             </div>
           </div>
 
@@ -242,16 +253,16 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             <h2 className="mt-3 text-2xl font-black">
               {priorityCount > 0 ? "Run the focused transformation agenda." : "Approve the few priorities that matter most."}
             </h2>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
+            <p className="mt-4 text-sm leading-6 text-slate-200">
               KHP-OS ranks recorded KSHC gaps, maps each one to the intervention library, and asks authorised leaders to approve no more than three active priorities.
             </p>
-            <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="mt-7 rounded-2xl border border-white/15 bg-white/5 p-5">
               <p className="text-sm font-bold">Focus is a system rule, not a suggestion.</p>
-              <p className="mt-2 text-xs leading-5 text-slate-400">Evidence can surface many weaknesses. The institutional agenda is deliberately capped at three commitments per baseline.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-300">Evidence can surface many weaknesses. The institutional agenda is deliberately capped at three commitments per baseline.</p>
             </div>
             <Link
               href={`/khpos/${organisationId}/priorities`}
-              className="mt-7 inline-flex items-center gap-2 rounded-full bg-mint-300 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-mint-200"
+              className="mt-7 inline-flex items-center gap-2 rounded-full border border-mint-200 bg-mint-300 px-5 py-3 text-sm font-extrabold text-slate-950 shadow-[0_10px_30px_rgb(16_185_129/0.2)] transition hover:bg-mint-200"
             >
               {priorityCount > 0 ? "Open transformation agenda" : "Build transformation agenda"}
               <ArrowRight className="size-4" />
