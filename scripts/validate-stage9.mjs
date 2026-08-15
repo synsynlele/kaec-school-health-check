@@ -71,9 +71,9 @@ expectContains("src/components/khpos/PortfolioIntelligenceWorkspace.tsx", [
   "Public ranking remains disabled.",
 ]);
 
-expectContains("src/app/khpos/[organisationId]/page.tsx", [
+expectContains("src/components/khpos/SchoolWorkspaceNav.tsx", [
   "/benchmarking",
-  "Benchmark Intelligence",
+  "Benchmarking",
 ]);
 
 expectContains("scripts/test-core.mjs", ["scripts/validate-stage9.mjs"]);

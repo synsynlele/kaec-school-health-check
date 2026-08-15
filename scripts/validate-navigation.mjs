@@ -49,6 +49,7 @@ for (const suffix of [
 ]) {
   requireText(schoolNav, `suffix: "${suffix}"`, "School workspace navigation");
 }
+requireText(schoolNav, 'href="/khpos/admin"', "School workspace Admin Console access");
 
 const schoolLayout = read("src/app/khpos/[organisationId]/layout.tsx");
 requireText(schoolLayout, "SchoolWorkspaceNav", "School workspace layout");

@@ -10,6 +10,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Scale,
+  ShieldCheck,
   Target,
   Workflow,
 } from "lucide-react";
@@ -61,6 +62,12 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
           );
         })}
         <span className="mx-1 h-6 w-px shrink-0 bg-white/10" aria-hidden="true" />
+        <Link
+          href="/khpos/admin"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-mint-300/20 px-3.5 py-2 text-xs font-bold text-mint-200 transition hover:bg-white/10 hover:text-white"
+        >
+          <ShieldCheck className="size-3.5" /> Admin Console
+        </Link>
         <Link
           href="/account"
           className="shrink-0 rounded-full border border-white/10 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
