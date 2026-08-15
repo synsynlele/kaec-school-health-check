@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PartnerRegistryWorkspace } from "@/components/khpos/PartnerRegistryWorkspace";
+import { AdminNav } from "@/components/khpos/AdminNav";
 
 export const metadata: Metadata = {
   title: "Partnership Registry | KHP-OS Admin",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function PartnershipRegistryPage() {
-  return <PartnerRegistryWorkspace />;
+  return (
+    <>
+      <AdminNav />
+      <PartnerRegistryWorkspace />
+    </>
+  );
 }

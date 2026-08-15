@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminConsoleWorkspace } from "@/components/khpos/AdminConsoleWorkspace";
+import { AdminNav } from "@/components/khpos/AdminNav";
 
 export const metadata: Metadata = {
   title: "Admin Console | KHP-OS",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function KhposAdminPage() {
-  return <AdminConsoleWorkspace />;
+  return (
+    <>
+      <AdminNav />
+      <AdminConsoleWorkspace />
+    </>
+  );
 }

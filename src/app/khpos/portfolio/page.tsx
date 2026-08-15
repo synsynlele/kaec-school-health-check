@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PortfolioIntelligenceWorkspace } from "@/components/khpos/PortfolioIntelligenceWorkspace";
+import { AdminNav } from "@/components/khpos/AdminNav";
 
 export const metadata: Metadata = {
   title: "KAEC Portfolio Intelligence | KHP-OS",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function KhposPortfolioPage() {
-  return <PortfolioIntelligenceWorkspace />;
+  return (
+    <>
+      <AdminNav />
+      <PortfolioIntelligenceWorkspace />
+    </>
+  );
 }
