@@ -34,7 +34,10 @@ expect("src/app/api/assessments/[id]/analyze/route.ts", [
 
 expect("src/app/api/health/route.ts", [
   "openAiConfigurationStatus",
-  "ai: openAiConfigurationStatus()",
+  "probeOpenAiConnection",
+  'url.searchParams.get("probe") === "1"',
+  'process.env.VERCEL_ENV !== "production"',
+  '"Cache-Control": "no-store"',
 ]);
 
 expect("src/app/api/health/ai/route.ts", [
