@@ -12,6 +12,7 @@ import {
   Loader2,
   Scale,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type {
@@ -98,7 +99,7 @@ function ReviewDecisionPanel({
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Human authority</p>
           <h3 className="mt-1 text-lg font-black text-slate-950">Approve the decision—not the review report.</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            KHP-OS has prepared the evidence, progress analysis and recommendation. An Executive or Transformation Lead retains the final decision.
+            KHP-OS has prepared the evidence, progress analysis, adaptation intelligence and deterministic recommendation. An Executive or Transformation Lead retains the final decision.
           </p>
         </div>
       </div>
@@ -166,7 +167,7 @@ function ReviewDecisionPanel({
 
       {selected === "complete" && (
         <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
-          Complete closes the implementation cycle only. The underlying priority remains active until Stage 6 reassessment verifies improvement.
+          Complete closes the implementation cycle only. The underlying priority remains active until reassessment verifies improvement.
         </p>
       )}
     </section>
@@ -316,10 +317,10 @@ export function ReviewDecisionWorkspace({
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Review & Decision</p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                KHP-OS prepares the review. Leadership makes the call.
+                Evidence drives the review. Leadership makes the call.
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                Plan versus actual, evidence, progress, gaps, lessons and the recommended decision are generated from the operating record. Humans do not rewrite the evidence into another report.
+                KHP-OS separates implementation activity from institutional change, interprets the evidence against the outcome contract and explains what should happen next. The deterministic recommendation remains authoritative; human leadership retains the final decision.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
@@ -365,6 +366,11 @@ export function ReviewDecisionWorkspace({
                       <span className="rounded-full border border-white/15 px-3 py-1 text-[10px] font-bold text-slate-300">
                         Scheduled {formatDate(review.scheduledFor)}
                       </span>
+                      {review.narrative.provider === "openai" && (
+                        <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-[10px] font-bold text-mint-200">
+                          AI interpretation · {review.narrative.model}
+                        </span>
+                      )}
                     </div>
                     <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-mint-300">{review.context.systemName}</p>
                     <h2 className="mt-2 text-2xl font-black sm:text-3xl">{review.context.interventionTitle}</h2>
@@ -406,7 +412,7 @@ export function ReviewDecisionWorkspace({
                     </p>
                   </section>
                   <section className="rounded-3xl border border-slate-200 p-6">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Gaps</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Evidence gaps</p>
                     {review.evidenceGaps.length ? (
                       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                         {review.evidenceGaps.map((gap, index) => <li key={`${review.id}-gap-${index}`}>• {gap}</li>)}
@@ -416,6 +422,46 @@ export function ReviewDecisionWorkspace({
                     )}
                   </section>
                 </div>
+
+                {review.narrative.provider === "openai" && review.adaptation.whatChanged && (
+                  <section className="rounded-[30px] border border-mint-200 bg-mint-50 p-6 sm:p-7">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="size-5 text-mint-800" />
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-800">Adaptive review intelligence</p>
+                        <h3 className="mt-1 text-xl font-black">What the evidence means for the next move</h3>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                      <div className="rounded-2xl bg-white p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-emerald-700">What changed</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{review.adaptation.whatChanged}</p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-amber-700">What remains unproven</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{review.adaptation.whatNotChanged}</p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-brand-700">Execution assessment</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{review.adaptation.executionAssessment}</p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-brand-700">Adaptation advice</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{review.adaptation.advice}</p>
+                      </div>
+                    </div>
+                    {!!review.adaptation.missingEvidence.length && (
+                      <div className="mt-4 rounded-2xl bg-white p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-slate-500">Evidence still needed</p>
+                        <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 md:grid-cols-2">
+                          {review.adaptation.missingEvidence.map((item, index) => (
+                            <li key={`${review.id}-missing-${index}`}>• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+                )}
 
                 <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Institutional lessons</p>
@@ -431,7 +477,7 @@ export function ReviewDecisionWorkspace({
                 <section className={`rounded-3xl border p-6 ${decisionTone(review.recommendation.decision)}`}>
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.18em]">KHP-OS recommendation</p>
+                      <p className="text-xs font-black uppercase tracking-[0.18em]">KHP-OS deterministic recommendation</p>
                       <h3 className="mt-2 text-2xl font-black capitalize">{review.recommendation.decision}</h3>
                       <p className="mt-3 max-w-3xl text-sm leading-7">{review.recommendation.reason}</p>
                     </div>

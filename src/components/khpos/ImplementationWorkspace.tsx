@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  BrainCircuit,
   CalendarClock,
   CheckCircle2,
   Circle,
+  ClipboardCheck,
   FileCheck2,
   Gauge,
   Layers3,
@@ -21,7 +23,7 @@ import type { KhposImplementationWorkspace } from "@/lib/khpos/implementation";
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "Not scheduled";
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en", {
     day: "numeric",
@@ -32,6 +34,18 @@ function formatDate(value: string | null | undefined): string {
 
 function readableStatus(value: string): string {
   return value.replaceAll("_", " ");
+}
+
+function SourceBadge({ source }: { source: "system" | "ai_assisted" }) {
+  return source === "ai_assisted" ? (
+    <span className="rounded-full bg-mint-300 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-950">
+      AI-contextualised
+    </span>
+  ) : (
+    <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-200">
+      Deterministic safe plan
+    </span>
+  );
 }
 
 export function ImplementationWorkspace({
@@ -88,7 +102,7 @@ export function ImplementationWorkspace({
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
           <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading the system-generated implementation plan…
+            Building the institution-specific execution view…
           </p>
         </div>
       </main>
@@ -123,7 +137,7 @@ export function ImplementationWorkspace({
             </span>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Schools</p>
-              <p className="text-sm font-extrabold">Implementation Automation</p>
+              <p className="text-sm font-extrabold">Implementation Intelligence</p>
             </div>
           </div>
           <Link
@@ -138,17 +152,20 @@ export function ImplementationWorkspace({
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-            System-generated execution
+            Canonical method · institution-specific intelligence
           </span>
           <h1 className="mt-5 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-            Approval is complete. KHP-OS builds the execution path.
+            The intervention stays disciplined. The execution becomes specific.
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            The institution does not design task lists or review calendars manually. KHP-OS converts each approved intervention into actions, milestones, required evidence and scheduled reviews. Humans execute the real-world work and provide proof.
+            KHP-OS keeps KSHC evidence and the approved KAEC-NG intervention authoritative, then contextualises the execution path, outcome contract, evidence standard and review cadence for this institution. Humans execute the real-world work and provide proof.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold">
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2">
               {workspace.activePlanCount} active {workspace.activePlanCount === 1 ? "plan" : "plans"}
+            </span>
+            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2">
+              {workspace.aiAssistedPlanCount} AI-contextualised
             </span>
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
@@ -163,7 +180,7 @@ export function ImplementationWorkspace({
             <Layers3 className="size-8 text-brand-700" />
             <h2 className="mt-5 text-2xl font-black">No implementation plan is active yet.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Approve a transformation priority first. The implementation plan will be created automatically at the moment of approval; no separate planning form is required.
+              Approve a transformation priority first. KHP-OS will create the safe deterministic plan and, when AI intelligence is available, contextualise it before execution begins.
             </p>
             <Link
               href={`/khpos/${organisationId}/priorities`}
@@ -178,6 +195,7 @@ export function ImplementationWorkspace({
               const completedActions = plan.actions.filter(
                 (action) => action.status === "completed",
               ).length;
+              const ai = plan.source === "ai_assisted";
 
               return (
                 <section
@@ -188,12 +206,15 @@ export function ImplementationWorkspace({
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                       <div className="max-w-3xl">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-mint-300 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-950">
-                            Automated plan v{plan.planVersion}
-                          </span>
+                          <SourceBadge source={plan.source} />
                           <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold capitalize text-slate-300">
-                            {readableStatus(plan.status)}
+                            plan v{plan.planVersion} · {readableStatus(plan.status)}
                           </span>
+                          {plan.model && (
+                            <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold text-slate-400">
+                              {plan.model}
+                            </span>
+                          )}
                         </div>
                         <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-mint-300">
                           {plan.priority.systemName}
@@ -221,6 +242,85 @@ export function ImplementationWorkspace({
                   </div>
 
                   <div className="space-y-8 p-6 sm:p-8">
+                    {ai && (
+                      <section className="grid gap-4 xl:grid-cols-3">
+                        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 xl:col-span-3">
+                          <div className="flex items-center gap-3">
+                            <BrainCircuit className="size-5 text-brand-700" />
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Institutional context</p>
+                              <h3 className="mt-1 text-lg font-black">What this intervention means here</h3>
+                            </div>
+                          </div>
+                          <p className="mt-4 max-w-5xl text-sm leading-7 text-slate-600">
+                            {plan.intervention.intelligenceSummary ?? plan.intervention.description}
+                          </p>
+                        </div>
+                        <div className="rounded-3xl border border-slate-200 p-6 xl:col-span-2">
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Problem interpretation</p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            {plan.intervention.problemInterpretation}
+                          </p>
+                        </div>
+                        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">Why now</p>
+                          <p className="mt-3 text-sm leading-7 text-amber-950">
+                            {plan.intervention.whyNow}
+                          </p>
+                        </div>
+                      </section>
+                    )}
+
+                    {!ai && plan.intervention.intelligenceSource === "fallback" && (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+                        <strong>Safe fallback in use:</strong> AI contextualisation did not pass the required contract, so KHP-OS preserved the deterministic intervention rather than presenting unverified intelligence as fact.
+                      </div>
+                    )}
+
+                    {plan.outcomeContract && (
+                      <section className="rounded-[30px] border border-mint-200 bg-mint-50 p-6 sm:p-7">
+                        <div className="flex items-center gap-3">
+                          <ClipboardCheck className="size-5 text-mint-800" />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-800">Outcome contract</p>
+                            <h3 className="mt-1 text-xl font-black">Completion means change—not task activity.</h3>
+                          </div>
+                        </div>
+                        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-2xl bg-white p-5">
+                            <p className="text-xs font-black uppercase tracking-wide text-slate-400">Baseline condition</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{plan.outcomeContract.baselineCondition}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white p-5">
+                            <p className="text-xs font-black uppercase tracking-wide text-slate-400">Desired condition</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{plan.outcomeContract.desiredCondition}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white p-5">
+                            <p className="text-xs font-black uppercase tracking-wide text-brand-700">Leading indicators</p>
+                            <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                              {plan.outcomeContract.leadingIndicators.map((item, index) => (
+                                <li key={`${plan.id}-leading-${index}`}>• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-2xl bg-white p-5">
+                            <p className="text-xs font-black uppercase tracking-wide text-brand-700">Outcome indicators</p>
+                            <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                              {plan.outcomeContract.outcomeIndicators.map((item, index) => (
+                                <li key={`${plan.id}-outcome-${index}`}>• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="mt-4 rounded-2xl border border-mint-200 bg-white p-5 text-sm leading-6 text-slate-700">
+                          <strong>Success threshold:</strong> {plan.outcomeContract.successThreshold}
+                          <span className="mt-2 block text-xs font-semibold text-slate-400">
+                            Outcome review {formatDate(plan.outcomeContract.reviewDate)} · contract v{plan.outcomeContract.contractVersion}
+                          </span>
+                        </div>
+                      </section>
+                    )}
+
                     <section>
                       <div className="flex flex-wrap items-end justify-between gap-3">
                         <div>
@@ -298,6 +398,19 @@ export function ImplementationWorkspace({
                       </div>
                     </section>
 
+                    {!!plan.intervention.risksAndGuardrails.length && (
+                      <section className="rounded-3xl border border-slate-200 p-6">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Risks & guardrails</p>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                          {plan.intervention.risksAndGuardrails.map((risk, index) => (
+                            <div key={`${plan.id}-risk-${index}`} className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                              {risk}
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
                     <section className="rounded-3xl border border-brand-100 bg-brand-50 p-6">
                       <div className="flex items-center gap-3">
                         <CalendarClock className="size-5 text-brand-700" />
@@ -320,7 +433,7 @@ export function ImplementationWorkspace({
                     </section>
 
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-                      <strong>Human role:</strong> approve the institutional commitment, execute the real-world actions and provide evidence. KHP-OS controls the sequence, deadlines, evidence standard and review cadence.
+                      <strong>Human role:</strong> approve the institutional commitment, execute the real-world actions and provide evidence. KHP-OS controls the sequence, evidence standard and review cadence; reassessment—not activity completion—verifies institutional improvement.
                     </div>
                   </div>
                 </section>
