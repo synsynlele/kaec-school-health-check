@@ -1,4 +1,5 @@
 import { KHPOS_SYSTEMS } from "@/lib/khpos/foundation";
+import { ensureKhposWorkspaceInterventionIntelligence } from "@/lib/khpos/intervention-intelligence";
 import {
   getKhposWorkspaceSnapshot,
   type KhposWorkspaceSnapshot,
@@ -6,6 +7,7 @@ import {
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const INTELLIGENCE_TRIGGER_ROLES = new Set(["executive", "transformation_lead"]);
 
 export class KhposImplementationError extends Error {
   constructor(
@@ -22,6 +24,9 @@ interface PlanRow {
   organisation_intervention_id: string;
   plan_version: number;
   generation_version: string;
+  source: "system" | "ai_assisted";
+  model: string | null;
+  intelligence_generated_at: string | null;
   objective: string;
   status: string;
   generated_at: string;
@@ -37,6 +42,15 @@ interface OrganisationInterventionRow {
   start_date: string | null;
   target_date: string | null;
   status: string;
+  intelligence_summary: string | null;
+  problem_interpretation: string | null;
+  why_now: string | null;
+  risks_and_guardrails: unknown;
+  intelligence_source: "system" | "openai" | "fallback";
+  intelligence_model: string | null;
+  intelligence_version: string;
+  intelligence_generated_at: string | null;
+  intelligence_error: string | null;
 }
 
 interface PriorityRow {
@@ -91,6 +105,24 @@ interface ReviewScheduleRow {
   decision: string | null;
 }
 
+interface OutcomeContractRow {
+  id: string;
+  organisation_intervention_id: string;
+  contract_version: number;
+  status: string;
+  baseline_condition: string;
+  desired_condition: string;
+  leading_indicators: unknown;
+  outcome_indicators: unknown;
+  success_threshold: string;
+  evidence_standard: unknown;
+  review_date: string;
+  source: string;
+  model: string | null;
+  generation_version: string;
+  generated_at: string;
+}
+
 export interface KhposImplementationAction {
   id: string;
   sequence: number;
@@ -130,10 +162,29 @@ export interface KhposReviewSchedule {
   decision: string | null;
 }
 
+export interface KhposOutcomeContract {
+  id: string;
+  contractVersion: number;
+  baselineCondition: string;
+  desiredCondition: string;
+  leadingIndicators: string[];
+  outcomeIndicators: string[];
+  successThreshold: string;
+  evidenceStandard: string[];
+  reviewDate: string;
+  source: string;
+  model: string | null;
+  generationVersion: string;
+  generatedAt: string;
+}
+
 export interface KhposImplementationPlan {
   id: string;
   planVersion: number;
   generationVersion: string;
+  source: "system" | "ai_assisted";
+  model: string | null;
+  intelligenceGeneratedAt: string | null;
   objective: string;
   status: string;
   generatedAt: string;
@@ -155,7 +206,17 @@ export interface KhposImplementationPlan {
     startDate: string | null;
     targetDate: string | null;
     status: string;
+    intelligenceSummary: string | null;
+    problemInterpretation: string | null;
+    whyNow: string | null;
+    risksAndGuardrails: string[];
+    intelligenceSource: "system" | "openai" | "fallback";
+    intelligenceModel: string | null;
+    intelligenceVersion: string;
+    intelligenceGeneratedAt: string | null;
+    intelligenceError: string | null;
   };
+  outcomeContract: KhposOutcomeContract | null;
   actions: KhposImplementationAction[];
   milestones: KhposImplementationMilestone[];
   evidenceRequirements: KhposEvidenceRequirement[];
@@ -166,6 +227,7 @@ export interface KhposImplementationWorkspace {
   organisation: KhposWorkspaceSnapshot["organisation"];
   membership: KhposWorkspaceSnapshot["membership"];
   activePlanCount: number;
+  aiAssistedPlanCount: number;
   plans: KhposImplementationPlan[];
 }
 
@@ -204,14 +266,32 @@ function systemNameForId(id: string): string {
   return KHPOS_SYSTEMS.find((system) => system.id === id)?.name ?? id;
 }
 
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is string => typeof item === "string" && item.trim().length > 0,
+  );
+}
+
 export async function getKhposImplementationWorkspace(
   organisationId: string,
   userId: string,
 ): Promise<KhposImplementationWorkspace> {
   const workspace = await getKhposWorkspaceSnapshot(organisationId, userId);
 
+  if (INTELLIGENCE_TRIGGER_ROLES.has(workspace.membership.role)) {
+    try {
+      await ensureKhposWorkspaceInterventionIntelligence(organisationId);
+    } catch (error) {
+      console.error(
+        "[khpos] workspace intelligence upgrade failed; deterministic implementation remains available:",
+        error,
+      );
+    }
+  }
+
   const plans = await serviceRequest<PlanRow[]>(
-    `khpos_implementation_plans?organisation_id=eq.${encodeURIComponent(organisationId)}&status=in.(generated,active,under_review)&select=id,organisation_intervention_id,plan_version,generation_version,objective,status,generated_at,activated_at&order=generated_at.desc`,
+    `khpos_implementation_plans?organisation_id=eq.${encodeURIComponent(organisationId)}&status=in.(generated,active,under_review)&select=id,organisation_intervention_id,plan_version,generation_version,source,model,intelligence_generated_at,objective,status,generated_at,activated_at&order=generated_at.desc`,
   );
 
   if (!plans.length) {
@@ -219,6 +299,7 @@ export async function getKhposImplementationWorkspace(
       organisation: workspace.organisation,
       membership: workspace.membership,
       activePlanCount: 0,
+      aiAssistedPlanCount: 0,
       plans: [],
     };
   }
@@ -230,14 +311,14 @@ export async function getKhposImplementationWorkspace(
 
   const organisationInterventions =
     await serviceRequest<OrganisationInterventionRow[]>(
-      `khpos_organisation_interventions?id=${encodeURIComponent(inFilter(organisationInterventionIds))}&select=id,priority_id,title,contextualised_description,owner_id,start_date,target_date,status`,
+      `khpos_organisation_interventions?id=${encodeURIComponent(inFilter(organisationInterventionIds))}&select=id,priority_id,title,contextualised_description,owner_id,start_date,target_date,status,intelligence_summary,problem_interpretation,why_now,risks_and_guardrails,intelligence_source,intelligence_model,intelligence_version,intelligence_generated_at,intelligence_error`,
     );
 
   const priorityIds = [
     ...new Set(organisationInterventions.map((item) => item.priority_id)),
   ];
 
-  const [priorities, actions, milestones, evidenceRequirements, reviews] =
+  const [priorities, actions, milestones, evidenceRequirements, reviews, outcomeContracts] =
     await Promise.all([
       priorityIds.length
         ? serviceRequest<PriorityRow[]>(
@@ -256,24 +337,34 @@ export async function getKhposImplementationWorkspace(
       serviceRequest<ReviewScheduleRow[]>(
         `khpos_review_schedules?implementation_plan_id=${encodeURIComponent(inFilter(planIds))}&select=id,implementation_plan_id,review_type,scheduled_for,status,decision&order=scheduled_for.asc`,
       ),
+      serviceRequest<OutcomeContractRow[]>(
+        `khpos_outcome_contracts?organisation_intervention_id=${encodeURIComponent(inFilter(organisationInterventionIds))}&status=eq.active&select=id,organisation_intervention_id,contract_version,status,baseline_condition,desired_condition,leading_indicators,outcome_indicators,success_threshold,evidence_standard,review_date,source,model,generation_version,generated_at`,
+      ),
     ]);
 
   const interventionById = new Map(
     organisationInterventions.map((item) => [item.id, item]),
   );
   const priorityById = new Map(priorities.map((item) => [item.id, item]));
+  const contractByInterventionId = new Map(
+    outcomeContracts.map((item) => [item.organisation_intervention_id, item]),
+  );
 
   const implementationPlans = plans.flatMap((plan) => {
     const intervention = interventionById.get(plan.organisation_intervention_id);
     if (!intervention) return [];
     const priority = priorityById.get(intervention.priority_id);
     if (!priority) return [];
+    const contract = contractByInterventionId.get(intervention.id) ?? null;
 
     return [
       {
         id: plan.id,
         planVersion: plan.plan_version,
         generationVersion: plan.generation_version,
+        source: plan.source,
+        model: plan.model,
+        intelligenceGeneratedAt: plan.intelligence_generated_at,
         objective: plan.objective,
         status: plan.status,
         generatedAt: plan.generated_at,
@@ -295,7 +386,33 @@ export async function getKhposImplementationWorkspace(
           startDate: intervention.start_date,
           targetDate: intervention.target_date,
           status: intervention.status,
+          intelligenceSummary: intervention.intelligence_summary,
+          problemInterpretation: intervention.problem_interpretation,
+          whyNow: intervention.why_now,
+          risksAndGuardrails: stringArray(intervention.risks_and_guardrails),
+          intelligenceSource: intervention.intelligence_source,
+          intelligenceModel: intervention.intelligence_model,
+          intelligenceVersion: intervention.intelligence_version,
+          intelligenceGeneratedAt: intervention.intelligence_generated_at,
+          intelligenceError: intervention.intelligence_error,
         },
+        outcomeContract: contract
+          ? {
+              id: contract.id,
+              contractVersion: contract.contract_version,
+              baselineCondition: contract.baseline_condition,
+              desiredCondition: contract.desired_condition,
+              leadingIndicators: stringArray(contract.leading_indicators),
+              outcomeIndicators: stringArray(contract.outcome_indicators),
+              successThreshold: contract.success_threshold,
+              evidenceStandard: stringArray(contract.evidence_standard),
+              reviewDate: contract.review_date,
+              source: contract.source,
+              model: contract.model,
+              generationVersion: contract.generation_version,
+              generatedAt: contract.generated_at,
+            }
+          : null,
         actions: actions
           .filter((item) => item.implementation_plan_id === plan.id)
           .map((item) => ({
@@ -347,6 +464,7 @@ export async function getKhposImplementationWorkspace(
     organisation: workspace.organisation,
     membership: workspace.membership,
     activePlanCount: implementationPlans.length,
+    aiAssistedPlanCount: implementationPlans.filter((plan) => plan.source === "ai_assisted").length,
     plans: implementationPlans,
   };
 }
