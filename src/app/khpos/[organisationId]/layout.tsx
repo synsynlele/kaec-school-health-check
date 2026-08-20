@@ -14,9 +14,9 @@ export default async function KhposOrganisationLayout({
   if (!UUID_RE.test(organisationId)) notFound();
 
   return (
-    <>
+    <div className="khpos-school-shell min-h-screen bg-slate-50">
       <SchoolWorkspaceNav organisationId={organisationId} />
-      {children}
-    </>
+      <div className="min-w-0 xl:pl-72">{children}</div>
+    </div>
   );
 }

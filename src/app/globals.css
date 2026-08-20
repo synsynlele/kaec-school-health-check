@@ -95,6 +95,37 @@ body {
   animation: var(--animate-shimmer);
 }
 
+/* ── KHP-OS school workspace ────────────────────────────── */
+.khpos-school-shell {
+  background:
+    radial-gradient(circle at 80% 0%, rgb(219 234 254 / 0.45), transparent 28rem),
+    #f8fafc;
+}
+
+@media (min-width: 1280px) {
+  /* The persistent sidebar becomes the desktop chrome, so per-page mini headers are redundant. */
+  .khpos-school-shell > div > main > header {
+    display: none;
+  }
+
+  /* Give institutional workspaces a wider operating canvas without widening error/loading cards. */
+  .khpos-school-shell > div > main > div[class*="max-w-7xl"],
+  .khpos-school-shell > div > main > section > div[class*="max-w-7xl"] {
+    max-width: 96rem;
+  }
+
+  /* Keep hero/context bands useful without consuming half the first screen. */
+  .khpos-school-shell > div > main > section:first-of-type > div {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .khpos-school-shell > div > main > div[class*="space-y-8"] {
+    padding-top: 1.75rem;
+    padding-bottom: 2.25rem;
+  }
+}
+
 /* ── Print (report) ─────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }

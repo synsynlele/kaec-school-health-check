@@ -74,8 +74,8 @@ assert.ok(
   "Stage 3 must not expose manual plan creation or editing",
 );
 assert.ok(
-  component.includes("KHP-OS builds the execution path"),
-  "Implementation UI must communicate system-generated execution",
+  component.includes("The intervention stays disciplined. The execution becomes specific."),
+  "Implementation UI must communicate system-governed, institution-specific execution",
 );
 assert.ok(
   component.includes("Humans execute the real-world work and provide proof"),

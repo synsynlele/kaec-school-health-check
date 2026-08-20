@@ -49,10 +49,17 @@ for (const suffix of [
 ]) {
   requireText(schoolNav, `suffix: "${suffix}"`, "School workspace navigation");
 }
-requireText(schoolNav, 'href="/khpos/admin"', "School workspace Admin Console access");
+requireText(schoolNav, 'href="/account"', "School workspace account access");
+requireText(schoolNav, 'href="/khpos"', "School workspace secure access hub");
+if (schoolNav.includes('href="/khpos/admin"')) {
+  throw new Error(
+    "Navigation contract failed: school users must not be offered platform-admin navigation from the school workspace.",
+  );
+}
 
 const schoolLayout = read("src/app/khpos/[organisationId]/layout.tsx");
 requireText(schoolLayout, "SchoolWorkspaceNav", "School workspace layout");
+requireText(schoolLayout, "khpos-school-shell", "School workspace shell");
 
 const commandCentre = read("src/components/khpos/CommandCentre.tsx");
 requireText(commandCentre, "View full KSHC report", "School workspace KSHC report access");
@@ -67,8 +74,9 @@ for (const token of [
   "--color-mint-200:",
   "--color-mint-300:",
   "--color-mint-400:",
+  ".khpos-school-shell",
 ]) {
-  requireText(globalStyles, token, "KHP-OS mint contrast palette");
+  requireText(globalStyles, token, "KHP-OS workspace styling");
 }
 
 console.log("Navigation contract validated.");
