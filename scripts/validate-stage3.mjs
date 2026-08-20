@@ -1,56 +1,49 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import fs from "node:fs";
+import path from "node:path";
 
-const migration = readFileSync(
-  new URL("../supabase/migrations/20260814181030_stage3_implementation_automation.sql", import.meta.url),
-  "utf8",
+const root = process.cwd();
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+
+const migration = read(
+  "supabase/migrations/20260814203947_stage3_implementation_automation.sql",
 );
-const implementation = readFileSync(
-  new URL("../src/lib/khpos/implementation.ts", import.meta.url),
-  "utf8",
+const implementation = read("src/lib/khpos/implementation.ts");
+const route = read(
+  "src/app/api/khpos/implementation/[organisationId]/route.ts",
 );
-const route = readFileSync(
-  new URL("../src/app/api/khpos/implementation/[id]/route.ts", import.meta.url),
-  "utf8",
-);
-const component = readFileSync(
-  new URL("../src/components/khpos/ImplementationWorkspace.tsx", import.meta.url),
-  "utf8",
-);
-const prioritiesPage = readFileSync(
-  new URL("../src/app/khpos/[organisationId]/priorities/page.tsx", import.meta.url),
-  "utf8",
+const component = read("src/components/khpos/ImplementationWorkspace.tsx");
+const prioritiesPage = read(
+  "src/components/khpos/PriorityInterventionWorkspace.tsx",
 );
 
-for (const table of [
-  "khpos_implementation_plans",
-  "khpos_implementation_actions",
-  "khpos_milestones",
-  "khpos_evidence_requirements",
-  "khpos_review_schedules",
-]) {
-  assert.ok(migration.includes(`public.${table}`), `${table} must exist in Stage 3 migration`);
-}
-
 assert.ok(
-  migration.includes("khpos_private.generate_implementation_plan"),
-  "Stage 3 must generate implementation plans automatically inside Postgres",
+  migration.includes("create table if not exists public.khpos_implementation_plans"),
+  "Implementation plans table must exist",
 );
 assert.ok(
-  migration.includes("trg_khpos_sync_implementation_plan"),
-  "Stage 3 must attach automatic generation to intervention lifecycle changes",
+  migration.includes("create table if not exists public.khpos_implementation_actions"),
+  "Implementation actions table must exist",
 );
 assert.ok(
-  migration.includes("implementation_plan_generated"),
-  "Stage 3 generation must be auditable",
+  migration.includes("create table if not exists public.khpos_implementation_events"),
+  "Implementation events table must exist",
 );
 assert.ok(
-  migration.includes("(v_plan_id, 6,"),
-  "Stage 3 must generate the six-step execution sequence",
+  migration.includes("create function public.khpos_create_implementation_plan_for_priority"),
+  "Approval-driven plan creation function must exist",
 );
 assert.ok(
-  migration.includes("'midpoint'") && migration.includes("'outcome'"),
-  "Stage 3 must schedule midpoint and outcome reviews",
+  migration.includes("create function public.khpos_generate_due_followups"),
+  "Deterministic follow-up generation must exist",
+);
+assert.ok(
+  migration.includes("create function public.khpos_touch_implementation_action"),
+  "Action immutability guard must exist",
+);
+assert.ok(
+  migration.includes("create trigger trg_khpos_priority_create_implementation"),
+  "Priority approval must trigger implementation plan generation",
 );
 assert.ok(
   migration.includes("revoke all privileges on table public.khpos_implementation_plans from public, anon, authenticated"),
@@ -74,8 +67,8 @@ assert.ok(
   "Stage 3 must not expose manual plan creation or editing",
 );
 assert.ok(
-  component.includes("KHP-OS builds the execution path"),
-  "Implementation UI must communicate system-generated execution",
+  component.includes("The intervention stays disciplined. The execution becomes specific."),
+  "Implementation UI must communicate system-governed, institution-specific execution",
 );
 assert.ok(
   component.includes("Humans execute the real-world work and provide proof"),
