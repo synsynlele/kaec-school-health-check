@@ -41,8 +41,8 @@ assert.match(migration, /cycle_mode=case when p_decision='adjust' then 'adjusted
 assert.match(migration, /generate_implementation_plan\(v_intervention\.id\)/);
 assert.match(migration, /service_role/);
 
-assert.match(review, /openai\.responses\.create/);
-assert.match(review, /The system recommendation is already fixed by rules/);
+assert.match(review, /openai\.chat\.completions\.create/);
+assert.match(review, /The system recommendation is already fixed by deterministic rules/);
 assert.match(review, /Evidence of implementation is not the same as verified institutional improvement/);
 assert.match(review, /khpos_prepare_reviews_server/);
 assert.match(review, /khpos_apply_review_decision_server/);
