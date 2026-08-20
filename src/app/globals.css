@@ -108,9 +108,9 @@ body {
     display: none;
   }
 
-  /* Give institutional workspaces a wider operating canvas instead of a narrow document column. */
-  .khpos-school-shell > div > main > div,
-  .khpos-school-shell > div > main > section > div {
+  /* Give institutional workspaces a wider operating canvas without widening error/loading cards. */
+  .khpos-school-shell > div > main > div[class*="max-w-7xl"],
+  .khpos-school-shell > div > main > section > div[class*="max-w-7xl"] {
     max-width: 96rem;
   }
 
