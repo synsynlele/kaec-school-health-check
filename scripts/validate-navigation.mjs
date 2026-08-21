@@ -40,6 +40,7 @@ const schoolNav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 for (const suffix of [
   "/priorities",
   "/implementation",
+  "/playbooks",
   "/evidence",
   "/reviews",
   "/improvement",
@@ -60,6 +61,15 @@ if (schoolNav.includes('href="/khpos/admin"')) {
 const schoolLayout = read("src/app/khpos/[organisationId]/layout.tsx");
 requireText(schoolLayout, "SchoolWorkspaceNav", "School workspace layout");
 requireText(schoolLayout, "khpos-school-shell", "School workspace shell");
+
+const playbooksPage = read("src/app/khpos/[organisationId]/playbooks/page.tsx");
+requireText(playbooksPage, "PlaybooksWorkspace", "School playbooks route");
+const playbooksLibrary = read("src/lib/khpos/playbooks.ts");
+requireText(playbooksLibrary, "transformation-leadership", "Universal playbook library");
+requireText(playbooksLibrary, "sustainability-institutionalisation", "Universal playbook library");
+const playbooksWorkspace = read("src/components/khpos/PlaybooksWorkspace.tsx");
+requireText(playbooksWorkspace, "Active Intervention Playbooks", "School playbooks workspace");
+requireText(playbooksWorkspace, "/api/khpos/implementation/${organisationId}", "Playbook implementation data source");
 
 const commandCentre = read("src/components/khpos/CommandCentre.tsx");
 requireText(commandCentre, "View full KSHC report", "School workspace KSHC report access");
