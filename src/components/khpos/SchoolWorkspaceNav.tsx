@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BookOpen,
   BrainCircuit,
   Building2,
   FileCheck2,
@@ -18,6 +19,7 @@ const transformLinks = [
   { suffix: "", label: "Command Centre", icon: LayoutDashboard },
   { suffix: "/priorities", label: "Priorities", icon: Target },
   { suffix: "/implementation", label: "Implementation", icon: Workflow },
+  { suffix: "/playbooks", label: "Playbooks", icon: BookOpen },
   { suffix: "/evidence", label: "Evidence", icon: FileCheck2 },
   { suffix: "/reviews", label: "Reviews", icon: Gauge },
   { suffix: "/improvement", label: "Improvement", icon: Activity },
