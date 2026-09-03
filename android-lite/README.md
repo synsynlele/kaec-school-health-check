@@ -19,9 +19,12 @@ Routine KHP-OS product, Supabase and interface releases remain web-first. The TW
 
 ## App icon contract
 
-The desktop PWA and Android Lite shell use raster exports of the exact existing KSHC favicon artwork from `src/app/icon.svg`: the blue rounded square, white health pulse and green dot. No alternate KHP-OS app mark is permitted unless the product identity is deliberately changed later.
+The installed identity must always use the exact existing KSHC favicon artwork from `src/app/icon.svg`: the blue rounded square, white health pulse and green dot. No alternate KHP-OS app mark is permitted unless the product identity is deliberately changed later.
 
-The first Android build uses immutable raw-GitHub copies of those committed icon assets and the bootstrap manifest. This allows the signed binary to be produced safely before the new PWA assets reach the production KSHC origin.
+- Desktop PWA: 192px and 512px raster exports of that exact artwork.
+- Android Lite: an exact SVG copy of `src/app/icon.svg`, verified byte-for-byte by the KHP-OS Lite regression contract.
+
+The Android build uses immutable raw-GitHub copies of the exact SVG and bootstrap manifest. This allows the signed binary to be produced safely before new PWA assets reach the production KSHC origin.
 
 ## Permanent signing identity
 
@@ -44,6 +47,6 @@ After this release is merged, normal wrapper releases are manual via `workflow_d
 
 `.github/workflows/android-lite-release.yml` builds a signed APK and AAB with Bubblewrap and publishes a GitHub Release. The APK asset is always named `KHP-OS-Lite.apk`, allowing the KSHC landing page to use GitHub's stable `releases/latest/download` URL without another web deployment merely to change an APK link.
 
-Changes under `android-lite/` intentionally trigger the protected release workflow on the pre-merge distribution branch. This lets the first signed binary be produced from the exact current branch head without enabling a Vercel deployment.
+Changes to Android distribution files, including the exact SVG app icon, intentionally trigger the protected release workflow on the pre-merge distribution branch. This lets the first signed binary be produced from the exact current branch head without enabling a Vercel deployment.
 
 Do not merge a landing-page Android download button into production before the first signed `KHP-OS-Lite.apk` release exists.
