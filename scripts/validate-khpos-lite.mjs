@@ -60,7 +60,7 @@ for (const required of [
   '"appVersion": "1.0.0"',
   '333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-icon-512.png',
   '333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-lite-bootstrap.webmanifest',
-  '"value": "4A:83:6C:70:C0:50:E8:BC:FA:45:CB:35:28:92:EC:6A:0E:21:C9:86:D7:7B:BD:8C:B9:4C:62:FA:52:9B:70:DC"',
+  '"value": "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"',
 ]) {
   requireText(twa, required, "Android production identity");
 }
@@ -69,6 +69,11 @@ requireText(
   assetlinks,
   '"package_name": "ng.name.khpos.lite"',
   "Digital Asset Links binding",
+);
+requireText(
+  assetlinks,
+  '"43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"',
+  "Digital Asset Links certificate",
 );
 requireText(
   readme,
@@ -80,6 +85,7 @@ for (const required of [
   "KHPOS_ANDROID_KEYSTORE_B64",
   "KHPOS_ANDROID_KEYSTORE_PASSWORD",
   "KHP-OS-Lite.apk",
+  "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E",
 ]) {
   requireText(releaseWorkflow, required, "pre-merge Android release gate");
 }
