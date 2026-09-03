@@ -13,8 +13,8 @@
   "backgroundColor": "#ffffff",
   "enableNotifications": false,
   "startUrl": "/khpos",
-  "iconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-icon-512.png",
-  "maskableIconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-icon-512.png",
+  "iconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg",
+  "maskableIconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg",
   "splashScreenFadeOutDuration": 250,
   "signingKey": {
     "path": "./khpos-lite-production.keystore",
@@ -24,7 +24,7 @@
   "appVersion": "1.0.0",
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-lite-bootstrap.webmanifest",
+  "webManifestUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/47668ed01f76ecb5fa0f73d4fb55c2b8bd87a43f/public/khpos-lite-bootstrap.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
