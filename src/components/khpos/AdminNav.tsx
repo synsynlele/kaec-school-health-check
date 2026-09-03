@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 const links = [
   { href: "/khpos/admin", label: "Admin Dashboard" },
@@ -26,7 +27,15 @@ export function AdminNav() {
             Govern partner access and institutional transformation.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/khpos"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-black text-slate-950 transition hover:bg-slate-100"
+          >
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
+            Back to KHP-OS
+          </Link>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-white/15 sm:block" />
           {links.map((link) => {
             const active =
               pathname === link.href ||
