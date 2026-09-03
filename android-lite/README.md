@@ -24,7 +24,7 @@ The installed identity must always use the exact existing KSHC favicon artwork f
 - Desktop PWA: 192px and 512px raster exports of that exact artwork.
 - Android Lite: an exact SVG copy of `src/app/icon.svg`, verified byte-for-byte by the KHP-OS Lite regression contract.
 
-The Android build uses immutable raw-GitHub copies of the exact SVG and bootstrap manifest. This allows the signed binary to be produced safely before new PWA assets reach the production KSHC origin.
+The Android build uses immutable raw-GitHub copies of the exact SVG and bootstrap manifest so wrapper generation does not depend on an unreleased web deployment.
 
 ## Permanent signing identity
 
@@ -35,18 +35,20 @@ The private keystore and password must never be committed. The production keysto
 - `KHPOS_ANDROID_KEYSTORE_B64`
 - `KHPOS_ANDROID_KEYSTORE_PASSWORD`
 
-Future Android wrapper releases must use the exact same production key. Increment `appVersionCode` and `appVersion`, then run the protected release workflow.
+Future Android wrapper releases must use the exact same production key. Increment `appVersionCode` and `appVersion`, then deliberately run the protected release workflow.
 
-## Pre-merge release gate
+## Initial release gate — satisfied
 
-The Android release workflow runs when distribution files change on the `stage-khpos-lite-distribution` branch. Until the protected signing secrets exist, that run is expected to stop at the signing-secret gate. Once the secrets are stored, a fresh distribution commit or manual workflow dispatch must build from the current verified head, verify the permanent certificate, build the signed APK/AAB and publish `KHP-OS-Lite.apk` before the web landing-page download is allowed into production.
+The first signed production wrapper, `khpos-lite-v1.0.0`, was successfully built and published before the KSHC landing-page Android download control is exposed in production. The stable `KHP-OS-Lite.apk` asset therefore exists before the web change is merged.
 
-After this release is merged, normal wrapper releases are manual via `workflow_dispatch` and are needed only when the Android wrapper itself changes.
+The initial release validated the protected secrets, permanent signing certificate, Bubblewrap project generation, signed APK/AAB build, release packaging and GitHub publication.
 
-## Release model
+## Permanent release model
 
-`.github/workflows/android-lite-release.yml` builds a signed APK and AAB with Bubblewrap and publishes a GitHub Release. The APK asset is always named `KHP-OS-Lite.apk`, allowing the KSHC landing page to use GitHub's stable `releases/latest/download` URL without another web deployment merely to change an APK link.
+`.github/workflows/android-lite-release.yml` is **manual-only** via `workflow_dispatch`. Routine web commits and normal KHP-OS product releases must not rebuild the Android shell automatically.
 
-Changes to Android distribution files, including the exact SVG app icon, intentionally trigger the protected release workflow on the pre-merge distribution branch. This lets the first signed binary be produced from the exact current branch head without enabling a Vercel deployment.
+A new Android wrapper release is required only when the wrapper itself changes—for example package metadata, signing identity, launcher behavior, Android-specific icon/bootstrap assets, or another native wrapper concern. In that case, increment the Android version fields and deliberately dispatch the protected workflow.
 
-Do not merge a landing-page Android download button into production before the first signed `KHP-OS-Lite.apk` release exists.
+The APK asset is always named `KHP-OS-Lite.apk`, allowing the KSHC landing page to use GitHub's stable `releases/latest/download` URL without another web deployment merely to change an APK link.
+
+Production merge/deployment of the KSHC landing-page distribution controls remains a separate explicit founder-authorised action.

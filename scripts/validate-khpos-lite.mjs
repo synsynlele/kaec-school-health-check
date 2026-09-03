@@ -95,14 +95,22 @@ requireText(
   "exact existing KSHC favicon artwork",
   "app icon identity contract",
 );
+requireText(
+  readme,
+  "manual-only",
+  "permanent Android release model",
+);
 for (const required of [
-  "stage-khpos-lite-distribution",
+  "workflow_dispatch:",
   "KHPOS_ANDROID_KEYSTORE_B64",
   "KHPOS_ANDROID_KEYSTORE_PASSWORD",
   "KHP-OS-Lite.apk",
   "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E",
 ]) {
-  requireText(releaseWorkflow, required, "pre-merge Android release gate");
+  requireText(releaseWorkflow, required, "manual Android release workflow");
+}
+if (releaseWorkflow.includes("\n  push:")) {
+  throw new Error("KHP-OS Lite contract failed: Android release workflow must remain manual-only");
 }
 for (const required of ['"*": false', '"main": true', '"*-preview": true']) {
   requireText(vercel, required, "Vercel quota gate");
