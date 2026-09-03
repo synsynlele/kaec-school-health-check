@@ -36,12 +36,14 @@ Future Android wrapper releases must use the exact same production key. Incremen
 
 ## Pre-merge release gate
 
-The Android release workflow runs when distribution files change on the `stage-khpos-lite-distribution` branch. Until the protected signing secrets exist, that run is expected to stop at the signing-secret gate. Once the secrets are stored, rerun the failed job. It will verify the permanent certificate, build the signed APK/AAB and publish `KHP-OS-Lite.apk` before the web landing-page download is allowed into production.
+The Android release workflow runs when distribution files change on the `stage-khpos-lite-distribution` branch. Until the protected signing secrets exist, that run is expected to stop at the signing-secret gate. Once the secrets are stored, a fresh distribution commit or manual workflow dispatch must build from the current verified head, verify the permanent certificate, build the signed APK/AAB and publish `KHP-OS-Lite.apk` before the web landing-page download is allowed into production.
 
 After this release is merged, normal wrapper releases are manual via `workflow_dispatch` and are needed only when the Android wrapper itself changes.
 
 ## Release model
 
 `.github/workflows/android-lite-release.yml` builds a signed APK and AAB with Bubblewrap and publishes a GitHub Release. The APK asset is always named `KHP-OS-Lite.apk`, allowing the KSHC landing page to use GitHub's stable `releases/latest/download` URL without another web deployment merely to change an APK link.
+
+Changes under `android-lite/` intentionally trigger the protected release workflow on the pre-merge distribution branch. This lets the first signed binary be produced from the exact current branch head without enabling a Vercel deployment.
 
 Do not merge a landing-page Android download button into production before the first signed `KHP-OS-Lite.apk` release exists.
