@@ -2,6 +2,16 @@ name: KHP-OS Lite Production Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - stage-khpos-lite-distribution
+    paths:
+      - .github/workflows/android-lite-release.yml
+      - android-lite/**
+      - public/.well-known/assetlinks.json
+      - public/khpos-lite-bootstrap.webmanifest
+      - public/khpos-icon-192.png
+      - public/khpos-icon-512.png
 
 permissions:
   contents: write

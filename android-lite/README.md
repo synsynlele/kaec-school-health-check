@@ -21,6 +21,8 @@ Routine KHP-OS product, Supabase and interface releases remain web-first. The TW
 
 The desktop PWA and Android Lite shell use raster exports of the exact existing KSHC favicon artwork from `src/app/icon.svg`: the blue rounded square, white health pulse and green dot. No alternate KHP-OS app mark is permitted unless the product identity is deliberately changed later.
 
+The first Android build uses immutable raw-GitHub copies of those committed icon assets and the bootstrap manifest. This allows the signed binary to be produced safely before the new PWA assets reach the production KSHC origin.
+
 ## Permanent signing identity
 
 The production certificate SHA-256 fingerprint is pinned in `twa-manifest.production.json` and `public/.well-known/assetlinks.json`.
@@ -31,6 +33,12 @@ The private keystore and password must never be committed. The production keysto
 - `KHPOS_ANDROID_KEYSTORE_PASSWORD`
 
 Future Android wrapper releases must use the exact same production key. Increment `appVersionCode` and `appVersion`, then run the protected release workflow.
+
+## Pre-merge release gate
+
+The Android release workflow runs when distribution files change on the `stage-khpos-lite-distribution` branch. Until the protected signing secrets exist, that run is expected to stop at the signing-secret gate. Once the secrets are stored, rerun the failed job. It will verify the permanent certificate, build the signed APK/AAB and publish `KHP-OS-Lite.apk` before the web landing-page download is allowed into production.
+
+After this release is merged, normal wrapper releases are manual via `workflow_dispatch` and are needed only when the Android wrapper itself changes.
 
 ## Release model
 
