@@ -142,8 +142,15 @@ export function AdminConsoleWorkspace() {
 
   async function signOut() {
     if (!supabase) return;
-    await supabase.auth.signOut();
-    window.location.reload();
+    setBusy("signout");
+    setError("");
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      setBusy("");
+      setError("We could not sign you out. Please try again.");
+      return;
+    }
+    window.location.replace("/account");
   }
 
   async function startMfaEnrollment() {
@@ -250,7 +257,10 @@ export function AdminConsoleWorkspace() {
     return (
       <main className="min-h-screen bg-slate-950 px-5 py-16 text-white">
         <div className="mx-auto max-w-xl rounded-[32px] border border-white/10 bg-white/5 p-7 shadow-2xl sm:p-10">
-          <ShieldCheck className="size-10 text-mint-300" />
+          <Link href="/account" className="text-sm font-bold text-mint-300 hover:text-mint-200">
+            ← Go to School Platform
+          </Link>
+          <ShieldCheck className="mt-8 size-10 text-mint-300" />
           <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-mint-300">
             KHP-OS | KAEC-NG Platform Administration
           </p>
@@ -304,13 +314,22 @@ export function AdminConsoleWorkspace() {
           <LockKeyhole className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">Platform access not authorised</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="mt-6 rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
-          >
-            Sign out
-          </button>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/account"
+              className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
+            >
+              Go to School Platform
+            </Link>
+            <button
+              type="button"
+              disabled={busy === "signout"}
+              onClick={() => void signOut()}
+              className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50"
+            >
+              {busy === "signout" ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -325,15 +344,16 @@ export function AdminConsoleWorkspace() {
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="text-xs font-bold text-slate-300 hover:text-white">
-              KSHC / KHP-OS
+            <Link href="/account" className="text-xs font-bold text-slate-300 hover:text-white">
+              ← School Platform
             </Link>
             <button
               type="button"
+              disabled={busy === "signout"}
               onClick={() => void signOut()}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-black"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-black disabled:opacity-50"
             >
-              <LogOut className="size-4" /> Sign out
+              <LogOut className="size-4" /> {busy === "signout" ? "Signing out…" : "Sign out"}
             </button>
           </div>
           <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
