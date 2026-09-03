@@ -1,0 +1,20 @@
+{
+  "id": "https://www.kshc.name.ng/khpos",
+  "name": "KHP-OS | Schools",
+  "short_name": "KHP-OS",
+  "start_url": "https://www.kshc.name.ng/khpos",
+  "scope": "https://www.kshc.name.ng/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4fd8",
+  "orientation": "any",
+  "categories": ["education", "productivity", "business"],
+  "icons": [
+    {
+      "src": "https://www.kshc.name.ng/khpos-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

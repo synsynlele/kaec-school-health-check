@@ -1,0 +1,46 @@
+{
+  "packageId": "ng.name.khpos.lite",
+  "host": "www.kshc.name.ng",
+  "name": "KHP-OS Lite",
+  "launcherName": "KHP-OS",
+  "display": "standalone",
+  "themeColor": "#0f4fd8",
+  "themeColorDark": "#0b3aa8",
+  "navigationColor": "#0f4fd8",
+  "navigationColorDark": "#0b3aa8",
+  "navigationDividerColor": "#0f4fd8",
+  "navigationDividerColorDark": "#0b3aa8",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": false,
+  "startUrl": "/khpos",
+  "iconUrl": "https://www.kshc.name.ng/khpos-icon-512.png",
+  "maskableIconUrl": "https://www.kshc.name.ng/khpos-icon-512.png",
+  "splashScreenFadeOutDuration": 250,
+  "signingKey": {
+    "path": "./khpos-lite-production.keystore",
+    "alias": "khpos-lite"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://www.kshc.name.ng/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "orientation": "any",
+  "fingerprints": [
+    {
+      "name": "KHP-OS Lite production key",
+      "value": "4A:83:6C:70:C0:50:E8:BC:FA:45:CB:35:28:92:EC:6A:0E:21:C9:86:D7:7B:BD:8C:B9:4C:62:FA:52:9B:70:DC"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
