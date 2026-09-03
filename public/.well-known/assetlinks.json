@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ng.name.khpos.lite",
+      "sha256_cert_fingerprints": [
+        "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"
+      ]
+    }
+  }
+]

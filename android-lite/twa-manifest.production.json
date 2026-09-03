@@ -1,0 +1,46 @@
+{
+  "packageId": "ng.name.khpos.lite",
+  "host": "www.kshc.name.ng",
+  "name": "KHP-OS Lite",
+  "launcherName": "KHP-OS",
+  "display": "standalone",
+  "themeColor": "#0f4fd8",
+  "themeColorDark": "#0b3aa8",
+  "navigationColor": "#0f4fd8",
+  "navigationColorDark": "#0b3aa8",
+  "navigationDividerColor": "#0f4fd8",
+  "navigationDividerColorDark": "#0b3aa8",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": false,
+  "startUrl": "/khpos",
+  "iconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg",
+  "maskableIconUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg",
+  "splashScreenFadeOutDuration": 250,
+  "signingKey": {
+    "path": "./khpos-lite-production.keystore",
+    "alias": "khpos-lite"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/47668ed01f76ecb5fa0f73d4fb55c2b8bd87a43f/public/khpos-lite-bootstrap.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "orientation": "any",
+  "fingerprints": [
+    {
+      "name": "KHP-OS Lite production key",
+      "value": "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}

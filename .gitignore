@@ -7,3 +7,10 @@ dist/
 build/
 coverage/
 *.log
+
+# KHP-OS Lite generated Android outputs and signing material
+/android-lite/generated/
+/android-lite/dist/
+/android-lite/generated-production/
+/android-lite/dist-production/
+/android-lite/*.keystore

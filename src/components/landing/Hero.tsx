@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Lock, RefreshCw, Smartphone } from "lucide-react";
+import { KhposDistributionButton } from "@/components/pwa/KhposDistributionButton";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ReportPreview } from "./ReportPreview";
@@ -53,13 +54,14 @@ export function Hero() {
           </p>
 
           <div
-            className="mt-8 flex animate-fade-up flex-col gap-3 sm:flex-row"
+            className="mt-8 flex animate-fade-up flex-col gap-3 sm:flex-row sm:flex-wrap"
             style={{ animationDelay: "240ms" }}
           >
             <Link href="/assessment" className={cn(buttonVariants({ size: "xl" }), "group")}>
               Start Free Assessment
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
+            <KhposDistributionButton />
             <Link href="#how" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
               See how it works
             </Link>
