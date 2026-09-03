@@ -15,6 +15,9 @@ const landing = read("src/components/landing/Hero.tsx");
 const distribution = read("src/components/pwa/KhposDistributionButton.tsx");
 const manifest = read("src/app/manifest.ts");
 const twa = read("android-lite/twa-manifest.production.json");
+const bootstrap = read("public/khpos-lite-bootstrap.webmanifest");
+const sourceIcon = read("src/app/icon.svg");
+const androidIcon = read("public/khpos-lite-icon.svg");
 const assetlinks = read("public/.well-known/assetlinks.json");
 const readme = read("android-lite/README.md");
 const releaseWorkflow = read(".github/workflows/android-lite-release.yml");
@@ -58,11 +61,23 @@ for (const required of [
   '"host": "www.kshc.name.ng"',
   '"startUrl": "/khpos"',
   '"appVersion": "1.0.0"',
-  '333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-icon-512.png',
-  '333c2be691c73939d6a9b2917a6a5e81cf57b505/public/khpos-lite-bootstrap.webmanifest',
+  '988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg',
+  '47668ed01f76ecb5fa0f73d4fb55c2b8bd87a43f/public/khpos-lite-bootstrap.webmanifest',
   '"value": "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"',
 ]) {
   requireText(twa, required, "Android production identity");
+}
+
+for (const required of [
+  '988db3adbd580edc0b82c30ca166d07db3c04391/public/khpos-lite-icon.svg',
+  '"type": "image/svg+xml"',
+  '"purpose": "any maskable"',
+]) {
+  requireText(bootstrap, required, "Android bootstrap manifest");
+}
+
+if (sourceIcon.trim() !== androidIcon.trim()) {
+  throw new Error("KHP-OS Lite contract failed: Android SVG must exactly match src/app/icon.svg");
 }
 
 requireText(
@@ -93,7 +108,11 @@ for (const required of ['"*": false', '"main": true', '"*-preview": true']) {
   requireText(vercel, required, "Vercel quota gate");
 }
 
-for (const iconPath of ["public/khpos-icon-192.png", "public/khpos-icon-512.png"]) {
+for (const iconPath of [
+  "public/khpos-icon-192.png",
+  "public/khpos-icon-512.png",
+  "public/khpos-lite-icon.svg",
+]) {
   if (!fs.existsSync(path.join(root, iconPath))) {
     throw new Error(`KHP-OS Lite contract failed: missing ${iconPath}`);
   }
