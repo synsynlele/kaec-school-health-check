@@ -19,6 +19,8 @@ for (const href of [
   requireText(adminNav, href, "Admin navigation");
 }
 requireText(adminNav, "usePathname", "Admin active-route handling");
+requireText(adminNav, 'href="/khpos"', "Admin return-to-KHP-OS action");
+requireText(adminNav, "Back to KHP-OS", "Admin return-to-KHP-OS label");
 
 const portfolio = read("src/components/khpos/PortfolioIntelligenceWorkspace.tsx");
 requireText(portfolio, 'href="/khpos/admin"', "Portfolio return link");
