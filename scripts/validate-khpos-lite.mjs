@@ -112,7 +112,12 @@ for (const required of [
 if (releaseWorkflow.includes("\n  push:")) {
   throw new Error("KHP-OS Lite contract failed: Android release workflow must remain manual-only");
 }
-for (const required of ['"*": false', '"main": true', '"*-preview": true']) {
+for (const required of [
+  '"**": false',
+  '"main": true',
+  '"*-preview": true',
+  '"**/*-preview": true',
+]) {
   requireText(vercel, required, "Vercel quota gate");
 }
 
