@@ -1192,6 +1192,35 @@ begin
       raise exception 'Only a leader-reviewed performance review can be completed.';
     end if;
 
+    if v_review.performance_state in ('support_required','improvement_required') then
+      if not exists(
+        select 1
+        from public.khpos_ops_staff_development_actions da
+        where da.review_id=v_review.id
+          and da.status<>'cancelled'
+      ) then
+        raise exception 'Support or improvement reviews require at least one development action before closure.';
+      end if;
+
+      if exists(
+        select 1
+        from public.khpos_ops_staff_development_actions da
+        where da.review_id=v_review.id
+          and da.status not in ('verified','cancelled')
+      ) then
+        raise exception 'Verify the agreed development response before completing this review.';
+      end if;
+    end if;
+
+    if exists(
+      select 1
+      from public.khpos_ops_staff_development_actions da
+      where da.review_id=v_review.id
+        and da.status not in ('verified','cancelled')
+    ) then
+      raise exception 'Open development actions must be verified or cancelled before review completion.';
+    end if;
+
     v_to_status := 'completed';
     update public.khpos_ops_staff_performance_reviews
     set status='completed',
