@@ -90,7 +90,7 @@ if (workspace.includes(String.fromCharCode(92, 96))) {
 }
 
 const migration = read(
-  "supabase/migrations/20260924223500_khpos_ops_o20_builder_projects.sql",
+  "supabase/migrations/20260924225147_khpos_ops_o20_builder_projects.sql",
 ).toLowerCase();
 
 for (const expected of [
