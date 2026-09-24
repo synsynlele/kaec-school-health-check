@@ -47,7 +47,7 @@ for (const expected of [
   "My Work",
   "Your role decides what appears here.",
   "KHP-OS does not create busywork.",
-  "Daily Learning Readiness",
+  "Evidence / operating note",
 ]) {
   requireText(workspace, expected, "My Work workspace");
 }
