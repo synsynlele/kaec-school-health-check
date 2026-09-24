@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  AlertTriangle,
   BookOpen,
   BrainCircuit,
   Building2,
@@ -30,6 +31,7 @@ const transformLinks = [
 
 const operationsLinks = [
   { suffix: "/work", label: "My Work", icon: ListTodo },
+  { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
