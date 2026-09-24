@@ -83,8 +83,8 @@ begin
     (v_policy,v_sg,'mandatory'),
     (v_policy,v_si,'mandatory'),
     (v_policy,v_sf,'mandatory'),
-    (v_policy,v_sp,'awareness'),
-    (v_policy,v_teacher,'awareness')
+    (v_policy,v_sp,'reference'),
+    (v_policy,v_teacher,'reference')
   on conflict do nothing;
 
   select id into v_process
