@@ -1569,6 +1569,10 @@ begin
     raise exception 'Do not impose corrective action before the staff response opportunity is complete.';
   end if;
 
+  if v_case.outcome is null or v_case.decided_at is null then
+    raise exception 'Record the evidence-based case decision before creating a corrective commitment.';
+  end if;
+
   if v_case.hearing_required and v_case.hearing_completed_at is null then
     raise exception 'Complete the required hearing step before creating corrective action.';
   end if;
