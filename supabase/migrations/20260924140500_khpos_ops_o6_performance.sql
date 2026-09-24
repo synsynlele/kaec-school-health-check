@@ -489,6 +489,12 @@ begin
   into v_active_kpis,v_unbaselined,v_green,v_amber,v_red,v_critical,v_critical_controls_failing
   from latest_per_kpi;
 
+  -- An active KPI with no measurement is still unbaselined and must remain visible as a data gap.
+  v_unbaselined := greatest(
+    v_active_kpis - v_green - v_amber - v_red - v_critical,
+    0
+  );
+
   return jsonb_build_object(
     'organisation',jsonb_build_object('id',p_organisation_id,'name',v_org_name),
     'membershipRole',v_member_role,
