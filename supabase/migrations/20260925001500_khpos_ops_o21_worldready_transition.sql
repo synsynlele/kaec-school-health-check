@@ -294,7 +294,7 @@ as $function$
       and p.project_type='personal'
       and p.status='completed'
       and pm.learner_id=p_learner_id
-      and pm.status='active'
+      and pm.status in ('active','completed')
   );
 $function$;
 
@@ -741,7 +741,7 @@ begin
          and p.organisation_id=p_organisation_id
          and p.status='completed'
          and pm.learner_id=v_record.learner_id
-         and pm.status='active'
+         and pm.status in ('active','completed')
      ) then
     raise exception 'Linked project must be a completed project for this learner.';
   end if;
