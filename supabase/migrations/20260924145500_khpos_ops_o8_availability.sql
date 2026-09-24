@@ -418,6 +418,12 @@ begin
         'assignedAt',ca.assigned_at,
         'respondedAt',ca.responded_at,
         'completedAt',ca.completed_at,
+        'isCoverer',exists(
+          select 1 from public.khpos_ops_role_assignments a
+          where a.id=ca.cover_assignment_id
+            and a.user_id=p_actor_user_id
+            and a.status='active'
+        ),
         'canAct',exists(
           select 1 from public.khpos_ops_role_assignments a
           where a.id=ca.cover_assignment_id
