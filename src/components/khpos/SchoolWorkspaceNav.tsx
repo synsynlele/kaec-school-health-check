@@ -20,6 +20,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LibraryBig,
+  Rocket,
   ListTodo,
   ShieldCheck,
   Sparkles,
@@ -58,6 +59,7 @@ const operationsLinks = [
   { suffix: "/potential-development", label: "Potential Development", icon: Sparkles },
   { suffix: "/skills-development", label: "Skills Development", icon: Wrench },
   { suffix: "/leadership-financial", label: "Leadership & Finance", icon: CircleDollarSign },
+  { suffix: "/young-ceo", label: "Young CEO Hub", icon: Rocket },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
