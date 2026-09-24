@@ -832,6 +832,13 @@ begin
     ) then
       raise exception 'Resolve planned/missed Young CEO Hub session obligations before cycle close-out.';
     end if;
+    if exists(
+      select 1 from public.khpos_ops_young_ceo_ventures v
+      where v.cycle_id=v_c.id
+        and v.status not in ('completed','withdrawn')
+    ) then
+      raise exception 'Complete or withdraw every active Young CEO venture before cycle close-out.';
+    end if;
     v_to := 'completed';
     update public.khpos_ops_young_ceo_cycles
     set status=v_to,completion_note=left(v_note,5000),
