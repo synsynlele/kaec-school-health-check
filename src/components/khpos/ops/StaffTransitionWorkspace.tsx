@@ -57,7 +57,7 @@ function targetRoles(
   if (!staff) return [];
 
   const byId = new Map(workspace.roles.map((role) => [role.id, role]));
-  const chain = [];
+  const chain: KhposOpsStaffTransitionWorkspace["roles"] = [];
   let next = byId.get(staff.roleId)?.reportsToRoleId ?? null;
 
   while (next) {
@@ -398,23 +398,39 @@ export function StaffTransitionWorkspace({
         <>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Succession plans", workspace.summary.activeSuccession, GitBranch],
-              ["Ready now", workspace.summary.readyNow, UserRoundCheck],
-              ["Open promotions", workspace.summary.openPromotions, ArrowUpRight],
-              ["Open exits", workspace.summary.openExits, DoorOpen],
-            ].map(([label, value, Icon]) => (
+              {
+                label: "Succession plans",
+                value: workspace.summary.activeSuccession,
+                icon: GitBranch,
+              },
+              {
+                label: "Ready now",
+                value: workspace.summary.readyNow,
+                icon: UserRoundCheck,
+              },
+              {
+                label: "Open promotions",
+                value: workspace.summary.openPromotions,
+                icon: ArrowUpRight,
+              },
+              {
+                label: "Open exits",
+                value: workspace.summary.openExits,
+                icon: DoorOpen,
+              },
+            ].map(({ label, value, icon: Icon }) => (
               <div
-                key={String(label)}
+                key={label}
                 className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                    {String(label)}
+                    {label}
                   </p>
                   <Icon className="size-4 text-slate-400" />
                 </div>
                 <p className="mt-3 text-2xl font-black text-slate-950">
-                  {String(value)}
+                  {value}
                 </p>
               </div>
             ))}
@@ -751,7 +767,9 @@ export function StaffTransitionWorkspace({
             </section>
           ) : null}
 
-          {self && !workspace.canManagePeople && !openSelfExit ? (
+          {self &&
+          self.roleCode !== "VISION_CUSTODIAN" &&
+          !openSelfExit ? (
             <section className="rounded-3xl border border-orange-200 bg-orange-50 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-700">
                 My exit notice
