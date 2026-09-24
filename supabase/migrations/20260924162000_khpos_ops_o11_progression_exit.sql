@@ -907,6 +907,72 @@ begin
 end;
 $$;
 
+
+create or replace function public.khpos_ops_succession_plan_action_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_plan_id uuid,
+  p_action text,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_plan public.khpos_ops_staff_succession_plans%rowtype;
+  v_note text := nullif(btrim(coalesce(p_note,'')),'');
+  v_to text;
+begin
+  select * into v_plan
+  from public.khpos_ops_staff_succession_plans
+  where id=p_plan_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_plan.id is null then raise exception 'Succession plan not found.'; end if;
+
+  if not khpos_private.ops_transition_can_manage_people(
+    p_actor_user_id,p_organisation_id
+  ) then
+    raise exception 'Only the School Guardian or Vision Custodian can change succession-plan status.';
+  end if;
+
+  if p_action='withdraw' then
+    if v_plan.status<>'active' then
+      raise exception 'Only an active succession plan can be withdrawn.';
+    end if;
+    if v_note is null then raise exception 'Record why the succession plan is being withdrawn.'; end if;
+    v_to := 'withdrawn';
+
+    update public.khpos_ops_staff_succession_plans
+    set status=v_to,withdrawn_at=now(),withdrawal_note=left(v_note,4000),updated_at=now()
+    where id=v_plan.id;
+
+  elsif p_action='archive' then
+    if v_plan.status not in ('achieved','withdrawn') then
+      raise exception 'Only achieved or withdrawn succession plans can be archived.';
+    end if;
+    v_to := 'archived';
+
+    update public.khpos_ops_staff_succession_plans
+    set status=v_to,updated_at=now()
+    where id=v_plan.id;
+
+  else
+    raise exception 'Unsupported succession-plan action.';
+  end if;
+
+  insert into public.khpos_ops_staff_transition_events(
+    organisation_id,succession_plan_id,actor_user_id,event_type,
+    from_status,to_status,note
+  ) values (
+    p_organisation_id,v_plan.id,p_actor_user_id,
+    'succession_plan_'||p_action,v_plan.status,v_to,left(v_note,4000)
+  );
+end;
+$;
+
 create or replace function public.khpos_ops_add_progression_evidence_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -1922,6 +1988,82 @@ begin
 end;
 $$;
 
+
+create or replace function public.khpos_ops_update_exit_schedule_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_exit_case_id uuid,
+  p_proposed_last_day date,
+  p_basis_reference text,
+  p_authority_review_reference text default null,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_case public.khpos_ops_staff_exit_cases%rowtype;
+  v_note text := nullif(btrim(coalesce(p_note,'')),'');
+  v_authority text := nullif(btrim(coalesce(p_authority_review_reference,'')),'');
+begin
+  select * into v_case
+  from public.khpos_ops_staff_exit_cases
+  where id=p_exit_case_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_case.id is null then raise exception 'Exit case not found.'; end if;
+
+  if not khpos_private.ops_transition_can_manage_people(
+    p_actor_user_id,p_organisation_id
+  ) then
+    raise exception 'Only People management authority can revise an acknowledged exit schedule.';
+  end if;
+
+  if v_case.status not in ('open','clearance_in_progress') then
+    raise exception 'Only an open or in-clearance exit can revise its recorded schedule.';
+  end if;
+
+  if p_proposed_last_day<current_date then
+    raise exception 'Revised last day cannot be in the past.';
+  end if;
+
+  if nullif(btrim(coalesce(p_basis_reference,'')),'') is null then
+    raise exception 'Revised notice/agreement/contract basis reference is required.';
+  end if;
+
+  if v_case.exit_type in ('mutual_agreement','redundancy','termination','dismissal','other')
+     and coalesce(v_authority,nullif(btrim(coalesce(v_case.authority_review_reference,'')),'')) is null then
+    raise exception 'This exit type requires the applicable authority/legal/agreement reference.';
+  end if;
+
+  update public.khpos_ops_staff_exit_cases
+  set proposed_last_day=p_proposed_last_day,
+      basis_reference=left(btrim(p_basis_reference),1000),
+      authority_review_reference=coalesce(left(v_authority,1000),authority_review_reference),
+      updated_at=now()
+  where id=v_case.id;
+
+  update public.khpos_ops_staff_transition_items
+  set due_date=p_proposed_last_day,updated_at=now()
+  where exit_case_id=v_case.id
+    and status in ('pending','in_progress','evidence_submitted');
+
+  insert into public.khpos_ops_staff_transition_events(
+    organisation_id,exit_case_id,actor_user_id,event_type,note,metadata
+  ) values (
+    p_organisation_id,v_case.id,p_actor_user_id,'exit_schedule_updated',
+    left(v_note,4000),
+    jsonb_build_object(
+      'fromLastDay',v_case.proposed_last_day,
+      'toLastDay',p_proposed_last_day,
+      'basisReference',left(btrim(p_basis_reference),1000)
+    )
+  );
+end;
+$;
+
 create or replace function public.khpos_ops_start_exit_clearance_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -2398,6 +2540,8 @@ revoke execute on function public.khpos_ops_create_succession_plan_server(uuid,u
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_update_succession_plan_server(uuid,uuid,uuid,text,text,text,date,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_succession_plan_action_server(uuid,uuid,uuid,text,text)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_add_progression_evidence_server(uuid,uuid,text,uuid,text,text,text,text,uuid,uuid)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_promotion_case_server(uuid,uuid,uuid,uuid,uuid,uuid,date,text,text,uuid)
@@ -2413,6 +2557,8 @@ revoke execute on function public.khpos_ops_transition_item_action_server(uuid,u
 revoke execute on function public.khpos_ops_execute_promotion_server(uuid,uuid,uuid)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_exit_case_server(uuid,uuid,uuid,text,date,text,text,text,uuid,boolean)
+  from public,anon,authenticated;
+revoke execute on function public.khpos_ops_update_exit_schedule_server(uuid,uuid,uuid,date,text,text,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_start_exit_clearance_server(uuid,uuid,uuid,uuid)
   from public,anon,authenticated;
@@ -2434,6 +2580,7 @@ grant execute on function khpos_private.ops_transition_case_visible(uuid,uuid,uu
 grant execute on function public.khpos_ops_get_staff_transition_server(uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_create_succession_plan_server(uuid,uuid,uuid,uuid,text,text,text,date) to service_role;
 grant execute on function public.khpos_ops_update_succession_plan_server(uuid,uuid,uuid,text,text,text,date,text) to service_role;
+grant execute on function public.khpos_ops_succession_plan_action_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_add_progression_evidence_server(uuid,uuid,text,uuid,text,text,text,text,uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_create_promotion_case_server(uuid,uuid,uuid,uuid,uuid,uuid,date,text,text,uuid) to service_role;
 grant execute on function public.khpos_ops_promotion_staff_response_server(uuid,uuid,uuid,text,text) to service_role;
@@ -2442,6 +2589,7 @@ grant execute on function public.khpos_ops_add_transition_item_server(uuid,uuid,
 grant execute on function public.khpos_ops_transition_item_action_server(uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_execute_promotion_server(uuid,uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_create_exit_case_server(uuid,uuid,uuid,text,date,text,text,text,uuid,boolean) to service_role;
+grant execute on function public.khpos_ops_update_exit_schedule_server(uuid,uuid,uuid,date,text,text,text) to service_role;
 grant execute on function public.khpos_ops_start_exit_clearance_server(uuid,uuid,uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_finalize_staff_exit_server(uuid,uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_exit_case_action_server(uuid,uuid,uuid,text,text,text) to service_role;
