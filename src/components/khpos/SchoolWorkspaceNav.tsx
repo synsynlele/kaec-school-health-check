@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   FileCheck2,
   Gauge,
+  Gavel,
   GraduationCap,
   LayoutDashboard,
   LibraryBig,
@@ -41,6 +42,7 @@ const operationsLinks = [
   { suffix: "/people", label: "People & Staff", icon: UserRoundCheck },
   { suffix: "/availability", label: "Availability & Coverage", icon: CalendarClock },
   { suffix: "/staff-performance", label: "Staff Performance", icon: FileCheck2 },
+  { suffix: "/staff-accountability", label: "Recognition & Accountability", icon: Gavel },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
