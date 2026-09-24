@@ -876,6 +876,7 @@ set search_path = public,auth,khpos_private,pg_temp
 as $$
 declare
   v_case public.khpos_ops_staff_availability_cases%rowtype;
+  v_unavailable_staff public.khpos_ops_staff%rowtype;
   v_cover_staff public.khpos_ops_staff%rowtype;
   v_scope text := nullif(btrim(coalesce(p_scope,'')),'');
   v_coverage_id uuid;
@@ -886,6 +887,16 @@ begin
   for update;
 
   if v_case.id is null then raise exception 'Availability case not found.'; end if;
+
+  select * into v_unavailable_staff
+  from public.khpos_ops_staff
+  where id=v_case.staff_id
+    and organisation_id=p_organisation_id
+    and status='active';
+
+  if v_unavailable_staff.id is null then
+    raise exception 'Unavailable staff record not found.';
+  end if;
 
   if not khpos_private.ops_availability_can_review_staff(
     p_actor_user_id,p_organisation_id,v_case.staff_id
@@ -925,6 +936,12 @@ begin
 
   if v_cover_staff.id is null then
     raise exception 'Coverage must be assigned to another active deployed staff member.';
+  end if;
+
+  if v_cover_staff.user_id is not null
+     and v_unavailable_staff.user_id is not null
+     and v_cover_staff.user_id=v_unavailable_staff.user_id then
+    raise exception 'The unavailable person cannot cover their own absence through another role assignment.';
   end if;
 
   if exists(
