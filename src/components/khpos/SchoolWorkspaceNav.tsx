@@ -27,6 +27,7 @@ import {
   UserRoundSearch,
   UsersRound,
   Workflow,
+  Wrench,
 } from "lucide-react";
 
 const transformLinks = [
@@ -54,6 +55,7 @@ const operationsLinks = [
   { suffix: "/academic-assurance", label: "Assessment & Exams", icon: ShieldCheck },
   { suffix: "/learner-progress", label: "Learner Progress", icon: UserRoundSearch },
   { suffix: "/potential-development", label: "Potential Development", icon: Sparkles },
+  { suffix: "/skills-development", label: "Skills Development", icon: Wrench },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
