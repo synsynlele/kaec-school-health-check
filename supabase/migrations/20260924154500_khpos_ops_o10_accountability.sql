@@ -74,6 +74,7 @@ create table if not exists public.khpos_ops_staff_accountability_cases (
     )),
   outcome_note text,
   authority_review_reference text,
+  decision_source text check (decision_source is null or decision_source in ('internal','external')),
   decided_by uuid references auth.users(id) on delete set null,
   decided_at timestamptz,
   outcome_delivered_at timestamptz,
@@ -388,6 +389,34 @@ begin
   return false;
 end;
 $$;
+
+create or replace function khpos_private.ops_accountability_can_record_external_review(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_case_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+  select exists(
+    select 1
+    from public.khpos_ops_staff_accountability_cases c
+    join public.khpos_ops_staff subject on subject.id=c.subject_staff_id
+    join public.khpos_ops_role_assignments a on a.user_id=p_actor_user_id and a.status='active'
+    join public.khpos_ops_roles r on r.id=a.role_id
+    where c.id=p_case_id
+      and c.organisation_id=p_organisation_id
+      and c.status='external_review_required'
+      and c.case_type='grievance'
+      and subject.user_id is distinct from p_actor_user_id
+      and r.organisation_id=p_organisation_id
+      and r.status='active'
+      and r.code='SCHOOL_GUARDIAN'
+  );
+$;
 
 create or replace function khpos_private.ops_accountability_case_can_manage(
   p_actor_user_id uuid,
@@ -1814,6 +1843,7 @@ begin
   set outcome=v_outcome,
       outcome_note=left(v_note,6000),
       authority_review_reference=left(v_authority_ref,1000),
+      decision_source='internal',
       decided_by=p_actor_user_id,
       decided_at=now(),
       outcome_delivered_at=now(),
@@ -1833,6 +1863,87 @@ begin
   );
 end;
 $$;
+
+create or replace function public.khpos_ops_record_external_accountability_review_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_case_id uuid,
+  p_outcome text,
+  p_outcome_note text,
+  p_external_review_reference text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_case public.khpos_ops_staff_accountability_cases%rowtype;
+  v_outcome text := lower(nullif(btrim(p_outcome),''));
+  v_note text := nullif(btrim(coalesce(p_outcome_note,'')),'');
+  v_reference text := nullif(btrim(coalesce(p_external_review_reference,'')),'');
+begin
+  select * into v_case
+  from public.khpos_ops_staff_accountability_cases
+  where id=p_case_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_case.id is null then raise exception 'Accountability case not found.'; end if;
+
+  if not khpos_private.ops_accountability_can_record_external_review(
+    p_actor_user_id,p_organisation_id,v_case.id
+  ) then
+    raise exception 'Only a non-subject School Guardian may record the result supplied by the independent external governance route.';
+  end if;
+
+  if v_outcome not in (
+    'grievance_upheld','grievance_partially_upheld','grievance_not_upheld',
+    'grievance_resolved_by_agreement','grievance_referred_other_process'
+  ) then
+    raise exception 'Unsupported external grievance outcome.';
+  end if;
+
+  if v_note is null or v_reference is null then
+    raise exception 'External review outcome and independent reference are required.';
+  end if;
+
+  update public.khpos_ops_staff_accountability_cases
+  set outcome=v_outcome,
+      outcome_note=left(v_note,6000),
+      authority_review_reference=left(v_reference,1000),
+      decision_source='external',
+      decided_by=p_actor_user_id,
+      decided_at=now(),
+      outcome_delivered_at=now(),
+      status='resolved',
+      updated_at=now()
+  where id=v_case.id;
+
+  insert into public.khpos_ops_staff_accountability_responses(
+    organisation_id,case_id,response_type,submitted_by,response_text,evidence_reference
+  ) values (
+    p_organisation_id,v_case.id,'external_review_record',p_actor_user_id,
+    left(v_note,8000),left(v_reference,1000)
+  );
+
+  insert into public.khpos_ops_staff_accountability_events(
+    organisation_id,case_id,actor_user_id,event_type,
+    from_status,to_status,note,metadata
+  ) values (
+    p_organisation_id,v_case.id,p_actor_user_id,'external_review_recorded',
+    v_case.status,'resolved',left(v_note,6000),
+    jsonb_build_object('outcome',v_outcome,'externalReviewReference',v_reference)
+  );
+
+  insert into public.khpos_ops_audit_events(
+    organisation_id,actor_user_id,event_type,object_type,object_id,metadata
+  ) values (
+    p_organisation_id,p_actor_user_id,'ops_external_accountability_review_recorded',
+    'staff_accountability_case',v_case.id,
+    jsonb_build_object('outcome',v_outcome,'externalReviewReference',v_reference)
+  );
+end;
+$;
 
 create or replace function public.khpos_ops_accountability_acknowledge_outcome_server(
   p_actor_user_id uuid,
@@ -2012,8 +2123,14 @@ begin
       and status not in ('verified','cancelled');
 
   elsif p_action='close' then
-    if not v_can_manage then
-      raise exception 'Only the appropriate case manager can close this case.';
+    if not v_can_manage
+       and not (
+         v_case.decision_source='external'
+         and khpos_private.ops_accountability_can_record_external_review(
+           p_actor_user_id,p_organisation_id,v_case.id
+         )
+       ) then
+      raise exception 'Only the appropriate case manager or authorised external-review recorder can close this case.';
     end if;
     if v_case.status not in ('resolved','decision_recorded','referred_formal') then
       raise exception 'Only resolved, decided or formally referred cases can be closed.';
@@ -2054,6 +2171,8 @@ revoke execute on function khpos_private.ops_accountability_staff_for_user(uuid,
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_accountability_can_manage_subject(uuid,uuid,uuid)
   from public,anon,authenticated;
+revoke execute on function khpos_private.ops_accountability_can_record_external_review(uuid,uuid,uuid)
+  from public,anon,authenticated;
 revoke execute on function khpos_private.ops_accountability_can_manage_grievance(uuid,uuid,uuid,uuid)
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_accountability_case_can_manage(uuid,uuid,uuid)
@@ -2089,6 +2208,8 @@ revoke execute on function public.khpos_ops_corrective_action_server(uuid,uuid,u
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_accountability_decide_server(uuid,uuid,uuid,text,text,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_record_external_accountability_review_server(uuid,uuid,uuid,text,text,text)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_accountability_acknowledge_outcome_server(uuid,uuid,uuid,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_accountability_case_action_server(uuid,uuid,uuid,text,text)
@@ -2097,6 +2218,7 @@ revoke execute on function public.khpos_ops_accountability_case_action_server(uu
 grant execute on function khpos_private.ops_accountability_has_membership(uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_accountability_staff_for_user(uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_accountability_can_manage_subject(uuid,uuid,uuid) to service_role;
+grant execute on function khpos_private.ops_accountability_can_record_external_review(uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_accountability_can_manage_grievance(uuid,uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_accountability_case_can_manage(uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_accountability_case_is_reporter(uuid,uuid,uuid) to service_role;
@@ -2115,5 +2237,6 @@ grant execute on function public.khpos_ops_record_accountability_hearing_server(
 grant execute on function public.khpos_ops_create_corrective_action_server(uuid,uuid,uuid,text,text,text,date) to service_role;
 grant execute on function public.khpos_ops_corrective_action_server(uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_accountability_decide_server(uuid,uuid,uuid,text,text,text) to service_role;
+grant execute on function public.khpos_ops_record_external_accountability_review_server(uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_accountability_acknowledge_outcome_server(uuid,uuid,uuid,text) to service_role;
 grant execute on function public.khpos_ops_accountability_case_action_server(uuid,uuid,uuid,text,text) to service_role;
