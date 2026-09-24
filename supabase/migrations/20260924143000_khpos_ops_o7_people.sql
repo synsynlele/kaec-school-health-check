@@ -297,7 +297,7 @@ begin
   from public.khpos_ops_roles r
   where r.organisation_id=p_organisation_id
     and r.status='active'
-    and r.category='staff';
+    and r.category<>'student';
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',c.id,'code',c.code,'name',c.name
