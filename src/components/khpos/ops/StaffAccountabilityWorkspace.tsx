@@ -3,20 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowLeft,
   Award,
-  BadgeCheck,
   CircleAlert,
   FileWarning,
   Gavel,
   History,
   Loader2,
   MessageSquareWarning,
-  Plus,
   Scale,
   ShieldAlert,
-  UserRoundCheck,
   UsersRound,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
