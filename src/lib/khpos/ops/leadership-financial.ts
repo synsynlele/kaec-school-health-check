@@ -279,7 +279,7 @@ export async function actOnKhposOpsFinancialActivity(
   userId: string,
   input: {
     activityId: string;
-    action: "deliver" | "miss" | "cancel";
+    action: "deliver" | "miss" | "recover" | "waive_recovery" | "cancel";
     note: string;
     evidenceReference?: string | null;
     recoveryDueDate?: string | null;
