@@ -137,7 +137,7 @@ function isJwtClockSkewError(message: string | undefined): boolean {
 }
 
 async function retryReadOnJwtClockSkew<T>(
-  operation: () => Promise<{ data: T | null; error: { message?: string } | null }>,
+  operation: () => PromiseLike<{ data: T | null; error: { message?: string } | null }>,
 ): Promise<{ data: T | null; error: { message?: string } | null }> {
   const first = await operation();
   if (!first.error || !isJwtClockSkewError(first.error.message)) return first;
