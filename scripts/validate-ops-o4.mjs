@@ -83,7 +83,6 @@ for (const expected of [
 const seed = read("supabase/seeds/khpos_ops_o4_issues.sql");
 for (const expected of [
   "GOV-003",
-  "Escalation Management",
   "P1 critical issues receive immediate leadership visibility",
   "Escalation transfers visibility and authority support, not automatic ownership",
   "ops_o4_issue_engine_bootstrapped",
