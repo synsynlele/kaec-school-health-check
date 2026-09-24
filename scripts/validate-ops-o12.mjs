@@ -78,7 +78,7 @@ for (const expected of [
 }
 
 const migrationPath =
-  "supabase/migrations/20260924172000_khpos_ops_o12_academic_delivery.sql";
+  "supabase/migrations/20260924172154_khpos_ops_o12_academic_delivery.sql";
 const migration = read(migrationPath).toLowerCase();
 
 for (const expected of [
