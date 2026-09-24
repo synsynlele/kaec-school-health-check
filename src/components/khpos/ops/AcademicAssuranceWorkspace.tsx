@@ -7,7 +7,6 @@ import {
   BadgeCheck,
   BookOpenCheck,
   ClipboardCheck,
-  FileWarning,
   Loader2,
   ShieldCheck,
 } from "lucide-react";
