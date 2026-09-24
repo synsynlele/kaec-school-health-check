@@ -133,7 +133,7 @@ create table if not exists public.khpos_ops_young_ceo_members (
   member_role text not null default 'member'
     check (member_role in ('lead','member')),
   status text not null default 'active'
-    check (status in ('active','left')),
+    check (status in ('active','completed','left')),
   joined_by uuid not null references auth.users(id) on delete restrict,
   joined_at timestamptz not null default now(),
   left_by uuid references auth.users(id) on delete set null,
@@ -1303,6 +1303,7 @@ begin
       where other_member.learner_id=p_learner_id
         and other_member.status='active'
         and other_venture.cycle_id=v_v.cycle_id
+        and other_venture.status not in ('completed','withdrawn')
         and other_venture.id<>v_v.id
     ) then
       raise exception 'Learner already has an active venture in this Young CEO Hub cycle.';
@@ -1322,7 +1323,7 @@ begin
       ) values (
         p_organisation_id,p_venture_id,p_learner_id,p_member_role,'active',p_actor_user_id
       );
-    elsif v_member.status='left' then
+    elsif v_member.status in ('left','completed') then
       update public.khpos_ops_young_ceo_members
       set status='active',member_role=p_member_role,
           joined_by=p_actor_user_id,joined_at=now(),
@@ -1597,11 +1598,21 @@ begin
         completion_evidence_reference=left(v_evidence,1000),
         completed_by=p_actor_user_id,completed_at=now(),updated_at=now()
     where id=v_v.id;
+
+    update public.khpos_ops_young_ceo_members
+    set status='completed',updated_at=now()
+    where venture_id=v_v.id and status='active';
+
   elsif p_action='withdraw' then
     update public.khpos_ops_young_ceo_ventures
     set status=v_to,withdrawn_by=p_actor_user_id,withdrawn_at=now(),
         withdrawal_note=left(v_note,4000),updated_at=now()
     where id=v_v.id;
+
+    update public.khpos_ops_young_ceo_members
+    set status='left',left_by=p_actor_user_id,left_at=now(),
+        leave_note='Venture withdrawn: '||left(v_note,3000),updated_at=now()
+    where venture_id=v_v.id and status='active';
   else
     update public.khpos_ops_young_ceo_ventures
     set status=v_to,updated_at=now()
@@ -1657,7 +1668,7 @@ begin
     select 1 from public.khpos_ops_young_ceo_members m
     where m.venture_id=v_v.id
       and m.learner_id=p_learner_id
-      and m.status='active'
+      and m.status in ('active','completed')
   ) then
     raise exception 'Individual value-creation evidence requires an active venture member.';
   end if;
