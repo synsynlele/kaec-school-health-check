@@ -96,6 +96,20 @@ for (const expected of [
   "to service_role",
 ]) requireText(migration, expected, "O16 migration");
 
+const hardening = read(
+  "supabase/migrations/20260924194130_khpos_ops_o16_fk_index_hardening.sql",
+).toLowerCase();
+for (const expected of [
+  "idx_o16_discovery_term",
+  "idx_o16_events_actor",
+  "idx_o16_events_reflection",
+  "idx_o16_evidence_term",
+  "idx_o16_exploration_term",
+  "idx_o16_hypothesis_origin_term",
+  "idx_o16_reflection_term",
+  "idx_o16_review_term",
+]) requireText(hardening, expected, "O16 FK-index hardening migration");
+
 const seed = read("supabase/seeds/khpos_ops_o16_potential_discovery.sql").toLowerCase();
 for (const expected of [
   "hpd-p01",
