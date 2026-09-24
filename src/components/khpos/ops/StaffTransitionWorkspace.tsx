@@ -29,7 +29,7 @@ function readable(value: string | null | undefined) {
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(\`\${value}T00:00:00\`),
+    new Date(`${value}T00:00:00`),
   );
 }
 
@@ -136,9 +136,9 @@ export function StaffTransitionWorkspace({
       }
 
       const response = await fetch(
-        \`/api/khpos/ops/staff-transition/\${organisationId}\`,
+        `/api/khpos/ops/staff-transition/${organisationId}`,
         {
-          headers: { Authorization: \`Bearer \${accessToken}\` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           cache: "no-store",
         },
       );
@@ -205,11 +205,11 @@ export function StaffTransitionWorkspace({
     setError("");
 
     const response = await fetch(
-      \`/api/khpos/ops/staff-transition/\${organisationId}\`,
+      `/api/khpos/ops/staff-transition/${organisationId}`,
       {
         method: "POST",
         headers: {
-          Authorization: \`Bearer \${accessToken}\`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -366,7 +366,7 @@ export function StaffTransitionWorkspace({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
-            href={\`/khpos/\${organisationId}/people\`}
+            href={`/khpos/${organisationId}/people`}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
@@ -477,7 +477,7 @@ export function StaffTransitionWorkspace({
                 begin.
               </p>
               <Link
-                href={\`/khpos/\${organisationId}/people\`}
+                href={`/khpos/${organisationId}/people`}
                 className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
               >
                 Open People & Staff
@@ -981,11 +981,11 @@ function SuccessionCard({
   onState: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const evidenceTitleKey = \`suc-title-\${plan.id}\`;
-  const evidenceNoteKey = \`suc-evidence-\${plan.id}\`;
-  const evidenceReferenceKey = \`suc-reference-\${plan.id}\`;
-  const readinessKey = \`suc-state-\${plan.id}\`;
-  const reviewKey = \`suc-review-\${plan.id}\`;
+  const evidenceTitleKey = `suc-title-${plan.id}`;
+  const evidenceNoteKey = `suc-evidence-${plan.id}`;
+  const evidenceReferenceKey = `suc-reference-${plan.id}`;
+  const readinessKey = `suc-state-${plan.id}`;
+  const reviewKey = `suc-review-${plan.id}`;
 
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -996,16 +996,16 @@ function SuccessionCard({
               {plan.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 plan.readinessState,
-              )}\`}
+              )}`}
             >
               {readable(plan.readinessState)}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 plan.status,
-              )}\`}
+              )}`}
             >
               {readable(plan.status)}
             </span>
@@ -1089,10 +1089,10 @@ function SuccessionCard({
                     evidenceReference:
                       references[evidenceReferenceKey] ?? null,
                   },
-                  \`succession-evidence-\${plan.id}\`,
+                  `succession-evidence-${plan.id}`,
                 )
               }
-              disabled={busyId === \`succession-evidence-\${plan.id}\`}
+              disabled={busyId === `succession-evidence-${plan.id}`}
               className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
             >
               Add evidence
@@ -1137,10 +1137,10 @@ function SuccessionCard({
                       targetHorizon: plan.targetHorizon,
                       reviewNote: notes[reviewKey] ?? null,
                     },
-                    \`succession-review-\${plan.id}\`,
+                    `succession-review-${plan.id}`,
                   )
                 }
-                disabled={busyId === \`succession-review-\${plan.id}\`}
+                disabled={busyId === `succession-review-${plan.id}`}
                 className="rounded-lg bg-violet-700 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
               >
                 Save review
@@ -1155,10 +1155,10 @@ function SuccessionCard({
                       action: "withdraw",
                       note: notes[reviewKey] ?? "",
                     },
-                    \`succession-withdraw-\${plan.id}\`,
+                    `succession-withdraw-${plan.id}`,
                   )
                 }
-                disabled={busyId === \`succession-withdraw-\${plan.id}\`}
+                disabled={busyId === `succession-withdraw-${plan.id}`}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-60"
               >
                 Withdraw plan
@@ -1194,13 +1194,13 @@ function PromotionCard({
   onSelect: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const responseKey = \`promotion-response-\${promotion.id}\`;
-  const evidenceTitleKey = \`promotion-title-\${promotion.id}\`;
-  const evidenceNoteKey = \`promotion-evidence-\${promotion.id}\`;
-  const evidenceReferenceKey = \`promotion-reference-\${promotion.id}\`;
-  const continuityKey = \`promotion-continuity-\${promotion.id}\`;
-  const supervisorKey = \`promotion-supervisor-\${promotion.id}\`;
-  const approvalKey = \`promotion-approval-\${promotion.id}\`;
+  const responseKey = `promotion-response-${promotion.id}`;
+  const evidenceTitleKey = `promotion-title-${promotion.id}`;
+  const evidenceNoteKey = `promotion-evidence-${promotion.id}`;
+  const evidenceReferenceKey = `promotion-reference-${promotion.id}`;
+  const continuityKey = `promotion-continuity-${promotion.id}`;
+  const supervisorKey = `promotion-supervisor-${promotion.id}`;
+  const approvalKey = `promotion-approval-${promotion.id}`;
 
   const targetRole = workspace.roles.find(
     (role) => role.id === promotion.targetRoleId,
@@ -1224,9 +1224,9 @@ function PromotionCard({
               {promotion.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 promotion.status,
-              )}\`}
+              )}`}
             >
               {readable(promotion.status)}
             </span>
@@ -1290,7 +1290,7 @@ function PromotionCard({
                     response: "accept",
                     note: notes[responseKey] ?? null,
                   },
-                  \`promotion-accept-\${promotion.id}\`,
+                  `promotion-accept-${promotion.id}`,
                 )
               }
               className="rounded-xl bg-brand-700 px-4 py-2 text-xs font-black text-white"
@@ -1307,7 +1307,7 @@ function PromotionCard({
                     response: "decline",
                     note: notes[responseKey] ?? null,
                   },
-                  \`promotion-decline-\${promotion.id}\`,
+                  `promotion-decline-${promotion.id}`,
                 )
               }
               className="rounded-xl border border-brand-300 px-4 py-2 text-xs font-black text-brand-900"
@@ -1362,7 +1362,7 @@ function PromotionCard({
                     evidenceReference:
                       references[evidenceReferenceKey] ?? null,
                   },
-                  \`promotion-evidence-\${promotion.id}\`,
+                  `promotion-evidence-${promotion.id}`,
                 )
               }
               className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white"
@@ -1421,7 +1421,7 @@ function PromotionCard({
                         selects[supervisorKey] ?? "",
                       approvalNote: notes[approvalKey] ?? "",
                     },
-                    \`promotion-approve-\${promotion.id}\`,
+                    `promotion-approve-${promotion.id}`,
                   )
                 }
                 className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -1467,10 +1467,10 @@ function PromotionCard({
             onClick={() =>
               void submit(
                 { mode: "execute_promotion", promotionCaseId: promotion.id },
-                \`promotion-execute-\${promotion.id}\`,
+                `promotion-execute-${promotion.id}`,
               )
             }
-            disabled={busyId === \`promotion-execute-\${promotion.id}\`}
+            disabled={busyId === `promotion-execute-${promotion.id}`}
             className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
           >
             Execute approved promotion
@@ -1484,10 +1484,10 @@ function PromotionCard({
                   promotionCaseId: promotion.id,
                   action: "cancel",
                   note:
-                    notes[\`promotion-cancel-\${promotion.id}\`] ??
+                    notes[`promotion-cancel-${promotion.id}`] ??
                     "Promotion transition cancelled by competent authority.",
                 },
-                \`promotion-cancel-\${promotion.id}\`,
+                `promotion-cancel-${promotion.id}`,
               )
             }
             className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-black text-slate-700"
@@ -1527,12 +1527,12 @@ function ExitCard({
   onSelect: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const continuityKey = \`exit-continuity-\${exitCase.id}\`;
-  const dateKey = \`exit-date-\${exitCase.id}\`;
-  const basisKey = \`exit-basis-\${exitCase.id}\`;
-  const authorityKey = \`exit-authority-\${exitCase.id}\`;
-  const noteKey = \`exit-note-\${exitCase.id}\`;
-  const cancellationReferenceKey = \`exit-cancel-ref-\${exitCase.id}\`;
+  const continuityKey = `exit-continuity-${exitCase.id}`;
+  const dateKey = `exit-date-${exitCase.id}`;
+  const basisKey = `exit-basis-${exitCase.id}`;
+  const authorityKey = `exit-authority-${exitCase.id}`;
+  const noteKey = `exit-note-${exitCase.id}`;
+  const cancellationReferenceKey = `exit-cancel-ref-${exitCase.id}`;
 
   const exitingUserId =
     workspace.staff.find((staff) => staff.id === exitCase.staffId)?.userId ?? null;
@@ -1549,9 +1549,9 @@ function ExitCard({
               {exitCase.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 exitCase.status,
-              )}\`}
+              )}`}
             >
               {readable(exitCase.status)}
             </span>
@@ -1609,7 +1609,7 @@ function ExitCard({
                     continuityRecipientAssignmentId:
                       selects[continuityKey] ?? "",
                   },
-                  \`exit-start-\${exitCase.id}\`,
+                  `exit-start-${exitCase.id}`,
                 )
               }
               className="mt-2 rounded-lg bg-orange-800 px-3 py-2 text-xs font-black text-white"
@@ -1661,7 +1661,7 @@ function ExitCard({
                         exitCase.authorityReviewReference,
                       note: notes[noteKey] ?? null,
                     },
-                    \`exit-update-\${exitCase.id}\`,
+                    `exit-update-${exitCase.id}`,
                   )
                 }
                 className="rounded-lg border border-orange-300 bg-white px-3 py-2 text-xs font-black text-orange-900"
@@ -1693,10 +1693,10 @@ function ExitCard({
             onClick={() =>
               void submit(
                 { mode: "finalize_exit", exitCaseId: exitCase.id },
-                \`exit-finalize-\${exitCase.id}\`,
+                `exit-finalize-${exitCase.id}`,
               )
             }
-            disabled={busyId === \`exit-finalize-\${exitCase.id}\`}
+            disabled={busyId === `exit-finalize-${exitCase.id}`}
             className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
           >
             Finalize exit & close KNS access
@@ -1718,7 +1718,7 @@ function ExitCard({
                     notes[noteKey] ??
                     "Staff withdrew the unacknowledged exit request.",
                 },
-                \`exit-withdraw-\${exitCase.id}\`,
+                `exit-withdraw-${exitCase.id}`,
               )
             }
             className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-black text-slate-700"
@@ -1751,7 +1751,7 @@ function ExitCard({
                       "Exit case cancelled by competent authority.",
                     reference: references[cancellationReferenceKey] ?? "",
                   },
-                  \`exit-cancel-\${exitCase.id}\`,
+                  `exit-cancel-${exitCase.id}`,
                 )
               }
               className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-black text-slate-700"
@@ -1771,7 +1771,7 @@ function ExitCard({
                   exitCaseId: exitCase.id,
                   action: "close",
                 },
-                \`exit-close-\${exitCase.id}\`,
+                `exit-close-${exitCase.id}`,
               )
             }
             className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white"
@@ -1809,9 +1809,9 @@ function TransitionItems({
         Transition controls
       </p>
       {items.map((item) => {
-        const noteKey = \`item-note-\${item.id}\`;
-        const referenceKey = \`item-reference-\${item.id}\`;
-        const busyKey = \`item-\${parentKey}-\${item.id}\`;
+        const noteKey = `item-note-${item.id}`;
+        const referenceKey = `item-reference-${item.id}`;
+        const busyKey = `item-${parentKey}-${item.id}`;
 
         return (
           <div
@@ -1831,9 +1831,9 @@ function TransitionItems({
                 </p>
               </div>
               <span
-                className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                   item.status,
-                )}\`}
+                )}`}
               >
                 {readable(item.status)}
               </span>
@@ -1890,7 +1890,7 @@ function TransitionItems({
                         itemId: item.id,
                         action: "verify",
                       },
-                      \`\${busyKey}-verify\`,
+                      `${busyKey}-verify`,
                     )
                   }
                   className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white"
@@ -1909,7 +1909,7 @@ function TransitionItems({
                           notes[noteKey] ??
                           "Evidence needs correction before transition completion.",
                       },
-                      \`\${busyKey}-reopen\`,
+                      `${busyKey}-reopen`,
                     )
                   }
                   className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700"
