@@ -107,6 +107,7 @@ begin
     '["Recognition reference/evidence","Corrective case notice and standard","Staff response/non-response record","Case evidence","Corrective commitment and verification","Resolution/closure history"]'::jsonb,
     'Strong conduct is visibly reinforced; ordinary accountability deviations are corrected without humiliation, arbitrary punishment or founder intervention.',
     '["Capability/training gap → O9 Staff Performance & Development","Serious misconduct/formal sanction may be warranted → PEO-013","Safeguarding/fraud/criminal/safety concern → specialised route","No competent internal manager because highest authority is the subject → external governance"]'::jsonb,
+    '["Unresolved ordinary corrective concern → immediate reporting leader","Repeated/serious conduct concern → PEO-013 through the competent reporting authority","Whole-school/cross-functional accountability defect → School Guardian","Case involving highest internal authority → independent external governance"]'::jsonb,
     '["Corrective cases awaiting response","Open corrective commitments","Overdue corrective commitments","Corrective actions independently verified","Cases referred to formal discipline","Evidence-based recognitions issued/withdrawn"]'::jsonb,
     current_date,v_actor,now(),'active'
   )
@@ -146,6 +147,7 @@ begin
     '["Case record and restricted audit trail","Specific allegation/statement and relevant standard","Response request/deadline and response/non-response record","Evidence relied upon","Hearing record where configured","Reasoned grievance/disciplinary outcome","Outcome delivery/acknowledgement","Corrective commitments and verification","Authority/legal review reference for separation recommendation"]'::jsonb,
     'Staff can raise concerns without informal suppression; formal discipline is defensible, auditable and separated from personality, rumour, retaliation or automatic scoring.',
     '["Vision Custodian is the grievance/discipline subject → independent external governance","Safeguarding/fraud/criminal/safety issue → specialised restricted/external route","High-severity employment consequence → qualified contract/legal/authority review before execution","No active staff record or reporting authority → People/Governance structure must be corrected first"]'::jsonb,
+    '["Ordinary staff grievance → competent common reporting authority","Serious/material formal discipline → School Guardian","School Guardian as subject → Vision Custodian","Vision Custodian as subject → independent external governance","Proposed separation/high-severity employment consequence → contract/legal/authority review and subsequent governed decision/exit process"]'::jsonb,
     '["Open grievances by stage","Cases awaiting staff response","Formal cases with hearing step overdue where configured","Formal outcomes by category","Cases referred to specialised/external process","Separation recommendations with required authority review reference","Cases closed without outstanding corrective commitments"]'::jsonb,
     current_date,v_actor,now(),'active'
   )
