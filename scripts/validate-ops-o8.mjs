@@ -51,7 +51,7 @@ for (const expected of [
   "KHP-OS does not replace the school attendance system.",
   "Transactional boundary",
   "Coverage gaps",
-  "Private reason hidden",
+  "private reason is hidden",
   "Confirm coverage plan",
   "Repeated absence is not solved by repeated reminders",
 ]) {
@@ -75,7 +75,7 @@ for (const expected of [
   "khpos_ops_coverage_action_server",
   "the unavailable person cannot cover their own absence through another role assignment",
   "active organisation membership and khp-os partnership are required",
-  "covering staff received private reason information",
+  "'reasoncategory',case when v.is_self or v.can_review then v.reason_category else null end",
   "from public,anon,authenticated",
   "to service_role",
 ]) {
