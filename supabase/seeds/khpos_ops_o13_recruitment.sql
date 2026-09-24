@@ -90,8 +90,8 @@ begin
     (v_policy,v_ai,'mandatory'),
     (v_policy,v_si,'mandatory'),
     (v_policy,v_sp,'mandatory'),
-    (v_policy,v_teacher,'awareness'),
-    (v_policy,v_facilitator,'awareness')
+    (v_policy,v_teacher,'reference'),
+    (v_policy,v_facilitator,'reference')
   on conflict do nothing;
 
   -- Safer-recruitment clearance controls.
