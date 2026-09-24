@@ -69,7 +69,7 @@ const workspace = read("src/components/khpos/ops/BuilderProjectsWorkspace.tsx");
 for (const expected of [
   "Operations · O20",
   "Builder Projects & Defence",
-  "Project Cycle →",
+  "Problem → Build → Test → Reflect → Defend",
   "Team success never becomes automatic evidence",
   "PipuPath boundary",
   "workspace.pipupathBoundary",
