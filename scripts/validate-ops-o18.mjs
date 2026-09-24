@@ -80,7 +80,7 @@ for (const [path, source] of [
 }
 
 const migration = read(
-  "supabase/migrations/20260924213000_khpos_ops_o18_leadership_financial.sql",
+  "supabase/migrations/20260924213818_khpos_ops_o18_leadership_financial.sql",
 ).toLowerCase();
 
 for (const expected of [
