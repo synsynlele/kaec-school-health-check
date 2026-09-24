@@ -69,7 +69,8 @@ for (const expected of [
   "Your response opportunity",
   "Record reasoned case decision",
   "A grievance is a request",
-  "O10 does not terminate employment",
+  "Employment-action boundary",
+  "workspace.legalBoundary",
 ]) {
   requireText(workspace, expected, "O10 workspace");
 }
