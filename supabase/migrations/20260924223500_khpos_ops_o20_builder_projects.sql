@@ -1153,6 +1153,19 @@ begin
       raise exception 'Project membership can only be added during idea/investigation stage.';
     end if;
 
+    if exists(
+      select 1
+      from public.khpos_ops_project_members existing_member
+      join public.khpos_ops_projects existing_project on existing_project.id=existing_member.project_id
+      where existing_member.learner_id=p_learner_id
+        and existing_member.status='active'
+        and existing_project.cycle_id=v_p.cycle_id
+        and existing_project.id<>v_p.id
+        and existing_project.status not in ('completed','withdrawn')
+    ) then
+      raise exception 'A learner may have only one active project in the same Project Cycle.';
+    end if;
+
     if v_p.project_type='personal' then
       if p_member_role<>'owner' then
         raise exception 'Personal Project member role must be owner.';
@@ -1667,6 +1680,9 @@ begin
   for update;
 
   if p_action='complete' then
+    if v_d.scheduled_at>now()+interval '5 minutes' then
+      raise exception 'Builder Defence outcome cannot be recorded before the scheduled defence time.';
+    end if;
     if p_outcome not in ('completed','showcase_ready','revision_required') then
       raise exception 'Unsupported Builder Defence outcome.';
     end if;
