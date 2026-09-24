@@ -38,6 +38,36 @@ export default function AuthCallbackPage() {
       }
 
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+
+      if (next === "/account") {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
+        if (token) {
+          try {
+            const response = await fetch("/api/account", {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: "no-store",
+            });
+            const body = (await response.json()) as {
+              ok?: boolean;
+              platformAdmin?: { role?: string; status?: string } | null;
+            };
+
+            if (
+              response.ok &&
+              body.ok &&
+              body.platformAdmin?.status === "active"
+            ) {
+              router.replace("/khpos/admin");
+              return;
+            }
+          } catch {
+            // If role discovery fails, fall back to the requested account route.
+          }
+        }
+      }
+
       router.replace(next);
     };
     void complete();
