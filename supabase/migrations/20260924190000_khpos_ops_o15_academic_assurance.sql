@@ -69,9 +69,12 @@ create table if not exists public.khpos_ops_assessment_packages (
   created_by uuid not null references auth.users(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (cycle_id,stream_id),
   unique (organisation_id,package_reference)
 );
+
+create unique index if not exists uq_khpos_ops_assessment_package_active_stream
+  on public.khpos_ops_assessment_packages(cycle_id,stream_id)
+  where moderation_state<>'withdrawn';
 
 create index if not exists idx_khpos_ops_assessment_packages_cycle
   on public.khpos_ops_assessment_packages(cycle_id,moderation_state);
@@ -292,9 +295,12 @@ create table if not exists public.khpos_ops_academic_closeouts (
   closed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (term_id),
   unique (organisation_id,closeout_reference)
 );
+
+create unique index if not exists uq_khpos_ops_academic_closeout_active_term
+  on public.khpos_ops_academic_closeouts(term_id)
+  where status<>'cancelled';
 
 create index if not exists idx_khpos_ops_academic_closeouts_org
   on public.khpos_ops_academic_closeouts(organisation_id,status,prepared_at desc);
@@ -1226,6 +1232,78 @@ begin
   return v_id;
 end;
 $$;
+
+create or replace function public.khpos_ops_update_assessment_package_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_package_id uuid,
+  p_assessment_source text,
+  p_source_reference text,
+  p_blueprint_reference text,
+  p_integrity_declaration boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $function$
+declare
+  v_package public.khpos_ops_assessment_packages%rowtype;
+begin
+  select * into v_package
+  from public.khpos_ops_assessment_packages
+  where id=p_package_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_package.id is null then raise exception 'Assessment package not found.'; end if;
+
+  if v_package.moderation_state not in ('draft','changes_required') then
+    raise exception 'Only draft or changes-required assessment packages can be updated.';
+  end if;
+
+  if not (
+    khpos_private.ops_assurance_can_manage(p_actor_user_id,p_organisation_id)
+    or khpos_private.ops_assurance_stream_teacher(
+      p_actor_user_id,p_organisation_id,v_package.stream_id
+    )
+  ) then
+    raise exception 'Only the assigned teacher or academic assurance authority can update this package.';
+  end if;
+
+  if p_assessment_source not in ('KSI','SIS','CBT','external','manual') then
+    raise exception 'Assessment source must be KSI, SIS, CBT, external or manual.';
+  end if;
+
+  if nullif(btrim(coalesce(p_source_reference,'')),'') is null
+     or nullif(btrim(coalesce(p_blueprint_reference,'')),'') is null then
+    raise exception 'Assessment source reference and blueprint/specification reference are required.';
+  end if;
+
+  update public.khpos_ops_assessment_packages
+  set assessment_source=p_assessment_source,
+      source_reference=left(btrim(p_source_reference),1000),
+      blueprint_reference=left(btrim(p_blueprint_reference),1000),
+      integrity_declaration=coalesce(p_integrity_declaration,false),
+      submitted_by=null,
+      submitted_at=null,
+      moderator_user_id=null,
+      moderation_note=null,
+      moderated_at=null,
+      approved_at=null,
+      moderation_state='draft',
+      updated_at=now()
+  where id=v_package.id;
+
+  insert into public.khpos_ops_academic_assurance_events(
+    organisation_id,package_id,actor_user_id,event_type,
+    from_state,to_state,note
+  ) values (
+    p_organisation_id,v_package.id,p_actor_user_id,
+    'assessment_package_updated',v_package.moderation_state,'draft',
+    'Assessment package source/blueprint metadata updated before resubmission.'
+  );
+end;
+$function$;
 
 create or replace function public.khpos_ops_assessment_package_action_server(
   p_actor_user_id uuid,
@@ -2326,6 +2404,71 @@ begin
 end;
 $$;
 
+create or replace function public.khpos_ops_update_academic_closeout_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_closeout_id uuid,
+  p_curriculum_summary text,
+  p_assessment_summary text,
+  p_learner_support_summary text,
+  p_integrity_summary text,
+  p_external_exam_summary text,
+  p_lessons_summary text,
+  p_carryover_reference text,
+  p_evidence_reference text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $function$
+declare
+  v_closeout public.khpos_ops_academic_closeouts%rowtype;
+begin
+  select * into v_closeout
+  from public.khpos_ops_academic_closeouts
+  where id=p_closeout_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_closeout.id is null then raise exception 'Academic close-out not found.'; end if;
+
+  if v_closeout.status<>'draft' then
+    raise exception 'Only a draft academic close-out can be edited.';
+  end if;
+
+  if v_closeout.prepared_by<>p_actor_user_id then
+    raise exception 'Only the Academic Inspector who prepared this close-out can edit it.';
+  end if;
+
+  if nullif(btrim(coalesce(p_curriculum_summary,'')),'') is null
+     or nullif(btrim(coalesce(p_assessment_summary,'')),'') is null
+     or nullif(btrim(coalesce(p_learner_support_summary,'')),'') is null
+     or nullif(btrim(coalesce(p_integrity_summary,'')),'') is null
+     or nullif(btrim(coalesce(p_lessons_summary,'')),'') is null then
+    raise exception 'Curriculum, assessment, learner-support, integrity and institutional-learning summaries are required.';
+  end if;
+
+  update public.khpos_ops_academic_closeouts
+  set curriculum_summary=left(btrim(p_curriculum_summary),8000),
+      assessment_summary=left(btrim(p_assessment_summary),8000),
+      learner_support_summary=left(btrim(p_learner_support_summary),8000),
+      integrity_summary=left(btrim(p_integrity_summary),8000),
+      external_exam_summary=left(nullif(btrim(coalesce(p_external_exam_summary,'')),''),8000),
+      lessons_summary=left(btrim(p_lessons_summary),8000),
+      carryover_reference=left(nullif(btrim(coalesce(p_carryover_reference,'')),''),1000),
+      evidence_reference=left(nullif(btrim(coalesce(p_evidence_reference,'')),''),1000),
+      updated_at=now()
+  where id=v_closeout.id;
+
+  insert into public.khpos_ops_academic_assurance_events(
+    organisation_id,term_id,closeout_id,actor_user_id,event_type,note
+  ) values (
+    p_organisation_id,v_closeout.term_id,v_closeout.id,p_actor_user_id,
+    'academic_closeout_updated','Draft academic close-out updated before submission.'
+  );
+end;
+$function$;
+
 create or replace function public.khpos_ops_academic_closeout_action_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -2428,6 +2571,22 @@ begin
     set status=v_to,submitted_at=now(),updated_at=now()
     where id=v_closeout.id;
 
+  elsif p_action='return_to_draft' then
+    if not khpos_private.ops_assurance_is_school_guardian(
+      p_actor_user_id,p_organisation_id
+    ) then
+      raise exception 'Only School Guardian can return an academic close-out for revision.';
+    end if;
+    if v_closeout.status<>'in_review' then
+      raise exception 'Only an in-review academic close-out can be returned for revision.';
+    end if;
+    if v_note is null then raise exception 'State the close-out revisions required.'; end if;
+
+    v_to := 'draft';
+    update public.khpos_ops_academic_closeouts
+    set status=v_to,submitted_at=null,approval_note=left(v_note,8000),updated_at=now()
+    where id=v_closeout.id;
+
   elsif p_action='approve' then
     if not khpos_private.ops_assurance_is_school_guardian(
       p_actor_user_id,p_organisation_id
@@ -2528,6 +2687,8 @@ revoke execute on function public.khpos_ops_assessment_cycle_action_server(uuid,
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_assessment_package_server(uuid,uuid,uuid,uuid,text,text,text,boolean)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_update_assessment_package_server(uuid,uuid,uuid,text,text,text,boolean)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_assessment_package_action_server(uuid,uuid,uuid,text,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_exam_readiness_item_server(uuid,uuid,uuid,uuid,text,text,text,uuid,date,boolean)
@@ -2550,6 +2711,8 @@ revoke execute on function public.khpos_ops_result_correction_action_server(uuid
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_academic_closeout_server(uuid,uuid,uuid,text,text,text,text,text,text,text,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_update_academic_closeout_server(uuid,uuid,uuid,text,text,text,text,text,text,text,text)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_academic_closeout_action_server(uuid,uuid,uuid,text,text)
   from public,anon,authenticated;
 
@@ -2565,6 +2728,7 @@ grant execute on function public.khpos_ops_get_academic_assurance_server(uuid,uu
 grant execute on function public.khpos_ops_create_assessment_cycle_server(uuid,uuid,uuid,uuid,text,text,text,date,date,date,text,text) to service_role;
 grant execute on function public.khpos_ops_assessment_cycle_action_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_create_assessment_package_server(uuid,uuid,uuid,uuid,text,text,text,boolean) to service_role;
+grant execute on function public.khpos_ops_update_assessment_package_server(uuid,uuid,uuid,text,text,text,boolean) to service_role;
 grant execute on function public.khpos_ops_assessment_package_action_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_create_exam_readiness_item_server(uuid,uuid,uuid,uuid,text,text,text,uuid,date,boolean) to service_role;
 grant execute on function public.khpos_ops_exam_readiness_action_server(uuid,uuid,uuid,text,text,text) to service_role;
@@ -2576,4 +2740,5 @@ grant execute on function public.khpos_ops_integrity_case_action_server(uuid,uui
 grant execute on function public.khpos_ops_request_result_correction_server(uuid,uuid,uuid,uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_result_correction_action_server(uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_create_academic_closeout_server(uuid,uuid,uuid,text,text,text,text,text,text,text,text) to service_role;
+grant execute on function public.khpos_ops_update_academic_closeout_server(uuid,uuid,uuid,text,text,text,text,text,text,text,text) to service_role;
 grant execute on function public.khpos_ops_academic_closeout_action_server(uuid,uuid,uuid,text,text) to service_role;
