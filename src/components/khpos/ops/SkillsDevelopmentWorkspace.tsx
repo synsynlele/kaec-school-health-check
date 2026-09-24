@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   BadgeCheck,
-  CalendarCheck,
-  CheckCircle2,
   Compass,
   Gauge,
   GitBranch,
@@ -1332,7 +1330,7 @@ function WeeklyReviewCard({
       />
 
       <div className="mt-2 flex flex-wrap gap-2">
-        {review.status === "draft" ? (
+        {review.status === "draft" && review.isPreparer ? (
           <button
             type="button"
             onClick={() =>
@@ -1351,7 +1349,7 @@ function WeeklyReviewCard({
           </button>
         ) : null}
 
-        {canManage && review.status === "submitted" ? (
+        {canManage && review.status === "submitted" && !review.isPreparer ? (
           <>
             <button
               type="button"
@@ -1666,8 +1664,13 @@ function CompetencyEvidenceCard({
           Linked into O16 Potential evidence
         </p>
       ) : null}
+      {canManage && evidence.isRecorder && evidence.status === "submitted" ? (
+        <p className="mt-2 text-[11px] font-bold text-amber-800">
+          Independent verification required from another authorised leader.
+        </p>
+      ) : null}
 
-      {canManage && ["submitted", "returned"].includes(evidence.status) ? (
+      {canManage && !evidence.isRecorder && ["submitted", "returned"].includes(evidence.status) ? (
         <div className="mt-3">
           <textarea
             value={notes[noteKey] ?? ""}
