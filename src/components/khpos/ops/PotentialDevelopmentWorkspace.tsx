@@ -273,27 +273,6 @@ export function PotentialDevelopmentWorkspace({
         ["draft", "returned", "submitted"].includes(review.status),
     ) ?? null;
 
-  useEffect(() => {
-    if (!currentReview) {
-      setReviewDiscovery("");
-      setReviewHypotheses("");
-      setReviewEvidence("");
-      setReviewDevelopment("");
-      setReviewContribution("");
-      setReviewPriorities("");
-      setReviewPortfolio("");
-      return;
-    }
-
-    setReviewDiscovery(currentReview.discoverySummary);
-    setReviewHypotheses(currentReview.hypothesisSummary);
-    setReviewEvidence(currentReview.evidenceSummary);
-    setReviewDevelopment(currentReview.developmentSummary);
-    setReviewContribution(currentReview.contributionSummary ?? "");
-    setReviewPriorities(currentReview.nextPriorities);
-    setReviewPortfolio(currentReview.portfolioReference ?? "");
-  }, [currentReview]);
-
   if (!workspace && !error) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
@@ -891,52 +870,53 @@ export function PotentialDevelopmentWorkspace({
 
                     <ActionCard
                       eyebrow="HPD-012"
-                      title={currentReview ? "Update term review" : "Prepare term review"}
+                      title={currentReview ? "Term review already open" : "Prepare term review"}
                       icon={CheckCircle2}
                     >
-                      {[
-                        ["Discovery summary", reviewDiscovery, setReviewDiscovery],
-                        ["Hypothesis summary", reviewHypotheses, setReviewHypotheses],
-                        ["Evidence summary", reviewEvidence, setReviewEvidence],
-                        ["Development summary", reviewDevelopment, setReviewDevelopment],
-                        ["Contribution summary", reviewContribution, setReviewContribution],
-                        ["Next priorities", reviewPriorities, setReviewPriorities],
-                      ].map(([label, value, setter]) => (
-                        <textarea
-                          key={String(label)}
-                          value={String(value)}
-                          onChange={(event) =>
-                            (setter as (value: string) => void)(event.target.value)
-                          }
-                          placeholder={String(label)}
-                          rows={2}
-                          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm first:mt-0"
-                        />
-                      ))}
-                      <input
-                        value={reviewPortfolio}
-                        onChange={(event) => setReviewPortfolio(event.target.value)}
-                        placeholder="Optional portfolio reference"
-                        className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <button
-                        type="button"
-                        disabled={busy === "review-save"}
-                        onClick={() =>
-                          void submit(
-                            currentReview
-                              ? {
-                                  mode: "update_review",
-                                  reviewId: currentReview.id,
-                                  discoverySummary: reviewDiscovery,
-                                  hypothesisSummary: reviewHypotheses,
-                                  evidenceSummary: reviewEvidence,
-                                  developmentSummary: reviewDevelopment,
-                                  contributionSummary: reviewContribution,
-                                  nextPriorities: reviewPriorities,
-                                  portfolioReference: reviewPortfolio,
-                                }
-                              : {
+                      {currentReview ? (
+                        <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
+                          <p className="text-sm font-black text-brand-950">
+                            {currentReview.reference} · {readable(currentReview.status)}
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-brand-800">
+                            Edit this review in its record below. Keeping the edit
+                            controls with the review avoids hidden state copies and
+                            preserves the exact draft/returned record being changed.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {[
+                            ["Discovery summary", reviewDiscovery, setReviewDiscovery],
+                            ["Hypothesis summary", reviewHypotheses, setReviewHypotheses],
+                            ["Evidence summary", reviewEvidence, setReviewEvidence],
+                            ["Development summary", reviewDevelopment, setReviewDevelopment],
+                            ["Contribution summary", reviewContribution, setReviewContribution],
+                            ["Next priorities", reviewPriorities, setReviewPriorities],
+                          ].map(([label, value, setter]) => (
+                            <textarea
+                              key={String(label)}
+                              value={String(value)}
+                              onChange={(event) =>
+                                (setter as (value: string) => void)(event.target.value)
+                              }
+                              placeholder={String(label)}
+                              rows={2}
+                              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm first:mt-0"
+                            />
+                          ))}
+                          <input
+                            value={reviewPortfolio}
+                            onChange={(event) => setReviewPortfolio(event.target.value)}
+                            placeholder="Optional portfolio reference"
+                            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          />
+                          <button
+                            type="button"
+                            disabled={busy === "review-save"}
+                            onClick={() =>
+                              void submit(
+                                {
                                   mode: "create_review",
                                   learnerId,
                                   termId,
@@ -948,13 +928,15 @@ export function PotentialDevelopmentWorkspace({
                                   nextPriorities: reviewPriorities,
                                   portfolioReference: reviewPortfolio,
                                 },
-                            "review-save",
-                          )
-                        }
-                        className="mt-3 rounded-xl bg-brand-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
-                      >
-                        {currentReview ? "Save review" : "Create review"}
-                      </button>
+                                "review-save",
+                              )
+                            }
+                            className="mt-3 rounded-xl bg-brand-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
+                          >
+                            Create review
+                          </button>
+                        </>
+                      )}
                     </ActionCard>
                   </section>
                 ) : null}
@@ -1381,6 +1363,17 @@ function ReviewCard({
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
   const noteKey = `review-note-${review.id}`;
+  const [discovery, setDiscovery] = useState(review.discoverySummary);
+  const [hypotheses, setHypotheses] = useState(review.hypothesisSummary);
+  const [evidence, setEvidence] = useState(review.evidenceSummary);
+  const [development, setDevelopment] = useState(review.developmentSummary);
+  const [contribution, setContribution] = useState(
+    review.contributionSummary ?? "",
+  );
+  const [priorities, setPriorities] = useState(review.nextPriorities);
+  const [portfolio, setPortfolio] = useState(review.portfolioReference ?? "");
+  const editable = ["draft", "returned"].includes(review.status);
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1396,32 +1389,107 @@ function ReviewCard({
           {readable(review.status)}
         </span>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <Summary label="Discovery" text={review.discoverySummary} />
-        <Summary label="Hypotheses" text={review.hypothesisSummary} />
-        <Summary label="Evidence" text={review.evidenceSummary} />
-        <Summary label="Development" text={review.developmentSummary} />
-        <Summary label="Next priorities" text={review.nextPriorities} />
-        <Summary
-          label="Contribution"
-          text={review.contributionSummary ?? "Not recorded"}
-        />
-      </div>
 
-      {["draft", "returned"].includes(review.status) ? (
-        <button
-          type="button"
-          onClick={() =>
-            void submit(
-              { mode: "review_action", reviewId: review.id, action: "submit" },
-              `review-submit-${review.id}`,
-            )
-          }
-          className="mt-4 rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
-        >
-          Submit evidence-gated review
-        </button>
-      ) : null}
+      {editable ? (
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          <textarea
+            value={discovery}
+            onChange={(event) => setDiscovery(event.target.value)}
+            placeholder="Discovery summary"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <textarea
+            value={hypotheses}
+            onChange={(event) => setHypotheses(event.target.value)}
+            placeholder="Hypothesis summary"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <textarea
+            value={evidence}
+            onChange={(event) => setEvidence(event.target.value)}
+            placeholder="Evidence summary"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <textarea
+            value={development}
+            onChange={(event) => setDevelopment(event.target.value)}
+            placeholder="Development summary"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <textarea
+            value={contribution}
+            onChange={(event) => setContribution(event.target.value)}
+            placeholder="Contribution summary"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <textarea
+            value={priorities}
+            onChange={(event) => setPriorities(event.target.value)}
+            placeholder="Next priorities"
+            rows={3}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <input
+            value={portfolio}
+            onChange={(event) => setPortfolio(event.target.value)}
+            placeholder="Optional portfolio reference"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+          />
+          <div className="flex flex-wrap gap-2 md:col-span-2">
+            <button
+              type="button"
+              onClick={() =>
+                void submit(
+                  {
+                    mode: "update_review",
+                    reviewId: review.id,
+                    discoverySummary: discovery,
+                    hypothesisSummary: hypotheses,
+                    evidenceSummary: evidence,
+                    developmentSummary: development,
+                    contributionSummary: contribution,
+                    nextPriorities: priorities,
+                    portfolioReference: portfolio,
+                  },
+                  `review-update-${review.id}`,
+                )
+              }
+              className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-black text-brand-800"
+            >
+              Save review
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void submit(
+                  { mode: "review_action", reviewId: review.id, action: "submit" },
+                  `review-submit-${review.id}`,
+                )
+              }
+              className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
+            >
+              Submit evidence-gated review
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <Summary label="Discovery" text={review.discoverySummary} />
+          <Summary label="Hypotheses" text={review.hypothesisSummary} />
+          <Summary label="Evidence" text={review.evidenceSummary} />
+          <Summary label="Development" text={review.developmentSummary} />
+          <Summary label="Next priorities" text={review.nextPriorities} />
+          <Summary
+            label="Contribution"
+            text={review.contributionSummary ?? "Not recorded"}
+          />
+        </div>
+      )}
 
       {review.status === "submitted" && workspace.canApproveReview ? (
         <div className="mt-4">
