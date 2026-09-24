@@ -565,16 +565,20 @@ begin
     raise exception 'Active organisation membership and KHP-OS partnership are required.';
   end if;
 
-  select i.*,oa.user_id,oa.role_id
-  into v_issue,v_owner_user,v_owner_role
+  select i.* into v_issue
   from public.khpos_ops_issues i
-  left join public.khpos_ops_role_assignments oa on oa.id=i.owner_assignment_id
   where i.id=p_issue_id
     and i.organisation_id=p_organisation_id
     and i.sensitivity='standard'
   limit 1;
 
   if v_issue.id is null then raise exception 'Issue not found.'; end if;
+
+  if v_issue.owner_assignment_id is not null then
+    select oa.user_id,oa.role_id into v_owner_user,v_owner_role
+    from public.khpos_ops_role_assignments oa
+    where oa.id=v_issue.owner_assignment_id;
+  end if;
 
   v_is_reporter := v_issue.reported_by=p_actor_user_id;
   v_is_owner := v_owner_user=p_actor_user_id;
