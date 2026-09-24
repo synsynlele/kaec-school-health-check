@@ -539,7 +539,7 @@ begin
   where id=v_role_id
     and organisation_id=p_organisation_id
     and status='active'
-    and category='staff';
+    and category<>'student';
 
   if v_role_code is null then raise exception 'Operating staff role not found.'; end if;
 
