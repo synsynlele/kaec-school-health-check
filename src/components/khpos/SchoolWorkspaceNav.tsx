@@ -11,6 +11,7 @@ import {
   Gauge,
   GraduationCap,
   LayoutDashboard,
+  LibraryBig,
   Target,
   UsersRound,
   Workflow,
@@ -28,6 +29,7 @@ const transformLinks = [
 
 const operationsLinks = [
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
+  { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
 
 const intelligenceLinks = [
