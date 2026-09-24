@@ -12,7 +12,6 @@ import {
   BarChart3,
   CheckCircle2,
   CircleAlert,
-  Clock3,
   Gauge,
   Loader2,
   Plus,
