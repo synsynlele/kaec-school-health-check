@@ -9,6 +9,7 @@ import {
   BookOpen,
   BrainCircuit,
   Building2,
+  CalendarClock,
   CheckCircle2,
   FileCheck2,
   Gauge,
@@ -38,6 +39,7 @@ const operationsLinks = [
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
   { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
   { suffix: "/people", label: "People & Staff", icon: UserRoundCheck },
+  { suffix: "/availability", label: "Availability & Coverage", icon: CalendarClock },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
