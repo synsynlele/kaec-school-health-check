@@ -43,6 +43,9 @@ expectContains("src/lib/khpos/benchmarking.ts", [
   "publicRankingEnabled: false",
   "getKhposBenchmarkWorkspace",
   "getKhposPortfolioIntelligence",
+  "retryReadOnJwtClockSkew",
+  "jwt issued at future",
+  "setTimeout(resolve, 750)",
 ]);
 
 expectContains("src/app/api/khpos/benchmarking/[id]/route.ts", [
