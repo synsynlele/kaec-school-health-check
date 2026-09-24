@@ -1338,8 +1338,7 @@ export function StaffAccountabilityWorkspace({
 
                     {review.canManage &&
                       review.responseState === "requested" &&
-                      review.responseDueAt &&
-                      new Date(review.responseDueAt).getTime() < Date.now() && (
+                      review.responseDueAt && (
                         <button
                           type="button"
                           onClick={() =>
