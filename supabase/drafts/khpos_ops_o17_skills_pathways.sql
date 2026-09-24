@@ -530,7 +530,8 @@ begin
           'safetyResourceSummary',w.safety_resource_summary,
           'recoveryActionNote',w.recovery_action_note,
           'valueCreationNote',w.value_creation_note,'status',w.status,
-          'preparedBy',w.prepared_by,'submittedAt',w.submitted_at,
+          'preparedBy',w.prepared_by,'isPreparer',w.prepared_by=p_actor_user_id,
+          'submittedAt',w.submitted_at,
           'approvedAt',w.approved_at,'approvalNote',w.approval_note,'returnNote',w.return_note
         ) order by w.week_start desc)
         from public.khpos_ops_skill_weekly_reviews w
@@ -571,7 +572,8 @@ begin
               'evidenceNote',e.evidence_note,'evidenceReference',e.evidence_reference,
               'observedAt',e.observed_at,'status',e.status,
               'verificationNote',e.verification_note,
-              'potentialEvidenceId',e.potential_evidence_id
+              'potentialEvidenceId',e.potential_evidence_id,
+              'isRecorder',e.recorded_by=p_actor_user_id
             ) order by e.observed_at desc)
             from public.khpos_ops_skill_competency_evidence e
             where e.selection_id=s.id
