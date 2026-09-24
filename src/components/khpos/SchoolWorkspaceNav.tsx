@@ -16,6 +16,7 @@ import {
   FileCheck2,
   Gauge,
   Gavel,
+  Hammer,
   GitBranch,
   GraduationCap,
   LayoutDashboard,
@@ -60,6 +61,7 @@ const operationsLinks = [
   { suffix: "/skills-development", label: "Skills Development", icon: Wrench },
   { suffix: "/leadership-financial", label: "Leadership & Finance", icon: CircleDollarSign },
   { suffix: "/young-ceo", label: "Young CEO Hub", icon: Rocket },
+  { suffix: "/builder-projects", label: "Builder Projects", icon: Hammer },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
