@@ -350,6 +350,28 @@ begin
 end;
 $o13$;
 
+create or replace function khpos_private.ops_recruitment_can_evaluate_any(
+  p_actor_user_id uuid,
+  p_organisation_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $o13$
+  select exists(
+    select 1
+    from public.khpos_ops_roles r
+    where r.organisation_id=p_organisation_id
+      and r.status='active'
+      and r.category<>'student'
+      and khpos_private.ops_can_review_staff(
+        p_actor_user_id,p_organisation_id,r.id
+      )
+  );
+$o13$;
+
 create or replace function public.khpos_ops_get_recruitment_server(
   p_actor_user_id uuid,
   p_organisation_id uuid
@@ -363,6 +385,7 @@ declare
   v_org_name text;
   v_member_role text;
   v_can_manage boolean;
+  v_can_evaluate boolean;
   v_roles jsonb := '[]'::jsonb;
   v_campuses jsonb := '[]'::jsonb;
   v_units jsonb := '[]'::jsonb;
@@ -387,9 +410,12 @@ begin
   v_can_manage := khpos_private.ops_recruitment_can_manage(
     p_actor_user_id,p_organisation_id
   );
+  v_can_evaluate := khpos_private.ops_recruitment_can_evaluate_any(
+    p_actor_user_id,p_organisation_id
+  );
 
-  if not v_can_manage then
-    raise exception 'Recruitment workspace is restricted to School Guardian and Vision Custodian.';
+  if not v_can_manage and not v_can_evaluate then
+    raise exception 'Recruitment workspace is restricted to People authority and role-scoped functional evaluators.';
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -433,7 +459,8 @@ begin
   into v_requests
   from public.khpos_ops_workforce_requests wr
   join public.khpos_ops_roles r on r.id=wr.role_id
-  where wr.organisation_id=p_organisation_id;
+  where wr.organisation_id=p_organisation_id
+    and v_can_manage;
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',v.id,'reference',v.vacancy_reference,
@@ -449,7 +476,13 @@ begin
   into v_vacancies
   from public.khpos_ops_recruitment_vacancies v
   join public.khpos_ops_roles r on r.id=v.role_id
-  where v.organisation_id=p_organisation_id;
+  where v.organisation_id=p_organisation_id
+    and (
+      v_can_manage
+      or khpos_private.ops_can_review_staff(
+        p_actor_user_id,p_organisation_id,v.role_id
+      )
+    );
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',a.id,'reference',a.application_reference,
@@ -492,22 +525,59 @@ begin
   join public.khpos_ops_recruitment_candidates c on c.id=a.candidate_id
   join public.khpos_ops_recruitment_vacancies v on v.id=a.vacancy_id
   join public.khpos_ops_roles r on r.id=v.role_id
-  where a.organisation_id=p_organisation_id;
+  where a.organisation_id=p_organisation_id
+    and (
+      v_can_manage
+      or khpos_private.ops_can_review_staff(
+        p_actor_user_id,p_organisation_id,v.role_id
+      )
+    );
 
   return jsonb_build_object(
     'organisation',jsonb_build_object('id',p_organisation_id,'name',v_org_name),
     'membershipRole',v_member_role,
     'canManageRecruitment',v_can_manage,
+    'canEvaluateCandidates',v_can_evaluate,
     'generatedAt',now(),
     'principle','Recruit because an approved institutional need exists; select with evidence; appoint only after safer-recruitment clearance.',
     'privacyBoundary','Recruitment stores only the candidate information, evidence references and clearance outcomes needed for the process. Sensitive-source records should remain with the authorised issuing/verification channel rather than being copied into KHP-OS.',
     'roles',v_roles,'campuses',v_campuses,'units',v_units,
     'workforceRequests',v_requests,'vacancies',v_vacancies,'applications',v_applications,
     'summary',jsonb_build_object(
-      'openRequests',(select count(*) from public.khpos_ops_workforce_requests where organisation_id=p_organisation_id and status in ('submitted','approved','vacancy_open')),
-      'openVacancies',(select count(*) from public.khpos_ops_recruitment_vacancies where organisation_id=p_organisation_id and status='open'),
-      'activeApplications',(select count(*) from public.khpos_ops_candidate_applications where organisation_id=p_organisation_id and stage not in ('declined','withdrawn','appointed')),
-      'clearancePending',(select count(*) from public.khpos_ops_candidate_applications where organisation_id=p_organisation_id and stage='clearance')
+      'openRequests',case when v_can_manage then (
+        select count(*) from public.khpos_ops_workforce_requests
+        where organisation_id=p_organisation_id
+          and status in ('submitted','approved','vacancy_open')
+      ) else 0 end,
+      'openVacancies',(
+        select count(*)
+        from public.khpos_ops_recruitment_vacancies vv
+        where vv.organisation_id=p_organisation_id
+          and vv.status='open'
+          and (
+            v_can_manage
+            or khpos_private.ops_can_review_staff(
+              p_actor_user_id,p_organisation_id,vv.role_id
+            )
+          )
+      ),
+      'activeApplications',(
+        select count(*)
+        from public.khpos_ops_candidate_applications aa
+        join public.khpos_ops_recruitment_vacancies vv on vv.id=aa.vacancy_id
+        where aa.organisation_id=p_organisation_id
+          and aa.stage not in ('declined','withdrawn','appointed')
+          and (
+            v_can_manage
+            or khpos_private.ops_can_review_staff(
+              p_actor_user_id,p_organisation_id,vv.role_id
+            )
+          )
+      ),
+      'clearancePending',case when v_can_manage then (
+        select count(*) from public.khpos_ops_candidate_applications
+        where organisation_id=p_organisation_id and stage='clearance'
+      ) else 0 end
     )
   );
 end;
@@ -960,6 +1030,18 @@ begin
   if p_evaluation_type not in ('screening','interview','demonstration','reference_review','other') then
     raise exception 'Unsupported evaluation type.';
   end if;
+
+  if p_evaluation_type='screening' and v_app.stage not in ('applied','screening') then
+    raise exception 'Screening evidence belongs to the Applied/Screening stage.';
+  end if;
+  if p_evaluation_type in ('interview','demonstration') and v_app.stage<>'interview' then
+    raise exception 'Interview/demonstration evidence belongs to the Interview stage.';
+  end if;
+  if p_evaluation_type='reference_review'
+     and v_app.stage not in ('screening','interview','conditional_selection','clearance') then
+    raise exception 'Reference review is not appropriate at this application stage.';
+  end if;
+
   if p_recommendation not in ('progress','needs_more_evidence','do_not_progress') then
     raise exception 'Unsupported candidate recommendation.';
   end if;
@@ -1359,6 +1441,7 @@ revoke execute on function khpos_private.ops_recruitment_has_membership(uuid,uui
 revoke execute on function khpos_private.ops_recruitment_can_manage(uuid,uuid) from public,anon,authenticated;
 revoke execute on function khpos_private.ops_recruitment_actor_has_role(uuid,uuid,text) from public,anon,authenticated;
 revoke execute on function khpos_private.ops_recruitment_can_approve_role(uuid,uuid,uuid) from public,anon,authenticated;
+revoke execute on function khpos_private.ops_recruitment_can_evaluate_any(uuid,uuid) from public,anon,authenticated;
 
 revoke execute on function public.khpos_ops_get_recruitment_server(uuid,uuid) from public,anon,authenticated;
 revoke execute on function public.khpos_ops_create_workforce_request_server(uuid,uuid,jsonb) from public,anon,authenticated;
@@ -1376,6 +1459,7 @@ grant execute on function khpos_private.ops_recruitment_has_membership(uuid,uuid
 grant execute on function khpos_private.ops_recruitment_can_manage(uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_recruitment_actor_has_role(uuid,uuid,text) to service_role;
 grant execute on function khpos_private.ops_recruitment_can_approve_role(uuid,uuid,uuid) to service_role;
+grant execute on function khpos_private.ops_recruitment_can_evaluate_any(uuid,uuid) to service_role;
 
 grant execute on function public.khpos_ops_get_recruitment_server(uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_create_workforce_request_server(uuid,uuid,jsonb) to service_role;
