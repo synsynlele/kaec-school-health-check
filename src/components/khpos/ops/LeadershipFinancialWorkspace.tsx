@@ -1130,6 +1130,12 @@ function FinancialCard({
           O4 recovery issue created · {item.issueId.slice(0, 8)}
         </p>
       ) : null}
+      {item.status === "missed" ? (
+        <p className="mt-2 text-xs font-black capitalize text-amber-800">
+          Recovery: {readable(item.recoveryStatus)}
+          {item.recoveryDueDate ? " · due " + formatDate(item.recoveryDueDate) : ""}
+        </p>
+      ) : null}
 
       {(item.isOwner || item.canManage) && item.status === "planned" ? (
         <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
@@ -1222,6 +1228,78 @@ function FinancialCard({
             >
               Cancel
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {(item.isOwner || item.canManage) &&
+      item.status === "missed" &&
+      ["required", "planned"].includes(item.recoveryStatus) ? (
+        <div className="mt-4 space-y-2 border-t border-amber-100 pt-4">
+          <p className="text-xs font-black text-amber-900">
+            Close the recovery obligation
+          </p>
+          <textarea
+            value={notes[noteKey] ?? ""}
+            onChange={(event) =>
+              setNotes((current) => ({
+                ...current,
+                [noteKey]: event.target.value,
+              }))
+            }
+            placeholder="What recovery happened, or why is a waiver justified?"
+            rows={2}
+            className="w-full rounded-xl border border-amber-200 px-3 py-2 text-xs"
+          />
+          <input
+            value={references[refKey] ?? ""}
+            onChange={(event) =>
+              setReferences((current) => ({
+                ...current,
+                [refKey]: event.target.value,
+              }))
+            }
+            placeholder="Recovery evidence reference"
+            className="w-full rounded-xl border border-amber-200 px-3 py-2 text-xs"
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                void submit(
+                  {
+                    mode: "financial_action",
+                    activityId: item.id,
+                    action: "recover",
+                    note: notes[noteKey] ?? "",
+                    evidenceReference: references[refKey] ?? "",
+                  },
+                  "fin-recover-" + item.id,
+                )
+              }
+              className="rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
+            >
+              Record recovery
+            </button>
+            {item.canManage ? (
+              <button
+                type="button"
+                onClick={() =>
+                  void submit(
+                    {
+                      mode: "financial_action",
+                      activityId: item.id,
+                      action: "waive_recovery",
+                      note: notes[noteKey] ?? "",
+                    },
+                    "fin-waive-" + item.id,
+                  )
+                }
+                className="rounded-full border border-amber-300 px-3 py-2 text-xs font-black text-amber-900"
+              >
+                Waive with reason
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
