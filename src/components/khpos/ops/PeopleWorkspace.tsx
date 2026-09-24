@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   BadgeCheck,
   CalendarClock,
-  CheckCircle2,
   ChevronDown,
   CircleAlert,
   Clock3,
