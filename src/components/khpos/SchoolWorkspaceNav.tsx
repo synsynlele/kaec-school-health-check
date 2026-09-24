@@ -12,6 +12,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Target,
+  UsersRound,
   Workflow,
 } from "lucide-react";
 
@@ -25,13 +26,21 @@ const transformLinks = [
   { suffix: "/improvement", label: "Improvement", icon: Activity },
 ] as const;
 
+const operationsLinks = [
+  { suffix: "/team", label: "Team & Roles", icon: UsersRound },
+] as const;
+
 const intelligenceLinks = [
   { suffix: "/benchmarking", label: "Benchmarking", icon: Gauge },
   { suffix: "/learning-intelligence", label: "Learning Intelligence", icon: GraduationCap },
   { suffix: "/human-potential-intelligence", label: "Human Potential", icon: BrainCircuit },
 ] as const;
 
-const workspaceLinks = [...transformLinks, ...intelligenceLinks] as const;
+const workspaceLinks = [
+  ...transformLinks,
+  ...operationsLinks,
+  ...intelligenceLinks,
+] as const;
 
 function isActive(pathname: string, base: string, suffix: string) {
   const href = `${base}${suffix}`;
@@ -111,6 +120,22 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             {transformLinks.map((item) => (
               <WorkspaceLink
                 key={item.suffix || "command-centre"}
+                base={base}
+                pathname={pathname}
+                {...item}
+              />
+            ))}
+          </div>
+
+          <div className="my-4 border-t border-white/10" />
+
+          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+            Operate
+          </p>
+          <div className="mt-2 space-y-1">
+            {operationsLinks.map((item) => (
+              <WorkspaceLink
+                key={item.suffix}
                 base={base}
                 pathname={pathname}
                 {...item}
