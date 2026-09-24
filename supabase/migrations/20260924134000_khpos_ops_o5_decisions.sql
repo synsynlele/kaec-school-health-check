@@ -213,6 +213,7 @@ set search_path = public, auth, khpos_private, pg_temp
 as $$
 declare
   v_decision public.khpos_ops_decisions%rowtype;
+  v_completed_by uuid;
 begin
   if new.source_decision_id is null then return new; end if;
 
@@ -223,6 +224,10 @@ begin
     for update;
 
     if v_decision.id is not null and v_decision.status='approved' then
+      select a.user_id into v_completed_by
+      from public.khpos_ops_role_assignments a
+      where a.id=new.owner_assignment_id;
+
       update public.khpos_ops_decisions
       set status='implemented',implemented_at=now(),updated_at=now()
       where id=v_decision.id;
@@ -230,7 +235,7 @@ begin
       insert into public.khpos_ops_decision_events(
         organisation_id,decision_id,actor_user_id,event_type,from_status,to_status,note,metadata
       ) values (
-        v_decision.organisation_id,v_decision.id,new.completed_by,'implementation_completed',
+        v_decision.organisation_id,v_decision.id,v_completed_by,'implementation_completed',
         'approved','implemented','The approved action was completed in My Work.',
         jsonb_build_object('workItemId',new.id)
       );
