@@ -25,7 +25,7 @@ function readable(value: string | null | undefined) {
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(\`\${value}T00:00:00\`),
+    new Date(`${value}T00:00:00`),
   );
 }
 
@@ -134,9 +134,9 @@ export function LearnerProgressWorkspace({
       }
 
       const response = await fetch(
-        \`/api/khpos/ops/learner-progress/\${organisationId}\`,
+        `/api/khpos/ops/learner-progress/${organisationId}`,
         {
-          headers: { Authorization: \`Bearer \${accessToken}\` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           cache: "no-store",
         },
       );
@@ -187,11 +187,11 @@ export function LearnerProgressWorkspace({
     setError("");
 
     const response = await fetch(
-      \`/api/khpos/ops/learner-progress/\${organisationId}\`,
+      `/api/khpos/ops/learner-progress/${organisationId}`,
       {
         method: "POST",
         headers: {
-          Authorization: \`Bearer \${accessToken}\`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -237,7 +237,7 @@ export function LearnerProgressWorkspace({
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={\`/khpos/\${organisationId}\`}
+            href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
@@ -257,7 +257,7 @@ export function LearnerProgressWorkspace({
               Operations · O14
             </span>
             <Link
-              href={\`/khpos/\${organisationId}/academic-delivery\`}
+              href={`/khpos/${organisationId}/academic-delivery`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
@@ -456,7 +456,7 @@ export function LearnerProgressWorkspace({
                         <option key={learner.id} value={learner.id}>
                           {learner.displayName} · {learner.classLabel}
                           {learner.sectionLabel
-                            ? \` \${learner.sectionLabel}\`
+                            ? ` ${learner.sectionLabel}`
                             : ""}
                         </option>
                       ))}
@@ -567,7 +567,7 @@ export function LearnerProgressWorkspace({
                     {workspace.learners.map((learner) => (
                       <option key={learner.id} value={learner.id}>
                         {learner.displayName} · {learner.classLabel}
-                        {learner.sectionLabel ? \` \${learner.sectionLabel}\` : ""}
+                        {learner.sectionLabel ? ` ${learner.sectionLabel}` : ""}
                       </option>
                     ))}
                   </select>
@@ -1053,9 +1053,9 @@ export function LearnerProgressWorkspace({
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${badgeClass(
+                          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
                             decision.status,
-                          )}\`}
+                          )}`}
                         >
                           {readable(decision.status)}
                         </span>
@@ -1077,11 +1077,11 @@ export function LearnerProgressWorkspace({
                       {workspace.canManage && decision.status === "proposed" ? (
                         <div className="mt-4 space-y-2">
                           <textarea
-                            value={notes[\`progression-\${decision.id}\`] ?? ""}
+                            value={notes[`progression-${decision.id}`] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
                                 ...current,
-                                [\`progression-\${decision.id}\`]:
+                                [`progression-${decision.id}`]:
                                   event.target.value,
                               }))
                             }
@@ -1100,10 +1100,10 @@ export function LearnerProgressWorkspace({
                                     action: "confirm",
                                     confirmationNote:
                                       notes[
-                                        \`progression-\${decision.id}\`
+                                        `progression-${decision.id}`
                                       ] ?? "",
                                   },
-                                  \`progression-confirm-\${decision.id}\`,
+                                  `progression-confirm-${decision.id}`,
                                 )
                               }
                               className="rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
@@ -1120,10 +1120,10 @@ export function LearnerProgressWorkspace({
                                     action: "cancel",
                                     confirmationNote:
                                       notes[
-                                        \`progression-\${decision.id}\`
+                                        `progression-${decision.id}`
                                       ] ?? "",
                                   },
-                                  \`progression-cancel-\${decision.id}\`,
+                                  `progression-cancel-${decision.id}`,
                                 )
                               }
                               className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-700"
@@ -1180,11 +1180,11 @@ function RiskSignalCard({
   setDates: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submit: (payload: Record<string, unknown>, busyKey: string) => Promise<boolean>;
 }) {
-  const responseKey = \`signal-response-\${signal.id}\`;
-  const responseRefKey = \`signal-ref-\${signal.id}\`;
-  const ownerKey = \`signal-owner-\${signal.id}\`;
-  const reviewKey = \`signal-review-\${signal.id}\`;
-  const concernKey = \`signal-concern-\${signal.id}\`;
+  const responseKey = `signal-response-${signal.id}`;
+  const responseRefKey = `signal-ref-${signal.id}`;
+  const ownerKey = `signal-owner-${signal.id}`;
+  const reviewKey = `signal-review-${signal.id}`;
+  const concernKey = `signal-concern-${signal.id}`;
   const caseOwners = workspace.assignments.filter((item) =>
     ["SECTIONAL_PROMOTER", "ACADEMIC_INSPECTOR", "SCHOOL_GUARDIAN"].includes(
       item.roleCode,
@@ -1195,16 +1195,16 @@ function RiskSignalCard({
     <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${badgeClass(
+          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
             signal.severity,
-          )}\`}
+          )}`}
         >
           {signal.severity}
         </span>
         <span
-          className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${badgeClass(
+          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
             signal.status,
-          )}\`}
+          )}`}
         >
           {signal.status}
         </span>
@@ -1214,7 +1214,7 @@ function RiskSignalCard({
       </div>
       <h3 className="mt-3 text-lg font-black">
         {signal.learnerName} · {signal.classLabel}
-        {signal.sectionLabel ? \` \${signal.sectionLabel}\` : ""}
+        {signal.sectionLabel ? ` ${signal.sectionLabel}` : ""}
       </h3>
       <p className="mt-1 text-xs font-bold capitalize text-slate-500">
         {readable(signal.signalType)} · {signal.sourceSystem}
@@ -1265,10 +1265,10 @@ function RiskSignalCard({
                   responseNote: notes[responseKey] ?? "",
                   evidenceReference: references[responseRefKey] ?? null,
                 },
-                \`signal-resolve-\${signal.id}\`,
+                `signal-resolve-${signal.id}`,
               )
             }
-            disabled={busyId === \`signal-resolve-\${signal.id}\`}
+            disabled={busyId === `signal-resolve-${signal.id}`}
             className="mt-2 rounded-full bg-amber-800 px-3 py-2 text-xs font-black text-white disabled:opacity-50"
           >
             Resolve with evidence
@@ -1337,7 +1337,7 @@ function RiskSignalCard({
                     caseOwnerAssignmentId: selects[ownerKey] ?? "",
                     reviewDueDate: dates[reviewKey] ?? "",
                   },
-                  \`signal-case-\${signal.id}\`,
+                  `signal-case-${signal.id}`,
                 )
               }
               className="rounded-full bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -1376,30 +1376,30 @@ function SupportCaseCard({
   setDates: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submit: (payload: Record<string, unknown>, busyKey: string) => Promise<boolean>;
 }) {
-  const diagnosisSummaryKey = \`diag-summary-\${supportCase.id}\`;
-  const diagnosisEvidenceKey = \`diag-evidence-\${supportCase.id}\`;
-  const diagnosisRefKey = \`diag-ref-\${supportCase.id}\`;
-  const diagnosisBarrierKey = \`diag-barriers-\${supportCase.id}\`;
-  const interventionOwnerKey = \`int-owner-\${supportCase.id}\`;
-  const interventionTierKey = \`int-tier-\${supportCase.id}\`;
-  const interventionTargetKey = \`int-target-\${supportCase.id}\`;
-  const interventionPlanKey = \`int-plan-\${supportCase.id}\`;
-  const interventionStartKey = \`int-start-\${supportCase.id}\`;
-  const interventionReviewKey = \`int-review-\${supportCase.id}\`;
-  const interventionCriteriaKey = \`int-criteria-\${supportCase.id}\`;
-  const parentSummaryKey = \`parent-summary-\${supportCase.id}\`;
-  const parentActionKey = \`parent-action-\${supportCase.id}\`;
-  const parentRefKey = \`parent-ref-\${supportCase.id}\`;
-  const reassessOutcomeKey = \`reassess-outcome-\${supportCase.id}\`;
-  const reassessInterventionKey = \`reassess-intervention-\${supportCase.id}\`;
-  const reassessEvidenceKey = \`reassess-evidence-\${supportCase.id}\`;
-  const reassessRefKey = \`reassess-ref-\${supportCase.id}\`;
-  const reassessNextKey = \`reassess-next-\${supportCase.id}\`;
-  const escalationOwnerKey = \`escalate-owner-\${supportCase.id}\`;
-  const escalationSeverityKey = \`escalate-severity-\${supportCase.id}\`;
-  const escalationNoteKey = \`escalate-note-\${supportCase.id}\`;
-  const issueRefKey = \`escalate-issue-\${supportCase.id}\`;
-  const closeKey = \`close-\${supportCase.id}\`;
+  const diagnosisSummaryKey = `diag-summary-${supportCase.id}`;
+  const diagnosisEvidenceKey = `diag-evidence-${supportCase.id}`;
+  const diagnosisRefKey = `diag-ref-${supportCase.id}`;
+  const diagnosisBarrierKey = `diag-barriers-${supportCase.id}`;
+  const interventionOwnerKey = `int-owner-${supportCase.id}`;
+  const interventionTierKey = `int-tier-${supportCase.id}`;
+  const interventionTargetKey = `int-target-${supportCase.id}`;
+  const interventionPlanKey = `int-plan-${supportCase.id}`;
+  const interventionStartKey = `int-start-${supportCase.id}`;
+  const interventionReviewKey = `int-review-${supportCase.id}`;
+  const interventionCriteriaKey = `int-criteria-${supportCase.id}`;
+  const parentSummaryKey = `parent-summary-${supportCase.id}`;
+  const parentActionKey = `parent-action-${supportCase.id}`;
+  const parentRefKey = `parent-ref-${supportCase.id}`;
+  const reassessOutcomeKey = `reassess-outcome-${supportCase.id}`;
+  const reassessInterventionKey = `reassess-intervention-${supportCase.id}`;
+  const reassessEvidenceKey = `reassess-evidence-${supportCase.id}`;
+  const reassessRefKey = `reassess-ref-${supportCase.id}`;
+  const reassessNextKey = `reassess-next-${supportCase.id}`;
+  const escalationOwnerKey = `escalate-owner-${supportCase.id}`;
+  const escalationSeverityKey = `escalate-severity-${supportCase.id}`;
+  const escalationNoteKey = `escalate-note-${supportCase.id}`;
+  const issueRefKey = `escalate-issue-${supportCase.id}`;
+  const closeKey = `close-${supportCase.id}`;
 
   const caseOwners = workspace.assignments.filter((item) =>
     ["SECTIONAL_PROMOTER", "ACADEMIC_INSPECTOR", "SCHOOL_GUARDIAN"].includes(
@@ -1416,16 +1416,16 @@ function SupportCaseCard({
               {supportCase.reference}
             </span>
             <span
-              className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${badgeClass(
+              className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
                 supportCase.severity,
-              )}\`}
+              )}`}
             >
               {supportCase.severity}
             </span>
             <span
-              className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${badgeClass(
+              className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
                 supportCase.status,
-              )}\`}
+              )}`}
             >
               {readable(supportCase.status)}
             </span>
@@ -1433,7 +1433,7 @@ function SupportCaseCard({
           <h3 className="mt-3 text-xl font-black">
             {supportCase.learnerName} · {supportCase.classLabel}
             {supportCase.sectionLabel
-              ? \` \${supportCase.sectionLabel}\`
+              ? ` ${supportCase.sectionLabel}`
               : ""}
           </h3>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-700">
@@ -1481,11 +1481,11 @@ function SupportCaseCard({
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
             <select
-              value={selects[\`diag-source-\${supportCase.id}\`] ?? "manual"}
+              value={selects[`diag-source-${supportCase.id}`] ?? "manual"}
               onChange={(event) =>
                 setSelects((current) => ({
                   ...current,
-                  [\`diag-source-\${supportCase.id}\`]: event.target.value,
+                  [`diag-source-${supportCase.id}`]: event.target.value,
                 }))
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
@@ -1548,9 +1548,9 @@ function SupportCaseCard({
                   evidenceNote: notes[diagnosisEvidenceKey] ?? "",
                   evidenceReference: references[diagnosisRefKey] ?? "",
                   diagnosisSource:
-                    selects[\`diag-source-\${supportCase.id}\`] ?? "manual",
+                    selects[`diag-source-${supportCase.id}`] ?? "manual",
                 },
-                \`diagnosis-\${supportCase.id}\`,
+                `diagnosis-${supportCase.id}`,
               )
             }
             className="mt-3 rounded-full bg-violet-700 px-3 py-2 text-xs font-black text-white"
@@ -1674,7 +1674,7 @@ function SupportCaseCard({
                   reviewDate: dates[interventionReviewKey] ?? "",
                   successCriteria: notes[interventionCriteriaKey] ?? "",
                 },
-                \`intervention-\${supportCase.id}\`,
+                `intervention-${supportCase.id}`,
               )
             }
             className="mt-3 rounded-full bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -1703,9 +1703,9 @@ function SupportCaseCard({
                   </p>
                 </div>
                 <span
-                  className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${badgeClass(
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${badgeClass(
                     intervention.status,
-                  )}\`}
+                  )}`}
                 >
                   {readable(intervention.status)}
                 </span>
@@ -1737,11 +1737,11 @@ function SupportCaseCard({
               !["completed", "cancelled"].includes(intervention.status) ? (
                 <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
                   <textarea
-                    value={notes[\`activity-\${intervention.id}\`] ?? ""}
+                    value={notes[`activity-${intervention.id}`] ?? ""}
                     onChange={(event) =>
                       setNotes((current) => ({
                         ...current,
-                        [\`activity-\${intervention.id}\`]: event.target.value,
+                        [`activity-${intervention.id}`]: event.target.value,
                       }))
                     }
                     rows={2}
@@ -1751,22 +1751,22 @@ function SupportCaseCard({
                   <div className="space-y-2">
                     <input
                       type="date"
-                      value={dates[\`activity-\${intervention.id}\`] ?? ""}
+                      value={dates[`activity-${intervention.id}`] ?? ""}
                       onChange={(event) =>
                         setDates((current) => ({
                           ...current,
-                          [\`activity-\${intervention.id}\`]:
+                          [`activity-${intervention.id}`]:
                             event.target.value,
                         }))
                       }
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
                     />
                     <input
-                      value={references[\`activity-\${intervention.id}\`] ?? ""}
+                      value={references[`activity-${intervention.id}`] ?? ""}
                       onChange={(event) =>
                         setReferences((current) => ({
                           ...current,
-                          [\`activity-\${intervention.id}\`]:
+                          [`activity-${intervention.id}`]:
                             event.target.value,
                         }))
                       }
@@ -1782,13 +1782,13 @@ function SupportCaseCard({
                           mode: "add_activity",
                           interventionId: intervention.id,
                           activityDate:
-                            dates[\`activity-\${intervention.id}\`] ?? "",
+                            dates[`activity-${intervention.id}`] ?? "",
                           activityNote:
-                            notes[\`activity-\${intervention.id}\`] ?? "",
+                            notes[`activity-${intervention.id}`] ?? "",
                           evidenceReference:
-                            references[\`activity-\${intervention.id}\`] ?? null,
+                            references[`activity-${intervention.id}`] ?? null,
                         },
-                        \`activity-\${intervention.id}\`,
+                        `activity-${intervention.id}`,
                       )
                     }
                     className="self-end rounded-full bg-slate-900 px-3 py-2 text-xs font-black text-white"
@@ -1812,21 +1812,21 @@ function SupportCaseCard({
             <div className="mt-3 space-y-2">
               <input
                 type="date"
-                value={dates[\`parent-date-\${supportCase.id}\`] ?? ""}
+                value={dates[`parent-date-${supportCase.id}`] ?? ""}
                 onChange={(event) =>
                   setDates((current) => ({
                     ...current,
-                    [\`parent-date-\${supportCase.id}\`]: event.target.value,
+                    [`parent-date-${supportCase.id}`]: event.target.value,
                   }))
                 }
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
               />
               <select
-                value={selects[\`parent-channel-\${supportCase.id}\`] ?? "meeting"}
+                value={selects[`parent-channel-${supportCase.id}`] ?? "meeting"}
                 onChange={(event) =>
                   setSelects((current) => ({
                     ...current,
-                    [\`parent-channel-\${supportCase.id}\`]:
+                    [`parent-channel-${supportCase.id}`]:
                       event.target.value,
                   }))
                 }
@@ -1882,9 +1882,9 @@ function SupportCaseCard({
                       mode: "record_parent_partnership",
                       caseId: supportCase.id,
                       contactDate:
-                        dates[\`parent-date-\${supportCase.id}\`] ?? "",
+                        dates[`parent-date-${supportCase.id}`] ?? "",
                       channel:
-                        selects[\`parent-channel-\${supportCase.id}\`] ??
+                        selects[`parent-channel-${supportCase.id}`] ??
                         "meeting",
                       summary: notes[parentSummaryKey] ?? "",
                       agreedAction: notes[parentActionKey] ?? null,
@@ -1892,7 +1892,7 @@ function SupportCaseCard({
                       staffActionDueDate: null,
                       evidenceReference: references[parentRefKey] ?? null,
                     },
-                    \`parent-\${supportCase.id}\`,
+                    `parent-${supportCase.id}`,
                   )
                 }
                 className="rounded-full bg-slate-900 px-3 py-2 text-xs font-black text-white"
@@ -1989,7 +1989,7 @@ function SupportCaseCard({
                       evidenceReference: references[reassessRefKey] ?? "",
                       nextAction: notes[reassessNextKey] ?? null,
                     },
-                    \`reassess-\${supportCase.id}\`,
+                    `reassess-${supportCase.id}`,
                   )
                 }
                 className="rounded-full bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -2071,7 +2071,7 @@ function SupportCaseCard({
                       escalationNote: notes[escalationNoteKey] ?? "",
                       linkedIssueId: references[issueRefKey] || null,
                     },
-                    \`escalate-\${supportCase.id}\`,
+                    `escalate-${supportCase.id}`,
                   )
                 }
                 className="rounded-full bg-orange-700 px-3 py-2 text-xs font-black text-white"
@@ -2093,9 +2093,9 @@ function SupportCaseCard({
               <div key={item.id} className="rounded-xl bg-slate-50 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={\`rounded-full border px-2.5 py-1 text-[10px] font-black capitalize \${badgeClass(
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-black capitalize ${badgeClass(
                       item.outcome,
-                    )}\`}
+                    )}`}
                   >
                     {readable(item.outcome)}
                   </span>
@@ -2143,7 +2143,7 @@ function SupportCaseCard({
                   caseId: supportCase.id,
                   closureNote: notes[closeKey] ?? "",
                 },
-                \`close-\${supportCase.id}\`,
+                `close-${supportCase.id}`,
               )
             }
             className="mt-2 rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
