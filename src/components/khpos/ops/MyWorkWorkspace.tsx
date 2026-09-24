@@ -51,36 +51,44 @@ export function MyWorkWorkspace({
     return data.session?.access_token ?? null;
   }
 
-  async function load() {
-    const token = await accessToken();
-    if (!token) {
-      setError("Your session has ended. Sign in again to continue.");
-      return;
-    }
-
-    const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const body = (await response.json()) as {
-      ok?: boolean;
-      work?: KhposOpsMyWork;
-      error?: string;
-    };
-
-    if (!response.ok || !body.ok || !body.work) {
-      setError(body.error ?? "My Work could not be loaded.");
-      return;
-    }
-
-    setWork(body.work);
-    setError("");
-  }
-
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organisationId]);
+    if (!supabase) return;
+    let active = true;
+
+    void supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
+
+      const token = data.session?.access_token;
+      if (!token) {
+        setError("Your session has ended. Sign in again to continue.");
+        return;
+      }
+
+      const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      const body = (await response.json()) as {
+        ok?: boolean;
+        work?: KhposOpsMyWork;
+        error?: string;
+      };
+
+      if (!active) return;
+
+      if (!response.ok || !body.ok || !body.work) {
+        setError(body.error ?? "My Work could not be loaded.");
+        return;
+      }
+
+      setWork(body.work);
+      setError("");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [organisationId, supabase]);
 
   async function act(
     item: KhposOpsWorkItem,
