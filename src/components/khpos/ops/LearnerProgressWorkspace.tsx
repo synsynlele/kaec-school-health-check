@@ -3,13 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowLeft,
   BookOpenCheck,
-  CheckCircle2,
   CircleAlert,
-  ClipboardList,
-  GraduationCap,
   Loader2,
   ShieldCheck,
   UserRoundSearch,
@@ -251,12 +247,6 @@ export function LearnerProgressWorkspace({
       </main>
     );
   }
-
-  const caseOwners = workspace.assignments.filter((item) =>
-    ["SECTIONAL_PROMOTER", "ACADEMIC_INSPECTOR", "SCHOOL_GUARDIAN"].includes(
-      item.roleCode,
-    ),
-  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -661,7 +651,9 @@ export function LearnerProgressWorkspace({
                           sourceSystem: signalSource,
                           sourceReference: signalSourceRef || null,
                           signalNote,
-                          observedAt: signalObservedAt,
+                          observedAt: signalObservedAt
+                            ? new Date(signalObservedAt).toISOString()
+                            : "",
                         },
                         "signal",
                       )
@@ -698,7 +690,6 @@ export function LearnerProgressWorkspace({
                       key={signal.id}
                       signal={signal}
                       workspace={workspace}
-                      busyId={busyId}
                       notes={notes}
                       references={references}
                       selects={selects}
@@ -1165,7 +1156,6 @@ function Empty({ text }: { text: string }) {
 function RiskSignalCard({
   signal,
   workspace,
-  busyId,
   notes,
   references,
   selects,
@@ -1178,7 +1168,6 @@ function RiskSignalCard({
 }: {
   signal: KhposOpsLearnerRiskSignal;
   workspace: KhposOpsLearnerProgressWorkspace;
-  busyId: string | null;
   notes: Record<string, string>;
   references: Record<string, string>;
   selects: Record<string, string>;
