@@ -17,6 +17,7 @@ import {
   LibraryBig,
   ListTodo,
   Target,
+  UserRoundCheck,
   UsersRound,
   Workflow,
 } from "lucide-react";
@@ -36,6 +37,7 @@ const operationsLinks = [
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
   { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
+  { suffix: "/people", label: "People & Staff", icon: UserRoundCheck },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
