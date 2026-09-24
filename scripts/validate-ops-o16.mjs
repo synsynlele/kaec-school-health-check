@@ -72,7 +72,7 @@ if ((workspace.match(/\\`/g) || []).length > 0 || (workspace.match(/\\\$\{/g) ||
 }
 
 const migration = read(
-  "supabase/migrations/20260924194500_khpos_ops_o16_potential_discovery.sql",
+  "supabase/migrations/20260924194015_khpos_ops_o16_potential_discovery.sql",
 ).toLowerCase();
 
 for (const expected of [
