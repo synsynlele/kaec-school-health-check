@@ -64,6 +64,7 @@ export interface KhposOpsCoverageAssignment {
   assignedAt: string;
   respondedAt: string | null;
   completedAt: string | null;
+  isCoverer: boolean;
   canAct: boolean;
 }
 
