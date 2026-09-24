@@ -397,14 +397,14 @@ begin
     left join lateral (
       select m.*
       from public.khpos_ops_kpi_measurements m
-      where m.kpi_version_id=v.id
+      where m.kpi_id=k.id
       order by m.period_end desc,m.recorded_at desc
       limit 1
     ) latest on true
     left join lateral (
       select m.*
       from public.khpos_ops_kpi_measurements m
-      where m.kpi_version_id=v.id
+      where m.kpi_id=k.id
         and (latest.id is null or m.id<>latest.id)
       order by m.period_end desc,m.recorded_at desc
       limit 1
@@ -747,6 +747,129 @@ begin
 end;
 $$;
 
+
+create or replace function public.khpos_ops_configure_kpi_target_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_kpi_id uuid,
+  p_direction text,
+  p_target_config jsonb,
+  p_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_current public.khpos_ops_kpi_versions%rowtype;
+  v_new_id uuid;
+  v_next_version integer;
+  v_direction text := lower(nullif(btrim(p_direction),''));
+begin
+  if not khpos_private.ops_can_govern_performance(p_actor_user_id,p_organisation_id) then
+    raise exception 'KPI target governance requires an active School Guardian or Vision Custodian role.';
+  end if;
+
+  if v_direction not in ('baseline_only','higher_is_better','lower_is_better','binary_control') then
+    raise exception 'Unsupported KPI direction.';
+  end if;
+  if jsonb_typeof(coalesce(p_target_config,'{}'::jsonb))<>'object' then
+    raise exception 'KPI target configuration must be an object.';
+  end if;
+
+  select v.* into v_current
+  from public.khpos_ops_kpi_versions v
+  join public.khpos_ops_kpis k on k.id=v.kpi_id
+  where v.kpi_id=p_kpi_id
+    and v.status='active'
+    and k.organisation_id=p_organisation_id
+    and k.status='active'
+  for update;
+
+  if v_current.id is null then raise exception 'Active KPI definition not found.'; end if;
+
+  perform khpos_private.ops_kpi_status(v_direction,coalesce(p_target_config,'{}'::jsonb),0);
+
+  select coalesce(max(version),0)+1 into v_next_version
+  from public.khpos_ops_kpi_versions
+  where kpi_id=p_kpi_id;
+
+  update public.khpos_ops_kpi_versions
+  set status='superseded'
+  where id=v_current.id;
+
+  insert into public.khpos_ops_kpi_versions(
+    kpi_id,version,definition,owner_role_id,scope_type,scope_role_id,campus_id,unit_id,system_code,
+    indicator_type,unit,direction,cadence,source_type,source_key,target_config,critical_control,
+    effective_date,approved_by,approved_at,status
+  ) values (
+    v_current.kpi_id,v_next_version,v_current.definition,v_current.owner_role_id,
+    v_current.scope_type,v_current.scope_role_id,v_current.campus_id,v_current.unit_id,
+    v_current.system_code,v_current.indicator_type,v_current.unit,v_direction,
+    v_current.cadence,v_current.source_type,v_current.source_key,
+    coalesce(p_target_config,'{}'::jsonb),v_current.critical_control,
+    current_date,p_actor_user_id,now(),'active'
+  ) returning id into v_new_id;
+
+  insert into public.khpos_ops_audit_events(
+    organisation_id,actor_user_id,event_type,object_type,object_id,metadata
+  ) values (
+    p_organisation_id,p_actor_user_id,'ops_kpi_target_configured','kpi',p_kpi_id,
+    jsonb_build_object(
+      'previousVersionId',v_current.id,
+      'newVersionId',v_new_id,
+      'direction',v_direction,
+      'note',nullif(btrim(coalesce(p_note,'')),'')
+    )
+  );
+
+  return v_new_id;
+end;
+$;
+
+create or replace function public.khpos_ops_retire_kpi_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_kpi_id uuid,
+  p_note text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+begin
+  if not khpos_private.ops_can_govern_performance(p_actor_user_id,p_organisation_id) then
+    raise exception 'KPI retirement requires an active School Guardian or Vision Custodian role.';
+  end if;
+  if nullif(btrim(coalesce(p_note,'')),'') is null then
+    raise exception 'A retirement reason is required.';
+  end if;
+  if not exists(
+    select 1 from public.khpos_ops_kpis
+    where id=p_kpi_id and organisation_id=p_organisation_id and status='active'
+  ) then
+    raise exception 'Active KPI not found.';
+  end if;
+
+  update public.khpos_ops_kpis
+  set status='retired',updated_at=now()
+  where id=p_kpi_id and organisation_id=p_organisation_id;
+
+  update public.khpos_ops_kpi_versions
+  set status='archived'
+  where kpi_id=p_kpi_id and status='active';
+
+  insert into public.khpos_ops_audit_events(
+    organisation_id,actor_user_id,event_type,object_type,object_id,metadata
+  ) values (
+    p_organisation_id,p_actor_user_id,'ops_kpi_retired','kpi',p_kpi_id,
+    jsonb_build_object('reason',left(btrim(p_note),4000))
+  );
+end;
+$;
+
 revoke execute on function khpos_private.ops_kpi_status(text,jsonb,numeric)
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_can_govern_performance(uuid,uuid)
@@ -757,9 +880,15 @@ revoke execute on function public.khpos_ops_create_kpi_server(uuid,uuid,jsonb)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_record_kpi_measurement_server(uuid,uuid,uuid,date,date,numeric,text,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_configure_kpi_target_server(uuid,uuid,uuid,text,jsonb,text)
+  from public,anon,authenticated;
+revoke execute on function public.khpos_ops_retire_kpi_server(uuid,uuid,uuid,text)
+  from public,anon,authenticated;
 
 grant execute on function khpos_private.ops_kpi_status(text,jsonb,numeric) to service_role;
 grant execute on function khpos_private.ops_can_govern_performance(uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_get_performance_server(uuid,uuid) to service_role;
 grant execute on function public.khpos_ops_create_kpi_server(uuid,uuid,jsonb) to service_role;
 grant execute on function public.khpos_ops_record_kpi_measurement_server(uuid,uuid,uuid,date,date,numeric,text,text) to service_role;
+grant execute on function public.khpos_ops_configure_kpi_target_server(uuid,uuid,uuid,text,jsonb,text) to service_role;
+grant execute on function public.khpos_ops_retire_kpi_server(uuid,uuid,uuid,text) to service_role;
