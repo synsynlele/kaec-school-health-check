@@ -720,6 +720,25 @@ export function StaffPerformanceWorkspace({
             ) : (
               <section className="space-y-5">
                 {workspace.reviews.map((review) => {
+                  const developmentRequired = [
+                    "support_required",
+                    "improvement_required",
+                  ].includes(review.performanceState);
+                  const nonCancelledDevelopment =
+                    review.developmentActions.filter(
+                      (action) => action.status !== "cancelled",
+                    );
+                  const unresolvedDevelopment =
+                    review.developmentActions.filter(
+                      (action) =>
+                        !["verified", "cancelled"].includes(action.status),
+                    );
+                  const canCompleteReview =
+                    review.status === "leader_reviewed" &&
+                    (!developmentRequired ||
+                      nonCancelledDevelopment.length > 0) &&
+                    unresolvedDevelopment.length === 0;
+
                   const staff = workspace.staffOptions.find(
                     (option) => option.id === review.staffId,
                   );
@@ -1279,10 +1298,16 @@ export function StaffPerformanceWorkspace({
                               )}
 
                               {review.developmentActions.length === 0 ? (
-                                <p className="text-sm text-slate-500">
-                                  No development commitment has been recorded.
-                                  An On Track review may legitimately require no
-                                  formal development action.
+                                <p
+                                  className={`text-sm ${
+                                    developmentRequired
+                                      ? "font-semibold text-amber-800"
+                                      : "text-slate-500"
+                                  }`}
+                                >
+                                  {developmentRequired
+                                    ? "This review cannot close until a proportionate development commitment is added and verified."
+                                    : "No development commitment has been recorded. An On Track review may legitimately require no formal development action."}
                                 </p>
                               ) : (
                                 review.developmentActions.map((action) => (
@@ -1511,18 +1536,31 @@ export function StaffPerformanceWorkspace({
                             />
                             <div className="mt-3 flex flex-wrap gap-2">
                               {review.status === "leader_reviewed" && (
-                                <button
-                                  type="button"
-                                  disabled={
-                                    busyId === `complete-${review.id}`
-                                  }
-                                  onClick={() =>
-                                    void reviewAction(review, "complete")
-                                  }
-                                  className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
-                                >
-                                  Complete review
-                                </button>
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      !canCompleteReview ||
+                                      busyId === `complete-${review.id}`
+                                    }
+                                    onClick={() =>
+                                      void reviewAction(review, "complete")
+                                    }
+                                    className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                  >
+                                    Complete review
+                                  </button>
+                                  {!canCompleteReview && (
+                                    <p className="basis-full text-xs font-semibold leading-5 text-amber-800">
+                                      {developmentRequired &&
+                                      nonCancelledDevelopment.length === 0
+                                        ? "Add at least one development commitment for this Support/Improvement review."
+                                        : unresolvedDevelopment.length > 0
+                                          ? `Verify or formally cancel ${unresolvedDevelopment.length} open development commitment${unresolvedDevelopment.length === 1 ? "" : "s"} before closing the review.`
+                                          : "This review is not ready to close."}
+                                    </p>
+                                  )}
+                                </>
                               )}
                               {review.status !== "completed" && (
                                 <button
