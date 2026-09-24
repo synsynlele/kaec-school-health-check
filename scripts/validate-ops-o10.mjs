@@ -105,7 +105,7 @@ for (const expected of [
   "the corrective action owner cannot verify their own completion",
   "complete the staff response opportunity before a conduct decision",
   "complete the required hearing step before the disciplinary decision",
-  "a separation recommendation requires a contract/legal/authority review reference",
+  "this outcome requires a contract/legal/authority review reference",
   "the subject cannot be managed through the internal reporting line",
   "independent external governance",
   "decision_source='external'",
