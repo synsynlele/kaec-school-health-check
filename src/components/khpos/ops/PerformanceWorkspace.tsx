@@ -356,6 +356,11 @@ export function PerformanceWorkspace({
   async function configureTarget(kpi: KhposOpsKpi) {
     try {
       const direction = targetDirection[kpi.id] ?? "higher_is_better";
+      if (direction !== "baseline_only" && !targetNotes[kpi.id]?.trim()) {
+        throw new Error(
+          "Explain the baseline evidence or institutional basis for this target.",
+        );
+      }
       const targetConfig = targetConfigFor(kpi);
       await submit(
         {
