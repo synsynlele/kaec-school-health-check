@@ -876,14 +876,19 @@ begin
     raise exception 'Staff activation requires an active School Guardian or Vision Custodian role.';
   end if;
 
-  perform khpos_private.ops_refresh_staff_readiness(p_staff_id);
-
   select * into v_staff
   from public.khpos_ops_staff
   where id=p_staff_id and organisation_id=p_organisation_id
   for update;
 
   if v_staff.id is null then raise exception 'Staff record not found.'; end if;
+
+  perform khpos_private.ops_refresh_staff_readiness(v_staff.id);
+
+  select * into v_staff
+  from public.khpos_ops_staff
+  where id=p_staff_id and organisation_id=p_organisation_id
+  for update;
   if v_staff.status='active' and v_staff.role_assignment_id is not null then
     return v_staff.role_assignment_id;
   end if;
