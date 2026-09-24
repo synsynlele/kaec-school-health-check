@@ -400,23 +400,27 @@ language sql
 stable
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
   select exists(
     select 1
     from public.khpos_ops_staff_accountability_cases c
     join public.khpos_ops_staff subject on subject.id=c.subject_staff_id
-    join public.khpos_ops_role_assignments a on a.user_id=p_actor_user_id and a.status='active'
+    join public.khpos_ops_role_assignments a
+      on a.user_id=p_actor_user_id and a.status='active'
     join public.khpos_ops_roles r on r.id=a.role_id
     where c.id=p_case_id
       and c.organisation_id=p_organisation_id
-      and c.status='external_review_required'
       and c.case_type='grievance'
+      and (
+        c.status='external_review_required'
+        or (c.status='resolved' and c.decision_source='external')
+      )
       and subject.user_id is distinct from p_actor_user_id
       and r.organisation_id=p_organisation_id
       and r.status='active'
       and r.code='SCHOOL_GUARDIAN'
   );
-$;
+$function$;
 
 create or replace function khpos_private.ops_accountability_case_can_manage(
   p_actor_user_id uuid,
@@ -668,6 +672,7 @@ begin
     'status',c.status,
     'outcome',c.outcome,
     'outcomeNote',c.outcome_note,
+    'decisionSource',c.decision_source,
     'authorityReviewReference',case
       when khpos_private.ops_accountability_case_can_manage(
         p_actor_user_id,p_organisation_id,c.id
@@ -1876,7 +1881,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
 declare
   v_case public.khpos_ops_staff_accountability_cases%rowtype;
   v_outcome text := lower(nullif(btrim(p_outcome),''));
@@ -1943,7 +1948,7 @@ begin
     jsonb_build_object('outcome',v_outcome,'externalReviewReference',v_reference)
   );
 end;
-$;
+$function$;
 
 create or replace function public.khpos_ops_accountability_acknowledge_outcome_server(
   p_actor_user_id uuid,
