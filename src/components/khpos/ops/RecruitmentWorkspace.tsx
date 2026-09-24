@@ -126,12 +126,6 @@ export function RecruitmentWorkspace({
     );
   }, [workspace, campusId]);
 
-  useEffect(() => {
-    if (!availableUnits.some((unit) => unit.id === unitId)) {
-      setUnitId("");
-    }
-  }, [availableUnits, unitId]);
-
   async function submit(payload: Record<string, unknown>, key: string) {
     const accessToken = await token();
     if (!accessToken) {
@@ -314,7 +308,10 @@ export function RecruitmentWorkspace({
                   </select>
                   <select
                     value={campusId}
-                    onChange={(event) => setCampusId(event.target.value)}
+                    onChange={(event) => {
+                      setCampusId(event.target.value);
+                      setUnitId("");
+                    }}
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                   >
                     <option value="">No campus / organisation-wide</option>
