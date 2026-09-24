@@ -71,7 +71,7 @@ for (const expected of [
   "severity in ('p1','p2','p3','p4')",
   "sensitivity='standard'",
   "the issue owner cannot verify their own resolution",
-  "escalation transfers visibility",
+  "p1 critical issue requires immediate leadership visibility",
   "work_blocker",
   "checklist_exception",
   "from public,anon,authenticated",
