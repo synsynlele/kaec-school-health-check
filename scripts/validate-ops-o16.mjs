@@ -6,7 +6,7 @@ function read(path) {
 
 function requireText(source, expected, context) {
   if (!source.includes(expected)) {
-    throw new Error(\`Operations O16 contract failed: \${context} is missing \${expected}\`);
+    throw new Error(`Operations O16 contract failed: ${context} is missing ${expected}`);
   }
 }
 
@@ -67,7 +67,7 @@ for (const expected of [
   "school-owned reflection",
 ]) requireText(workspace, expected, "O16 workspace");
 
-if ((workspace.match(/\\\`/g) || []).length > 0 || (workspace.match(/\\\$\{/g) || []).length > 0) {
+if ((workspace.match(/\\`/g) || []).length > 0 || (workspace.match(/\\\$\{/g) || []).length > 0) {
   throw new Error("Operations O16 contract failed: escaped template-literal generation artefacts remain in TSX.");
 }
 
@@ -126,7 +126,7 @@ for (const path of [
   const historical = read(path);
   if (historical.includes("khpos_ops_potential_discovery_records")) {
     throw new Error(
-      \`Operations O16 contract failed: historical migration \${path} must remain independent from O16.\`,
+      `Operations O16 contract failed: historical migration ${path} must remain independent from O16.`,
     );
   }
 }
