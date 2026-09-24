@@ -42,6 +42,7 @@ create table if not exists public.khpos_ops_recurring_rules (
   title text not null,
   description text,
   cadence text not null check (cadence in ('daily','weekly','monthly','manual')),
+  weekdays integer[] not null default array[1,2,3,4,5,6,7],
   weekday integer check (weekday between 1 and 7),
   day_of_month integer check (day_of_month between 1 and 31),
   due_time time,
@@ -58,6 +59,10 @@ create table if not exists public.khpos_ops_recurring_rules (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (end_date is null or end_date >= start_date),
+  check (
+    cardinality(weekdays) > 0
+    and weekdays <@ array[1,2,3,4,5,6,7]::integer[]
+  ),
   check (
     (cadence='daily')
     or (cadence='weekly' and weekday is not null)
@@ -274,6 +279,9 @@ begin
       end if;
 
       if r.cadence='daily' then
+        if extract(isodow from v_local_date)::integer <> all(r.weekdays) then
+          continue;
+        end if;
         v_occurrence_date := v_local_date;
         v_occurrence_key := 'D:' || to_char(v_occurrence_date,'YYYY-MM-DD');
       elsif r.cadence='weekly' then
