@@ -84,6 +84,35 @@ export interface KhposAdminDashboard {
   portfolio: KhposPortfolioIntelligence;
 }
 
+export interface KhposPlatformAccess {
+  role: KhposPlatformRole;
+  status: "active" | "suspended";
+}
+
+export async function getKhposPlatformAccess(
+  userId: string,
+): Promise<KhposPlatformAccess | null> {
+  const { data, error } = await admin()
+    .from("khpos_platform_admins")
+    .select("platform_role,status")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new KhposPlatformAdminError(
+      "Platform Administration access could not be checked.",
+      500,
+    );
+  }
+
+  if (!data) return null;
+
+  return {
+    role: data.platform_role as KhposPlatformRole,
+    status: data.status as "active" | "suspended",
+  };
+}
+
 export class KhposPlatformAdminError extends Error {
   constructor(message: string, public readonly status = 400) {
     super(message);

@@ -105,3 +105,22 @@ for (const token of [
 }
 
 console.log("Navigation contract validated.");
+
+
+const authCallback = read("src/app/auth/callback/page.tsx");
+for (const expected of [
+  'next === "/account"',
+  'fetch("/api/account"',
+  'body.platformAdmin?.status === "active"',
+  'router.replace("/khpos/admin")',
+]) {
+  requireText(authCallback, expected, "platform-admin login routing");
+}
+
+const accountApi = read("src/app/api/account/route.ts");
+for (const expected of [
+  "getKhposPlatformAccess",
+  "platformAdmin",
+]) {
+  requireText(accountApi, expected, "account authority discovery");
+}
