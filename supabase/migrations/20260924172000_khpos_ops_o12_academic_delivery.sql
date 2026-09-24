@@ -1095,7 +1095,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
 declare
   v_stream public.khpos_ops_academic_delivery_streams%rowtype;
   v_note text := nullif(btrim(coalesce(p_note,'')),'');
@@ -1153,7 +1153,7 @@ begin
     )
   );
 end;
-$;
+$function$;
 
 create or replace function public.khpos_ops_add_academic_target_server(
   p_actor_user_id uuid,
@@ -1685,7 +1685,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
 declare
   v_debt public.khpos_ops_academic_debt%rowtype;
   v_note text := nullif(btrim(coalesce(p_note,'')),'');
@@ -1736,7 +1736,7 @@ begin
     )
   );
 end;
-$;
+$function$;
 
 create or replace function public.khpos_ops_escalate_academic_debt_server(
   p_actor_user_id uuid,
