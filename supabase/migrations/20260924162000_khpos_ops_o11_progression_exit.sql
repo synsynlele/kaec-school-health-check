@@ -1555,6 +1555,9 @@ begin
 
   elsif p_action='waive' then
     if not v_can_manage then raise exception 'Only People management authority can waive a transition requirement.'; end if;
+    if v_item.item_type in ('responsibility_handover','access_revocation') then
+      raise exception 'Responsibility handover and access closure are non-waivable continuity controls.';
+    end if;
     if not v_item.mandatory then
       raise exception 'Optional requirements can be removed operationally rather than formally waived.';
     end if;
@@ -1639,7 +1642,7 @@ begin
     where ti.promotion_case_id=v_case.id
       and ti.item_type='responsibility_handover'
       and ti.recipient_assignment_id is not null
-      and ti.status in ('verified','waived')
+      and ti.status='verified'
   ) then
     raise exception 'Promotion requires a completed responsibility handover to a named continuity recipient.';
   end if;
@@ -2105,6 +2108,17 @@ begin
       and ti.status not in ('verified','waived')
   ) then
     raise exception 'Verify or formally waive every mandatory pre-exit clearance requirement first.';
+  end if;
+
+  if not exists(
+    select 1
+    from public.khpos_ops_staff_transition_items ti
+    where ti.exit_case_id=v_case.id
+      and ti.item_type='responsibility_handover'
+      and ti.recipient_assignment_id is not null
+      and ti.status='verified'
+  ) then
+    raise exception 'Exit requires a verified responsibility handover to the named continuity recipient.';
   end if;
 
   select * into v_staff
