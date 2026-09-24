@@ -61,6 +61,7 @@ export interface KhposOpsSkillWeeklyReview {
   valueCreationNote: string | null;
   status: "draft" | "submitted" | "approved" | "returned" | "cancelled";
   preparedBy: string;
+  isPreparer: boolean;
   submittedAt: string | null;
   approvedAt: string | null;
   approvalNote: string | null;
@@ -97,6 +98,7 @@ export interface KhposOpsSkillCompetencyEvidence {
   status: "submitted" | "verified" | "returned" | "withdrawn";
   verificationNote: string | null;
   potentialEvidenceId: string | null;
+  isRecorder: boolean;
 }
 
 export interface KhposOpsSkillSelection {
