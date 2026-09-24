@@ -17,6 +17,7 @@ for (const script of [
   "scripts/validate-kshc-ai.mjs",
   "scripts/validate-report-integrity.mjs",
   "scripts/validate-ops-o1.mjs",
+  "scripts/validate-ops-o2.mjs",
   "scripts/test-scoring.mjs",
 ]) {
   const run = spawnSync(process.execPath, [script], { stdio: "inherit" });
