@@ -364,7 +364,7 @@ language plpgsql
 stable
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
 declare
   v_staff_user_id uuid;
   v_role_code text;
@@ -397,7 +397,7 @@ begin
     p_actor_user_id,p_organisation_id
   );
 end;
-$;
+$function$;
 
 create or replace function khpos_private.ops_transition_valid_target(
   p_organisation_id uuid,
