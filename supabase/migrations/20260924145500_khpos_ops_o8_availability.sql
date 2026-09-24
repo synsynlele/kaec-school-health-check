@@ -141,7 +141,7 @@ language sql
 stable
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $$
   select exists(
     select 1
     from public.organisation_memberships m
@@ -153,7 +153,7 @@ as $
       and o.partner_status='active'
       and 'khpos_core'=any(coalesce(o.partner_entitlements,'{}'::text[]))
   );
-$;
+$$;
 
 create or replace function khpos_private.ops_availability_can_review_staff(
   p_actor_user_id uuid,
