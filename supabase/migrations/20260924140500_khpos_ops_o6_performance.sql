@@ -586,6 +586,9 @@ begin
   if v_cadence not in ('weekly','monthly','termly','quarterly','annual','ad_hoc') then raise exception 'Unsupported KPI cadence.'; end if;
   if v_source_type not in ('manual','operational_engine','third_party','ksi','pipupath') then raise exception 'Unsupported KPI source type.'; end if;
   if jsonb_typeof(v_target_config)<>'object' then raise exception 'KPI target configuration must be an object.'; end if;
+  if v_direction<>'baseline_only' or v_target_config<>'{}'::jsonb then
+    raise exception 'New KPIs must begin in baseline-only mode without performance thresholds.';
+  end if;
 
   begin v_owner_role := (p_input->>'ownerRoleId')::uuid;
   exception when others then raise exception 'A valid KPI owner role is required.'; end;
@@ -794,6 +797,19 @@ begin
   for update;
 
   if v_current.id is null then raise exception 'Active KPI definition not found.'; end if;
+
+  if v_direction<>'baseline_only' then
+    if not exists(
+      select 1
+      from public.khpos_ops_kpi_measurements
+      where kpi_id=p_kpi_id
+    ) then
+      raise exception 'Record baseline evidence before activating KPI performance thresholds.';
+    end if;
+    if nullif(btrim(coalesce(p_note,'')),'') is null then
+      raise exception 'Explain the evidence or institutional basis for this KPI target.';
+    end if;
+  end if;
 
   perform khpos_private.ops_kpi_status(v_direction,coalesce(p_target_config,'{}'::jsonb),0);
 
