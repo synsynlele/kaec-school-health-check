@@ -525,8 +525,8 @@ begin
   v_actor_staff_id := khpos_private.ops_transition_staff_for_user(
     p_actor_user_id,p_organisation_id
   );
-  v_can_manage := khpos_private.ops_transition_can_manage_exit(
-    p_actor_user_id,p_organisation_id,v_case.staff_id
+  v_can_manage := khpos_private.ops_transition_can_manage_people(
+    p_actor_user_id,p_organisation_id
   );
 
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -726,7 +726,9 @@ begin
         'completionNote',ti.completion_note,
         'evidenceReference',ti.evidence_reference,
         'isOwner',ti.owner_user_id=p_actor_user_id,
-        'canVerify',v_can_manage
+        'canVerify',khpos_private.ops_transition_can_manage_exit(
+          p_actor_user_id,p_organisation_id,ec.staff_id
+        )
       ) order by ti.created_at)
       from public.khpos_ops_staff_transition_items ti
       where ti.exit_case_id=ec.id
@@ -1652,9 +1654,15 @@ begin
     where id=v_item.exit_case_id;
   end if;
 
-  v_can_manage := khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
-  );
+  if v_item.exit_case_id is not null then
+    v_can_manage := khpos_private.ops_transition_can_manage_exit(
+      p_actor_user_id,p_organisation_id,v_staff_id
+    );
+  else
+    v_can_manage := khpos_private.ops_transition_can_manage_people(
+      p_actor_user_id,p_organisation_id
+    );
+  end if;
   v_is_owner := v_item.owner_user_id=p_actor_user_id;
   v_from := v_item.status;
 
@@ -2494,8 +2502,8 @@ begin
   where id=v_case.staff_id and organisation_id=p_organisation_id;
 
   v_is_self := v_staff.user_id=p_actor_user_id;
-  v_can_manage := khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  v_can_manage := khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_case.staff_id
   );
 
   if p_action='withdraw_request' then
