@@ -842,6 +842,37 @@ begin
         issue_id=v_issue,missed_by=p_actor_user_id,missed_at=now(),updated_at=now()
     where id=v_f.id;
 
+  elsif p_action='recover' then
+    if v_f.status<>'missed'
+       or v_f.recovery_status not in ('required','planned') then
+      raise exception 'Only a missed activity with an open recovery obligation can be recovered.';
+    end if;
+    if v_evidence is null then
+      raise exception 'Recovered Financial Capability delivery requires an evidence reference.';
+    end if;
+    v_to := 'recovered';
+    update public.khpos_ops_financial_capability_activities
+    set recovery_status='recovered',
+        delivery_note=left(coalesce(delivery_note,'')||case when delivery_note is null then '' else E'\n' end||'Recovery: '||v_note,5000),
+        evidence_reference=left(v_evidence,1000),
+        updated_at=now()
+    where id=v_f.id;
+
+  elsif p_action='waive_recovery' then
+    if not v_can_manage then
+      raise exception 'Only Human Potential coordinating authority can waive a Financial Capability recovery obligation.';
+    end if;
+    if v_f.status<>'missed'
+       or v_f.recovery_status not in ('required','planned') then
+      raise exception 'Only an open missed-activity recovery obligation can be waived.';
+    end if;
+    v_to := 'recovery_waived';
+    update public.khpos_ops_financial_capability_activities
+    set recovery_status='waived',
+        delivery_note=left(coalesce(delivery_note,'')||case when delivery_note is null then '' else E'\n' end||'Recovery waived: '||v_note,5000),
+        updated_at=now()
+    where id=v_f.id;
+
   elsif p_action='cancel' then
     if v_f.status<>'planned' then
       raise exception 'Only a planned Financial Capability activity can be cancelled.';
