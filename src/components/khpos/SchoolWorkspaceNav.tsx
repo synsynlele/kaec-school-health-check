@@ -21,6 +21,7 @@ import {
   LibraryBig,
   ListTodo,
   ShieldCheck,
+  Sparkles,
   Target,
   UserRoundCheck,
   UserRoundSearch,
@@ -52,6 +53,7 @@ const operationsLinks = [
   { suffix: "/academic-delivery", label: "Academic Delivery", icon: GraduationCap },
   { suffix: "/academic-assurance", label: "Assessment & Exams", icon: ShieldCheck },
   { suffix: "/learner-progress", label: "Learner Progress", icon: UserRoundSearch },
+  { suffix: "/potential-development", label: "Potential Development", icon: Sparkles },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
