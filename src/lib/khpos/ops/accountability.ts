@@ -142,6 +142,7 @@ export interface KhposOpsAccountabilityCase {
   isReporter: boolean;
   isSubject: boolean;
   canManage: boolean;
+  canRecordExternalReview: boolean;
   responses: KhposOpsAccountabilityResponse[];
   evidence: KhposOpsAccountabilityEvidence[];
   correctiveActions: KhposOpsCorrectiveAction[];
