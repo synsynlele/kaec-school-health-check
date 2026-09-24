@@ -26,6 +26,7 @@ create table if not exists public.khpos_ops_checklist_template_items (
     check (response_type in ('boolean','text','number','choice')),
   required boolean not null default true,
   options jsonb not null default '[]'::jsonb check (jsonb_typeof(options)='array'),
+  exception_on_response jsonb,
   created_at timestamptz not null default now(),
   unique (template_id, position)
 );
@@ -489,6 +490,7 @@ as $$
 declare
   v_work public.khpos_ops_work_items%rowtype;
   v_missing_checklist integer := 0;
+  v_failed_checklist integer := 0;
   v_evidence_count integer := 0;
 begin
   select w.* into v_work
@@ -533,6 +535,18 @@ begin
         );
       if v_missing_checklist > 0 then
         raise exception 'Complete all required checklist items before closing this work.';
+      end if;
+
+      select count(*)::integer into v_failed_checklist
+      from public.khpos_ops_checklist_template_items i
+      join public.khpos_ops_checklist_responses cr
+        on cr.template_item_id=i.id and cr.work_item_id=v_work.id
+      where i.template_id=v_work.checklist_template_id
+        and i.exception_on_response is not null
+        and cr.response=i.exception_on_response;
+
+      if v_failed_checklist > 0 then
+        raise exception 'This checklist contains an unresolved exception and cannot be closed as normal work.';
       end if;
     end if;
 
