@@ -83,7 +83,7 @@ for (const [path, source] of [
 }
 
 const migration = read(
-  "supabase/drafts/khpos_ops_o17_skills_pathways.sql",
+  "supabase/migrations/20260924211424_khpos_ops_o17_skills_pathways.sql",
 ).toLowerCase();
 
 for (const expected of [
@@ -119,7 +119,7 @@ for (const expected of [
   "ispreparer",
   "from public,anon,authenticated",
   "to service_role",
-]) requireText(migration, expected, "O17 draft migration");
+]) requireText(migration, expected, "O17 migration");
 
 const seed = read("supabase/seeds/khpos_ops_o17_skills_pathways.sql").toLowerCase();
 for (const expected of [
