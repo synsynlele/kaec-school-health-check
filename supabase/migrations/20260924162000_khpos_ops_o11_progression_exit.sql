@@ -972,7 +972,6 @@ begin
   );
 end;
 $;
-
 create or replace function public.khpos_ops_add_progression_evidence_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -2063,7 +2062,6 @@ begin
   );
 end;
 $;
-
 create or replace function public.khpos_ops_start_exit_clearance_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
