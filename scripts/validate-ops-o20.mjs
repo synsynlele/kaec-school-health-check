@@ -70,7 +70,7 @@ for (const expected of [
   "Operations · O20",
   "Builder Projects & Defence",
   "Problem → Build → Test → Reflect → Defend",
-  "Team success never becomes automatic evidence",
+  "Team completion never creates automatic learner evidence.",
   "PipuPath boundary",
   "workspace.pipupathBoundary",
   "Builder Defence standard",
