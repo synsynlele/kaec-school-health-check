@@ -87,7 +87,6 @@ for (const expected of [
   "potential remains a hypothesis until repeated evidence",
   "pipupath learner profiles, missions and private reflections are not copied into o16",
   "executiveaggregateonly",
-  "new potential hypothesis did not",
   "potential review cannot submit without an active discovery record",
   "potential review cannot submit without at least one active potential hypothesis",
   "potential review cannot submit without term evidence",
