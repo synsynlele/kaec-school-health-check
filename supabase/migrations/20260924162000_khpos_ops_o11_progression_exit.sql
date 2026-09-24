@@ -354,6 +354,51 @@ as $$
   );
 $$;
 
+create or replace function khpos_private.ops_transition_can_manage_exit(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_staff_id uuid
+)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_staff_user_id uuid;
+  v_role_code text;
+begin
+  select s.user_id,r.code into v_staff_user_id,v_role_code
+  from public.khpos_ops_staff s
+  join public.khpos_ops_roles r on r.id=s.desired_role_id
+  where s.id=p_staff_id
+    and s.organisation_id=p_organisation_id;
+
+  if v_staff_user_id is null or v_role_code is null then
+    return false;
+  end if;
+
+  if v_staff_user_id=p_actor_user_id then
+    return false;
+  end if;
+
+  if v_role_code='VISION_CUSTODIAN' then
+    return false;
+  end if;
+
+  if v_role_code='SCHOOL_GUARDIAN' then
+    return khpos_private.ops_transition_actor_has_role(
+      p_actor_user_id,p_organisation_id,'VISION_CUSTODIAN'
+    );
+  end if;
+
+  return khpos_private.ops_transition_can_manage_people(
+    p_actor_user_id,p_organisation_id
+  );
+end;
+$;
+
 create or replace function khpos_private.ops_transition_valid_target(
   p_organisation_id uuid,
   p_current_role_id uuid,
@@ -480,8 +525,8 @@ begin
   v_actor_staff_id := khpos_private.ops_transition_staff_for_user(
     p_actor_user_id,p_organisation_id
   );
-  v_can_manage := khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  v_can_manage := khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_case.staff_id
   );
 
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -667,7 +712,9 @@ begin
     'actualLastDay',ec.actual_last_day,
     'endedAt',ec.ended_at,
     'isSelf',s.user_id=p_actor_user_id,
-    'canManage',v_can_manage,
+    'canManage',khpos_private.ops_transition_can_manage_exit(
+      p_actor_user_id,p_organisation_id,ec.staff_id
+    ),
     'items',coalesce((
       select jsonb_agg(jsonb_build_object(
         'id',ti.id,'itemCode',ti.item_code,'itemType',ti.item_type,
@@ -785,6 +832,10 @@ begin
     raise exception 'Succession planning requires an active deployed staff member.';
   end if;
 
+  if v_staff.user_id=p_actor_user_id then
+    raise exception 'A staff member cannot sponsor their own succession plan.';
+  end if;
+
   if not khpos_private.ops_transition_valid_target(
     p_organisation_id,v_staff.desired_role_id,p_target_role_id
   ) then
@@ -805,11 +856,11 @@ begin
   from public.khpos_ops_roles
   where id=p_target_role_id and organisation_id=p_organisation_id;
 
-  if v_target_code='SCHOOL_GUARDIAN'
+  if v_target_code in ('SCHOOL_GUARDIAN','VISION_CUSTODIAN')
      and not khpos_private.ops_transition_actor_has_role(
        p_actor_user_id,p_organisation_id,'VISION_CUSTODIAN'
      ) then
-    raise exception 'School Guardian succession planning is reserved to the Vision Custodian.';
+    raise exception 'School Guardian or Vision Custodian succession planning is reserved to the Vision Custodian.';
   end if;
 
   v_reference := 'SUC-'||upper(substr(gen_random_uuid()::text,1,8));
@@ -874,6 +925,26 @@ begin
     raise exception 'Only an active succession plan can be reviewed.';
   end if;
 
+  if exists(
+    select 1
+    from public.khpos_ops_staff s
+    where s.id=v_plan.staff_id and s.user_id=p_actor_user_id
+  ) then
+    raise exception 'A staff member cannot review their own succession plan.';
+  end if;
+
+  if exists(
+    select 1
+    from public.khpos_ops_roles r
+    where r.id=v_plan.target_role_id
+      and r.code in ('SCHOOL_GUARDIAN','VISION_CUSTODIAN')
+  ) and not khpos_private.ops_transition_actor_has_role(
+    p_actor_user_id,p_organisation_id,'VISION_CUSTODIAN'
+  ) then
+    raise exception 'School Guardian or Vision Custodian succession review is reserved to the Vision Custodian.';
+  end if;
+
+
   if p_readiness_state not in (
     'exploring','developing','ready_with_support','ready_now','not_ready'
   ) then
@@ -936,6 +1007,25 @@ begin
     p_actor_user_id,p_organisation_id
   ) then
     raise exception 'Only the School Guardian or Vision Custodian can change succession-plan status.';
+  end if;
+
+  if exists(
+    select 1
+    from public.khpos_ops_staff s
+    where s.id=v_plan.staff_id and s.user_id=p_actor_user_id
+  ) then
+    raise exception 'A staff member cannot change status on their own succession plan.';
+  end if;
+
+  if exists(
+    select 1
+    from public.khpos_ops_roles r
+    where r.id=v_plan.target_role_id
+      and r.code in ('SCHOOL_GUARDIAN','VISION_CUSTODIAN')
+  ) and not khpos_private.ops_transition_actor_has_role(
+    p_actor_user_id,p_organisation_id,'VISION_CUSTODIAN'
+  ) then
+    raise exception 'School Guardian or Vision Custodian succession status is reserved to the Vision Custodian.';
   end if;
 
   if p_action='withdraw' then
@@ -1173,11 +1263,11 @@ begin
   from public.khpos_ops_roles
   where id=p_target_role_id and organisation_id=p_organisation_id;
 
-  if v_target_code='SCHOOL_GUARDIAN'
+  if v_target_code in ('SCHOOL_GUARDIAN','VISION_CUSTODIAN')
      and not khpos_private.ops_transition_actor_has_role(
        p_actor_user_id,p_organisation_id,'VISION_CUSTODIAN'
      ) then
-    raise exception 'Only the Vision Custodian can open a School Guardian promotion case.';
+    raise exception 'Only the Vision Custodian can open School Guardian or Vision Custodian progression cases.';
   end if;
 
   v_external := v_target_code='VISION_CUSTODIAN';
@@ -1910,10 +2000,10 @@ begin
     if p_exit_type not in ('resignation','retirement') then
       raise exception 'Staff self-service can only submit resignation or retirement notice.';
     end if;
-  elsif not khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  elsif not khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_staff.id
   ) then
-    raise exception 'Only People management authority can initiate an institutional exit case.';
+    raise exception 'You are not the competent authority to initiate this staff exit.';
   end if;
 
   if p_exit_type not in (
@@ -2014,10 +2104,10 @@ begin
 
   if v_case.id is null then raise exception 'Exit case not found.'; end if;
 
-  if not khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  if not khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_case.staff_id
   ) then
-    raise exception 'Only People management authority can revise an acknowledged exit schedule.';
+    raise exception 'You are not the competent authority to revise this acknowledged exit schedule.';
   end if;
 
   if v_case.status not in ('open','clearance_in_progress') then
@@ -2089,10 +2179,10 @@ begin
     raise exception 'Only an open exit case can start clearance.';
   end if;
 
-  if not khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  if not khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_case.staff_id
   ) then
-    raise exception 'Only People management authority can acknowledge the exit and start clearance.';
+    raise exception 'You are not the competent authority to acknowledge this exit and start clearance.';
   end if;
 
   select * into v_staff
@@ -2229,10 +2319,10 @@ begin
     raise exception 'Exit must be in clearance before it can be finalized.';
   end if;
 
-  if not khpos_private.ops_transition_can_manage_people(
-    p_actor_user_id,p_organisation_id
+  if not khpos_private.ops_transition_can_manage_exit(
+    p_actor_user_id,p_organisation_id,v_case.staff_id
   ) then
-    raise exception 'Only People management authority can finalize staff exit.';
+    raise exception 'You are not the competent authority to finalize this staff exit.';
   end if;
 
   if current_date<v_case.proposed_last_day then
@@ -2525,6 +2615,8 @@ revoke execute on function khpos_private.ops_transition_staff_for_user(uuid,uuid
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_transition_can_manage_people(uuid,uuid)
   from public,anon,authenticated;
+revoke execute on function khpos_private.ops_transition_can_manage_exit(uuid,uuid,uuid)
+  from public,anon,authenticated;
 revoke execute on function khpos_private.ops_transition_valid_target(uuid,uuid,uuid)
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_transition_can_approve_target(uuid,uuid,uuid)
@@ -2571,6 +2663,7 @@ grant execute on function khpos_private.ops_transition_has_membership(uuid,uuid)
 grant execute on function khpos_private.ops_transition_actor_has_role(uuid,uuid,text) to service_role;
 grant execute on function khpos_private.ops_transition_staff_for_user(uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_transition_can_manage_people(uuid,uuid) to service_role;
+grant execute on function khpos_private.ops_transition_can_manage_exit(uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_transition_valid_target(uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_transition_can_approve_target(uuid,uuid,uuid) to service_role;
 grant execute on function khpos_private.ops_transition_case_visible(uuid,uuid,uuid) to service_role;
