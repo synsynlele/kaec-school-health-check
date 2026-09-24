@@ -617,7 +617,6 @@ function DomainCard({
   record: KhposOpsWorldReadyRecord;
   domain: KhposOpsWorldReadyDomain;
   workspace: KhposOpsWorldReadyWorkspace;
-  busy: string | null;
   notes: Record<string, string>;
   refs: Record<string, string>;
   selects: Record<string, string>;
