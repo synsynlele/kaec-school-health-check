@@ -154,9 +154,9 @@ export function PotentialDevelopmentWorkspace({
       return;
     }
     const response = await fetch(
-      \`/api/khpos/ops/potential-development/\${organisationId}\`,
+      `/api/khpos/ops/potential-development/${organisationId}`,
       {
-        headers: { Authorization: \`Bearer \${accessToken}\` },
+        headers: { Authorization: `Bearer ${accessToken}` },
         cache: "no-store",
       },
     );
@@ -196,9 +196,9 @@ export function PotentialDevelopmentWorkspace({
         return;
       }
       const response = await fetch(
-        \`/api/khpos/ops/potential-development/\${organisationId}\`,
+        `/api/khpos/ops/potential-development/${organisationId}`,
         {
-          headers: { Authorization: \`Bearer \${accessToken}\` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           cache: "no-store",
         },
       );
@@ -238,11 +238,11 @@ export function PotentialDevelopmentWorkspace({
     setBusy(key);
     setError("");
     const response = await fetch(
-      \`/api/khpos/ops/potential-development/\${organisationId}\`,
+      `/api/khpos/ops/potential-development/${organisationId}`,
       {
         method: "POST",
         headers: {
-          Authorization: \`Bearer \${accessToken}\`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -312,7 +312,7 @@ export function PotentialDevelopmentWorkspace({
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={\`/khpos/\${organisationId}\`}
+            href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
           >
             Command Centre
@@ -328,7 +328,7 @@ export function PotentialDevelopmentWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
-              href={\`/khpos/\${organisationId}\`}
+              href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 text-xs font-bold text-brand-100"
             >
               <ArrowLeft className="size-4" /> Command Centre
@@ -406,7 +406,7 @@ export function PotentialDevelopmentWorkspace({
                   {workspace.privacyBoundary}
                 </p>
                 <Link
-                  href={\`/khpos/\${organisationId}/human-potential-intelligence\`}
+                  href={`/khpos/${organisationId}/human-potential-intelligence`}
                   className="mt-3 inline-flex text-xs font-black text-violet-800 underline"
                 >
                   Open privacy-thresholded Human Potential Intelligence
@@ -436,7 +436,7 @@ export function PotentialDevelopmentWorkspace({
               second student database.
             </p>
             <Link
-              href={\`/khpos/\${organisationId}/learner-progress\`}
+              href={`/khpos/${organisationId}/learner-progress`}
               className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
             >
               Open Learner Progress
@@ -456,7 +456,7 @@ export function PotentialDevelopmentWorkspace({
                     {workspace.learners.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.displayName} · {item.classLabel}
-                        {item.sectionLabel ? \` \${item.sectionLabel}\` : ""}
+                        {item.sectionLabel ? ` ${item.sectionLabel}` : ""}
                       </option>
                     ))}
                   </select>
@@ -1028,7 +1028,7 @@ function LearnerSnapshot({
           <h2 className="mt-1 text-2xl font-black">{learner.displayName}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {learner.classLabel}
-            {learner.sectionLabel ? \` · \${learner.sectionLabel}\` : ""}
+            {learner.sectionLabel ? ` · ${learner.sectionLabel}` : ""}
           </p>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
@@ -1100,8 +1100,8 @@ function PotentialRecords({
       {learner.hypotheses.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {learner.hypotheses.map((item) => {
-            const stateKey = \`hyp-state-\${item.id}\`;
-            const noteKey = \`hyp-note-\${item.id}\`;
+            const stateKey = `hyp-state-${item.id}`;
+            const noteKey = `hyp-note-${item.id}`;
             return (
               <article
                 key={item.id}
@@ -1115,9 +1115,9 @@ function PotentialRecords({
                     <h3 className="mt-1 text-lg font-black">{item.themeLabel}</h3>
                   </div>
                   <span
-                    className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${statusClass(
+                    className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${statusClass(
                       item.developmentState,
-                    )}\`}
+                    )}`}
                   >
                     {readable(item.developmentState)}
                   </span>
@@ -1157,7 +1157,7 @@ function PotentialRecords({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        disabled={busy === \`hyp-\${item.id}\`}
+                        disabled={busy === `hyp-${item.id}`}
                         onClick={() =>
                           void submit(
                             {
@@ -1166,7 +1166,7 @@ function PotentialRecords({
                               action: states[stateKey] ?? item.developmentState,
                               note: notes[noteKey] ?? "",
                             },
-                            \`hyp-\${item.id}\`,
+                            `hyp-${item.id}`,
                           )
                         }
                         className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -1183,7 +1183,7 @@ function PotentialRecords({
                               action: "retire",
                               note: notes[noteKey] ?? "",
                             },
-                            \`hyp-retire-\${item.id}\`,
+                            `hyp-retire-${item.id}`,
                           )
                         }
                         className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700"
@@ -1203,8 +1203,8 @@ function PotentialRecords({
         <div className="space-y-3">
           <h3 className="text-sm font-black">Explorations</h3>
           {learner.explorations.map((item) => {
-            const noteKey = \`exp-note-\${item.id}\`;
-            const refKey = \`exp-ref-\${item.id}\`;
+            const noteKey = `exp-note-${item.id}`;
+            const refKey = `exp-ref-${item.id}`;
             return (
               <article
                 key={item.id}
@@ -1221,9 +1221,9 @@ function PotentialRecords({
                     </p>
                   </div>
                   <span
-                    className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${statusClass(
+                    className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${statusClass(
                       item.status,
-                    )}\`}
+                    )}`}
                   >
                     {readable(item.status)}
                   </span>
@@ -1263,7 +1263,7 @@ function PotentialRecords({
                                 explorationId: item.id,
                                 action: "start",
                               },
-                              \`exp-start-\${item.id}\`,
+                              `exp-start-${item.id}`,
                             )
                           }
                           className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-black text-amber-900"
@@ -1282,7 +1282,7 @@ function PotentialRecords({
                               note: notes[noteKey] ?? "",
                               evidenceReference: references[refKey] ?? "",
                             },
-                            \`exp-complete-\${item.id}\`,
+                            `exp-complete-${item.id}`,
                           )
                         }
                         className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white"
@@ -1380,7 +1380,7 @@ function ReviewCard({
   setNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`review-note-\${review.id}\`;
+  const noteKey = `review-note-${review.id}`;
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1389,9 +1389,9 @@ function ReviewCard({
           <h4 className="mt-1 text-lg font-black">Term Potential Progress Review</h4>
         </div>
         <span
-          className={\`rounded-full border px-3 py-1 text-[11px] font-black capitalize \${statusClass(
+          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${statusClass(
             review.status,
-          )}\`}
+          )}`}
         >
           {readable(review.status)}
         </span>
@@ -1414,7 +1414,7 @@ function ReviewCard({
           onClick={() =>
             void submit(
               { mode: "review_action", reviewId: review.id, action: "submit" },
-              \`review-submit-\${review.id}\`,
+              `review-submit-${review.id}`,
             )
           }
           className="mt-4 rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -1448,7 +1448,7 @@ function ReviewCard({
                     action: "approve",
                     note: notes[noteKey] ?? "",
                   },
-                  \`review-approve-\${review.id}\`,
+                  `review-approve-${review.id}`,
                 )
               }
               className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white"
@@ -1465,7 +1465,7 @@ function ReviewCard({
                     action: "return",
                     note: notes[noteKey] ?? "",
                   },
-                  \`review-return-\${review.id}\`,
+                  `review-return-${review.id}`,
                 )
               }
               className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-black text-amber-900"
