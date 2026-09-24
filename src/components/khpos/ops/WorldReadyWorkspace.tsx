@@ -421,7 +421,6 @@ function WorldReadyRecordCard({
             record={record}
             domain={domain}
             workspace={workspace}
-            busy={busy}
             notes={notes}
             refs={refs}
             selects={selects}
