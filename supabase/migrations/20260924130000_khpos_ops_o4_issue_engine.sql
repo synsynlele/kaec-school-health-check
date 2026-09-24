@@ -369,6 +369,7 @@ begin
       orole.id as owner_role_id,
       orole.title as owner_role_title,
       u.email as owner_email,
+      coalesce(u.raw_user_meta_data->>'full_name',u.raw_user_meta_data->>'name',u.email) as owner_display,
       p.code as process_code,
       p.title as process_title,
       w.title as source_work_title,
@@ -442,6 +443,7 @@ begin
         'verifiedAt',v.verified_at,
         'owner',case when v.owner_assignment_id is null then null else jsonb_build_object(
           'roleTitle',v.owner_role_title,
+          'displayName',v.owner_display,
           'email',v.owner_email
         ) end,
         'process',case when v.process_id is null then null else jsonb_build_object(
@@ -452,7 +454,23 @@ begin
         'isOwner',v.is_owner,
         'isReporter',v.is_reporter,
         'isDirectManager',v.is_direct_manager,
-        'isEscalationRecipient',v.is_escalation_recipient
+        'isEscalationRecipient',v.is_escalation_recipient,
+        'history',coalesce((
+          select jsonb_agg(jsonb_build_object(
+            'eventType',h.event_type,
+            'fromStatus',h.from_status,
+            'toStatus',h.to_status,
+            'note',h.note,
+            'createdAt',h.created_at
+          ) order by h.created_at desc)
+          from (
+            select e.event_type,e.from_status,e.to_status,e.note,e.created_at
+            from public.khpos_ops_issue_events e
+            where e.issue_id=v.id
+            order by e.created_at desc
+            limit 12
+          ) h
+        ),'[]'::jsonb)
       )
       order by
         case v.severity when 'P1' then 1 when 'P2' then 2 when 'P3' then 3 else 4 end,
