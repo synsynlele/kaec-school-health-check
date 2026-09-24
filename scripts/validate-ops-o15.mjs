@@ -100,6 +100,20 @@ for (const expected of [
   "to service_role",
 ]) requireText(migration, expected, "O15 migration");
 
+const hardening = read(
+  "supabase/migrations/20260924191600_khpos_ops_o15_fk_index_hardening.sql",
+).toLowerCase();
+for (const expected of [
+  "idx_o15_assurance_events_actor",
+  "idx_o15_assurance_events_closeout",
+  "idx_o15_closeouts_approved_by",
+  "idx_o15_integrity_representation_by",
+  "idx_o15_cycles_approved_by",
+  "idx_o15_packages_moderator",
+  "idx_o15_readiness_verified_by",
+  "idx_o15_corrections_verified_by",
+]) requireText(hardening, expected, "O15 FK-index hardening migration");
+
 const seed = read("supabase/seeds/khpos_ops_o15_academic_assurance.sql").toLowerCase();
 for (const expected of [
   "acd-p02",
