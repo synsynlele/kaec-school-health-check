@@ -1720,7 +1720,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $function$
 declare
   v_case public.khpos_ops_academic_integrity_cases%rowtype;
 begin
@@ -1778,7 +1778,7 @@ begin
     )
   );
 end;
-$;
+$function$;
 
 create or replace function public.khpos_ops_add_integrity_evidence_server(
   p_actor_user_id uuid,
