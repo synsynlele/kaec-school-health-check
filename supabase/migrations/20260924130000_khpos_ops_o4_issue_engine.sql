@@ -634,6 +634,16 @@ begin
       and r.organisation_id=p_organisation_id and r.status='active'
   ) into v_is_escalation_recipient;
 
+  if v_is_escalation_recipient then
+    select e.target_role_id into v_actor_role
+    from public.khpos_ops_issue_escalations e
+    join public.khpos_ops_role_assignments a on a.role_id=e.target_role_id
+    where e.issue_id=v_issue.id and e.cleared_at is null
+      and a.user_id=p_actor_user_id and a.status='active'
+    order by e.escalated_at desc
+    limit 1;
+  end if;
+
   if not (v_is_reporter or v_is_owner or v_is_manager or v_is_escalation_recipient) then
     raise exception 'This issue is not visible to your active role.';
   end if;
@@ -739,8 +749,8 @@ begin
     ) values (p_organisation_id,v_issue.id,p_actor_user_id,'closed',v_from_status,'closed',nullif(btrim(coalesce(p_note,'')),''));
 
   elsif p_action='escalate' then
-    if not (v_is_owner or v_is_reporter) then
-      raise exception 'Only the issue owner or reporter can escalate this issue.';
+    if not (v_is_owner or v_is_reporter or v_is_manager or v_is_escalation_recipient) then
+      raise exception 'Escalation requires issue ownership, reporting responsibility or leadership visibility.';
     end if;
     if v_issue.status in ('verified','closed') then
       raise exception 'Verified or closed issues cannot be escalated.';
@@ -749,7 +759,9 @@ begin
       raise exception 'An escalation reason is required.';
     end if;
 
-    if v_owner_role is null then
+    if v_is_manager or v_is_escalation_recipient then
+      v_owner_role := v_actor_role;
+    elsif v_owner_role is null then
       if v_actor_role is null then
         select a.role_id into v_actor_role
         from public.khpos_ops_role_assignments a
