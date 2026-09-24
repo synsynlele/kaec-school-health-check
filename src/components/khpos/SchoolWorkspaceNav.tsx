@@ -22,6 +22,7 @@ import {
   ListTodo,
   Target,
   UserRoundCheck,
+  UserRoundSearch,
   UsersRound,
   Workflow,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const operationsLinks = [
   { suffix: "/staff-accountability", label: "Recognition & Accountability", icon: Gavel },
   { suffix: "/staff-transition", label: "Progression & Exit", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Academic Delivery", icon: GraduationCap },
+  { suffix: "/learner-progress", label: "Learner Progress", icon: UserRoundSearch },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
