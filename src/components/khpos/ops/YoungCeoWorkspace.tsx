@@ -342,23 +342,39 @@ export function YoungCeoWorkspace({
         <>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Active cycles", workspace.summary.activeCycles, BriefcaseBusiness],
-              ["Planned sessions", workspace.summary.plannedSessions, CalendarClock],
-              ["Active ventures", workspace.summary.activeVentures, Lightbulb],
-              ["Verified evidence", workspace.summary.verifiedMemberEvidence, BadgeCheck],
-            ].map(([label, value, Icon]) => (
+              {
+                label: "Active cycles",
+                value: workspace.summary.activeCycles,
+                Icon: BriefcaseBusiness,
+              },
+              {
+                label: "Planned sessions",
+                value: workspace.summary.plannedSessions,
+                Icon: CalendarClock,
+              },
+              {
+                label: "Active ventures",
+                value: workspace.summary.activeVentures,
+                Icon: Lightbulb,
+              },
+              {
+                label: "Verified evidence",
+                value: workspace.summary.verifiedMemberEvidence,
+                Icon: BadgeCheck,
+              },
+            ].map(({ label, value, Icon }) => (
               <div
-                key={String(label)}
+                key={label}
                 className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                    {String(label)}
+                    {label}
                   </p>
                   <Icon className="size-4 text-slate-400" />
                 </div>
                 <p className="mt-3 text-2xl font-black text-slate-950">
-                  {String(value)}
+                  {value}
                 </p>
               </div>
             ))}
