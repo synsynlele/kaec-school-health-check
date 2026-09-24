@@ -760,7 +760,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $$
 declare
   v_current public.khpos_ops_kpi_versions%rowtype;
   v_new_id uuid;
@@ -826,7 +826,7 @@ begin
 
   return v_new_id;
 end;
-$;
+$$;
 
 create or replace function public.khpos_ops_retire_kpi_server(
   p_actor_user_id uuid,
@@ -838,7 +838,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public,auth,khpos_private,pg_temp
-as $
+as $$
 begin
   if not khpos_private.ops_can_govern_performance(p_actor_user_id,p_organisation_id) then
     raise exception 'KPI retirement requires an active School Guardian or Vision Custodian role.';
@@ -868,7 +868,7 @@ begin
     jsonb_build_object('reason',left(btrim(p_note),4000))
   );
 end;
-$;
+$$;
 
 revoke execute on function khpos_private.ops_kpi_status(text,jsonb,numeric)
   from public,anon,authenticated;
