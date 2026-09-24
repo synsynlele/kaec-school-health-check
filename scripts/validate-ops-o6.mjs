@@ -58,7 +58,7 @@ for (const expected of [
 }
 
 const migration = read(
-  "supabase/migrations/20260924140500_khpos_ops_o6_performance.sql",
+  "supabase/migrations/20260924135638_khpos_ops_o6_performance.sql",
 ).toLowerCase();
 
 for (const expected of [
