@@ -127,7 +127,7 @@ export function PerformanceWorkspace({
   const [scopeRoleId, setScopeRoleId] = useState("");
   const [campusId, setCampusId] = useState("");
   const [unitId, setUnitId] = useState("");
-  const [systemCode, setSystemCode] = useState(systemOptions[0][0]);
+  const [systemCode, setSystemCode] = useState<string>(systemOptions[0][0]);
   const [indicatorType, setIndicatorType] = useState<
     "outcome" | "process" | "risk"
   >("outcome");
@@ -190,11 +190,12 @@ export function PerformanceWorkspace({
         return;
       }
 
-      setWorkspace(body.performance);
-      setOwnerRoleId((current) => current || body.performance.roles[0]?.id || "");
-      setScopeRoleId((current) => current || body.performance.roles[0]?.id || "");
-      setCampusId((current) => current || body.performance.campuses[0]?.id || "");
-      setUnitId((current) => current || body.performance.units[0]?.id || "");
+      const performance = body.performance;
+      setWorkspace(performance);
+      setOwnerRoleId((current) => current || performance.roles[0]?.id || "");
+      setScopeRoleId((current) => current || performance.roles[0]?.id || "");
+      setCampusId((current) => current || performance.campuses[0]?.id || "");
+      setUnitId((current) => current || performance.units[0]?.id || "");
       setError("");
     });
 
