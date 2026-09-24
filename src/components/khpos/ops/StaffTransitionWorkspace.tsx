@@ -178,21 +178,15 @@ export function StaffTransitionWorkspace({
     return targetRoles(workspace, promotionStaffId);
   }, [workspace, promotionStaffId]);
 
-  useEffect(() => {
-    setSuccessionTargetRoleId((current) =>
-      successionRoleOptions.some((role) => role.id === current)
-        ? current
-        : successionRoleOptions[0]?.id ?? "",
-    );
-  }, [successionRoleOptions]);
+  const effectiveSuccessionTargetRoleId =
+    successionRoleOptions.some((role) => role.id === successionTargetRoleId)
+      ? successionTargetRoleId
+      : successionRoleOptions[0]?.id ?? "";
 
-  useEffect(() => {
-    setPromotionTargetRoleId((current) =>
-      promotionRoleOptions.some((role) => role.id === current)
-        ? current
-        : promotionRoleOptions[0]?.id ?? "",
-    );
-  }, [promotionRoleOptions]);
+  const effectivePromotionTargetRoleId =
+    promotionRoleOptions.some((role) => role.id === promotionTargetRoleId)
+      ? promotionTargetRoleId
+      : promotionRoleOptions[0]?.id ?? "";
 
   async function submit(payload: Record<string, unknown>, busyKey: string) {
     const accessToken = await token();
@@ -235,7 +229,7 @@ export function StaffTransitionWorkspace({
   async function createSuccession() {
     if (
       !successionStaffId ||
-      !successionTargetRoleId ||
+      !effectiveSuccessionTargetRoleId ||
       !successionSummary.trim()
     ) {
       setError("Choose staff and target role, then record the readiness summary.");
@@ -246,7 +240,7 @@ export function StaffTransitionWorkspace({
       {
         mode: "create_succession",
         staffId: successionStaffId,
-        targetRoleId: successionTargetRoleId,
+        targetRoleId: effectiveSuccessionTargetRoleId,
         readinessState: successionReadiness,
         readinessSummary: successionSummary.trim(),
         developmentPriorities: successionPriorities.trim() || null,
@@ -265,7 +259,7 @@ export function StaffTransitionWorkspace({
   async function createPromotion() {
     if (
       !promotionStaffId ||
-      !promotionTargetRoleId ||
+      !effectivePromotionTargetRoleId ||
       !promotionEffectiveDate ||
       !promotionJustification.trim() ||
       !promotionReadiness.trim()
@@ -281,7 +275,7 @@ export function StaffTransitionWorkspace({
       {
         mode: "create_promotion",
         staffId: promotionStaffId,
-        targetRoleId: promotionTargetRoleId,
+        targetRoleId: effectivePromotionTargetRoleId,
         targetCampusId: staff?.campusId ?? null,
         targetUnitId: staff?.unitId ?? null,
         proposedEffectiveDate: promotionEffectiveDate,
@@ -510,7 +504,7 @@ export function StaffTransitionWorkspace({
                     ))}
                   </select>
                   <select
-                    value={successionTargetRoleId}
+                    value={effectiveSuccessionTargetRoleId}
                     onChange={(event) =>
                       setSuccessionTargetRoleId(event.target.value)
                     }
@@ -595,7 +589,7 @@ export function StaffTransitionWorkspace({
                     ))}
                   </select>
                   <select
-                    value={promotionTargetRoleId}
+                    value={effectivePromotionTargetRoleId}
                     onChange={(event) =>
                       setPromotionTargetRoleId(event.target.value)
                     }
@@ -619,7 +613,7 @@ export function StaffTransitionWorkspace({
                       .filter(
                         (plan) =>
                           plan.staffId === promotionStaffId &&
-                          plan.targetRoleId === promotionTargetRoleId,
+                          plan.targetRoleId === effectivePromotionTargetRoleId,
                       )
                       .map((plan) => (
                         <option key={plan.id} value={plan.id}>
