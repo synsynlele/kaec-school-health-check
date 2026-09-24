@@ -79,6 +79,28 @@ for (const role of ["public", "anon", "authenticated"]) {
   );
 }
 
+const hardeningMigration = read(
+  "supabase/migrations/20260924114421_khpos_ops_o1_fk_index_hardening.sql",
+);
+for (const expected of [
+  "idx_khpos_ops_campuses_created_by",
+  "idx_khpos_ops_units_campus",
+  "idx_khpos_ops_units_parent",
+  "idx_khpos_ops_roles_reports_to",
+  "idx_khpos_ops_role_assignments_campus",
+  "idx_khpos_ops_role_assignments_unit",
+  "idx_khpos_ops_role_charters_approved_by",
+  "idx_khpos_ops_reporting_supervisor",
+  "idx_khpos_ops_backup_backup",
+  "idx_khpos_ops_audit_actor",
+]) {
+  requireText(
+    hardeningMigration,
+    expected,
+    "Operations O1 foreign-key index hardening",
+  );
+}
+
 const seed = read("supabase/seeds/khpos_ops_o1_kns.sql");
 for (const expected of [
   "KAEC Nigerian Schools",
