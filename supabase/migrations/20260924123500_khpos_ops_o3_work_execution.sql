@@ -39,6 +39,7 @@ create table if not exists public.khpos_ops_recurring_rules (
   campus_id uuid references public.khpos_ops_campuses(id) on delete cascade,
   unit_id uuid references public.khpos_ops_units(id) on delete cascade,
   checklist_template_id uuid references public.khpos_ops_checklist_templates(id) on delete set null,
+  code text not null,
   title text not null,
   description text,
   cadence text not null check (cadence in ('daily','weekly','monthly','manual')),
@@ -58,6 +59,7 @@ create table if not exists public.khpos_ops_recurring_rules (
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  unique (organisation_id, code),
   check (end_date is null or end_date >= start_date),
   check (
     cardinality(weekdays) > 0
