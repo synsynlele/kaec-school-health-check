@@ -44,7 +44,7 @@ function statusClass(status: string) {
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(\`\${value}T00:00:00\`),
+    new Date(`${value}T00:00:00`),
   );
 }
 
@@ -82,9 +82,9 @@ export function AcademicAssuranceWorkspace({
       }
 
       const response = await fetch(
-        \`/api/khpos/ops/academic-assurance/\${organisationId}\`,
+        `/api/khpos/ops/academic-assurance/${organisationId}`,
         {
-          headers: { Authorization: \`Bearer \${accessToken}\` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           cache: "no-store",
         },
       );
@@ -120,11 +120,11 @@ export function AcademicAssuranceWorkspace({
     setError("");
 
     const response = await fetch(
-      \`/api/khpos/ops/academic-assurance/\${organisationId}\`,
+      `/api/khpos/ops/academic-assurance/${organisationId}`,
       {
         method: "POST",
         headers: {
-          Authorization: \`Bearer \${accessToken}\`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -180,7 +180,7 @@ export function AcademicAssuranceWorkspace({
     <main className="mx-auto w-full max-w-7xl space-y-7 px-4 py-6 sm:px-6 lg:px-8">
       <header>
         <Link
-          href={\`/khpos/\${organisationId}/academic-delivery\`}
+          href={`/khpos/${organisationId}/academic-delivery`}
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
         >
           <ArrowLeft className="size-3.5" />
@@ -577,9 +577,9 @@ function CycleCard({
   const cycleStreams = workspace.streams.filter(
     (stream) => stream.termId === cycle.termId,
   );
-  const packageStreamKey = \`pkg-stream-\${cycle.id}\`;
-  const readyOwnerKey = \`ready-owner-\${cycle.id}\`;
-  const readyStreamKey = \`ready-stream-\${cycle.id}\`;
+  const packageStreamKey = `pkg-stream-${cycle.id}`;
+  const readyOwnerKey = `ready-owner-${cycle.id}`;
+  const readyStreamKey = `ready-stream-${cycle.id}`;
 
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -590,9 +590,9 @@ function CycleCard({
               {cycle.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 cycle.status,
-              )}\`}
+              )}`}
             >
               {readable(cycle.status)}
             </span>
@@ -616,7 +616,7 @@ function CycleCard({
           {cycle.status === "draft" ? (
             <ActionButton
               label="Approve plan"
-              busy={busyId === \`cycle-plan-\${cycle.id}\`}
+              busy={busyId === `cycle-plan-${cycle.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -624,7 +624,7 @@ function CycleCard({
                     cycleId: cycle.id,
                     action: "approve_plan",
                   },
-                  \`cycle-plan-\${cycle.id}\`,
+                  `cycle-plan-${cycle.id}`,
                 )
               }
             />
@@ -632,7 +632,7 @@ function CycleCard({
           {cycle.status === "planned" ? (
             <ActionButton
               label="Mark Ready"
-              busy={busyId === \`cycle-ready-\${cycle.id}\`}
+              busy={busyId === `cycle-ready-${cycle.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -640,7 +640,7 @@ function CycleCard({
                     cycleId: cycle.id,
                     action: "mark_ready",
                   },
-                  \`cycle-ready-\${cycle.id}\`,
+                  `cycle-ready-${cycle.id}`,
                 )
               }
             />
@@ -648,11 +648,11 @@ function CycleCard({
           {cycle.status === "ready" ? (
             <ActionButton
               label="Start cycle"
-              busy={busyId === \`cycle-start-\${cycle.id}\`}
+              busy={busyId === `cycle-start-${cycle.id}`}
               onClick={() =>
                 void submit(
                   { mode: "cycle_action", cycleId: cycle.id, action: "start" },
-                  \`cycle-start-\${cycle.id}\`,
+                  `cycle-start-${cycle.id}`,
                 )
               }
             />
@@ -660,7 +660,7 @@ function CycleCard({
           {cycle.status === "in_progress" ? (
             <ActionButton
               label="Results pending"
-              busy={busyId === \`cycle-results-\${cycle.id}\`}
+              busy={busyId === `cycle-results-${cycle.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -668,7 +668,7 @@ function CycleCard({
                     cycleId: cycle.id,
                     action: "results_pending",
                   },
-                  \`cycle-results-\${cycle.id}\`,
+                  `cycle-results-${cycle.id}`,
                 )
               }
             />
@@ -676,11 +676,11 @@ function CycleCard({
           {cycle.status === "results_pending" ? (
             <ActionButton
               label="Close cycle"
-              busy={busyId === \`cycle-close-\${cycle.id}\`}
+              busy={busyId === `cycle-close-${cycle.id}`}
               onClick={() =>
                 void submit(
                   { mode: "cycle_action", cycleId: cycle.id, action: "close" },
-                  \`cycle-close-\${cycle.id}\`,
+                  `cycle-close-${cycle.id}`,
                 )
               }
             />
@@ -707,9 +707,9 @@ function CycleCard({
               ))}
             </select>
             <select
-              value={values[\`pkg-source-\${cycle.id}\`] || "KSI"}
+              value={values[`pkg-source-${cycle.id}`] || "KSI"}
               onChange={(event) =>
-                setValue(\`pkg-source-\${cycle.id}\`, event.target.value)
+                setValue(`pkg-source-${cycle.id}`, event.target.value)
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             >
@@ -720,17 +720,17 @@ function CycleCard({
               ))}
             </select>
             <input
-              value={values[\`pkg-ref-\${cycle.id}\`] || ""}
+              value={values[`pkg-ref-${cycle.id}`] || ""}
               onChange={(event) =>
-                setValue(\`pkg-ref-\${cycle.id}\`, event.target.value)
+                setValue(`pkg-ref-${cycle.id}`, event.target.value)
               }
               placeholder="Assessment source reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
             <input
-              value={values[\`pkg-blueprint-\${cycle.id}\`] || ""}
+              value={values[`pkg-blueprint-${cycle.id}`] || ""}
               onChange={(event) =>
-                setValue(\`pkg-blueprint-\${cycle.id}\`, event.target.value)
+                setValue(`pkg-blueprint-${cycle.id}`, event.target.value)
               }
               placeholder="Blueprint/specification reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
@@ -739,11 +739,11 @@ function CycleCard({
           <label className="mt-3 flex items-center gap-2 text-xs font-bold">
             <input
               type="checkbox"
-              checked={flags[\`pkg-declare-\${cycle.id}\`] ?? false}
+              checked={flags[`pkg-declare-${cycle.id}`] ?? false}
               onChange={(event) =>
                 setFlags((current) => ({
                   ...current,
-                  [\`pkg-declare-\${cycle.id}\`]: event.target.checked,
+                  [`pkg-declare-${cycle.id}`]: event.target.checked,
                 }))
               }
             />
@@ -760,13 +760,13 @@ function CycleCard({
                   cycleId: cycle.id,
                   streamId: values[packageStreamKey] || cycleStreams[0]?.id,
                   assessmentSource:
-                    values[\`pkg-source-\${cycle.id}\`] || "KSI",
-                  sourceReference: values[\`pkg-ref-\${cycle.id}\`],
-                  blueprintReference: values[\`pkg-blueprint-\${cycle.id}\`],
+                    values[`pkg-source-${cycle.id}`] || "KSI",
+                  sourceReference: values[`pkg-ref-${cycle.id}`],
+                  blueprintReference: values[`pkg-blueprint-${cycle.id}`],
                   integrityDeclaration:
-                    flags[\`pkg-declare-\${cycle.id}\`] ?? false,
+                    flags[`pkg-declare-${cycle.id}`] ?? false,
                 },
-                \`pkg-create-\${cycle.id}\`,
+                `pkg-create-${cycle.id}`,
               )
             }
           >
@@ -800,9 +800,9 @@ function CycleCard({
           </summary>
           <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             <select
-              value={values[\`ready-category-\${cycle.id}\`] || "timetable"}
+              value={values[`ready-category-${cycle.id}`] || "timetable"}
               onChange={(event) =>
-                setValue(\`ready-category-\${cycle.id}\`, event.target.value)
+                setValue(`ready-category-${cycle.id}`, event.target.value)
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             >
@@ -851,25 +851,25 @@ function CycleCard({
               ))}
             </select>
             <input
-              value={values[\`ready-title-\${cycle.id}\`] || ""}
+              value={values[`ready-title-${cycle.id}`] || ""}
               onChange={(event) =>
-                setValue(\`ready-title-\${cycle.id}\`, event.target.value)
+                setValue(`ready-title-${cycle.id}`, event.target.value)
               }
               placeholder="Readiness control title"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
             <input
               type="date"
-              value={values[\`ready-date-\${cycle.id}\`] || ""}
+              value={values[`ready-date-${cycle.id}`] || ""}
               onChange={(event) =>
-                setValue(\`ready-date-\${cycle.id}\`, event.target.value)
+                setValue(`ready-date-${cycle.id}`, event.target.value)
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
             <input
-              value={values[\`ready-desc-\${cycle.id}\`] || ""}
+              value={values[`ready-desc-${cycle.id}`] || ""}
               onChange={(event) =>
-                setValue(\`ready-desc-\${cycle.id}\`, event.target.value)
+                setValue(`ready-desc-${cycle.id}`, event.target.value)
               }
               placeholder="What must be proven?"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
@@ -885,15 +885,15 @@ function CycleCard({
                   cycleId: cycle.id,
                   streamId: values[readyStreamKey] || null,
                   category:
-                    values[\`ready-category-\${cycle.id}\`] || "timetable",
-                  title: values[\`ready-title-\${cycle.id}\`],
-                  description: values[\`ready-desc-\${cycle.id}\`],
+                    values[`ready-category-${cycle.id}`] || "timetable",
+                  title: values[`ready-title-${cycle.id}`],
+                  description: values[`ready-desc-${cycle.id}`],
                   ownerAssignmentId:
                     values[readyOwnerKey] || workspace.assignments[0]?.id,
-                  dueDate: values[\`ready-date-\${cycle.id}\`],
+                  dueDate: values[`ready-date-${cycle.id}`],
                   mandatory: true,
                 },
-                \`ready-create-\${cycle.id}\`,
+                `ready-create-${cycle.id}`,
               )
             }
           >
@@ -936,7 +936,7 @@ function PackageRow({
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`pkg-note-\${pkg.id}\`;
+  const noteKey = `pkg-note-${pkg.id}`;
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -950,9 +950,9 @@ function PackageRow({
           </p>
         </div>
         <span
-          className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
             pkg.moderationState,
-          )}\`}
+          )}`}
         >
           {readable(pkg.moderationState)}
         </span>
@@ -968,11 +968,11 @@ function PackageRow({
         {["draft", "changes_required"].includes(pkg.moderationState) ? (
           <MiniButton
             label="Submit"
-            busy={busyId === \`pkg-submit-\${pkg.id}\`}
+            busy={busyId === `pkg-submit-${pkg.id}`}
             onClick={() =>
               void submit(
                 { mode: "package_action", packageId: pkg.id, action: "submit" },
-                \`pkg-submit-\${pkg.id}\`,
+                `pkg-submit-${pkg.id}`,
               )
             }
           />
@@ -981,7 +981,7 @@ function PackageRow({
           <>
             <MiniButton
               label="Approve"
-              busy={busyId === \`pkg-approve-\${pkg.id}\`}
+              busy={busyId === `pkg-approve-${pkg.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -990,13 +990,13 @@ function PackageRow({
                     action: "approve",
                     note: values[noteKey] || null,
                   },
-                  \`pkg-approve-\${pkg.id}\`,
+                  `pkg-approve-${pkg.id}`,
                 )
               }
             />
             <MiniButton
               label="Request changes"
-              busy={busyId === \`pkg-changes-\${pkg.id}\`}
+              busy={busyId === `pkg-changes-${pkg.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -1005,7 +1005,7 @@ function PackageRow({
                     action: "request_changes",
                     note: values[noteKey],
                   },
-                  \`pkg-changes-\${pkg.id}\`,
+                  `pkg-changes-${pkg.id}`,
                 )
               }
             />
@@ -1029,8 +1029,8 @@ function ReadinessRow({
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`ready-note-\${item.id}\`;
-  const refKey = \`ready-ref-\${item.id}\`;
+  const noteKey = `ready-note-${item.id}`;
+  const refKey = `ready-ref-${item.id}`;
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1042,9 +1042,9 @@ function ReadinessRow({
           </p>
         </div>
         <span
-          className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
             item.status,
-          )}\`}
+          )}`}
         >
           {readable(item.status)}
         </span>
@@ -1072,7 +1072,7 @@ function ReadinessRow({
         {item.isOwner && ["pending", "in_progress"].includes(item.status) ? (
           <MiniButton
             label="Submit evidence"
-            busy={busyId === \`ready-submit-\${item.id}\`}
+            busy={busyId === `ready-submit-${item.id}`}
             onClick={() =>
               void submit(
                 {
@@ -1082,7 +1082,7 @@ function ReadinessRow({
                   note: values[noteKey],
                   evidenceReference: values[refKey],
                 },
-                \`ready-submit-\${item.id}\`,
+                `ready-submit-${item.id}`,
               )
             }
           />
@@ -1090,7 +1090,7 @@ function ReadinessRow({
         {item.canVerify && item.status === "evidence_submitted" ? (
           <MiniButton
             label="Verify"
-            busy={busyId === \`ready-verify-\${item.id}\`}
+            busy={busyId === `ready-verify-${item.id}`}
             onClick={() =>
               void submit(
                 {
@@ -1098,7 +1098,7 @@ function ReadinessRow({
                   itemId: item.id,
                   action: "verify",
                 },
-                \`ready-verify-\${item.id}\`,
+                `ready-verify-${item.id}`,
               )
             }
           />
@@ -1289,10 +1289,10 @@ function IntegrityCard({
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`int-note-\${item.id}\`;
-  const refKey = \`int-ref-\${item.id}\`;
-  const outcomeKey = \`int-outcome-\${item.id}\`;
-  const actionKey = \`int-action-\${item.id}\`;
+  const noteKey = `int-note-${item.id}`;
+  const refKey = `int-ref-${item.id}`;
+  const outcomeKey = `int-outcome-${item.id}`;
+  const actionKey = `int-action-${item.id}`;
 
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1301,16 +1301,16 @@ function IntegrityCard({
           <div className="flex flex-wrap gap-2">
             <span className="text-xs font-black text-slate-500">{item.reference}</span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 item.status,
-              )}\`}
+              )}`}
             >
               {readable(item.status)}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 item.severity,
-              )}\`}
+              )}`}
             >
               {item.severity}
             </span>
@@ -1363,17 +1363,17 @@ function IntegrityCard({
           <div className="rounded-2xl border border-slate-200 p-3">
             <p className="text-xs font-black">Add evidence</p>
             <input
-              value={values[\`evidence-title-\${item.id}\`] || ""}
+              value={values[`evidence-title-${item.id}`] || ""}
               onChange={(event) =>
-                setValue(\`evidence-title-\${item.id}\`, event.target.value)
+                setValue(`evidence-title-${item.id}`, event.target.value)
               }
               placeholder="Evidence title"
               className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
             />
             <textarea
-              value={values[\`evidence-note-\${item.id}\`] || ""}
+              value={values[`evidence-note-${item.id}`] || ""}
               onChange={(event) =>
-                setValue(\`evidence-note-\${item.id}\`, event.target.value)
+                setValue(`evidence-note-${item.id}`, event.target.value)
               }
               placeholder="What does it establish?"
               rows={2}
@@ -1381,18 +1381,18 @@ function IntegrityCard({
             />
             <MiniButton
               label="Add evidence"
-              busy={busyId === \`int-evidence-\${item.id}\`}
+              busy={busyId === `int-evidence-${item.id}`}
               onClick={() =>
                 void submit(
                   {
                     mode: "integrity_evidence",
                     caseId: item.id,
                     evidenceType: "system_record",
-                    title: values[\`evidence-title-\${item.id}\`],
-                    note: values[\`evidence-note-\${item.id}\`],
+                    title: values[`evidence-title-${item.id}`],
+                    note: values[`evidence-note-${item.id}`],
                     evidenceReference: values[refKey] || null,
                   },
-                  \`int-evidence-\${item.id}\`,
+                  `int-evidence-${item.id}`,
                 )
               }
             />
@@ -1405,9 +1405,9 @@ function IntegrityCard({
             <div className="rounded-2xl border border-slate-200 p-3">
               <p className="text-xs font-black">Record subject explanation</p>
               <textarea
-                value={values[\`representation-\${item.id}\`] || ""}
+                value={values[`representation-${item.id}`] || ""}
                 onChange={(event) =>
-                  setValue(\`representation-\${item.id}\`, event.target.value)
+                  setValue(`representation-${item.id}`, event.target.value)
                 }
                 placeholder="Their explanation, or documented decline/inability to respond"
                 rows={3}
@@ -1415,17 +1415,17 @@ function IntegrityCard({
               />
               <MiniButton
                 label="Record representation"
-                busy={busyId === \`int-representation-\${item.id}\`}
+                busy={busyId === `int-representation-${item.id}`}
                 onClick={() =>
                   void submit(
                     {
                       mode: "integrity_representation",
                       caseId: item.id,
                       representationNote:
-                        values[\`representation-\${item.id}\`],
+                        values[`representation-${item.id}`],
                       representationReference: values[refKey] || null,
                     },
-                    \`int-representation-\${item.id}\`,
+                    `int-representation-${item.id}`,
                   )
                 }
               />
@@ -1485,7 +1485,7 @@ function IntegrityCard({
               />
               <MiniButton
                 label="Record decision"
-                busy={busyId === \`int-decision-\${item.id}\`}
+                busy={busyId === `int-decision-${item.id}`}
                 onClick={() =>
                   void submit(
                     {
@@ -1496,7 +1496,7 @@ function IntegrityCard({
                       decisionNote: values[noteKey],
                       relatedProcessReference: values[refKey] || null,
                     },
-                    \`int-decision-\${item.id}\`,
+                    `int-decision-${item.id}`,
                   )
                 }
               />
@@ -1511,7 +1511,7 @@ function IntegrityCard({
           onClick={() =>
             void submit(
               { mode: "integrity_action", caseId: item.id, action: "close" },
-              \`int-close-\${item.id}\`,
+              `int-close-${item.id}`,
             )
           }
           className="mt-4 rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white"
@@ -1645,8 +1645,8 @@ function CorrectionCard({
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`corr-note-\${item.id}\`;
-  const refKey = \`corr-ref-\${item.id}\`;
+  const noteKey = `corr-note-${item.id}`;
+  const refKey = `corr-ref-${item.id}`;
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1661,9 +1661,9 @@ function CorrectionCard({
           </p>
         </div>
         <span
-          className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
             item.status,
-          )}\`}
+          )}`}
         >
           {readable(item.status)}
         </span>
@@ -1689,7 +1689,7 @@ function CorrectionCard({
           <>
             <MiniButton
               label="Approve"
-              busy={busyId === \`corr-approve-\${item.id}\`}
+              busy={busyId === `corr-approve-${item.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -1698,13 +1698,13 @@ function CorrectionCard({
                     action: "approve",
                     note: values[noteKey],
                   },
-                  \`corr-approve-\${item.id}\`,
+                  `corr-approve-${item.id}`,
                 )
               }
             />
             <MiniButton
               label="Reject"
-              busy={busyId === \`corr-reject-\${item.id}\`}
+              busy={busyId === `corr-reject-${item.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -1713,7 +1713,7 @@ function CorrectionCard({
                     action: "reject",
                     note: values[noteKey],
                   },
-                  \`corr-reject-\${item.id}\`,
+                  `corr-reject-${item.id}`,
                 )
               }
             />
@@ -1722,7 +1722,7 @@ function CorrectionCard({
         {item.status === "approved" ? (
           <MiniButton
             label="Record external implementation"
-            busy={busyId === \`corr-implement-\${item.id}\`}
+            busy={busyId === `corr-implement-${item.id}`}
             onClick={() =>
               void submit(
                 {
@@ -1732,7 +1732,7 @@ function CorrectionCard({
                   note: values[noteKey],
                   reference: values[refKey],
                 },
-                \`corr-implement-\${item.id}\`,
+                `corr-implement-${item.id}`,
               )
             }
           />
@@ -1740,7 +1740,7 @@ function CorrectionCard({
         {item.canVerify && item.status === "implemented" ? (
           <MiniButton
             label="Independently verify"
-            busy={busyId === \`corr-verify-\${item.id}\`}
+            busy={busyId === `corr-verify-${item.id}`}
             onClick={() =>
               void submit(
                 {
@@ -1748,7 +1748,7 @@ function CorrectionCard({
                   correctionId: item.id,
                   action: "verify",
                 },
-                \`corr-verify-\${item.id}\`,
+                `corr-verify-${item.id}`,
               )
             }
           />
@@ -1865,7 +1865,7 @@ function CloseoutCard({
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const noteKey = \`closeout-note-\${item.id}\`;
+  const noteKey = `closeout-note-${item.id}`;
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1879,9 +1879,9 @@ function CloseoutCard({
           </p>
         </div>
         <span
-          className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
             item.status,
-          )}\`}
+          )}`}
         >
           {readable(item.status)}
         </span>
@@ -1899,11 +1899,11 @@ function CloseoutCard({
         {item.status === "draft" ? (
           <MiniButton
             label="Submit for School Guardian review"
-            busy={busyId === \`closeout-submit-\${item.id}\`}
+            busy={busyId === `closeout-submit-${item.id}`}
             onClick={() =>
               void submit(
                 { mode: "closeout_action", closeoutId: item.id, action: "submit" },
-                \`closeout-submit-\${item.id}\`,
+                `closeout-submit-${item.id}`,
               )
             }
           />
@@ -1912,7 +1912,7 @@ function CloseoutCard({
           <>
             <MiniButton
               label="Approve"
-              busy={busyId === \`closeout-approve-\${item.id}\`}
+              busy={busyId === `closeout-approve-${item.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -1921,13 +1921,13 @@ function CloseoutCard({
                     action: "approve",
                     note: values[noteKey],
                   },
-                  \`closeout-approve-\${item.id}\`,
+                  `closeout-approve-${item.id}`,
                 )
               }
             />
             <MiniButton
               label="Return for revision"
-              busy={busyId === \`closeout-return-\${item.id}\`}
+              busy={busyId === `closeout-return-${item.id}`}
               onClick={() =>
                 void submit(
                   {
@@ -1936,7 +1936,7 @@ function CloseoutCard({
                     action: "return_to_draft",
                     note: values[noteKey],
                   },
-                  \`closeout-return-\${item.id}\`,
+                  `closeout-return-${item.id}`,
                 )
               }
             />
@@ -1945,7 +1945,7 @@ function CloseoutCard({
         {item.canApprove && item.status === "approved" ? (
           <MiniButton
             label="Close academic term"
-            busy={busyId === \`closeout-close-\${item.id}\`}
+            busy={busyId === `closeout-close-${item.id}`}
             onClick={() =>
               void submit(
                 {
@@ -1954,7 +1954,7 @@ function CloseoutCard({
                   action: "close_term",
                   note: values[noteKey] || null,
                 },
-                \`closeout-close-\${item.id}\`,
+                `closeout-close-${item.id}`,
               )
             }
           />
