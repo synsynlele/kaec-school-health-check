@@ -234,23 +234,39 @@ export function RecruitmentWorkspace({
         <>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Open needs", workspace.summary.openRequests, ClipboardList],
-              ["Open vacancies", workspace.summary.openVacancies, BriefcaseBusiness],
-              ["Active candidates", workspace.summary.activeApplications, UsersRound],
-              ["In clearance", workspace.summary.clearancePending, ShieldCheck],
-            ].map(([label, value, Icon]) => (
+              {
+                label: "Open needs",
+                value: workspace.summary.openRequests,
+                Icon: ClipboardList,
+              },
+              {
+                label: "Open vacancies",
+                value: workspace.summary.openVacancies,
+                Icon: BriefcaseBusiness,
+              },
+              {
+                label: "Active candidates",
+                value: workspace.summary.activeApplications,
+                Icon: UsersRound,
+              },
+              {
+                label: "In clearance",
+                value: workspace.summary.clearancePending,
+                Icon: ShieldCheck,
+              },
+            ].map(({ label, value, Icon }) => (
               <div
-                key={String(label)}
+                key={label}
                 className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                    {String(label)}
+                    {label}
                   </p>
                   <Icon className="size-4 text-slate-400" />
                 </div>
                 <p className="mt-3 text-2xl font-black text-slate-950">
-                  {String(value)}
+                  {value}
                 </p>
               </div>
             ))}
