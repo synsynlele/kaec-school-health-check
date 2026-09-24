@@ -54,7 +54,7 @@ for (const expected of [
 }
 
 const migration = read(
-  "supabase/migrations/20260924122000_khpos_ops_o2_control_library.sql",
+  "supabase/migrations/20260924122456_khpos_ops_o2_control_library.sql",
 ).toLowerCase();
 for (const expected of [
   "create table if not exists public.khpos_ops_policies",
