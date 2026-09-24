@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   BookOpen,
   BrainCircuit,
   Building2,
@@ -34,6 +35,7 @@ const operationsLinks = [
   { suffix: "/work", label: "My Work", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
+  { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
