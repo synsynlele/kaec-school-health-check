@@ -132,6 +132,29 @@ grant select,insert,update,delete on table public.khpos_ops_staff_availability_c
 grant select,insert,update,delete on table public.khpos_ops_staff_coverage_assignments to service_role;
 grant select,insert,update,delete on table public.khpos_ops_staff_availability_events to service_role;
 
+create or replace function khpos_private.ops_availability_has_membership(
+  p_actor_user_id uuid,
+  p_organisation_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+  select exists(
+    select 1
+    from public.organisation_memberships m
+    join public.organisations o on o.id=m.organisation_id
+    where m.organisation_id=p_organisation_id
+      and m.user_id=p_actor_user_id
+      and m.status='active'
+      and o.status='active'
+      and o.partner_status='active'
+      and 'khpos_core'=any(coalesce(o.partner_entitlements,'{}'::text[]))
+  );
+$;
+
 create or replace function khpos_private.ops_availability_can_review_staff(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -521,6 +544,10 @@ declare
   v_case_id uuid;
   v_reference text;
 begin
+  if not khpos_private.ops_availability_has_membership(p_actor_user_id,p_organisation_id) then
+    raise exception 'Active organisation membership and KHP-OS partnership are required.';
+  end if;
+
   begin v_staff_id := (p_input->>'staffId')::uuid;
   exception when others then raise exception 'A valid active staff record is required.'; end;
 
@@ -675,6 +702,10 @@ declare
   v_note text := nullif(btrim(coalesce(p_note,'')),'');
   v_coverage_required boolean;
 begin
+  if not khpos_private.ops_availability_has_membership(p_actor_user_id,p_organisation_id) then
+    raise exception 'Active organisation membership and KHP-OS partnership are required.';
+  end if;
+
   select * into v_case
   from public.khpos_ops_staff_availability_cases
   where id=p_case_id and organisation_id=p_organisation_id
@@ -881,6 +912,10 @@ declare
   v_scope text := nullif(btrim(coalesce(p_scope,'')),'');
   v_coverage_id uuid;
 begin
+  if not khpos_private.ops_availability_has_membership(p_actor_user_id,p_organisation_id) then
+    raise exception 'Active organisation membership and KHP-OS partnership are required.';
+  end if;
+
   select * into v_case
   from public.khpos_ops_staff_availability_cases
   where id=p_case_id and organisation_id=p_organisation_id
@@ -1004,6 +1039,10 @@ declare
   v_to_status text;
   v_note text := nullif(btrim(coalesce(p_note,'')),'');
 begin
+  if not khpos_private.ops_availability_has_membership(p_actor_user_id,p_organisation_id) then
+    raise exception 'Active organisation membership and KHP-OS partnership are required.';
+  end if;
+
   select * into v_coverage
   from public.khpos_ops_staff_coverage_assignments
   where id=p_coverage_id and organisation_id=p_organisation_id
@@ -1126,6 +1165,8 @@ begin
 end;
 $$;
 
+revoke execute on function khpos_private.ops_availability_has_membership(uuid,uuid)
+  from public,anon,authenticated;
 revoke execute on function khpos_private.ops_availability_can_review_staff(uuid,uuid,uuid)
   from public,anon,authenticated;
 revoke execute on function khpos_private.ops_availability_staff_is_self(uuid,uuid,uuid)
@@ -1141,6 +1182,8 @@ revoke execute on function public.khpos_ops_assign_coverage_server(uuid,uuid,uui
 revoke execute on function public.khpos_ops_coverage_action_server(uuid,uuid,uuid,text,text)
   from public,anon,authenticated;
 
+grant execute on function khpos_private.ops_availability_has_membership(uuid,uuid)
+  to service_role;
 grant execute on function khpos_private.ops_availability_can_review_staff(uuid,uuid,uuid)
   to service_role;
 grant execute on function khpos_private.ops_availability_staff_is_self(uuid,uuid,uuid)
