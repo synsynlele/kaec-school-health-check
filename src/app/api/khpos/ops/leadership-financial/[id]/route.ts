@@ -181,7 +181,7 @@ export async function POST(
       const action = clean(payload.action);
       if (
         !validUuid(payload.activityId) ||
-        !["deliver", "miss", "cancel"].includes(action) ||
+        !["deliver", "miss", "recover", "waive_recovery", "cancel"].includes(action) ||
         !clean(payload.note)
       ) {
         return NextResponse.json(
@@ -192,7 +192,12 @@ export async function POST(
 
       const capability = await actOnKhposOpsFinancialActivity(id, user.id, {
         activityId: payload.activityId,
-        action: action as "deliver" | "miss" | "cancel",
+        action: action as
+          | "deliver"
+          | "miss"
+          | "recover"
+          | "waive_recovery"
+          | "cancel",
         note: clean(payload.note),
         evidenceReference: clean(payload.evidenceReference) || null,
         recoveryDueDate: clean(payload.recoveryDueDate) || null,
