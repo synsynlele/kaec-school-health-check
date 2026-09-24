@@ -149,6 +149,10 @@ create table if not exists public.khpos_ops_academic_integrity_cases (
     check (severity in ('standard','high','critical')),
   incident_summary text not null,
   source_reference text,
+  representation_note text,
+  representation_reference text,
+  representation_recorded_by uuid references auth.users(id) on delete set null,
+  representation_recorded_at timestamptz,
   reported_by uuid not null references auth.users(id) on delete restrict,
   reported_at timestamptz not null default now(),
   status text not null default 'open'
@@ -712,7 +716,11 @@ begin
       'subjectStaffName',st.display_name,'reference',ic.case_reference,
       'subjectType',ic.subject_type,'incidentType',ic.incident_type,
       'severity',ic.severity,'incidentSummary',ic.incident_summary,
-      'sourceReference',ic.source_reference,'reportedBy',ic.reported_by,
+      'sourceReference',ic.source_reference,
+      'representationNote',ic.representation_note,
+      'representationReference',ic.representation_reference,
+      'representationRecordedAt',ic.representation_recorded_at,
+      'reportedBy',ic.reported_by,
       'reportedAt',ic.reported_at,'status',ic.status,
       'outcome',ic.outcome,'academicAction',ic.academic_action,
       'decisionNote',ic.decision_note,
@@ -990,6 +998,15 @@ begin
       raise exception 'Only a planned assessment cycle can be marked ready.';
     end if;
 
+    if not exists(
+      select 1
+      from public.khpos_ops_exam_readiness_items ri
+      where ri.cycle_id=v_cycle.id
+        and ri.mandatory
+    ) then
+      raise exception 'Assessment cycle cannot be marked ready without at least one mandatory readiness control.';
+    end if;
+
     if exists(
       select 1
       from public.khpos_ops_exam_readiness_items ri
@@ -998,6 +1015,28 @@ begin
         and ri.status not in ('verified','exception_accepted')
     ) then
       raise exception 'Resolve every mandatory examination-readiness control before marking the cycle ready.';
+    end if;
+
+    if v_cycle.cycle_type='external_exam'
+       and not exists(
+         select 1
+         from public.khpos_ops_exam_readiness_items ri
+         where ri.cycle_id=v_cycle.id
+           and ri.category='external_registration'
+           and ri.mandatory
+           and ri.status in ('verified','exception_accepted')
+       ) then
+      raise exception 'External examination readiness requires a resolved mandatory external-registration control.';
+    end if;
+
+    if v_cycle.cycle_type<>'external_exam'
+       and exists(
+         select 1
+         from public.khpos_ops_assessment_packages p
+         where p.cycle_id=v_cycle.id
+           and p.moderation_state not in ('approved','withdrawn')
+       ) then
+      raise exception 'Resolve every created assessment package through approval or withdrawal before marking the cycle ready.';
     end if;
 
     if v_cycle.cycle_type<>'external_exam'
@@ -1670,6 +1709,77 @@ begin
 end;
 $$;
 
+create or replace function public.khpos_ops_record_integrity_representation_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_case_id uuid,
+  p_representation_note text,
+  p_representation_reference text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_case public.khpos_ops_academic_integrity_cases%rowtype;
+begin
+  select * into v_case
+  from public.khpos_ops_academic_integrity_cases
+  where id=p_case_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_case.id is null then raise exception 'Academic-integrity case not found.'; end if;
+
+  if v_case.subject_type not in ('learner','staff') then
+    raise exception 'Subject representation applies only to learner/staff integrity cases.';
+  end if;
+
+  if not khpos_private.ops_assurance_can_coordinate(
+    p_actor_user_id,p_organisation_id
+  ) then
+    raise exception 'Only authorised academic leadership can record the subject representation.';
+  end if;
+
+  if v_case.reported_by=p_actor_user_id then
+    raise exception 'The integrity-case reporter cannot be the sole recorder of the subject representation.';
+  end if;
+
+  if v_case.status in ('decision_recorded','referred','closed') then
+    raise exception 'Subject representation must be recorded before the integrity decision.';
+  end if;
+
+  if nullif(btrim(coalesce(p_representation_note,'')),'') is null then
+    raise exception 'Record the learner/staff explanation or the documented fact that they declined/unable to respond.';
+  end if;
+
+  update public.khpos_ops_academic_integrity_cases
+  set representation_note=left(btrim(p_representation_note),8000),
+      representation_reference=left(
+        nullif(btrim(coalesce(p_representation_reference,'')),''),
+        1000
+      ),
+      representation_recorded_by=p_actor_user_id,
+      representation_recorded_at=now(),
+      status=case when status='open' then 'under_review' else status end,
+      updated_at=now()
+  where id=v_case.id;
+
+  insert into public.khpos_ops_academic_assurance_events(
+    organisation_id,term_id,cycle_id,integrity_case_id,
+    actor_user_id,event_type,note,metadata
+  ) values (
+    p_organisation_id,v_case.term_id,v_case.cycle_id,v_case.id,
+    p_actor_user_id,'integrity_subject_representation_recorded',
+    left(btrim(p_representation_note),4000),
+    jsonb_build_object(
+      'representationReference',
+      nullif(btrim(coalesce(p_representation_reference,'')),'')
+    )
+  );
+end;
+$;
+
 create or replace function public.khpos_ops_add_integrity_evidence_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -1794,6 +1904,11 @@ begin
     where e.case_id=v_case.id
   ) then
     raise exception 'Add at least one specific evidence item before deciding the integrity case.';
+  end if;
+
+  if v_case.subject_type in ('learner','staff')
+     and v_case.representation_recorded_at is null then
+    raise exception 'Record the learner/staff representation before deciding the academic-integrity case.';
   end if;
 
   if p_outcome not in (
@@ -2091,8 +2206,9 @@ begin
       raise exception 'Only an implemented result correction can be verified.';
     end if;
     if v_corr.implemented_by=p_actor_user_id
-       or v_corr.requested_by=p_actor_user_id then
-      raise exception 'Result-correction verification must be independent of the requester and implementer.';
+       or v_corr.requested_by=p_actor_user_id
+       or v_corr.reviewed_by=p_actor_user_id then
+      raise exception 'Result-correction verification must be independent of the requester, approver and implementer.';
     end if;
 
     v_to := 'verified';
@@ -2242,6 +2358,14 @@ begin
       raise exception 'Only the Academic Inspector who prepared this close-out can submit it.';
     end if;
     if v_closeout.status<>'draft' then raise exception 'Only draft close-out can be submitted.'; end if;
+
+    if not exists(
+      select 1
+      from public.khpos_ops_assessment_cycles c
+      where c.term_id=v_closeout.term_id
+    ) then
+      raise exception 'Academic term close-out requires at least one governed assessment cycle for the term.';
+    end if;
 
     if exists(
       select 1
@@ -2412,6 +2536,8 @@ revoke execute on function public.khpos_ops_exam_readiness_action_server(uuid,uu
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_report_integrity_case_server(uuid,uuid,uuid,uuid,uuid,text,uuid,uuid,text,text,text,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_record_integrity_representation_server(uuid,uuid,uuid,text,text)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_add_integrity_evidence_server(uuid,uuid,uuid,text,text,text,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_decide_integrity_case_server(uuid,uuid,uuid,text,text,text,text)
@@ -2443,6 +2569,7 @@ grant execute on function public.khpos_ops_assessment_package_action_server(uuid
 grant execute on function public.khpos_ops_create_exam_readiness_item_server(uuid,uuid,uuid,uuid,text,text,text,uuid,date,boolean) to service_role;
 grant execute on function public.khpos_ops_exam_readiness_action_server(uuid,uuid,uuid,text,text,text) to service_role;
 grant execute on function public.khpos_ops_report_integrity_case_server(uuid,uuid,uuid,uuid,uuid,text,uuid,uuid,text,text,text,text) to service_role;
+grant execute on function public.khpos_ops_record_integrity_representation_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_add_integrity_evidence_server(uuid,uuid,uuid,text,text,text,text) to service_role;
 grant execute on function public.khpos_ops_decide_integrity_case_server(uuid,uuid,uuid,text,text,text,text) to service_role;
 grant execute on function public.khpos_ops_integrity_case_action_server(uuid,uuid,uuid,text,text) to service_role;
