@@ -5,6 +5,12 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 let adminClient: SupabaseClient | null = null;
 
+export interface KhposOpsLearnerCampus {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface KhposOpsLearnerBaseline {
   id: string;
   reference: string;
@@ -212,6 +218,7 @@ export interface KhposOpsLearnerProgressWorkspace {
   progressionDecisions: KhposOpsLearnerProgressionDecision[];
   terms: KhposOpsLearnerTerm[];
   assignments: KhposOpsLearnerAssignment[];
+  campuses: KhposOpsLearnerCampus[];
   summary: {
     activeLearners: number;
     openSignals: number;
@@ -300,7 +307,7 @@ export async function upsertKhposOpsLearnerAnchor(
     displayName: string;
     classLabel: string;
     sectionLabel?: string | null;
-    campusId?: string | null;
+    campusId: string;
     status?: "active" | "inactive" | "left";
   },
 ) {
@@ -314,7 +321,7 @@ export async function upsertKhposOpsLearnerAnchor(
       p_display_name: input.displayName,
       p_class_label: input.classLabel,
       p_section_label: input.sectionLabel ?? null,
-      p_campus_id: input.campusId ?? null,
+      p_campus_id: input.campusId,
       p_status: input.status ?? "active",
     },
   );
