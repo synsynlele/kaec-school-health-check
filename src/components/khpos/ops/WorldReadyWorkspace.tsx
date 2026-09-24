@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  BadgeCheck,
   CircleAlert,
   Compass,
   GraduationCap,
@@ -289,8 +288,7 @@ export function WorldReadyWorkspace({
               key={record.id}
               record={record}
               workspace={workspace}
-              busy={busy}
-              notes={notes}
+                notes={notes}
               refs={refs}
               selects={selects}
               dates={dates}
@@ -310,7 +308,6 @@ export function WorldReadyWorkspace({
 function WorldReadyRecordCard({
   record,
   workspace,
-  busy,
   notes,
   refs,
   selects,
@@ -323,7 +320,6 @@ function WorldReadyRecordCard({
 }: {
   record: KhposOpsWorldReadyRecord;
   workspace: KhposOpsWorldReadyWorkspace;
-  busy: string | null;
   notes: Record<string, string>;
   refs: Record<string, string>;
   selects: Record<string, string>;
