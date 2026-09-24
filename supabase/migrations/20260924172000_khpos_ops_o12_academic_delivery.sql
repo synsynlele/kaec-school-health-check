@@ -479,6 +479,9 @@ declare
   v_can_plan boolean;
   v_can_monitor boolean;
   v_terms jsonb := '[]'::jsonb;
+  v_campuses jsonb := '[]'::jsonb;
+  v_units jsonb := '[]'::jsonb;
+  v_teacher_assignments jsonb := '[]'::jsonb;
   v_streams jsonb := '[]'::jsonb;
   v_observations jsonb := '[]'::jsonb;
 begin
@@ -502,6 +505,46 @@ begin
   v_can_monitor := khpos_private.ops_academic_can_monitor(
     p_actor_user_id,p_organisation_id
   );
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',c.id,'code',c.code,'name',c.name
+  ) order by c.name),'[]'::jsonb)
+  into v_campuses
+  from public.khpos_ops_campuses c
+  where c.organisation_id=p_organisation_id and c.status='active';
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',u.id,'code',u.code,'name',u.name,'campusId',u.campus_id
+  ) order by u.name),'[]'::jsonb)
+  into v_units
+  from public.khpos_ops_units u
+  where u.organisation_id=p_organisation_id and u.status='active';
+
+  if v_can_plan or v_can_monitor then
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id',a.id,
+      'userId',a.user_id,
+      'roleId',a.role_id,
+      'campusId',a.campus_id,
+      'unitId',a.unit_id,
+      'displayName',coalesce(
+        st.display_name,
+        au.raw_user_meta_data->>'full_name',
+        au.raw_user_meta_data->>'name',
+        au.email
+      )
+    ) order by coalesce(st.display_name,au.email)),'[]'::jsonb)
+    into v_teacher_assignments
+    from public.khpos_ops_role_assignments a
+    join public.khpos_ops_roles r on r.id=a.role_id
+    left join public.khpos_ops_staff st
+      on st.organisation_id=p_organisation_id and st.role_assignment_id=a.id
+    left join auth.users au on au.id=a.user_id
+    where a.status='active'
+      and r.organisation_id=p_organisation_id
+      and r.status='active'
+      and r.code='TEACHER';
+  end if;
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',t.id,
@@ -633,6 +676,9 @@ begin
     'canMonitor',v_can_monitor,
     'principle','Planned is not Delivered, and Delivered is not Verified. Academic debt remains visible until recovery evidence is independently verified.',
     'technologyBoundary','KSI owns lesson/scheme intelligence; SIS owns timetable and transactional records. KHP-OS stores execution references, delivery state, verification, academic debt, recovery and leadership exceptions.',
+    'campuses',v_campuses,
+    'units',v_units,
+    'teacherAssignments',v_teacher_assignments,
     'terms',v_terms,
     'streams',v_streams,
     'observations',v_observations,
@@ -1037,6 +1083,78 @@ begin
 end;
 $$;
 
+create or replace function public.khpos_ops_update_academic_stream_assignment_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_stream_id uuid,
+  p_teacher_assignment_id uuid,
+  p_timetable_reference text,
+  p_note text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_stream public.khpos_ops_academic_delivery_streams%rowtype;
+  v_note text := nullif(btrim(coalesce(p_note,'')),'');
+begin
+  select * into v_stream
+  from public.khpos_ops_academic_delivery_streams
+  where id=p_stream_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_stream.id is null then raise exception 'Academic delivery stream not found.'; end if;
+
+  if not khpos_private.ops_academic_can_plan(
+    p_actor_user_id,p_organisation_id
+  ) then
+    raise exception 'Only academic planning authority can change stream deployment.';
+  end if;
+
+  if v_stream.status not in ('approved','active') then
+    raise exception 'Only approved/active streams can change teacher deployment.';
+  end if;
+
+  if not exists(
+    select 1
+    from public.khpos_ops_role_assignments a
+    join public.khpos_ops_roles r on r.id=a.role_id
+    where a.id=p_teacher_assignment_id
+      and a.status='active'
+      and r.organisation_id=p_organisation_id
+      and r.status='active'
+      and r.code='TEACHER'
+  ) then
+    raise exception 'Replacement delivery owner must be an active Teacher role assignment.';
+  end if;
+
+  if nullif(btrim(coalesce(p_timetable_reference,'')),'') is null or v_note is null then
+    raise exception 'Updated timetable/deployment reference and change note are required.';
+  end if;
+
+  update public.khpos_ops_academic_delivery_streams
+  set teacher_assignment_id=p_teacher_assignment_id,
+      timetable_reference=left(btrim(p_timetable_reference),1000),
+      updated_at=now()
+  where id=v_stream.id;
+
+  insert into public.khpos_ops_academic_events(
+    organisation_id,term_id,stream_id,actor_user_id,event_type,note,metadata
+  ) values (
+    p_organisation_id,v_stream.term_id,v_stream.id,p_actor_user_id,
+    'delivery_stream_assignment_updated',left(v_note,4000),
+    jsonb_build_object(
+      'fromTeacherAssignmentId',v_stream.teacher_assignment_id,
+      'toTeacherAssignmentId',p_teacher_assignment_id,
+      'fromTimetableReference',v_stream.timetable_reference,
+      'toTimetableReference',left(btrim(p_timetable_reference),1000)
+    )
+  );
+end;
+$;
+
 create or replace function public.khpos_ops_add_academic_target_server(
   p_actor_user_id uuid,
   p_organisation_id uuid,
@@ -1085,6 +1203,18 @@ begin
      and p_planned_end_date is not null
      and p_planned_end_date<p_planned_start_date then
     raise exception 'Weekly target end date cannot precede its start date.';
+  end if;
+
+  if exists(
+    select 1
+    from public.khpos_ops_academic_terms term
+    where term.id=v_stream.term_id
+      and (
+        (p_planned_start_date is not null and p_planned_start_date<term.start_date)
+        or (p_planned_end_date is not null and p_planned_end_date>term.end_date)
+      )
+  ) then
+    raise exception 'Weekly target dates must fall within the academic term.';
   end if;
 
   insert into public.khpos_ops_academic_weekly_targets(
@@ -1320,6 +1450,10 @@ begin
     raise exception 'Only a fully delivered target can enter delivery verification.';
   end if;
 
+  if v_target.verification_state<>'unverified' then
+    raise exception 'This delivery already has a verification decision; reopen through academic recovery rather than overwriting history.';
+  end if;
+
   if p_decision not in ('verify','reject') then
     raise exception 'Delivery verification decision must be verify or reject.';
   end if;
@@ -1539,6 +1673,70 @@ begin
   );
 end;
 $$;
+
+create or replace function public.khpos_ops_reassign_academic_debt_server(
+  p_actor_user_id uuid,
+  p_organisation_id uuid,
+  p_debt_id uuid,
+  p_recovery_owner_assignment_id uuid,
+  p_note text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public,auth,khpos_private,pg_temp
+as $
+declare
+  v_debt public.khpos_ops_academic_debt%rowtype;
+  v_note text := nullif(btrim(coalesce(p_note,'')),'');
+begin
+  select * into v_debt
+  from public.khpos_ops_academic_debt
+  where id=p_debt_id and organisation_id=p_organisation_id
+  for update;
+
+  if v_debt.id is null then raise exception 'Academic debt record not found.'; end if;
+  if v_debt.status='closed' then raise exception 'Closed academic debt cannot be reassigned.'; end if;
+
+  if not khpos_private.ops_academic_can_monitor(
+    p_actor_user_id,p_organisation_id
+  ) then
+    raise exception 'Only academic monitoring authority can reassign recovery ownership.';
+  end if;
+
+  if not exists(
+    select 1
+    from public.khpos_ops_role_assignments a
+    join public.khpos_ops_roles r on r.id=a.role_id
+    where a.id=p_recovery_owner_assignment_id
+      and a.status='active'
+      and r.organisation_id=p_organisation_id
+      and r.status='active'
+      and r.code='TEACHER'
+  ) then
+    raise exception 'Academic recovery owner must be an active Teacher assignment.';
+  end if;
+
+  if v_note is null then raise exception 'Recovery-owner reassignment note is required.'; end if;
+
+  update public.khpos_ops_academic_debt
+  set recovery_owner_assignment_id=p_recovery_owner_assignment_id,
+      updated_at=now()
+  where id=v_debt.id;
+
+  insert into public.khpos_ops_academic_events(
+    organisation_id,stream_id,target_id,debt_id,actor_user_id,
+    event_type,note,metadata
+  ) values (
+    p_organisation_id,v_debt.stream_id,v_debt.target_id,v_debt.id,
+    p_actor_user_id,'academic_debt_owner_reassigned',left(v_note,4000),
+    jsonb_build_object(
+      'fromAssignmentId',v_debt.recovery_owner_assignment_id,
+      'toAssignmentId',p_recovery_owner_assignment_id
+    )
+  );
+end;
+$;
 
 create or replace function public.khpos_ops_escalate_academic_debt_server(
   p_actor_user_id uuid,
@@ -1906,6 +2104,8 @@ revoke execute on function public.khpos_ops_create_academic_stream_server(uuid,u
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_academic_stream_action_server(uuid,uuid,uuid,text,text)
   from public,anon,authenticated;
+revoke execute on function public.khpos_ops_update_academic_stream_assignment_server(uuid,uuid,uuid,uuid,text,text)
+  from public,anon,authenticated;
 revoke execute on function public.khpos_ops_add_academic_target_server(uuid,uuid,uuid,integer,text,text,date,date)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_academic_target_action_server(uuid,uuid,uuid,text,text,text,text,text)
@@ -1913,6 +2113,8 @@ revoke execute on function public.khpos_ops_academic_target_action_server(uuid,u
 revoke execute on function public.khpos_ops_verify_academic_target_server(uuid,uuid,uuid,text,text,text,text,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_academic_debt_action_server(uuid,uuid,uuid,text,text,date,text)
+  from public,anon,authenticated;
+revoke execute on function public.khpos_ops_reassign_academic_debt_server(uuid,uuid,uuid,uuid,text)
   from public,anon,authenticated;
 revoke execute on function public.khpos_ops_escalate_academic_debt_server(uuid,uuid,uuid,text,text)
   from public,anon,authenticated;
@@ -1936,10 +2138,12 @@ grant execute on function public.khpos_ops_create_academic_term_server(uuid,uuid
 grant execute on function public.khpos_ops_academic_term_action_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_create_academic_stream_server(uuid,uuid,uuid,uuid,uuid,text,text,text,text,uuid,text,text,text,text,integer) to service_role;
 grant execute on function public.khpos_ops_academic_stream_action_server(uuid,uuid,uuid,text,text) to service_role;
+grant execute on function public.khpos_ops_update_academic_stream_assignment_server(uuid,uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_add_academic_target_server(uuid,uuid,uuid,integer,text,text,date,date) to service_role;
 grant execute on function public.khpos_ops_academic_target_action_server(uuid,uuid,uuid,text,text,text,text,text) to service_role;
 grant execute on function public.khpos_ops_verify_academic_target_server(uuid,uuid,uuid,text,text,text,text,text) to service_role;
 grant execute on function public.khpos_ops_academic_debt_action_server(uuid,uuid,uuid,text,text,date,text) to service_role;
+grant execute on function public.khpos_ops_reassign_academic_debt_server(uuid,uuid,uuid,uuid,text) to service_role;
 grant execute on function public.khpos_ops_escalate_academic_debt_server(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.khpos_ops_create_academic_observation_server(uuid,uuid,uuid,uuid,text,timestamp with time zone,text,text,text,date) to service_role;
 grant execute on function public.khpos_ops_academic_observation_action_server(uuid,uuid,uuid,text,text,text) to service_role;
