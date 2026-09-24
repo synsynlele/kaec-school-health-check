@@ -394,6 +394,7 @@ begin
       and a.user_id=p_actor_user_id
       and a.status='active'
       and w.status <> 'cancelled'
+      and (w.status <> 'completed' or w.completed_at >= now() - interval '30 days')
   ),
   item_json as (
     select coalesce(jsonb_agg(
@@ -455,12 +456,13 @@ begin
       and a.user_id=p_actor_user_id
       and a.status='active'
       and w.status <> 'cancelled'
+      and (w.status <> 'completed' or w.completed_at >= now() - interval '30 days')
   )
   select
     count(*)::integer,
     count(*) filter (
       where due_at is not null
-        and (due_at at time zone 'Africa/Lagos')::date=current_date
+        and (due_at at time zone 'Africa/Lagos')::date=(now() at time zone 'Africa/Lagos')::date
         and status not in ('completed')
     )::integer,
     count(*) filter (where due_at < now() and status not in ('completed'))::integer,
@@ -532,7 +534,9 @@ begin
       set status='blocked',blocked_reason=btrim(p_note),updated_at=now()
       where id=v_work.id;
   elsif p_action='complete' then
-    if v_work.status in ('completed','cancelled') then raise exception 'This work item is already closed.'; end if;
+    if v_work.status <> 'in_progress' then
+      raise exception 'Start this work before completing it; blocked or closed work cannot be completed.';
+    end if;
 
     if v_work.checklist_template_id is not null then
       select count(*)::integer into v_missing_checklist
@@ -668,7 +672,7 @@ begin
       and w.organisation_id=p_organisation_id
       and a.user_id=p_actor_user_id
       and a.status='active'
-      and w.status not in ('cancelled')
+      and w.status not in ('completed','cancelled')
       and o.status='active'
       and o.partner_status='active'
       and 'khpos_core'=any(coalesce(o.partner_entitlements,'{}'::text[]))
