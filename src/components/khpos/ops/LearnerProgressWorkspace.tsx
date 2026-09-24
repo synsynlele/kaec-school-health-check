@@ -690,6 +690,7 @@ export function LearnerProgressWorkspace({
                       key={signal.id}
                       signal={signal}
                       workspace={workspace}
+                      busyId={busyId}
                       notes={notes}
                       references={references}
                       selects={selects}
@@ -721,7 +722,6 @@ export function LearnerProgressWorkspace({
                       key={supportCase.id}
                       supportCase={supportCase}
                       workspace={workspace}
-                      busyId={busyId}
                       notes={notes}
                       references={references}
                       selects={selects}
@@ -1156,6 +1156,7 @@ function Empty({ text }: { text: string }) {
 function RiskSignalCard({
   signal,
   workspace,
+  busyId,
   notes,
   references,
   selects,
@@ -1168,6 +1169,7 @@ function RiskSignalCard({
 }: {
   signal: KhposOpsLearnerRiskSignal;
   workspace: KhposOpsLearnerProgressWorkspace;
+  busyId: string | null;
   notes: Record<string, string>;
   references: Record<string, string>;
   selects: Record<string, string>;
@@ -1352,7 +1354,6 @@ function RiskSignalCard({
 function SupportCaseCard({
   supportCase,
   workspace,
-  busyId,
   notes,
   references,
   selects,
@@ -1365,7 +1366,6 @@ function SupportCaseCard({
 }: {
   supportCase: KhposOpsLearnerSupportCase;
   workspace: KhposOpsLearnerProgressWorkspace;
-  busyId: string | null;
   notes: Record<string, string>;
   references: Record<string, string>;
   selects: Record<string, string>;
