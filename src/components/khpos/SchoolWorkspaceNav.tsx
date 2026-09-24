@@ -13,6 +13,7 @@ import {
   CalendarClock,
   CircleDollarSign,
   CheckCircle2,
+  Compass,
   FileCheck2,
   Gauge,
   Gavel,
@@ -62,6 +63,7 @@ const operationsLinks = [
   { suffix: "/leadership-financial", label: "Leadership & Finance", icon: CircleDollarSign },
   { suffix: "/young-ceo", label: "Young CEO Hub", icon: Rocket },
   { suffix: "/builder-projects", label: "Builder Projects", icon: Hammer },
+  { suffix: "/worldready", label: "WorldReady", icon: Compass },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
