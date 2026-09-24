@@ -67,7 +67,7 @@ create table if not exists public.khpos_ops_staff_accountability_cases (
   outcome text
     check (outcome is null or outcome in (
       'no_action','expectation_reset','documented_reminder','conduct_commitment',
-      'written_warning','final_warning','other_proportionate_action',
+      'corrective_action','written_warning','final_warning','other_proportionate_action',
       'refer_separation_review',
       'grievance_upheld','grievance_partially_upheld','grievance_not_upheld',
       'grievance_resolved_by_agreement','grievance_referred_other_process'
@@ -1775,8 +1775,9 @@ begin
       raise exception 'Unsupported formal disciplinary outcome.';
     end if;
 
-    if v_outcome='refer_separation_review' and v_authority_ref is null then
-      raise exception 'A separation recommendation requires a contract/legal/authority review reference; O10 does not terminate employment directly.';
+    if v_outcome in ('other_proportionate_action','refer_separation_review')
+       and v_authority_ref is null then
+      raise exception 'This outcome requires a contract/legal/authority review reference; O10 does not execute high-severity employment consequences directly.';
     end if;
 
     v_to_status := case
@@ -1958,6 +1959,9 @@ begin
   elsif p_action='resolve_corrective' then
     if v_case.case_type<>'corrective' or not v_can_manage then
       raise exception 'Only the appropriate case manager can resolve a corrective case.';
+    end if;
+    if v_case.outcome is null or v_case.decided_at is null then
+      raise exception 'Record the evidence-based corrective decision before resolving the case.';
     end if;
     if exists(
       select 1
