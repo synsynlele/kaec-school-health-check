@@ -132,14 +132,32 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
+function isJwtClockSkewError(message: string | undefined): boolean {
+  return /jwt issued at future/i.test(message ?? "");
+}
+
+async function retryReadOnJwtClockSkew<T>(
+  operation: () => Promise<{ data: T | null; error: { message?: string } | null }>,
+): Promise<{ data: T | null; error: { message?: string } | null }> {
+  const first = await operation();
+  if (!first.error || !isJwtClockSkewError(first.error.message)) return first;
+
+  // Supabase documents clock skew as a possible JWT timing edge case.
+  // Retry this read-only request once without changing authentication rules.
+  await new Promise((resolve) => setTimeout(resolve, 750));
+  return operation();
+}
+
 export async function getKhposBenchmarkWorkspace(
   organisationId: string,
   userId: string,
 ): Promise<KhposBenchmarkWorkspace> {
-  const { data, error } = await admin().rpc("khpos_get_school_benchmark_server", {
-    p_actor_user_id: userId,
-    p_organisation_id: organisationId,
-  });
+  const { data, error } = await retryReadOnJwtClockSkew(() =>
+    admin().rpc("khpos_get_school_benchmark_server", {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+    }),
+  );
   if (error || !isObject(data)) {
     throw new KhposBenchmarkingError(
       error?.message ?? "Benchmark Intelligence could not be loaded.",
@@ -152,9 +170,10 @@ export async function getKhposBenchmarkWorkspace(
 export async function getKhposPortfolioIntelligence(
   userId: string,
 ): Promise<KhposPortfolioIntelligence> {
-  const { data, error } = await admin().rpc(
-    "khpos_get_portfolio_intelligence_server",
-    { p_actor_user_id: userId },
+  const { data, error } = await retryReadOnJwtClockSkew(() =>
+    admin().rpc("khpos_get_portfolio_intelligence_server", {
+      p_actor_user_id: userId,
+    }),
   );
   if (error || !isObject(data)) {
     throw new KhposBenchmarkingError(
