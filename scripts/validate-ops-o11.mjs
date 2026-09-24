@@ -6,7 +6,7 @@ function read(path) {
 
 function requireText(source, expected, context) {
   if (!source.includes(expected)) {
-    throw new Error(\`Operations O11 contract failed: \${context} is missing \${expected}\`);
+    throw new Error(`Operations O11 contract failed: ${context} is missing ${expected}`);
   }
 }
 
@@ -155,7 +155,7 @@ for (const path of [
   const historical = read(path);
   if (historical.includes("khpos_ops_staff_promotion_cases")) {
     throw new Error(
-      \`Operations O11 contract failed: historical migration \${path} must remain independent from O11.\`,
+      `Operations O11 contract failed: historical migration ${path} must remain independent from O11.`,
     );
   }
 }
