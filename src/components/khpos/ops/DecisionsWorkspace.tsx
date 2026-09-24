@@ -26,6 +26,7 @@ import type {
 } from "@/lib/khpos/ops/decisions";
 
 const categories = [
+  ["operational", "Operational"],
   ["governance", "Governance"],
   ["academic", "Academic"],
   ["people", "People & staff"],
