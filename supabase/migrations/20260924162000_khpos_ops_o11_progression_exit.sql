@@ -367,15 +367,15 @@ set search_path = public,auth,khpos_private,pg_temp
 as $$
   select exists(
     select 1
-    from public.khpos_ops_roles current_role
-    join public.khpos_ops_roles target_role
-      on target_role.id=p_target_role_id
-      and target_role.organisation_id=p_organisation_id
-      and target_role.status='active'
-    where current_role.id=p_current_role_id
-      and current_role.organisation_id=p_organisation_id
-      and current_role.status='active'
-      and target_role.role_level<current_role.role_level
+    from public.khpos_ops_roles cr
+    join public.khpos_ops_roles tr
+      on tr.id=p_target_role_id
+      and tr.organisation_id=p_organisation_id
+      and tr.status='active'
+    where cr.id=p_current_role_id
+      and cr.organisation_id=p_organisation_id
+      and cr.status='active'
+      and tr.role_level<cr.role_level
       and khpos_private.ops_role_is_ancestor(
         p_organisation_id,p_current_role_id,p_target_role_id
       )
