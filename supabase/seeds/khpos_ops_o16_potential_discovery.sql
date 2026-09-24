@@ -144,7 +144,7 @@ begin
   values
     (v_process,v_teacher,'owner'),(v_process,v_facilitator,'owner'),
     (v_process,v_sp,'participant'),(v_process,v_si,'participant'),
-    (v_process,v_sg,'approver'),(v_process,v_vc,'reference')
+    (v_process,v_sg,'approver'),(v_process,v_vc,'informed')
   on conflict do nothing;
 
   select id into v_process from public.khpos_ops_processes where organisation_id=v_org and code='HPD-002';
@@ -152,7 +152,7 @@ begin
   values
     (v_process,v_teacher,'owner'),(v_process,v_facilitator,'owner'),
     (v_process,v_sp,'participant'),(v_process,v_si,'participant'),
-    (v_process,v_sg,'approver'),(v_process,v_vc,'reference')
+    (v_process,v_sg,'approver'),(v_process,v_vc,'informed')
   on conflict do nothing;
 
   select id into v_process from public.khpos_ops_processes where organisation_id=v_org and code='HPD-010';
@@ -160,7 +160,7 @@ begin
   values
     (v_process,v_teacher,'owner'),(v_process,v_facilitator,'owner'),
     (v_process,v_sp,'participant'),(v_process,v_si,'participant'),
-    (v_process,v_sg,'approver'),(v_process,v_vc,'reference')
+    (v_process,v_sg,'approver'),(v_process,v_vc,'informed')
   on conflict do nothing;
 
   select id into v_process from public.khpos_ops_processes where organisation_id=v_org and code='HPD-012';
@@ -168,7 +168,7 @@ begin
   values
     (v_process,v_teacher,'participant'),(v_process,v_facilitator,'participant'),
     (v_process,v_sp,'owner'),(v_process,v_si,'participant'),
-    (v_process,v_sg,'approver'),(v_process,v_vc,'reference')
+    (v_process,v_sg,'approver'),(v_process,v_vc,'informed')
   on conflict do nothing;
 
   insert into public.khpos_ops_audit_events(
