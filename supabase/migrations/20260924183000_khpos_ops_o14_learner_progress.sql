@@ -7,7 +7,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.khpos_ops_learner_anchors (
   id uuid primary key default gen_random_uuid(),
   organisation_id uuid not null references public.organisations(id) on delete cascade,
-  campus_id uuid references public.khpos_ops_campuses(id) on delete set null,
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete restrict,
   external_system text not null
     check (external_system in ('SIS','external','manual')),
   external_learner_reference text not null,
@@ -554,6 +554,7 @@ as $$
             and s.status in ('approved','active')
             and a.user_id=p_actor_user_id
             and a.status='active'
+            and coalesce(s.campus_id,a.campus_id) is not distinct from l.campus_id
             and lower(s.class_label)=lower(l.class_label)
             and lower(coalesce(s.section_label,''))=lower(coalesce(l.section_label,''))
         )
@@ -665,6 +666,7 @@ declare
   v_progression jsonb := '[]'::jsonb;
   v_terms jsonb := '[]'::jsonb;
   v_assignments jsonb := '[]'::jsonb;
+  v_campuses jsonb := '[]'::jsonb;
 begin
   if not khpos_private.ops_lpi_has_membership(
     p_actor_user_id,p_organisation_id
@@ -692,6 +694,14 @@ begin
   v_is_executive := khpos_private.ops_lpi_is_executive(
     p_actor_user_id,p_organisation_id
   );
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',c.id,'code',c.code,'name',c.name
+  ) order by c.name),'[]'::jsonb)
+  into v_campuses
+  from public.khpos_ops_campuses c
+  where c.organisation_id=p_organisation_id
+    and c.status='active';
 
   if v_can_report or v_can_coordinate then
     select coalesce(jsonb_agg(jsonb_build_object(
@@ -931,6 +941,7 @@ begin
     'progressionDecisions',v_progression,
     'terms',v_terms,
     'assignments',v_assignments,
+    'campuses',v_campuses,
     'summary',jsonb_build_object(
       'activeLearners',(
         select count(*) from public.khpos_ops_learner_anchors l
@@ -1013,13 +1024,13 @@ begin
     raise exception 'Unsupported learner-anchor status.';
   end if;
 
-  if p_campus_id is not null and not exists(
+  if p_campus_id is null or not exists(
     select 1 from public.khpos_ops_campuses c
     where c.id=p_campus_id
       and c.organisation_id=p_organisation_id
       and c.status='active'
   ) then
-    raise exception 'Learner campus must be active in this organisation.';
+    raise exception 'Learner anchor requires an active campus in this organisation.';
   end if;
 
   insert into public.khpos_ops_learner_anchors(
