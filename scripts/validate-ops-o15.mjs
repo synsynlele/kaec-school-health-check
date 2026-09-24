@@ -71,7 +71,7 @@ for (const expected of [
 ]) requireText(workspace, expected, "O15 workspace");
 
 const migration = read(
-  "supabase/migrations/20260924190000_khpos_ops_o15_academic_assurance.sql",
+  "supabase/migrations/20260924190921_khpos_ops_o15_academic_assurance.sql",
 ).toLowerCase();
 
 for (const expected of [
