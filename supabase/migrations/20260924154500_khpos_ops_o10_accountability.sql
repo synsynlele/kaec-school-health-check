@@ -525,6 +525,9 @@ as $$
     )
     or khpos_private.ops_accountability_case_can_manage(
       p_actor_user_id,p_organisation_id,p_case_id
+    )
+    or khpos_private.ops_accountability_can_record_external_review(
+      p_actor_user_id,p_organisation_id,p_case_id
     );
 $$;
 
@@ -692,6 +695,9 @@ begin
     'canManage',khpos_private.ops_accountability_case_can_manage(
       p_actor_user_id,p_organisation_id,c.id
     ),
+    'canRecordExternalReview',khpos_private.ops_accountability_can_record_external_review(
+      p_actor_user_id,p_organisation_id,c.id
+    ),
     'responses',coalesce((
       select jsonb_agg(jsonb_build_object(
         'id',resp.id,
@@ -705,6 +711,9 @@ begin
       where resp.case_id=c.id
         and (
           khpos_private.ops_accountability_case_can_manage(
+            p_actor_user_id,p_organisation_id,c.id
+          )
+          or khpos_private.ops_accountability_can_record_external_review(
             p_actor_user_id,p_organisation_id,c.id
           )
           or resp.submitted_by=p_actor_user_id
@@ -736,6 +745,9 @@ begin
       where ev.case_id=c.id
         and (
           khpos_private.ops_accountability_case_can_manage(
+            p_actor_user_id,p_organisation_id,c.id
+          )
+          or khpos_private.ops_accountability_can_record_external_review(
             p_actor_user_id,p_organisation_id,c.id
           )
           or ev.added_by=p_actor_user_id
