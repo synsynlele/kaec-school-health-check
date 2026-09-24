@@ -40,6 +40,7 @@ const operationsLinks = [
   { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
   { suffix: "/people", label: "People & Staff", icon: UserRoundCheck },
   { suffix: "/availability", label: "Availability & Coverage", icon: CalendarClock },
+  { suffix: "/staff-performance", label: "Staff Performance", icon: FileCheck2 },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
