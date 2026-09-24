@@ -19,6 +19,21 @@ for (const href of [
   requireText(adminNav, href, "Admin navigation");
 }
 requireText(adminNav, "usePathname", "Admin active-route handling");
+requireText(adminNav, 'href="/account"', "Admin school-platform escape action");
+requireText(adminNav, "School Platform", "Admin school-platform escape label");
+
+const adminConsole = read("src/components/khpos/AdminConsoleWorkspace.tsx");
+requireText(adminConsole, 'window.location.replace("/account")', "Admin sign-out destination");
+requireText(adminConsole, 'href="/account"', "Admin signed-out and denied escape route");
+requireText(adminConsole, "Go to School Platform", "Admin signed-out and denied escape label");
+
+const accountEntry = read("src/components/account/AccountEntry.tsx");
+requireText(accountEntry, "return <AccountAccess />", "Explicit school/account context");
+if (accountEntry.includes('router.replace("/khpos/admin")') || accountEntry.includes('fetch("/api/khpos/admin"')) {
+  throw new Error(
+    "Navigation contract failed: platform-admin authority must not force /account back into the Admin Console.",
+  );
+}
 
 const portfolio = read("src/components/khpos/PortfolioIntelligenceWorkspace.tsx");
 requireText(portfolio, 'href="/khpos/admin"', "Portfolio return link");
