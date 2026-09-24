@@ -14,6 +14,7 @@ import {
   FileCheck2,
   Gauge,
   Gavel,
+  GitBranch,
   GraduationCap,
   LayoutDashboard,
   LibraryBig,
@@ -43,6 +44,7 @@ const operationsLinks = [
   { suffix: "/availability", label: "Availability & Coverage", icon: CalendarClock },
   { suffix: "/staff-performance", label: "Staff Performance", icon: FileCheck2 },
   { suffix: "/staff-accountability", label: "Recognition & Accountability", icon: Gavel },
+  { suffix: "/staff-transition", label: "Progression & Exit", icon: GitBranch },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
