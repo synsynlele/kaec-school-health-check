@@ -140,6 +140,7 @@ export async function POST(
       const externalSystem = clean(payload.externalSystem);
       if (
         campusId === undefined ||
+        campusId === null ||
         !["SIS", "external", "manual"].includes(externalSystem) ||
         !clean(payload.externalLearnerReference) ||
         !clean(payload.displayName) ||
