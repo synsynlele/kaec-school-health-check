@@ -63,9 +63,7 @@ for (const expected of [
   "Workforce & Recruitment",
   "Approved need → governed vacancy",
   "functional evaluator",
-  "No score promotes a person.",
-].filter(Boolean)) {
-  if (expected === "No score promotes a person.") continue;
+]) {
   requireText(workspace, expected, "O13 workspace");
 }
 for (const expected of [
