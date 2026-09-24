@@ -883,15 +883,17 @@ begin
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',t.id,
-    'name',t.name,
-    'academicYear',t.academic_year,
-    'termNumber',t.term_number,
+    'sessionLabel',t.session_label,
+    'termCode',t.term_code,
+    'termName',t.term_name,
+    'startDate',t.start_date,
+    'endDate',t.end_date,
     'status',t.status
   ) order by t.start_date desc),'[]'::jsonb)
   into v_terms
   from public.khpos_ops_academic_terms t
   where t.organisation_id=p_organisation_id
-    and t.status in ('planned','active','closed');
+    and t.status in ('draft','active','closed');
 
   if v_can_coordinate then
     select coalesce(jsonb_agg(jsonb_build_object(
