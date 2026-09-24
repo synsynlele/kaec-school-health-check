@@ -27,7 +27,7 @@ function readable(value: string | null | undefined) {
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(\`\${value}T00:00:00\`),
+    new Date(`${value}T00:00:00`),
   );
 }
 
@@ -90,9 +90,9 @@ export function RecruitmentWorkspace({
       }
 
       const response = await fetch(
-        \`/api/khpos/ops/recruitment/\${organisationId}\`,
+        `/api/khpos/ops/recruitment/${organisationId}`,
         {
-          headers: { Authorization: \`Bearer \${accessToken}\` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           cache: "no-store",
         },
       );
@@ -143,11 +143,11 @@ export function RecruitmentWorkspace({
     setError("");
 
     const response = await fetch(
-      \`/api/khpos/ops/recruitment/\${organisationId}\`,
+      `/api/khpos/ops/recruitment/${organisationId}`,
       {
         method: "POST",
         headers: {
-          Authorization: \`Bearer \${accessToken}\`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -208,7 +208,7 @@ export function RecruitmentWorkspace({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
-            href={\`/khpos/\${organisationId}/people\`}
+            href={`/khpos/${organisationId}/people`}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
@@ -535,7 +535,7 @@ function WorkforceCard({
   onNote: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const key = \`workforce-\${request.id}\`;
+  const key = `workforce-${request.id}`;
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -545,9 +545,9 @@ function WorkforceCard({
               {request.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 request.status,
-              )}\`}
+              )}`}
             >
               {readable(request.status)}
             </span>
@@ -581,7 +581,7 @@ function WorkforceCard({
           <div className="mt-2 flex gap-2">
             <button
               type="button"
-              disabled={busyId === \`\${key}-approve\`}
+              disabled={busyId === `${key}-approve`}
               onClick={() =>
                 void submit(
                   {
@@ -590,7 +590,7 @@ function WorkforceCard({
                     decision: "approve",
                     note: notes[key] ?? "",
                   },
-                  \`\${key}-approve\`,
+                  `${key}-approve`,
                 )
               }
               className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
@@ -599,7 +599,7 @@ function WorkforceCard({
             </button>
             <button
               type="button"
-              disabled={busyId === \`\${key}-decline\`}
+              disabled={busyId === `${key}-decline`}
               onClick={() =>
                 void submit(
                   {
@@ -608,7 +608,7 @@ function WorkforceCard({
                     decision: "decline",
                     note: notes[key] ?? "",
                   },
-                  \`\${key}-decline\`,
+                  `${key}-decline`,
                 )
               }
               className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-black text-slate-700 disabled:opacity-60"
@@ -643,7 +643,7 @@ function VacancyCard({
   onDate: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const prefix = \`vacancy-\${vacancy.id}\`;
+  const prefix = `vacancy-${vacancy.id}`;
   const editable = ["draft", "on_hold"].includes(vacancy.status);
 
   return (
@@ -655,9 +655,9 @@ function VacancyCard({
               {vacancy.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 vacancy.status,
-              )}\`}
+              )}`}
             >
               {readable(vacancy.status)}
             </span>
@@ -674,14 +674,14 @@ function VacancyCard({
       {editable ? (
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <input
-            value={values[\`\${prefix}-title\`] ?? vacancy.title}
-            onChange={(event) => onValue(\`\${prefix}-title\`, event.target.value)}
+            value={values[`${prefix}-title`] ?? vacancy.title}
+            onChange={(event) => onValue(`${prefix}-title`, event.target.value)}
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
           />
           <textarea
-            value={values[\`\${prefix}-outcomes\`] ?? vacancy.roleOutcomes}
+            value={values[`${prefix}-outcomes`] ?? vacancy.roleOutcomes}
             onChange={(event) =>
-              onValue(\`\${prefix}-outcomes\`, event.target.value)
+              onValue(`${prefix}-outcomes`, event.target.value)
             }
             rows={3}
             placeholder="Role outcomes"
@@ -689,12 +689,12 @@ function VacancyCard({
           />
           <textarea
             value={
-              values[\`\${prefix}-requirements\`] ??
+              values[`${prefix}-requirements`] ??
               vacancy.minimumRequirements ??
               ""
             }
             onChange={(event) =>
-              onValue(\`\${prefix}-requirements\`, event.target.value)
+              onValue(`${prefix}-requirements`, event.target.value)
             }
             rows={3}
             placeholder="Minimum relevant requirements"
@@ -702,11 +702,11 @@ function VacancyCard({
           />
           <textarea
             value={
-              values[\`\${prefix}-safeguarding\`] ??
+              values[`${prefix}-safeguarding`] ??
               vacancy.safeguardingStatement
             }
             onChange={(event) =>
-              onValue(\`\${prefix}-safeguarding\`, event.target.value)
+              onValue(`${prefix}-safeguarding`, event.target.value)
             }
             rows={2}
             placeholder="Safeguarding statement"
@@ -714,9 +714,9 @@ function VacancyCard({
           />
           <input
             type="date"
-            value={dates[\`\${prefix}-close-date\`] ?? vacancy.closingDate ?? ""}
+            value={dates[`${prefix}-close-date`] ?? vacancy.closingDate ?? ""}
             onChange={(event) =>
-              onDate(\`\${prefix}-close-date\`, event.target.value)
+              onDate(`${prefix}-close-date`, event.target.value)
             }
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
           />
@@ -727,25 +727,25 @@ function VacancyCard({
                 {
                   mode: "update_vacancy",
                   vacancyId: vacancy.id,
-                  title: values[\`\${prefix}-title\`] ?? vacancy.title,
+                  title: values[`${prefix}-title`] ?? vacancy.title,
                   roleOutcomes:
-                    values[\`\${prefix}-outcomes\`] ?? vacancy.roleOutcomes,
+                    values[`${prefix}-outcomes`] ?? vacancy.roleOutcomes,
                   minimumRequirements:
-                    values[\`\${prefix}-requirements\`] ??
+                    values[`${prefix}-requirements`] ??
                     vacancy.minimumRequirements ??
                     "",
                   safeguardingStatement:
-                    values[\`\${prefix}-safeguarding\`] ??
+                    values[`${prefix}-safeguarding`] ??
                     vacancy.safeguardingStatement,
                   closingDate:
-                    dates[\`\${prefix}-close-date\`] ??
+                    dates[`${prefix}-close-date`] ??
                     vacancy.closingDate ??
                     null,
                 },
-                \`\${prefix}-save\`,
+                `${prefix}-save`,
               )
             }
-            disabled={busyId === \`\${prefix}-save\`}
+            disabled={busyId === `${prefix}-save`}
             className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-black text-white disabled:opacity-60"
           >
             Save governed vacancy brief
@@ -773,11 +773,11 @@ function VacancyCard({
                   vacancyId: vacancy.id,
                   action: "open",
                   closingDate:
-                    dates[\`\${prefix}-close-date\`] ??
+                    dates[`${prefix}-close-date`] ??
                     vacancy.closingDate ??
                     null,
                 },
-                \`\${prefix}-open\`,
+                `${prefix}-open`,
               )
             }
             className="rounded-xl bg-brand-700 px-4 py-2 text-xs font-black text-white"
@@ -795,10 +795,10 @@ function VacancyCard({
                   vacancyId: vacancy.id,
                   action: "hold",
                   note:
-                    notes[\`\${prefix}-action\`] ??
+                    notes[`${prefix}-action`] ??
                     "Vacancy placed on hold pending review.",
                 },
-                \`\${prefix}-hold\`,
+                `${prefix}-hold`,
               )
             }
             className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-black text-amber-900"
@@ -816,10 +816,10 @@ function VacancyCard({
                   vacancyId: vacancy.id,
                   action: "close",
                   note:
-                    notes[\`\${prefix}-action\`] ??
+                    notes[`${prefix}-action`] ??
                     "Vacancy closed because the staffing need changed.",
                 },
-                \`\${prefix}-close\`,
+                `${prefix}-close`,
               )
             }
             className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-black text-slate-700"
@@ -834,33 +834,33 @@ function VacancyCard({
           <p className="text-xs font-black text-brand-950">Add candidate application</p>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             <input
-              value={values[\`\${prefix}-candidate-name\`] ?? ""}
+              value={values[`${prefix}-candidate-name`] ?? ""}
               onChange={(event) =>
-                onValue(\`\${prefix}-candidate-name\`, event.target.value)
+                onValue(`${prefix}-candidate-name`, event.target.value)
               }
               placeholder="Candidate full name"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
             />
             <input
-              value={values[\`\${prefix}-candidate-email\`] ?? ""}
+              value={values[`${prefix}-candidate-email`] ?? ""}
               onChange={(event) =>
-                onValue(\`\${prefix}-candidate-email\`, event.target.value)
+                onValue(`${prefix}-candidate-email`, event.target.value)
               }
               placeholder="Candidate email"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
             />
             <input
-              value={values[\`\${prefix}-candidate-phone\`] ?? ""}
+              value={values[`${prefix}-candidate-phone`] ?? ""}
               onChange={(event) =>
-                onValue(\`\${prefix}-candidate-phone\`, event.target.value)
+                onValue(`${prefix}-candidate-phone`, event.target.value)
               }
               placeholder="Phone (optional)"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
             />
             <input
-              value={values[\`\${prefix}-candidate-source\`] ?? ""}
+              value={values[`${prefix}-candidate-source`] ?? ""}
               onChange={(event) =>
-                onValue(\`\${prefix}-candidate-source\`, event.target.value)
+                onValue(`${prefix}-candidate-source`, event.target.value)
               }
               placeholder="Source"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
@@ -873,13 +873,13 @@ function VacancyCard({
                 {
                   mode: "add_application",
                   vacancyId: vacancy.id,
-                  fullName: values[\`\${prefix}-candidate-name\`] ?? "",
-                  email: values[\`\${prefix}-candidate-email\`] ?? "",
-                  phone: values[\`\${prefix}-candidate-phone\`] ?? null,
-                  source: values[\`\${prefix}-candidate-source\`] ?? null,
+                  fullName: values[`${prefix}-candidate-name`] ?? "",
+                  email: values[`${prefix}-candidate-email`] ?? "",
+                  phone: values[`${prefix}-candidate-phone`] ?? null,
+                  source: values[`${prefix}-candidate-source`] ?? null,
                   applicationNote: "Application captured in the governed O13 recruitment pipeline.",
                 },
-                \`\${prefix}-candidate\`,
+                `${prefix}-candidate`,
               )
             }
             className="mt-3 rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white"
@@ -921,7 +921,7 @@ function ApplicationCard({
   onSelect: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
-  const prefix = \`application-\${application.id}\`;
+  const prefix = `application-${application.id}`;
   const evalTypeDefault =
     application.stage === "interview" ? "interview" : "screening";
   const evaluationOpen = !["declined", "withdrawn", "appointed", "cleared"].includes(
@@ -937,9 +937,9 @@ function ApplicationCard({
               {application.reference}
             </span>
             <span
-              className={\`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize \${statusClass(
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${statusClass(
                 application.stage,
-              )}\`}
+              )}`}
             >
               {readable(application.stage)}
             </span>
@@ -949,8 +949,8 @@ function ApplicationCard({
           </h3>
           <p className="mt-1 text-xs text-slate-500">
             {application.candidateEmail}
-            {application.candidatePhone ? \` · \${application.candidatePhone}\` : ""}
-            {application.candidateSource ? \` · \${application.candidateSource}\` : ""}
+            {application.candidatePhone ? ` · ${application.candidatePhone}` : ""}
+            {application.candidateSource ? ` · ${application.candidateSource}` : ""}
           </p>
         </div>
       </div>
@@ -967,9 +967,9 @@ function ApplicationCard({
                   {readable(evaluation.evaluationType)}
                 </p>
                 <span
-                  className={\`rounded-full border px-2 py-0.5 text-[10px] font-black capitalize \${statusClass(
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-black capitalize ${statusClass(
                     evaluation.recommendation,
-                  )}\`}
+                  )}`}
                 >
                   {readable(evaluation.recommendation)}
                 </span>
@@ -997,9 +997,9 @@ function ApplicationCard({
           </p>
           <div className="mt-3 grid gap-2 lg:grid-cols-2">
             <select
-              value={selects[\`\${prefix}-eval-type\`] ?? evalTypeDefault}
+              value={selects[`${prefix}-eval-type`] ?? evalTypeDefault}
               onChange={(event) =>
-                onSelect(\`\${prefix}-eval-type\`, event.target.value)
+                onSelect(`${prefix}-eval-type`, event.target.value)
               }
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
             >
@@ -1010,9 +1010,9 @@ function ApplicationCard({
               <option value="other">Other</option>
             </select>
             <select
-              value={selects[\`\${prefix}-recommendation\`] ?? "progress"}
+              value={selects[`${prefix}-recommendation`] ?? "progress"}
               onChange={(event) =>
-                onSelect(\`\${prefix}-recommendation\`, event.target.value)
+                onSelect(`${prefix}-recommendation`, event.target.value)
               }
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
             >
@@ -1021,35 +1021,35 @@ function ApplicationCard({
               <option value="do_not_progress">Do not progress</option>
             </select>
             <textarea
-              value={notes[\`\${prefix}-competence\`] ?? ""}
+              value={notes[`${prefix}-competence`] ?? ""}
               onChange={(event) =>
-                onNote(\`\${prefix}-competence\`, event.target.value)
+                onNote(`${prefix}-competence`, event.target.value)
               }
               placeholder="Specific competence evidence"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
             />
             <textarea
-              value={notes[\`\${prefix}-fit\`] ?? ""}
+              value={notes[`${prefix}-fit`] ?? ""}
               onChange={(event) =>
-                onNote(\`\${prefix}-fit\`, event.target.value)
+                onNote(`${prefix}-fit`, event.target.value)
               }
               placeholder="Specific role-fit evidence"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
             />
             <textarea
-              value={notes[\`\${prefix}-builder\`] ?? ""}
+              value={notes[`${prefix}-builder`] ?? ""}
               onChange={(event) =>
-                onNote(\`\${prefix}-builder\`, event.target.value)
+                onNote(`${prefix}-builder`, event.target.value)
               }
               placeholder="Builder philosophy evidence (optional)"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
             />
             <textarea
-              value={notes[\`\${prefix}-gap\`] ?? ""}
-              onChange={(event) => onNote(\`\${prefix}-gap\`, event.target.value)}
+              value={notes[`${prefix}-gap`] ?? ""}
+              onChange={(event) => onNote(`${prefix}-gap`, event.target.value)}
               placeholder="Concern/gap (optional)"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
@@ -1063,19 +1063,19 @@ function ApplicationCard({
                   mode: "add_evaluation",
                   applicationId: application.id,
                   evaluationType:
-                    selects[\`\${prefix}-eval-type\`] ?? evalTypeDefault,
-                  competenceEvidence: notes[\`\${prefix}-competence\`] ?? "",
-                  roleFitEvidence: notes[\`\${prefix}-fit\`] ?? "",
+                    selects[`${prefix}-eval-type`] ?? evalTypeDefault,
+                  competenceEvidence: notes[`${prefix}-competence`] ?? "",
+                  roleFitEvidence: notes[`${prefix}-fit`] ?? "",
                   builderPhilosophyEvidence:
-                    notes[\`\${prefix}-builder\`] ?? null,
-                  concernOrGap: notes[\`\${prefix}-gap\`] ?? null,
+                    notes[`${prefix}-builder`] ?? null,
+                  concernOrGap: notes[`${prefix}-gap`] ?? null,
                   recommendation:
-                    selects[\`\${prefix}-recommendation\`] ?? "progress",
+                    selects[`${prefix}-recommendation`] ?? "progress",
                 },
-                \`\${prefix}-evaluation\`,
+                `${prefix}-evaluation`,
               )
             }
-            disabled={busyId === \`\${prefix}-evaluation\`}
+            disabled={busyId === `${prefix}-evaluation`}
             className="mt-3 rounded-lg bg-violet-700 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
           >
             Add evaluation
@@ -1096,7 +1096,7 @@ function ApplicationCard({
                     action: "start_screening",
                     note: "Screening opened.",
                   },
-                  \`\${prefix}-screening\`,
+                  `${prefix}-screening`,
                 )
               }
             />
@@ -1112,7 +1112,7 @@ function ApplicationCard({
                     action: "invite_interview",
                     note: "Screening evidence supports interview progression.",
                   },
-                  \`\${prefix}-interview\`,
+                  `${prefix}-interview`,
                 )
               }
             />
@@ -1127,10 +1127,10 @@ function ApplicationCard({
                     applicationId: application.id,
                     action: "conditional_select",
                     note:
-                      notes[\`\${prefix}-decision\`] ??
+                      notes[`${prefix}-decision`] ??
                       "Interview/demonstration evidence supports conditional selection.",
                   },
-                  \`\${prefix}-conditional\`,
+                  `${prefix}-conditional`,
                 )
               }
             />
@@ -1146,7 +1146,7 @@ function ApplicationCard({
                     action: "start_clearance",
                     note: "Conditional selection moved into safer-recruitment clearance.",
                   },
-                  \`\${prefix}-clearance\`,
+                  `${prefix}-clearance`,
                 )
               }
             />
@@ -1162,10 +1162,10 @@ function ApplicationCard({
                       applicationId: application.id,
                       action: "decline",
                       note:
-                        notes[\`\${prefix}-decision\`] ??
+                        notes[`${prefix}-decision`] ??
                         "Candidate did not progress based on the recorded role-relevant evidence.",
                     },
-                    \`\${prefix}-decline\`,
+                    `${prefix}-decline`,
                   )
                 }
                 className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-black text-slate-700"
@@ -1173,9 +1173,9 @@ function ApplicationCard({
                 Decline
               </button>
               <input
-                value={notes[\`\${prefix}-decision\`] ?? ""}
+                value={notes[`${prefix}-decision`] ?? ""}
                 onChange={(event) =>
-                  onNote(\`\${prefix}-decision\`, event.target.value)
+                  onNote(`${prefix}-decision`, event.target.value)
                 }
                 placeholder="Decision note when needed"
                 className="min-w-64 rounded-xl border border-slate-200 px-3 py-2 text-xs"
@@ -1205,34 +1205,34 @@ function ApplicationCard({
                   </p>
                 </div>
                 <span
-                  className={\`rounded-full border px-2.5 py-1 text-[10px] font-black capitalize \${statusClass(
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-black capitalize ${statusClass(
                     item.status,
-                  )}\`}
+                  )}`}
                 >
                   {readable(item.status)}
                 </span>
               </div>
               <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
                 <input
-                  value={notes[\`clearance-note-\${item.id}\`] ?? ""}
+                  value={notes[`clearance-note-${item.id}`] ?? ""}
                   onChange={(event) =>
-                    onNote(\`clearance-note-\${item.id}\`, event.target.value)
+                    onNote(`clearance-note-${item.id}`, event.target.value)
                   }
                   placeholder="Outcome note"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                 />
                 <input
-                  value={values[\`clearance-ref-\${item.id}\`] ?? ""}
+                  value={values[`clearance-ref-${item.id}`] ?? ""}
                   onChange={(event) =>
-                    onValue(\`clearance-ref-\${item.id}\`, event.target.value)
+                    onValue(`clearance-ref-${item.id}`, event.target.value)
                   }
                   placeholder="Evidence reference"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                 />
                 <select
-                  value={selects[\`clearance-action-\${item.id}\`] ?? "verify"}
+                  value={selects[`clearance-action-${item.id}`] ?? "verify"}
                   onChange={(event) =>
-                    onSelect(\`clearance-action-\${item.id}\`, event.target.value)
+                    onSelect(`clearance-action-${item.id}`, event.target.value)
                   }
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                 >
@@ -1250,12 +1250,12 @@ function ApplicationCard({
                       mode: "clearance_action",
                       itemId: item.id,
                       action:
-                        selects[\`clearance-action-\${item.id}\`] ?? "verify",
-                      note: notes[\`clearance-note-\${item.id}\`] ?? "",
+                        selects[`clearance-action-${item.id}`] ?? "verify",
+                      note: notes[`clearance-note-${item.id}`] ?? "",
                       evidenceReference:
-                        values[\`clearance-ref-\${item.id}\`] ?? null,
+                        values[`clearance-ref-${item.id}`] ?? null,
                     },
-                    \`clearance-\${item.id}\`,
+                    `clearance-${item.id}`,
                   )
                 }
                 className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white"
@@ -1265,9 +1265,9 @@ function ApplicationCard({
             </div>
           ))}
           <textarea
-            value={notes[\`\${prefix}-clearance-final\`] ?? ""}
+            value={notes[`${prefix}-clearance-final`] ?? ""}
             onChange={(event) =>
-              onNote(\`\${prefix}-clearance-final\`, event.target.value)
+              onNote(`${prefix}-clearance-final`, event.target.value)
             }
             placeholder="Final clearance decision note"
             rows={2}
@@ -1280,9 +1280,9 @@ function ApplicationCard({
                 {
                   mode: "complete_clearance",
                   applicationId: application.id,
-                  note: notes[\`\${prefix}-clearance-final\`] ?? "",
+                  note: notes[`${prefix}-clearance-final`] ?? "",
                 },
-                \`\${prefix}-complete-clearance\`,
+                `${prefix}-complete-clearance`,
               )
             }
             className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white"
@@ -1304,25 +1304,25 @@ function ApplicationCard({
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             <input
               type="date"
-              value={dates[\`\${prefix}-start\`] ?? ""}
+              value={dates[`${prefix}-start`] ?? ""}
               onChange={(event) =>
-                onDate(\`\${prefix}-start\`, event.target.value)
+                onDate(`${prefix}-start`, event.target.value)
               }
               className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs"
             />
             <input
               type="date"
-              value={dates[\`\${prefix}-onboarding\`] ?? ""}
+              value={dates[`${prefix}-onboarding`] ?? ""}
               onChange={(event) =>
-                onDate(\`\${prefix}-onboarding\`, event.target.value)
+                onDate(`${prefix}-onboarding`, event.target.value)
               }
               className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs"
             />
             <input
               type="date"
-              value={dates[\`\${prefix}-probation\`] ?? ""}
+              value={dates[`${prefix}-probation`] ?? ""}
               onChange={(event) =>
-                onDate(\`\${prefix}-probation\`, event.target.value)
+                onDate(`${prefix}-probation`, event.target.value)
               }
               className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs"
             />
@@ -1334,13 +1334,13 @@ function ApplicationCard({
                 {
                   mode: "appoint_candidate",
                   applicationId: application.id,
-                  startDate: dates[\`\${prefix}-start\`] ?? "",
+                  startDate: dates[`${prefix}-start`] ?? "",
                   onboardingDueDate:
-                    dates[\`\${prefix}-onboarding\`] ?? null,
+                    dates[`${prefix}-onboarding`] ?? null,
                   probationReviewDate:
-                    dates[\`\${prefix}-probation\`] ?? null,
+                    dates[`${prefix}-probation`] ?? null,
                 },
-                \`\${prefix}-appoint\`,
+                `${prefix}-appoint`,
               )
             }
             className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white"
