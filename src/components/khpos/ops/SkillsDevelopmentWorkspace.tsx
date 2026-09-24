@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -134,18 +135,19 @@ export function SkillsDevelopmentWorkspace({
       return;
     }
 
-    setWorkspace(body.skills);
+    const next = body.skills;
+    setWorkspace(next);
     const activeTerm =
-      body.skills.terms.find((term) => term.status === "active") ??
-      body.skills.terms[0];
-    const firstPathway = body.skills.pathways.find(
+      next.terms.find((term) => term.status === "active") ??
+      next.terms[0];
+    const firstPathway = next.pathways.find(
       (pathway) => pathway.status === "active",
     );
-    const firstFacilitator = body.skills.assignments.find(
+    const firstFacilitator = next.assignments.find(
       (assignment) => assignment.roleCode === "SKILLS_FACILITATOR",
     );
-    const firstLearner = body.skills.learners[0];
-    const firstOffering = body.skills.offerings.find((offering) =>
+    const firstLearner = next.learners[0];
+    const firstOffering = next.offerings.find((offering) =>
       ["ready", "active"].includes(offering.status),
     );
 
@@ -160,7 +162,7 @@ export function SkillsDevelopmentWorkspace({
         current ||
         firstLearner?.campusId ||
         firstFacilitator?.campusId ||
-        body.skills.offerings[0]?.campusId ||
+        next.offerings[0]?.campusId ||
         "",
     );
     setSelectionOfferingId(
@@ -387,14 +389,14 @@ export function SkillsDevelopmentWorkspace({
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            {[
+            {([
               ["Active offerings", workspace.summary.activeOfferings, Wrench],
               ["Active selections", workspace.summary.activeSelections, UsersRound],
               ["Pending changes", workspace.summary.pendingChanges, GitBranch],
               ["Verified competencies", workspace.summary.verifiedCompetencies, BadgeCheck],
               ["Open recoveries", workspace.summary.openRecoveries, RefreshCw],
               ["Reviews awaiting approval", workspace.summary.submittedReviews, Gauge],
-            ].map(([label, value, Icon]) => (
+            ] as Array<[string, number, LucideIcon]>).map(([label, value, Icon]) => (
               <div
                 key={String(label)}
                 className="rounded-2xl border border-white/10 bg-white/10 p-4"
