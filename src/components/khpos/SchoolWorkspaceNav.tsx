@@ -12,6 +12,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LibraryBig,
+  ListTodo,
   Target,
   UsersRound,
   Workflow,
@@ -28,6 +29,7 @@ const transformLinks = [
 ] as const;
 
 const operationsLinks = [
+  { suffix: "/work", label: "My Work", icon: ListTodo },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
