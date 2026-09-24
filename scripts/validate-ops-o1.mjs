@@ -51,6 +51,50 @@ for (const expected of [
   requireText(workspace, expected, "Operations team workspace");
 }
 
+const migration = read(
+  "supabase/migrations/20260924113822_khpos_ops_o1_institutional_structure.sql",
+);
+for (const expected of [
+  "create table if not exists public.khpos_ops_campuses",
+  "create table if not exists public.khpos_ops_units",
+  "create table if not exists public.khpos_ops_roles",
+  "create table if not exists public.khpos_ops_role_assignments",
+  "create table if not exists public.khpos_ops_role_charters",
+  "create table if not exists public.khpos_ops_reporting_lines",
+  "create table if not exists public.khpos_ops_backup_assignments",
+  "create table if not exists public.khpos_ops_audit_events",
+  "khpos_ops_get_structure_server",
+  "revoke execute on function public.khpos_ops_get_structure_server(uuid,uuid)",
+  "grant execute on function public.khpos_ops_get_structure_server(uuid,uuid)",
+  "to service_role",
+]) {
+  requireText(migration.toLowerCase(), expected.toLowerCase(), "Operations O1 migration");
+}
+
+for (const role of ["public", "anon", "authenticated"]) {
+  requireText(
+    migration.toLowerCase(),
+    `from public, anon, authenticated`,
+    `Operations O1 function privilege boundary (${role})`,
+  );
+}
+
+const seed = read("supabase/seeds/khpos_ops_o1_kns.sql");
+for (const expected of [
+  "KAEC Nigerian Schools",
+  "'IGANDO','Igando Campus'",
+  "'VISION_CUSTODIAN','Vision Custodian'",
+  "'SCHOOL_GUARDIAN','School Guardian'",
+  "'ACADEMIC_INSPECTOR','Academic Inspector'",
+  "'SKILL_INSPECTOR','Skill Inspector'",
+  "'SECTIONAL_PROMOTER','Sectional Promoter'",
+  "'TEACHER','Teacher'",
+  "'SKILLS_FACILITATOR','Skills Facilitator'",
+  "ops_o1_structure_bootstrapped",
+]) {
+  requireText(seed, expected, "KNS O1 seed");
+}
+
 for (const protectedFile of [
   "src/lib/khpos/priorities.ts",
   "src/lib/khpos/implementation.ts",
@@ -66,4 +110,4 @@ for (const protectedFile of [
   }
 }
 
-console.log("KHP-OS Operations O1 application foundation validated.");
+console.log("KHP-OS Operations O1 application, schema and KNS bootstrap validated.");
