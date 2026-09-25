@@ -13,7 +13,8 @@ function requireText(source, expected, context) {
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, "const operationsLinks", "school workspace navigation");
 requireText(nav, 'suffix: "/team"', "school workspace navigation");
-requireText(nav, "Operate", "school workspace navigation");
+requireText(nav, "const dailyLinks", "school workspace navigation");
+requireText(nav, "NavigationGroups", "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/team/page.tsx");
 requireText(page, "OperationsTeamWorkspace", "team route");

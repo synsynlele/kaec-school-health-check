@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +13,7 @@ import {
   Building2,
   CalendarClock,
   CircleDollarSign,
+  ChevronDown,
   CheckCircle2,
   Compass,
   FileCheck2,
@@ -24,14 +26,17 @@ import {
   LibraryBig,
   Rocket,
   ListTodo,
+  Menu,
   ShieldCheck,
   Sparkles,
   Target,
   UserRoundCheck,
   UserRoundSearch,
+  MessageCircle,
   UsersRound,
   Workflow,
   Wrench,
+  X,
 } from "lucide-react";
 
 const transformLinks = [
@@ -69,6 +74,7 @@ const operationsLinks = [
   { suffix: "/safeguarding", label: "Safeguarding", icon: ShieldCheck },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
+  { suffix: "/parents", label: "Parent Partnership", icon: MessageCircle },
 ] as const;
 
 const intelligenceLinks = [
@@ -83,6 +89,37 @@ const workspaceLinks = [
   ...intelligenceLinks,
 ] as const;
 
+const dailyLinks = [transformLinks[0], operationsLinks[0], operationsLinks[1], operationsLinks[2], operationsLinks[21]] as const;
+const navigationGroups = [
+  { title: "Leadership", icon: Gauge, links: [...transformLinks.slice(1), operationsLinks[3], intelligenceLinks[0]] },
+  { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
+  { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
+  { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
+  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 21), operationsLinks[24]] },
+  { title: "Institution", icon: LibraryBig, links: [operationsLinks[23]] },
+] as const;
+
+function NavigationGroup({ group, base, pathname, onNavigate }: {
+  group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
+}) {
+  const active = group.links.some((link) => isActive(pathname, base, link.suffix));
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
+  const Icon = group.icon;
+  return <details ref={detailsRef} className="group rounded-xl border border-transparent open:border-white/10 open:bg-white/5">
+    <summary className={`flex cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold marker:hidden hover:bg-white/8 ${active ? "text-mint-300" : "text-slate-300"}`}>
+      <Icon className="size-4 shrink-0" aria-hidden="true" />{group.title}<ChevronDown className="ml-auto size-4 transition group-open:rotate-180" aria-hidden="true" />
+    </summary>
+    <div className="space-y-0.5 px-2 pb-2 pl-5">{group.links.map((item) => <WorkspaceLink key={item.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...item} />)}</div>
+  </details>;
+}
+
+function NavigationGroups({ base, pathname, onNavigate }: {
+  base: string; pathname: string; onNavigate?: () => void;
+}) {
+  return <div className="space-y-1">{navigationGroups.map((group) => <NavigationGroup key={group.title} group={group} base={base} pathname={pathname} onNavigate={onNavigate} />)}</div>;
+}
+
 function isActive(pathname: string, base: string, suffix: string) {
   const href = `${base}${suffix}`;
   return suffix === ""
@@ -96,12 +133,14 @@ function WorkspaceLink({
   suffix,
   label,
   icon: Icon,
+  onNavigate,
 }: {
   base: string;
   pathname: string;
   suffix: string;
   label: string;
   icon: (typeof workspaceLinks)[number]["icon"];
+  onNavigate?: () => void;
 }) {
   const href = `${base}${suffix}`;
   const active = isActive(pathname, base, suffix);
@@ -109,6 +148,7 @@ function WorkspaceLink({
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
         active
@@ -133,6 +173,20 @@ function WorkspaceLink({
 export function SchoolWorkspaceNav({ organisationId }: { organisationId: string }) {
   const pathname = usePathname();
   const base = `/khpos/${organisationId}`;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const current = workspaceLinks.find((item) => isActive(pathname, base, item.suffix));
+  const moreActive = !dailyLinks.slice(0, 4).some((item) => isActive(pathname, base, item.suffix));
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", escape);
+    return () => { document.body.style.overflow = oldOverflow; window.removeEventListener("keydown", escape); };
+  }, [menuOpen]);
 
   return (
     <>
@@ -154,51 +208,11 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         </div>
 
         <nav aria-label="KHP-OS school workspace" className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-            Transform
-          </p>
-          <div className="mt-2 space-y-1">
-            {transformLinks.map((item) => (
-              <WorkspaceLink
-                key={item.suffix || "command-centre"}
-                base={base}
-                pathname={pathname}
-                {...item}
-              />
-            ))}
-          </div>
-
+          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Daily</p>
+          <div className="mt-2 space-y-1">{dailyLinks.map((item) => <WorkspaceLink key={item.suffix || "home"} base={base} pathname={pathname} {...item} />)}</div>
           <div className="my-4 border-t border-white/10" />
-
-          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-            Operate
-          </p>
-          <div className="mt-2 space-y-1">
-            {operationsLinks.map((item) => (
-              <WorkspaceLink
-                key={item.suffix}
-                base={base}
-                pathname={pathname}
-                {...item}
-              />
-            ))}
-          </div>
-
-          <div className="my-4 border-t border-white/10" />
-
-          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-            Intelligence
-          </p>
-          <div className="mt-2 space-y-1">
-            {intelligenceLinks.map((item) => (
-              <WorkspaceLink
-                key={item.suffix}
-                base={base}
-                pathname={pathname}
-                {...item}
-              />
-            ))}
-          </div>
+          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Areas</p>
+          <NavigationGroups base={base} pathname={pathname} />
         </nav>
 
         <div className="border-t border-white/10 p-3">
@@ -235,7 +249,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
               <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-mint-300">
                 KHP-OS | Schools
               </span>
-              <span className="block truncate text-xs font-extrabold">Transformation Workspace</span>
+              <span className="block truncate text-xs font-extrabold">{current?.label || "School Workspace"}</span>
             </span>
           </Link>
           <div className="flex shrink-0 gap-2">
@@ -247,9 +261,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             </Link>
           </div>
         </div>
-        <div className="overflow-x-auto px-3 py-2 sm:px-5">
-          <div className="flex min-w-max gap-1.5">
-            {workspaceLinks.map((item) => {
+        <div className="grid grid-cols-5 border-t border-white/10">
+            {dailyLinks.slice(0, 4).map((item) => {
               const href = `${base}${item.suffix}`;
               const active = isActive(pathname, base, item.suffix);
               const Icon = item.icon;
@@ -258,20 +271,29 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   key={item.suffix || "command-centre"}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black transition ${
+                  aria-label={item.label}
+                  className={`flex min-w-0 flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold transition ${
                     active
-                      ? "bg-mint-300 text-slate-950"
-                      : "border border-white/10 text-slate-300 hover:bg-white/8 hover:text-white"
+                      ? "text-mint-300"
+                      : "text-slate-300 hover:text-white"
                   }`}
                 >
-                  <Icon className="size-3.5" />
-                  {item.label}
+                  <Icon className="size-4" />
+                  <span className="w-full truncate text-center">{["Home", "Work", "Issues", "Decisions"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
-          </div>
+            <button type="button" aria-expanded={menuOpen} aria-controls="school-more-menu" onClick={() => setMenuOpen(true)} className={`flex flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold ${moreActive ? "text-mint-300" : "text-slate-300"}`}><Menu className="size-4" />More</button>
         </div>
       </nav>
+      {menuOpen && <div className="fixed inset-0 z-[80] xl:hidden">
+        <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
+        <div id="school-more-menu" role="dialog" aria-modal="true" aria-label="All school areas" className="absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><h2 className="font-bold">All school areas</h2><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
+          <nav aria-label="All school areas" className="flex-1 overflow-y-auto p-3"><WorkspaceLink base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} {...dailyLinks[4]} /><div className="my-3 border-t border-white/10" /><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
+          <div className="flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Access Hub</Link></div>
+        </div>
+      </div>}
     </>
   );
 }
