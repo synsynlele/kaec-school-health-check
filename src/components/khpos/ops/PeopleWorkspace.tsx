@@ -67,6 +67,7 @@ export function PeopleWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [joinLinks, setJoinLinks] = useState<Record<string, string>>({});
 
   const [displayName, setDisplayName] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
@@ -197,6 +198,11 @@ export function PeopleWorkspace({
       return;
     }
 
+    if (workspace?.roles.find((role) => role.id === roleId)?.code === "SCHOOL_GUARDIAN" && !campusId) {
+      setError("Choose the campus this School Guardian will lead.");
+      return;
+    }
+
     const ok = await submit(
       {
         mode: "create_staff",
@@ -222,6 +228,19 @@ export function PeopleWorkspace({
       setUnitId("");
       setShowCreate(false);
     }
+  }
+
+  async function issueJoinLink(staff: KhposOpsStaff) {
+    const accessToken = await token();
+    if (!accessToken) { setError("Sign in to continue."); return; }
+    setBusyId(`invite-${staff.id}`); setError("");
+    try {
+      const response = await fetch(`/api/khpos/ops/staff-access/${organisationId}`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ staffId: staff.id }) });
+      const body = await response.json();
+      if (!response.ok || !body.ok) throw new Error(body.error || "Could not create staff link.");
+      setJoinLinks((current) => ({ ...current, [staff.id]: `${window.location.origin}/khpos/join/${body.token}` }));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not create staff link."); }
+    finally { setBusyId(null); }
   }
 
   async function linkAccount(staff: KhposOpsStaff) {
@@ -728,6 +747,41 @@ export function PeopleWorkspace({
                     </div>
                   )}
 
+                  {staff.canManage && !staff.accessMembershipActive &&
+                    ["onboarding", "ready"].includes(staff.status) &&
+                    staff.role.code !== "VISION_CUSTODIAN" && (
+                      <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm">
+                        <p className="font-bold">Give this person school access</p>
+                        <p className="mt-1 text-slate-600">
+                          Create a one-use, 7-day link and give it privately to {staff.displayName}.
+                          They must sign in with {staff.accountEmail}. This grants organisation
+                          access; role activation still requires onboarding.
+                        </p>
+                        <button
+                          type="button"
+                          disabled={busyId === `invite-${staff.id}`}
+                          onClick={() => void issueJoinLink(staff)}
+                          className="mt-3 rounded-lg bg-slate-900 px-4 py-2 font-bold text-white disabled:opacity-50"
+                        >
+                          {busyId === `invite-${staff.id}` ? "Creating…" : joinLinks[staff.id] ? "Replace joining link" : "Create joining link"}
+                        </button>
+                        {joinLinks[staff.id] && (
+                          <div className="mt-3 space-y-2">
+                            <label className="block font-semibold">
+                              Private joining link
+                              <input
+                                readOnly
+                                value={joinLinks[staff.id]}
+                                onFocus={(event) => event.target.select()}
+                                className="mt-1 w-full rounded-lg border border-brand-200 bg-white p-2 font-normal"
+                              />
+                            </label>
+                            <button type="button" onClick={() => void navigator.clipboard.writeText(joinLinks[staff.id])} className="text-sm font-bold underline">Copy link</button>
+                            <p className="text-xs text-slate-600">This link appears only now. Replacing it invalidates the previous link.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   <div className="mt-5 flex flex-wrap gap-2">
                     {staff.canManage && !staff.accountLinked && (
                       <button
