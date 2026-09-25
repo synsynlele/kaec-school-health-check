@@ -474,6 +474,7 @@ export function IssuesWorkspace({
               return (
                 <article
                   key={issue.id}
+                  id={`issue-${issue.id}`}
                   className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
