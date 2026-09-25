@@ -65,6 +65,7 @@ const operationsLinks = [
   { suffix: "/builder-projects", label: "Builder Projects", icon: Hammer },
   { suffix: "/worldready", label: "WorldReady", icon: Compass },
   { suffix: "/builders-council", label: "Builders Council", icon: UsersRound },
+  { suffix: "/student-culture", label: "Student Culture", icon: UserRoundCheck },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
   { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
 ] as const;
