@@ -35,6 +35,7 @@ export function AccountAccess() {
   const [email, setEmail] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [partnerships, setPartnerships] = useState<KhposPartnerSnapshot[]>([]);
+  const [assessments, setAssessments] = useState<Array<{ id: string; schoolName: string; completed: boolean; createdAt: string }>>([]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -58,6 +59,7 @@ export function AccountAccess() {
         ok?: boolean;
         account?: { email: string };
         partnerships?: KhposPartnerSnapshot[];
+        assessments?: Array<{ id: string; schoolName: string; completed: boolean; createdAt: string }>;
         error?: string;
       };
       if (!response.ok || !body.ok || !body.account) {
@@ -67,6 +69,14 @@ export function AccountAccess() {
       }
       setAccountEmail(body.account.email);
       setPartnerships(body.partnerships ?? []);
+      setAssessments(body.assessments ?? []);
+      const sessionResponse = await fetch("/api/kshc/session", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      if (!sessionResponse.ok) { setError("Could not establish your assessment session. Please sign in again."); setState("ready"); return; }
+      const next = new URLSearchParams(window.location.search).get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")) {
+        window.location.replace(next);
+        return;
+      }
       setState("ready");
     });
     return () => {
@@ -77,7 +87,7 @@ export function AccountAccess() {
   async function continueWithGoogle() {
     if (!supabase) return;
     setError("");
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/account")}`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/account${window.location.search}`)}`;
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
@@ -91,7 +101,7 @@ export function AccountAccess() {
     if (!client || !email.trim()) return;
     setBusy(true);
     setError("");
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/account")}`;
+    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/account${window.location.search}`)}`;
     const { error: authError } = await client.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { emailRedirectTo, shouldCreateUser: mode === "signup" },
@@ -110,6 +120,7 @@ export function AccountAccess() {
 
   async function signOut() {
     if (!supabase) return;
+    await fetch("/api/kshc/session", { method: "DELETE" });
     await supabase.auth.signOut();
     window.location.reload();
   }
@@ -174,6 +185,13 @@ export function AccountAccess() {
           <Link href="/assessment" className="rounded-[26px] bg-brand-700 p-6 text-white shadow-lift"><CheckCircle2 className="size-7" /><h2 className="mt-4 text-xl font-black">Start free School Health Check</h2><p className="mt-2 text-sm leading-6 text-brand-100">KSHC remains open whether or not your school is a KHP-OS partner.</p></Link>
           <Link href="/" className="rounded-[26px] border border-slate-200 bg-white p-6"><UserPlus className="size-7 text-slate-700" /><h2 className="mt-4 text-xl font-black text-slate-950">Explore KAEC-NG</h2><p className="mt-2 text-sm leading-6 text-slate-500">Return to the diagnostic platform and Human Potential Development resources.</p></Link>
         </div>
+
+        <section className="mt-10">
+          <div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">School Health Check</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your assessments</h2></div>
+          {assessments.length === 0 ? <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">No assessments under {accountEmail} yet. Start one above and return here anytime.</p> : (
+            <div className="mt-4 grid gap-3">{assessments.map((item) => <Link key={item.id} href={item.completed ? `/report/${item.id}` : `/assessment?resume=${item.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 hover:border-brand-300"><span><strong className="block text-slate-950">{item.schoolName}</strong><span className="text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString()} · {item.completed ? "Report ready" : "Continue assessment"}</span></span><ArrowRight className="size-5 text-brand-700" /></Link>)}</div>
+          )}
+        </section>
 
         <section className="mt-10">
           <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Institutional access</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your school partnerships</h2></div></div>

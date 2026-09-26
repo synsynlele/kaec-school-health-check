@@ -552,7 +552,7 @@ export function DecisionsWorkspace({
           <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-950 shadow-sm">
             <h2 className="font-black">Your operating role is not assigned yet.</h2>
             <p className="mt-2 text-sm leading-6">
-              KHP-OS will not guess authority. Assign your real KNS role in Team
+              KHP-OS will not guess authority. Assign your assigned school role in Team
               & Roles first; decision routing will then follow the actual
               reporting line.
             </p>

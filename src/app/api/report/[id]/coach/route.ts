@@ -4,6 +4,7 @@ import { buildCoachSystemPrompt, streamCoachReply } from "@/lib/kshc-ai-coach";
 import { getReport } from "@/lib/storage";
 import { badRequest, clientIp, notFound, serverError, UUID_RE } from "@/lib/http";
 import type { CoachMessage } from "@/lib/types";
+import { canAccessKshcAssessment, kshcUserFromRequest } from "@/lib/kshc-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -41,6 +42,9 @@ export async function POST(
 ) {
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return notFound("Report not found.");
+  const user = await kshcUserFromRequest(req);
+  if (!user) return new Response("Sign in to continue.", { status: 401 });
+  if (!(await canAccessKshcAssessment(id, user.email))) return notFound("Report not found.");
   if (!allowed(clientIp(req))) {
     return new Response("You have sent many questions in a short time. Please wait a few minutes and try again.", {
       status: 429,

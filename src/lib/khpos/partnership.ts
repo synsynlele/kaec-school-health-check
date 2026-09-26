@@ -115,6 +115,7 @@ export async function getUserPartnerships(userId: string): Promise<KhposPartnerS
     .from("organisation_memberships")
     .select("organisation_id,role,status")
     .eq("user_id", userId)
+    .neq("status", "ended")
     .order("created_at", { ascending: true });
 
   if (error) throw new KhposPartnershipError("Your school partnerships could not be loaded.", 500);

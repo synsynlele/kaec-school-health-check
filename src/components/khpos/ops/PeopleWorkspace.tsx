@@ -126,7 +126,7 @@ export function PeopleWorkspace({
       setWorkspace(people);
       const defaultRole =
         people.roles.find((role) => role.code === "SCHOOL_GUARDIAN") ??
-        people.roles.find((role) => role.code !== "VISION_CUSTODIAN") ??
+        people.roles.find((role) => !(["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(role.code))) ??
         people.roles[0];
       setRoleId((current) => current || defaultRole?.id || "");
       setCampusId((current) => current || people.campuses[0]?.id || "");
@@ -228,6 +228,13 @@ export function PeopleWorkspace({
       setUnitId("");
       setShowCreate(false);
     }
+  }
+
+  async function cancelAppointment(staff: KhposOpsStaff) {
+    const reason = window.prompt(`Why is ${staff.displayName}'s appointment being cancelled? This closes any joining link and removes their school access.`);
+    if (!reason) return;
+    if (reason.trim().length < 10) { setError("Please provide a reason of at least 10 characters."); return; }
+    await submit({ mode: "cancel_appointment", staffId: staff.id, reason: reason.trim() }, `cancel-${staff.id}`);
   }
 
   async function issueJoinLink(staff: KhposOpsStaff) {
@@ -360,7 +367,7 @@ export function PeopleWorkspace({
                 People & Staff
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Appointment is not activation. KNS can now onboard a person
+                Appointment is not activation. Your school can onboard a person
                 before they have a login, certify readiness against the actual
                 role, then activate the O1 operating-role seat only when every
                 required gate is clear.
@@ -749,7 +756,7 @@ export function PeopleWorkspace({
 
                   {staff.canManage && !staff.accessMembershipActive &&
                     ["onboarding", "ready"].includes(staff.status) &&
-                    staff.role.code !== "VISION_CUSTODIAN" && (
+                    !["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(staff.role.code) && (
                       <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm">
                         <p className="font-bold">Give this person school access</p>
                         <p className="mt-1 text-slate-600">
@@ -783,6 +790,11 @@ export function PeopleWorkspace({
                       </div>
                     )}
                   <div className="mt-5 flex flex-wrap gap-2">
+                    {staff.canManage && ["onboarding", "ready"].includes(staff.status) && (
+                      <button type="button" disabled={busyId === `cancel-${staff.id}`} onClick={() => void cancelAppointment(staff)} className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-800 disabled:opacity-50">
+                        <XCircle className="size-3.5" /> Cancel appointment
+                      </button>
+                    )}
                     {staff.canManage && !staff.accountLinked && (
                       <button
                         type="button"
@@ -823,6 +835,9 @@ export function PeopleWorkspace({
                         <BadgeCheck className="size-3.5" />
                         View active role
                       </Link>
+                    )}
+                    {staff.status === "active" && staff.canManage && (
+                      <Link href={`/khpos/${organisationId}/staff-transition`} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-black text-orange-900">Manage exit & access</Link>
                     )}
                   </div>
 

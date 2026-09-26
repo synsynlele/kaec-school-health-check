@@ -67,7 +67,7 @@ const STEPS = [
   {
     icon: ClipboardList,
     title: "Tell us about your school",
-    text: "A two-minute profile — name, size, type, location. No account, no password, straight in.",
+    text: "A two-minute profile — name, size, type, location. Sign in with Google or an email link so you can return to your records.",
   },
   {
     icon: BrainCircuit,
@@ -129,7 +129,7 @@ const BENEFITS = [
   {
     icon: ShieldCheck,
     title: "Private by design",
-    text: "Your answers generate your report and nothing else. No accounts to leak; only anonymous statistics are kept.",
+    text: "Your answers generate your report and nothing else. Your report stays in your account; only aggregate statistics are shared.",
   },
   {
     icon: MonitorSmartphone,

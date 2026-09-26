@@ -10,7 +10,7 @@ import { SectionHeading } from "@/components/site/SectionHeading";
 const FAQS = [
   {
     q: "Is the School Health Check really free?",
-    a: "Yes — the assessment, the full AI report, the PDF download and the AI Coach are completely free, with no account required. KAEC-NG offers optional paid Human Potential Development and institutional transformation support afterwards — including KHP-OS deployment, capability development and implementation support — but nothing in KSHC is locked behind payment.",
+    a: "Yes — the assessment, the full AI report, the PDF download and the AI Coach are completely free, with a free account required to keep your records accessible. KAEC-NG offers optional paid Human Potential Development and institutional transformation support afterwards — including KHP-OS deployment, capability development and implementation support — but nothing in KSHC is locked behind payment.",
   },
   {
     q: "How long does the assessment take?",

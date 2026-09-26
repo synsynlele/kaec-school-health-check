@@ -601,7 +601,7 @@ export function PerformanceWorkspace({
                 <h2 className="mt-2 text-2xl font-black">Define a KPI</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                   New KPIs start in baseline mode. Record real evidence first;
-                  configure performance thresholds later only when KNS has a
+                  configure performance thresholds later only when your school has a
                   defensible basis for them.
                 </p>
               </div>

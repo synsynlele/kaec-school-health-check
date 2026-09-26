@@ -27,6 +27,7 @@ export function StaffJoinWorkspace({ token }: { token: string }) {
   }
   async function switchAccount() {
     if (!supabase) return;
+    await fetch("/api/kshc/session", { method: "DELETE" });
     await supabase.auth.signOut();
     setEmail(""); setError("");
   }

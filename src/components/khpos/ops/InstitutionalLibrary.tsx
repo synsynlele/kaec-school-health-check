@@ -340,7 +340,7 @@ export function InstitutionalLibrary({
             Institutional Control Library
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            One controlled source for what KNS requires, how work should happen and the tools people use to execute it. Registered items are visible without being falsely treated as adopted documents.
+            One controlled source for what your school requires, how work should happen and the tools people use to execute it. Registered items are visible without being falsely treated as adopted documents.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -411,7 +411,7 @@ export function InstitutionalLibrary({
           <section className="space-y-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Policy Register</p>
-              <h2 className="mt-2 text-2xl font-black">What KNS requires</h2>
+              <h2 className="mt-2 text-2xl font-black">What your school requires</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                 Only an approved active version is authoritative. Registered policies without an active version remain visible so nobody mistakes “not yet written” for “does not exist.”
               </p>
@@ -432,7 +432,7 @@ export function InstitutionalLibrary({
           <section>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Process Register</p>
-              <h2 className="mt-2 text-2xl font-black">How KNS operates</h2>
+              <h2 className="mt-2 text-2xl font-black">How your school operates</h2>
             </div>
 
             <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -483,7 +483,7 @@ export function InstitutionalLibrary({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Tools Registry</p>
               <h2 className="mt-2 text-2xl font-black">What people use to execute work</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Reusable tools prevent KNS from creating a different form for every process. The same Issue, Approval, Checklist, Evidence and Review primitives can serve many operating systems.
+                Reusable tools prevent your school from creating a different form for every process. The same Issue, Approval, Checklist, Evidence and Review primitives can serve many operating systems.
               </p>
             </div>
 

@@ -8,6 +8,7 @@ import {
 import {
   actOnKhposOpsStaffOnboarding,
   activateKhposOpsStaff,
+  cancelKhposOpsStaffAppointment,
   createKhposOpsStaff,
   getKhposOpsPeople,
   KhposOpsPeopleError,
@@ -77,7 +78,7 @@ export async function POST(
   }
 
   let payload: {
-    mode?: "create_staff" | "link_account" | "onboarding_action" | "activate";
+    mode?: "create_staff" | "link_account" | "onboarding_action" | "activate" | "cancel_appointment";
     displayName?: string;
     accountEmail?: string;
     employmentType?: KhposOpsEmploymentType;
@@ -92,6 +93,7 @@ export async function POST(
     action?: KhposOpsOnboardingAction;
     note?: string | null;
     evidenceReference?: string | null;
+    reason?: string;
   } = {};
 
   try {
@@ -199,6 +201,11 @@ export async function POST(
       UUID_RE.test(payload.staffId)
     ) {
       const people = await activateKhposOpsStaff(id, user.id, payload.staffId);
+      return NextResponse.json({ ok: true, people });
+    }
+
+    if (payload.mode === "cancel_appointment" && payload.staffId && UUID_RE.test(payload.staffId) && payload.reason?.trim()) {
+      const people = await cancelKhposOpsStaffAppointment(id, user.id, payload.staffId, payload.reason.trim());
       return NextResponse.json({ ok: true, people });
     }
 

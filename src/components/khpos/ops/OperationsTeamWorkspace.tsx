@@ -114,7 +114,7 @@ export function OperationsTeamWorkspace({
     );
   }
 
-  if (error || !structure) {
+  if (!structure) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
@@ -173,6 +173,7 @@ export function OperationsTeamWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        {error && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-brand-700" />
@@ -251,6 +252,7 @@ export function OperationsTeamWorkspace({
               );
             })}
           </div>
+          <p className="mt-6 text-sm leading-6 text-slate-600">Each additional campus needs its own school health check and KAEC partnership approval before it receives a KHP-OS workspace. The School Custodian is the school owner who holds its vision and appoints its School Guardian; this is a leadership seat, not a facilities role. <Link href="/assessment" className="font-bold text-brand-700 underline">Start a campus health check</Link>.</p>
         </section>
 
         <section>

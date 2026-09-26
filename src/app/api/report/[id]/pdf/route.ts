@@ -1,6 +1,7 @@
 import { buildReportPdf } from "@/lib/pdf";
 import { getReport } from "@/lib/storage";
 import { notFound, serverError, UUID_RE } from "@/lib/http";
+import { canAccessKshcAssessment, kshcUserFromRequest } from "@/lib/kshc-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,11 +16,14 @@ function slugify(s: string): string {
 
 /** Downloadable, print-ready School Health Report PDF. */
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return notFound("Report not found.");
+  const user = await kshcUserFromRequest(req);
+  if (!user) return new Response("Sign in to download your report.", { status: 401 });
+  if (!(await canAccessKshcAssessment(id, user.email))) return notFound("Report not found.");
 
   try {
     const stored = await getReport(id);

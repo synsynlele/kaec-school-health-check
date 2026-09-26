@@ -4,6 +4,7 @@ import { QUESTION_INDEX, RATING_OPTIONS } from "@/lib/questions";
 import { getAssessmentState, saveAnswers } from "@/lib/storage";
 import { badRequest, notFound, serverError, UUID_RE } from "@/lib/http";
 import type { AnswerRecord } from "@/lib/types";
+import { canAccessKshcAssessment, kshcUserFromRequest } from "@/lib/kshc-access";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,9 @@ export async function POST(
 ) {
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return notFound("Assessment not found.");
+  const user = await kshcUserFromRequest(req);
+  if (!user) return NextResponse.json({ ok: false, error: "Sign in to continue." }, { status: 401 });
+  if (!(await canAccessKshcAssessment(id, user.email))) return notFound("Assessment not found.");
 
   let body: unknown;
   try {

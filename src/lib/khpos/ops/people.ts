@@ -268,3 +268,11 @@ export async function activateKhposOpsStaff(
 
   return getKhposOpsPeople(organisationId, userId);
 }
+
+export async function cancelKhposOpsStaffAppointment(organisationId: string, userId: string, staffId: string, reason: string): Promise<KhposOpsPeopleWorkspace> {
+  const { error } = await admin().rpc("khpos_ops_cancel_staff_appointment_server", {
+    p_actor: userId, p_org: organisationId, p_staff: staffId, p_reason: reason,
+  });
+  if (error) throw new KhposOpsPeopleError(error.message, statusFor(error.message));
+  return getKhposOpsPeople(organisationId, userId);
+}

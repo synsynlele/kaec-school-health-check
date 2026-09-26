@@ -144,6 +144,7 @@ export function AdminConsoleWorkspace() {
     if (!supabase) return;
     setBusy("signout");
     setError("");
+    await fetch("/api/kshc/session", { method: "DELETE" });
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) {
       setBusy("");

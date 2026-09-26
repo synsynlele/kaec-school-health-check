@@ -15,7 +15,7 @@ const SECTIONS = [
     title: "The service",
     body: [
       "KAEC School Health Check is a free, AI-powered self-assessment for schools. You answer a structured questionnaire; the platform generates an indicative health report with scores, analysis and a suggested improvement plan.",
-      "The service is provided as-is, free of charge, without accounts or subscriptions.",
+      "The service is provided as-is, free of charge, with a free account and no required subscription.",
     ],
   },
   {
@@ -29,7 +29,7 @@ const SECTIONS = [
     title: "Acceptable use",
     body: [
       "You agree to provide truthful information, to use the service for lawful purposes, and not to attempt to disrupt, scrape at abusive volume, or reverse-engineer the platform. We may rate-limit or block usage that degrades the service for others.",
-      "Report links are unlisted but accessible to anyone holding them — share them only with people you trust with your school's results.",
+      "Reports and downloads require the verified assessment-contact account. Share a downloaded report only with people you trust.",
     ],
   },
   {

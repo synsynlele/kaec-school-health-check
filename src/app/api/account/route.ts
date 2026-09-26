@@ -9,18 +9,20 @@ import {
   KhposPartnershipError,
 } from "@/lib/khpos/partnership";
 import { getKhposPlatformAccess } from "@/lib/khpos/platform-admin";
+import { listAssessmentsForEmail } from "@/lib/storage";
 
 export async function GET(request: Request) {
   try {
     const token = bearerTokenFromRequest(request);
     if (!token) throw new KhposAuthError("Sign in to continue.", 401);
     const user = await verifyKhposAccessToken(token);
-    const [partnerships, platformAdmin] = await Promise.all([
+    const [partnerships, platformAdmin, assessments] = await Promise.all([
       getUserPartnerships(user.id),
       getKhposPlatformAccess(user.id),
+      listAssessmentsForEmail(user.email),
     ]);
     return NextResponse.json(
-      { ok: true, account: { email: user.email }, partnerships, platformAdmin },
+      { ok: true, account: { email: user.email }, partnerships, platformAdmin, assessments },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {

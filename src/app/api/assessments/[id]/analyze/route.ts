@@ -11,16 +11,20 @@ import {
 } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 import { badRequest, notFound, serverError, UUID_RE } from "@/lib/http";
+import { canAccessKshcAssessment, kshcUserFromRequest } from "@/lib/kshc-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function POST(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return notFound("Assessment not found.");
+  const user = await kshcUserFromRequest(req);
+  if (!user) return NextResponse.json({ ok: false, error: "Sign in to continue." }, { status: 401 });
+  if (!(await canAccessKshcAssessment(id, user.email))) return notFound("Assessment not found.");
 
   try {
     if (await hasReport(id)) {

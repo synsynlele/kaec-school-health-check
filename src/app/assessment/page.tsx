@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { AssessmentFlow } from "@/components/assessment/AssessmentFlow";
+import { redirect } from "next/navigation";
+import { kshcUserFromCookie } from "@/lib/kshc-access";
 
 export const metadata: Metadata = {
   title: "Start Your Free School Health Assessment",
@@ -8,6 +10,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AssessmentPage() {
-  return <AssessmentFlow />;
+export default async function AssessmentPage() {
+  const user = await kshcUserFromCookie();
+  if (!user) redirect("/account?next=%2Fassessment");
+  return <AssessmentFlow accountEmail={user.email} />;
 }

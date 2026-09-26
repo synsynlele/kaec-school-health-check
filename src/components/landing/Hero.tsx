@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { ReportPreview } from "./ReportPreview";
 
 const TRUST = [
-  { icon: Lock, text: "No login, no password" },
+  { icon: Lock, text: "Free account keeps your reports safe" },
   { icon: RefreshCw, text: "Autosaves — resume anytime" },
   { icon: Smartphone, text: "Works beautifully on any phone" },
 ];

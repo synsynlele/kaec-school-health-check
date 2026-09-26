@@ -214,6 +214,32 @@ export interface SchoolInput {
   staffPopulation: string;
 }
 
+/** Recover historical and new assessments by the verified school contact email. */
+export async function listAssessmentsForEmail(email: string): Promise<Array<{
+  id: string; schoolName: string; completed: boolean; createdAt: string;
+}>> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return [];
+  if (USE_SUPABASE) {
+    const candidates = await sb<Array<{ id: string; school_name: string; email: string }>>(
+      `schools?select=id,school_name,email&email=ilike.${encodeURIComponent(normalized)}&limit=500`,
+    );
+    // ILIKE treats characters such as _ and % as wildcards. Verify exact
+    // contact ownership before returning any assessment IDs to the account.
+    const schools = candidates.filter((school) => school.email.trim().toLowerCase() === normalized);
+    if (!schools.length) return [];
+    const names = new Map(schools.map((school) => [school.id, school.school_name]));
+    const assessments = await sb<Array<{ id: string; school_id: string; completed_at: string | null; created_at: string }>>(
+      `assessments?select=id,school_id,completed_at,created_at&school_id=in.(${schools.map((school) => school.id).join(",")})&order=created_at.desc&limit=100`,
+    );
+    return assessments.map((item) => ({ id: item.id, schoolName: names.get(item.school_id) ?? "School", completed: Boolean(item.completed_at), createdAt: item.created_at }));
+  }
+  const rows = await pg<{ id: string; school_name: string; completed_at: string | null; created_at: string }>(
+    `SELECT a.id, s.school_name, a.completed_at, a.created_at FROM assessments a JOIN schools s ON s.id=a.school_id WHERE lower(s.email)= $1 ORDER BY a.created_at DESC LIMIT 100`, [normalized],
+  );
+  return rows.map((item) => ({ id: item.id, schoolName: item.school_name, completed: Boolean(item.completed_at), createdAt: item.created_at }));
+}
+
 /** Create the school record + a fresh assessment in one call. */
 export async function createSchoolAssessment(
   input: SchoolInput,

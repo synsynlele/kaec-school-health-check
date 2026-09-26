@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Analyzer } from "@/components/analyzing/Analyzer";
 import { getAssessmentState } from "@/lib/storage";
 import { UUID_RE } from "@/lib/http";
+import { canAccessKshcAssessment, kshcUserFromCookie } from "@/lib/kshc-access";
 
 export const metadata: Metadata = {
   title: "Analysing your school…",
@@ -16,6 +17,9 @@ export default async function AnalyzingPage({
 }) {
   const { id } = await params;
   if (!UUID_RE.test(id)) redirect("/assessment");
+  const user = await kshcUserFromCookie();
+  if (!user) redirect(`/account?next=${encodeURIComponent(`/analyzing/${id}`)}`);
+  if (!(await canAccessKshcAssessment(id, user.email))) redirect("/assessment");
 
   /* If the report already exists, skip the theatre entirely. */
   try {

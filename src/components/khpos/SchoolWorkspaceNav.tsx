@@ -77,6 +77,9 @@ const operationsLinks = [
   { suffix: "/parents", label: "Parent Partnership", icon: MessageCircle },
   { suffix: "/campus-readiness", label: "Campus Readiness", icon: Building2 },
   { suffix: "/assets", label: "Assets & Maintenance", icon: Wrench },
+  { suffix: "/events", label: "Events & Programmes", icon: CalendarClock },
+  { suffix: "/parent-journeys", label: "Parent Journey", icon: MessageCircle },
+  { suffix: "/network-pulse", label: "Network Pulse", icon: Gauge },
 ] as const;
 
 const intelligenceLinks = [
@@ -93,12 +96,12 @@ const workspaceLinks = [
 
 const dailyLinks = [transformLinks[0], operationsLinks[0], operationsLinks[1], operationsLinks[2], operationsLinks[21]] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [...transformLinks.slice(1), operationsLinks[3], intelligenceLinks[0]] },
+  { title: "Leadership", icon: Gauge, links: [...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
-  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 21), operationsLinks[24]] },
-  { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[23]] },
+  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 21), operationsLinks[24], operationsLinks[28]] },
+  { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[27], operationsLinks[23]] },
 ] as const;
 
 function NavigationGroup({ group, base, pathname, onNavigate }: {

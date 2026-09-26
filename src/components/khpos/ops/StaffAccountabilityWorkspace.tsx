@@ -392,7 +392,7 @@ export function StaffAccountabilityWorkspace({
             Recognition & Accountability
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
-            Reinforce what KNS wants repeated. Correct known conduct fairly.
+            Reinforce what your school wants repeated. Correct known conduct fairly.
             Give staff a real grievance route. Formal discipline uses specific
             notice, evidence, response opportunity and competent authority—not
             personality, rumours or automatic scoring.

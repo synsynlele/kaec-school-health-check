@@ -74,6 +74,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   }, [organisationId, supabase]);
 
   async function signOut() {
+    await fetch("/api/kshc/session", { method: "DELETE" });
     if (supabase) await supabase.auth.signOut();
     router.push("/");
   }

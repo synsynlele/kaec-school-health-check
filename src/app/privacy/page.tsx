@@ -16,13 +16,13 @@ const SECTIONS = [
     body: [
       "When you run a School Health Check we collect the school profile you type in: school name, your name, email, optional phone number, country, state/region, school type, level and population ranges. We then store the answers you give to the 55 assessment indicators, and the report that is generated from them.",
       "If you contact us, we store your name, email, phone, school name and message so we can respond.",
-      "We do not create accounts, we do not use passwords, and we do not collect student data of any kind.",
+      "A free account is required to access your assessments. Google or email-link sign-in verifies your identity; KSHC does not collect individual student records.",
     ],
   },
   {
     title: "How we use it",
     body: [
-      "Your school profile and answers are used for exactly three things: generating your AI health report, emailing that report to you, and letting you resume an unfinished assessment.",
+      "Your school profile and answers are used to generate and email your health report, link it to your verified account, and let you resume an unfinished assessment.",
       "We compute anonymous, aggregate statistics (for example, average scores by region or school type). These statistics contain no school names, no personal names and no contact details, and cannot reasonably identify any school or individual.",
       "We never sell, rent or trade your information to anyone.",
     ],
@@ -37,7 +37,7 @@ const SECTIONS = [
   {
     title: "Data retention & your choices",
     body: [
-      "Reports remain accessible at their unique, unguessable link so you can return to them, download the PDF, or resend the email. You may request deletion of your school's record at any time by emailing us — we will remove the school profile, answers, report and contact history.",
+      "Reports remain accessible through your signed-in account so you can return to them and download the PDF. You may request deletion of your school's record at any time by emailing us — we will remove the school profile, answers, report and contact history.",
       "Assessment autosaves are stored both on our servers and locally in your own browser, so you can resume. Clearing your browser storage removes the local copy.",
     ],
   },

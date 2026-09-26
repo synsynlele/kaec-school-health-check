@@ -23,7 +23,7 @@ const LS_ID = "kaec_assessment_id";
 
 type Stage = "checking" | "details" | "questions";
 
-export function AssessmentFlow() {
+export function AssessmentFlow({ accountEmail }: { accountEmail: string }) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("checking");
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -36,7 +36,8 @@ export function AssessmentFlow() {
   useEffect(() => {
     let cancelled = false;
     async function boot() {
-      const stored = localStorage.getItem(LS_ID);
+      const requested = new URLSearchParams(window.location.search).get("resume");
+      const stored = requested && /^[0-9a-f-]{36}$/i.test(requested) ? requested : localStorage.getItem(LS_ID);
       if (!stored) {
         setStage("details");
         return;
@@ -102,7 +103,7 @@ export function AssessmentFlow() {
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5 sm:px-6">
         <Logo />
         <span className="hidden items-center gap-1.5 rounded-full bg-mint-50 px-3 py-1 text-xs font-semibold text-mint-700 sm:inline-flex">
-          <Sparkles className="size-3.5" /> Free · no login · autosaves
+          <Sparkles className="size-3.5" /> Free · saved to your account
         </span>
       </header>
 
@@ -130,7 +131,7 @@ export function AssessmentFlow() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <SchoolDetailsForm onCreated={handleCreated} />
+            <SchoolDetailsForm onCreated={handleCreated} accountEmail={accountEmail} />
           </motion.div>
         )}
 
@@ -212,7 +213,7 @@ function Field({
   );
 }
 
-function SchoolDetailsForm({ onCreated }: { onCreated: (id: string) => void }) {
+function SchoolDetailsForm({ onCreated, accountEmail }: { onCreated: (id: string) => void; accountEmail: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -262,14 +263,14 @@ function SchoolDetailsForm({ onCreated }: { onCreated: (id: string) => void }) {
 
       <Card className="mt-10 p-6 sm:p-9">
         <form onSubmit={onSubmit} className="grid gap-5 sm:grid-cols-2">
-          <Field id="schoolName" label="School name">
-            <Input id="schoolName" name="schoolName" required maxLength={140} placeholder="e.g. Bright Futures Academy" autoComplete="organization" />
+          <Field id="schoolName" label="School and campus name">
+            <Input id="schoolName" name="schoolName" required maxLength={140} placeholder="e.g. Bright Futures Academy, Lekki Campus" autoComplete="organization" />
           </Field>
           <Field id="contactName" label="Your name">
             <Input id="contactName" name="contactName" required maxLength={140} placeholder="e.g. Adaeze Okafor" autoComplete="name" />
           </Field>
           <Field id="email" label="Email" hint="Your report is sent here automatically.">
-            <Input id="email" name="email" type="email" required maxLength={160} placeholder="you@school.com" autoComplete="email" />
+            <Input id="email" name="email" type="email" required readOnly value={accountEmail} autoComplete="email" />
           </Field>
           <Field id="phone" label="Phone / WhatsApp" required={false}>
             <Input id="phone" name="phone" type="tel" maxLength={40} placeholder="+234 ..." autoComplete="tel" />
@@ -334,7 +335,7 @@ function SchoolDetailsForm({ onCreated }: { onCreated: (id: string) => void }) {
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Button>
             <p className="mt-3 text-center text-xs text-slate-400">
-              Your details are only used to generate and send your report. No account is created.
+              Your report is saved to your signed-in account and sent to this email.
             </p>
           </div>
         </form>

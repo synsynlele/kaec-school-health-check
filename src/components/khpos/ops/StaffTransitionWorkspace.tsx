@@ -762,7 +762,7 @@ export function StaffTransitionWorkspace({
           ) : null}
 
           {self &&
-          self.roleCode !== "VISION_CUSTODIAN" &&
+          !(["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(self.roleCode)) &&
           !openSelfExit ? (
             <section className="rounded-3xl border border-orange-200 bg-orange-50 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-700">
@@ -1693,7 +1693,7 @@ function ExitCard({
             disabled={busyId === `exit-finalize-${exitCase.id}`}
             className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
           >
-            Finalize exit & close KNS access
+            Finalize exit & close school access
           </button>
         ) : null}
 

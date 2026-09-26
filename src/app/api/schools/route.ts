@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSchoolAssessment } from "@/lib/storage";
 import { badRequest, serverError } from "@/lib/http";
+import { kshcUserFromRequest } from "@/lib/kshc-access";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,8 @@ const SchoolSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await kshcUserFromRequest(req);
+  if (!user) return NextResponse.json({ ok: false, error: "Sign in before starting your assessment." }, { status: 401 });
   let body: unknown;
   try {
     body = await req.json();
@@ -29,6 +32,9 @@ export async function POST(req: NextRequest) {
   const parsed = SchoolSchema.safeParse(body);
   if (!parsed.success) {
     return badRequest(parsed.error.issues[0]?.message ?? "Please check the form and try again.");
+  }
+  if (parsed.data.email.toLowerCase() !== user.email) {
+    return badRequest("Use your signed-in email as the assessment contact so your report stays in your account.");
   }
 
   try {
