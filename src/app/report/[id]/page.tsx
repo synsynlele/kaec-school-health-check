@@ -105,7 +105,7 @@ export default async function ReportPage({
 
   return (
     <>
-      <Header />
+      <Header authenticated />
       <main className="pt-[68px]">
         {/* ── Report banner ─────────────────────────────────── */}
         <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 text-white">

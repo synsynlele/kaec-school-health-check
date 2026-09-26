@@ -17,7 +17,7 @@ const NAV = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function Header() {
+export function Header({ authenticated = false }: { authenticated?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -55,21 +55,20 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/account"
-            className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 lg:inline-flex"
-          >
-            <LogIn className="size-4" /> Sign in
-          </Link>
-          <Link
-            href="/account"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "hidden xl:inline-flex",
-            )}
-          >
-            <UserPlus className="size-4" /> Create account
-          </Link>
+          {authenticated ? (
+            <Link href="/account" className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 lg:inline-flex">
+              My account
+            </Link>
+          ) : (
+            <>
+              <Link href="/account" className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 lg:inline-flex">
+                <LogIn className="size-4" /> Sign in
+              </Link>
+              <Link href="/account" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "hidden xl:inline-flex")}>
+                <UserPlus className="size-4" /> Create account
+              </Link>
+            </>
+          )}
           <Link
             href="/assessment"
             className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}
@@ -110,22 +109,16 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <Link
-                  href="/account"
-                  onClick={() => setOpen(false)}
-                  className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-                >
-                  Sign in
+              {authenticated ? (
+                <Link href="/account" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "mt-2 w-full")}>
+                  My account
                 </Link>
-                <Link
-                  href="/account"
-                  onClick={() => setOpen(false)}
-                  className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-                >
-                  Create account
-                </Link>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Link href="/account" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>Sign in</Link>
+                  <Link href="/account" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>Create account</Link>
+                </div>
+              )}
               <div className="pt-1">
                 <Link
                   href="/assessment"

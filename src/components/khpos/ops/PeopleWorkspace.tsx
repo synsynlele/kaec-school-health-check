@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
-  CalendarClock,
   ChevronDown,
   CircleAlert,
   Clock3,
@@ -133,7 +132,7 @@ export function PeopleWorkspace({
         people.roles.find((role) => !(["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(role.code))) ??
         people.roles[0];
       setRoleId(defaultRole?.id || "");
-      setCampusId("");
+      setCampusId(people.campuses.length === 1 ? people.campuses[0].id : "");
       setError("");
 
       // A staff appointment always belongs to one approved school workspace.
@@ -371,7 +370,7 @@ export function PeopleWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O7
+              People & staff
             </span>
             <Link
               href={`/khpos/${organisationId}`}
@@ -388,10 +387,8 @@ export function PeopleWorkspace({
                 People & Staff
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Appointment is not activation. Your school can onboard a person
-                before they have a login, certify readiness against the actual
-                role, then activate the O1 operating-role seat only when every
-                required gate is clear.
+                Appoint and onboard a person before giving them an active school
+                role. Their account, training and approvals must be ready first.
               </p>
             </div>
 
@@ -475,23 +472,27 @@ export function PeopleWorkspace({
             </div>
 
             <div className="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-950">
-              <label className="font-bold" htmlFor="staff-school">School receiving this staff member</label>
-              <select
-                id="staff-school"
-                value={organisationId}
-                onChange={(event) => {
-                  if (event.target.value !== organisationId) {
-                    setShowCreate(false);
-                    router.push(`/khpos/${event.target.value}/people`);
-                  }
-                }}
-                className="mt-2 block w-full rounded-xl border border-brand-200 bg-white px-3 py-2.5 font-semibold"
-              >
-                <option value={organisationId}>{workspace.organisation.name}</option>
-                {approvedSchools.filter((school) => school.organisationId !== organisationId).map((school) => (
-                  <option key={school.organisationId} value={school.organisationId}>{school.name}</option>
-                ))}
-              </select>
+              <p className="font-bold">School receiving this staff member</p>
+              {approvedSchools.length > 1 ? (
+                <select
+                  aria-label="School receiving this staff member"
+                  value={organisationId}
+                  onChange={(event) => {
+                    if (event.target.value !== organisationId) {
+                      setShowCreate(false);
+                      router.push(`/khpos/${event.target.value}/people`);
+                    }
+                  }}
+                  className="mt-2 block w-full rounded-xl border border-brand-200 bg-white px-3 py-2.5 font-semibold"
+                >
+                  <option value={organisationId}>{workspace.organisation.name}</option>
+                  {approvedSchools.filter((school) => school.organisationId !== organisationId).map((school) => (
+                    <option key={school.organisationId} value={school.organisationId}>{school.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="mt-2 rounded-xl border border-brand-200 bg-white px-3 py-2.5 font-semibold">{workspace.organisation.name}</p>
+              )}
               <p className="mt-2 leading-6 text-brand-900/80">
                 Campus choices below belong to this approved school. Other schools appear after KAEC grants access. Each additional campus needs its own KSHC and KAEC approval.
                 {approvedSchools.length < 2 && <> <Link href="/account" className="font-bold underline">View school partnerships</Link>.</>}
@@ -562,24 +563,33 @@ export function PeopleWorkspace({
                 </select>
               </label>
 
-              <label className="text-sm font-bold">
-                Campus
-                <select
-                  value={campusId}
-                  onChange={(event) => {
-                    setCampusId(event.target.value);
-                    setUnitId("");
-                  }}
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
-                >
-                  <option value="">Select campus later / school-wide</option>
-                  {workspace.campuses.map((campus) => (
-                    <option key={campus.id} value={campus.id}>
-                      {campus.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {workspace.campuses.length === 1 ? (
+                <div className="text-sm font-bold">
+                  Approved campus for this school
+                  <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 font-semibold text-slate-700">
+                    {workspace.campuses[0].name}
+                  </p>
+                </div>
+              ) : (
+                <label className="text-sm font-bold">
+                  Approved campus
+                  <select
+                    value={campusId}
+                    onChange={(event) => {
+                      setCampusId(event.target.value);
+                      setUnitId("");
+                    }}
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
+                  >
+                    <option value="">Choose an approved campus</option>
+                    {workspace.campuses.map((campus) => (
+                      <option key={campus.id} value={campus.id}>
+                        {campus.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               <label className="text-sm font-bold">
                 Unit / section
@@ -654,9 +664,8 @@ export function PeopleWorkspace({
               No staff lifecycle records yet.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              O1 already defines the institutional seats. O7 begins when an
-              actual appointee must be onboarded and certified into one of
-              those seats.
+              Appoint a staff member to begin their account access and
+              onboarding for an approved school role.
             </p>
           </section>
         ) : (
@@ -1127,19 +1136,6 @@ export function PeopleWorkspace({
           </section>
         )}
 
-        <section className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white sm:p-7">
-          <CalendarClock className="size-6 text-mint-300" />
-          <h2 className="mt-3 text-xl font-black">
-            What O7 deliberately does not do yet
-          </h2>
-          <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-300">
-            Recruitment campaigns, sensitive safer-recruitment evidence,
-            ongoing attendance/leave, performance coaching, formal grievance or
-            discipline, succession and exit/handover remain separate People
-            stages. O7 creates the trustworthy staff identity and readiness
-            foundation those workflows need.
-          </p>
-        </section>
       </div>
     </main>
   );

@@ -46,16 +46,19 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/PeopleWorkspace.tsx");
 for (const expected of [
-  "Operations · O7",
+  "People & staff",
   "People & Staff",
-  "Appointment is not activation.",
+  "Appoint and onboard a person",
   "Minimal personnel data by design",
   "Deployment blockers",
   "Onboarding certification",
   "Activate operating role",
-  "What O7 deliberately does not do yet",
+  "Approved campus for this school",
 ]) {
   requireText(workspace, expected, "O7 People workspace");
+}
+if (workspace.includes("What O7 deliberately does not do yet")) {
+  throw new Error("People workspace still shows obsolete build notes.");
 }
 
 const migration = read(
