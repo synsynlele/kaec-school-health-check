@@ -509,7 +509,7 @@ export function PeopleWorkspace({
                   onChange={(event) => setRoleId(event.target.value)}
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
                 >
-                  {workspace.roles.map((role) => (
+                  {workspace.roles.filter((role) => !["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(role.code)).map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.title}
                     </option>
