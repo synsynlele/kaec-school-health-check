@@ -16,5 +16,5 @@ export default async function KhposOperationsPeoplePage({
   const { organisationId } = await params;
   if (!UUID_RE.test(organisationId)) notFound();
 
-  return <PeopleWorkspace organisationId={organisationId} />;
+  return <PeopleWorkspace key={organisationId} organisationId={organisationId} />;
 }

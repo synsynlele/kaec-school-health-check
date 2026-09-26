@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -26,6 +27,7 @@ import type {
   KhposOpsPeopleWorkspace,
   KhposOpsStaff,
 } from "@/lib/khpos/ops/people";
+import type { KhposPartnerSnapshot } from "@/lib/khpos/partnership";
 
 function readable(value: string) {
   return value.replaceAll("_", " ");
@@ -59,9 +61,11 @@ export function PeopleWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const router = useRouter();
   const [workspace, setWorkspace] = useState<KhposOpsPeopleWorkspace | null>(
     null,
   );
+  const [approvedSchools, setApprovedSchools] = useState<KhposPartnerSnapshot[]>([]);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -128,9 +132,25 @@ export function PeopleWorkspace({
         people.roles.find((role) => role.code === "SCHOOL_GUARDIAN") ??
         people.roles.find((role) => !(["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(role.code))) ??
         people.roles[0];
-      setRoleId((current) => current || defaultRole?.id || "");
-      setCampusId((current) => current || people.campuses[0]?.id || "");
+      setRoleId(defaultRole?.id || "");
+      setCampusId("");
       setError("");
+
+      // A staff appointment always belongs to one approved school workspace.
+      // The school switcher changes the route before any staff data is entered.
+      const accountResponse = await fetch("/api/account", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (!active || !accountResponse.ok) return;
+      const account = (await accountResponse.json()) as {
+        partnerships?: KhposPartnerSnapshot[];
+      };
+      if (active) {
+        setApprovedSchools(
+          (account.partnerships ?? []).filter((school) => school.partnerStatus === "active"),
+        );
+      }
     });
 
     return () => {
@@ -147,6 +167,7 @@ export function PeopleWorkspace({
   }, [workspace, campusId]);
 
   async function submit(payload: Record<string, unknown>, busyKey: string) {
+    if (workspace?.organisation.id !== organisationId) return false;
     const accessToken = await token();
     if (!accessToken) {
       setError("Your session has ended. Sign in again to continue.");
@@ -312,7 +333,7 @@ export function PeopleWorkspace({
     );
   }
 
-  if (!workspace && !error) {
+  if ((!workspace || workspace.organisation.id !== organisationId) && !error) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="text-center">
@@ -453,6 +474,30 @@ export function PeopleWorkspace({
               </button>
             </div>
 
+            <div className="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-950">
+              <label className="font-bold" htmlFor="staff-school">School receiving this staff member</label>
+              <select
+                id="staff-school"
+                value={organisationId}
+                onChange={(event) => {
+                  if (event.target.value !== organisationId) {
+                    setShowCreate(false);
+                    router.push(`/khpos/${event.target.value}/people`);
+                  }
+                }}
+                className="mt-2 block w-full rounded-xl border border-brand-200 bg-white px-3 py-2.5 font-semibold"
+              >
+                <option value={organisationId}>{workspace.organisation.name}</option>
+                {approvedSchools.filter((school) => school.organisationId !== organisationId).map((school) => (
+                  <option key={school.organisationId} value={school.organisationId}>{school.name}</option>
+                ))}
+              </select>
+              <p className="mt-2 leading-6 text-brand-900/80">
+                Campus choices below belong to this approved school. Other schools appear after KAEC grants access. Each additional campus needs its own KSHC and KAEC approval.
+                {approvedSchools.length < 2 && <> <Link href="/account" className="font-bold underline">View school partnerships</Link>.</>}
+              </p>
+            </div>
+
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <label className="text-sm font-bold">
                 Staff name
@@ -527,7 +572,7 @@ export function PeopleWorkspace({
                   }}
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
                 >
-                  <option value="">Institution-wide / not yet fixed</option>
+                  <option value="">Select campus later / school-wide</option>
                   {workspace.campuses.map((campus) => (
                     <option key={campus.id} value={campus.id}>
                       {campus.name}
