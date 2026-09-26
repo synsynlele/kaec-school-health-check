@@ -128,11 +128,11 @@ export function PeopleWorkspace({
       const people = body.people;
       setWorkspace(people);
       const defaultRole =
-        people.roles.find((role) => role.code === "SCHOOL_GUARDIAN") ??
+        people.roles.find((role) => role.code === "TEACHER") ??
         people.roles.find((role) => !(["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN"].includes(role.code))) ??
         people.roles[0];
       setRoleId(defaultRole?.id || "");
-      setCampusId(people.campuses.length === 1 ? people.campuses[0].id : "");
+      setCampusId("");
       setError("");
 
       // A staff appointment always belongs to one approved school workspace.
@@ -159,7 +159,7 @@ export function PeopleWorkspace({
 
   const availableUnits = useMemo(() => {
     if (!workspace) return [];
-    if (!campusId) return workspace.units;
+    if (!campusId) return workspace.units.filter((unit) => !unit.campusId);
     return workspace.units.filter(
       (unit) => !unit.campusId || unit.campusId === campusId,
     );
@@ -251,10 +251,16 @@ export function PeopleWorkspace({
   }
 
   async function cancelAppointment(staff: KhposOpsStaff) {
-    const reason = window.prompt(`Why is ${staff.displayName}'s appointment being cancelled? This closes any joining link and removes their school access.`);
+    const reason = window.prompt(`Why is ${staff.displayName}'s appointment being cancelled? This removes the unactivated staff record, closes its joining link and removes their school access.`);
     if (!reason) return;
     if (reason.trim().length < 10) { setError("Please provide a reason of at least 10 characters."); return; }
-    await submit({ mode: "cancel_appointment", staffId: staff.id, reason: reason.trim() }, `cancel-${staff.id}`);
+    if (await submit({ mode: "cancel_appointment", staffId: staff.id, reason: reason.trim() }, `cancel-${staff.id}`)) {
+      setJoinLinks((current) => {
+        const updated = { ...current };
+        delete updated[staff.id];
+        return updated;
+      });
+    }
   }
 
   async function issueJoinLink(staff: KhposOpsStaff) {
@@ -563,33 +569,27 @@ export function PeopleWorkspace({
                 </select>
               </label>
 
-              {workspace.campuses.length === 1 ? (
-                <div className="text-sm font-bold">
-                  Approved campus for this school
-                  <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 font-semibold text-slate-700">
-                    {workspace.campuses[0].name}
-                  </p>
-                </div>
-              ) : (
-                <label className="text-sm font-bold">
-                  Approved campus
-                  <select
-                    value={campusId}
-                    onChange={(event) => {
-                      setCampusId(event.target.value);
-                      setUnitId("");
-                    }}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
-                  >
-                    <option value="">Choose an approved campus</option>
-                    {workspace.campuses.map((campus) => (
-                      <option key={campus.id} value={campus.id}>
-                        {campus.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              <label className="text-sm font-bold">
+                Staff placement
+                <select
+                  value={campusId}
+                  onChange={(event) => {
+                    setCampusId(event.target.value);
+                    setUnitId("");
+                  }}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
+                >
+                  <option value="">School-wide / assign campus later</option>
+                  {workspace.campuses.map((campus) => (
+                    <option key={campus.id} value={campus.id}>
+                      {campus.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">
+                  School Guardians must lead a selected approved campus. A new campus requires its own KSHC and KAEC approval.
+                </span>
+              </label>
 
               <label className="text-sm font-bold">
                 Unit / section

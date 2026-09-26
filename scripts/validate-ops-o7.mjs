@@ -53,7 +53,7 @@ for (const expected of [
   "Deployment blockers",
   "Onboarding certification",
   "Activate operating role",
-  "Approved campus for this school",
+  "Staff placement",
 ]) {
   requireText(workspace, expected, "O7 People workspace");
 }
