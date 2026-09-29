@@ -36,6 +36,7 @@ export function AccountAccess() {
   const [accountEmail, setAccountEmail] = useState("");
   const [partnerships, setPartnerships] = useState<KhposPartnerSnapshot[]>([]);
   const [assessments, setAssessments] = useState<Array<{ id: string; schoolName: string; completed: boolean; createdAt: string }>>([]);
+  const [sharedReports, setSharedReports] = useState<Array<{ id: string; schoolName: string; completedAt: string | null }>>([]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -60,6 +61,7 @@ export function AccountAccess() {
         account?: { email: string };
         partnerships?: KhposPartnerSnapshot[];
         assessments?: Array<{ id: string; schoolName: string; completed: boolean; createdAt: string }>;
+        sharedReports?: Array<{ id: string; schoolName: string; completedAt: string | null }>;
         error?: string;
       };
       if (!response.ok || !body.ok || !body.account) {
@@ -70,6 +72,7 @@ export function AccountAccess() {
       setAccountEmail(body.account.email);
       setPartnerships(body.partnerships ?? []);
       setAssessments(body.assessments ?? []);
+      setSharedReports(body.sharedReports ?? []);
       const sessionResponse = await fetch("/api/kshc/session", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
       if (!sessionResponse.ok) { setError("Could not establish your assessment session. Please sign in again."); setState("ready"); return; }
       const next = new URLSearchParams(window.location.search).get("next");
@@ -188,9 +191,10 @@ export function AccountAccess() {
 
         <section className="mt-10">
           <div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">School Health Check</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your assessments</h2></div>
-          {assessments.length === 0 ? <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">No assessments under {accountEmail} yet. Start one above and return here anytime.</p> : (
+          {assessments.length === 0 ? <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">No assessments created under {accountEmail} yet. School reports shared with your leadership role appear below.</p> : (
             <div className="mt-4 grid gap-3">{assessments.map((item) => <Link key={item.id} href={item.completed ? `/report/${item.id}` : `/assessment?resume=${item.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 hover:border-brand-300"><span><strong className="block text-slate-950">{item.schoolName}</strong><span className="text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString()} · {item.completed ? "Report ready" : "Continue assessment"}</span></span><ArrowRight className="size-5 text-brand-700" /></Link>)}</div>
           )}
+          {sharedReports.length > 0 && <div className="mt-7"><h3 className="text-lg font-black text-slate-950">School reports shared with leadership</h3><p className="mt-1 text-sm text-slate-600">You can read these completed reports through your active school leadership role.</p><div className="mt-3 grid gap-3">{sharedReports.map((report) => <Link key={report.id} href={`/report/${report.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 hover:border-brand-300"><span><strong className="block text-slate-950">{report.schoolName}</strong><span className="text-sm text-slate-500">{report.completedAt ? new Date(report.completedAt).toLocaleDateString() : "Completed"} · View report</span></span><ArrowRight className="size-5 text-brand-700" /></Link>)}</div></div>}
         </section>
 
         <section className="mt-10">

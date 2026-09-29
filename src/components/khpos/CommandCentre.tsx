@@ -38,6 +38,27 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
+  const [reportError, setReportError] = useState("");
+  const [openingReport, setOpeningReport] = useState(false);
+
+  async function openReport(event: React.MouseEvent<HTMLAnchorElement>, assessmentId: string) {
+    event.preventDefault();
+    if (!supabase || openingReport) return;
+    setOpeningReport(true);
+    setReportError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) throw new Error("Please sign in again to open the report.");
+      const response = await fetch("/api/kshc/session", {
+        method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      if (!response.ok) throw new Error("Your report session could not be confirmed. Please sign in again.");
+      window.location.assign(`/report/${assessmentId}`);
+    } catch (cause) {
+      setReportError(cause instanceof Error ? cause.message : "The report could not be opened.");
+      setOpeningReport(false);
+    }
+  }
 
   useEffect(() => {
     if (!supabase) return;
@@ -175,13 +196,17 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             {baseline && (
               <Link
                 href={`/report/${baseline.assessmentId}`}
+                prefetch={false}
+                onClick={(event) => void openReport(event, baseline.assessmentId)}
+                aria-disabled={openingReport}
                 className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               >
-                <FileText className="size-4" />
-                View full KSHC report
+                {openingReport ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+                {openingReport ? "Opening report…" : "View full KSHC report"}
                 <ArrowRight className="size-4" />
               </Link>
             )}
+            {reportError && <p role="alert" className="mt-2 text-sm text-red-700">{reportError}</p>}
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Target className="size-6 text-amber-600" />

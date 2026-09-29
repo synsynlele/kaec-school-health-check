@@ -2,8 +2,16 @@ import { cookies } from "next/headers";
 import { bearerTokenFromRequest, verifyKhposAccessToken, type VerifiedKhposUser } from "@/lib/khpos/auth";
 import { getAssessmentState } from "@/lib/storage";
 import { createClient } from "@supabase/supabase-js";
+import type { KhposPartnerSnapshot } from "@/lib/khpos/partnership";
 
 export const KSHC_SESSION_COOKIE = "kshc_session";
+const LEADERSHIP_CATEGORIES = ["leadership", "academic_leadership", "skills_leadership", "section_leadership"];
+
+function reportDb() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
+}
 
 export async function kshcUserFromRequest(request: Request): Promise<VerifiedKhposUser | null> {
   const token = bearerTokenFromRequest(request) ?? (await cookies()).get(KSHC_SESSION_COOKIE)?.value;
@@ -25,10 +33,8 @@ export async function canAccessKshcAssessment(id: string, email: string): Promis
 /** Report readers have a wider scope than assessment editors. */
 export async function canAccessKshcReport(id: string, user: VerifiedKhposUser): Promise<boolean> {
   if (await canAccessKshcAssessment(id, user.email)) return true;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return false;
-  const db = createClient(url, key, { auth: { persistSession: false } });
+  const db = reportDb();
+  if (!db) return false;
   const { data: assessment, error } = await db.from("assessments")
     .select("organisation_id").eq("id", id).maybeSingle();
   if (error || !assessment?.organisation_id) return false;
@@ -45,7 +51,39 @@ export async function canAccessKshcReport(id: string, user: VerifiedKhposUser): 
   if (assignmentError || !assignments?.length) return false;
   const { data: roles, error: rolesError } = await db.from("khpos_ops_roles").select("id")
     .eq("organisation_id", orgId).eq("status", "active")
-    .in("code", ["SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "VISION_CUSTODIAN"])
+    .in("category", LEADERSHIP_CATEGORIES)
     .in("id", assignments.map((assignment) => assignment.role_id));
   return !rolesError && Boolean(roles?.length);
+}
+
+/** Completed school reports for leaders; never includes another school's records. */
+export async function listKshcLeadershipReports(userId: string, partnerships: KhposPartnerSnapshot[]) {
+  const db = reportDb();
+  if (!db) return [];
+  const active = partnerships.filter((partner) => partner.partnerStatus === "active" && partner.membershipStatus === "active");
+  if (!active.length) return [];
+  const eligible = new Set(active.filter((partner) => ["executive", "transformation_lead"].includes(partner.membershipRole)).map((partner) => partner.organisationId));
+  const { data: assignments, error: assignmentError } = await db.from("khpos_ops_role_assignments")
+    .select("role_id").eq("user_id", userId).eq("status", "active");
+  if (assignmentError) throw assignmentError;
+  if (assignments?.length) {
+    const { data: roles, error: rolesError } = await db.from("khpos_ops_roles")
+      .select("organisation_id").eq("status", "active")
+      .in("organisation_id", active.map((partner) => partner.organisationId))
+      .in("category", LEADERSHIP_CATEGORIES)
+      .in("id", assignments.map((assignment) => assignment.role_id));
+    if (rolesError) throw rolesError;
+    for (const role of roles ?? []) eligible.add(role.organisation_id);
+  }
+  if (!eligible.size) return [];
+  const { data: assessments, error } = await db.from("assessments")
+    .select("id,organisation_id,completed_at").in("organisation_id", [...eligible])
+    .eq("status", "completed").order("completed_at", { ascending: false }).limit(100);
+  if (error) throw error;
+  const names = new Map(active.map((partner) => [partner.organisationId, partner.name]));
+  return (assessments ?? []).map((assessment) => ({
+    id: assessment.id as string,
+    schoolName: names.get(assessment.organisation_id as string) ?? "School",
+    completedAt: assessment.completed_at as string | null,
+  }));
 }
