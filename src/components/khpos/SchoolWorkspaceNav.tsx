@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { NotificationBell } from "@/components/khpos/NotificationBell";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { usePathname } from "next/navigation";
 import {
   Activity,
@@ -184,6 +186,21 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   const moreActive = !dailyLinks.slice(0, 4).some((item) => isActive(pathname, base, item.suffix));
 
   useEffect(() => {
+    const client = createBrowserSupabaseClient();
+    if (!client) return;
+    let mounted = true;
+    const sync = async (token: string | undefined) => {
+      if (!mounted || !token) return;
+      await fetch("/api/kshc/session", { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
+    };
+    void client.auth.getSession().then(({ data }) => sync(data.session?.access_token));
+    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") window.setTimeout(() => void sync(session?.access_token), 0);
+    });
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
     if (!menuOpen) return;
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -197,6 +214,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
     <>
       <aside className="fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
         <div className="border-b border-white/10 px-5 py-5">
+          <div className="mb-3 flex justify-end"><NotificationBell organisationId={organisationId} /></div>
           <Link href={base} className="flex items-center gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-mint-300 text-slate-950 shadow-sm">
               <Building2 className="size-5" />
@@ -258,6 +276,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             </span>
           </Link>
           <div className="flex shrink-0 gap-2">
+            <NotificationBell organisationId={organisationId} mobile />
             <Link href="/account" className="rounded-lg border border-white/10 px-2.5 py-2 text-[11px] font-bold text-slate-300">
               Account
             </Link>

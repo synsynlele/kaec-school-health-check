@@ -32,7 +32,7 @@ import { getAssessmentState, getReport } from "@/lib/storage";
 import { ratingFor } from "@/lib/scoring";
 import { formatDate, cn } from "@/lib/utils";
 import { UUID_RE } from "@/lib/http";
-import { canAccessKshcAssessment, kshcUserFromCookie } from "@/lib/kshc-access";
+import { canAccessKshcReport, kshcUserFromCookie } from "@/lib/kshc-access";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +45,7 @@ export async function generateMetadata({
   let title = "School Health Report";
   try {
     const user = await kshcUserFromCookie();
-    const state = user && UUID_RE.test(id) && await canAccessKshcAssessment(id, user.email) ? await getAssessmentState(id) : null;
+    const state = user && UUID_RE.test(id) && await canAccessKshcReport(id, user) ? await getAssessmentState(id) : null;
     if (state) title = `${state.school.schoolName} — School Health Report`;
   } catch {
     /* keep default title */
@@ -90,7 +90,7 @@ export default async function ReportPage({
   if (!UUID_RE.test(id)) notFound();
   const user = await kshcUserFromCookie();
   if (!user) redirect(`/account?next=${encodeURIComponent(`/report/${id}`)}`);
-  if (!(await canAccessKshcAssessment(id, user.email))) notFound();
+  if (!(await canAccessKshcReport(id, user))) notFound();
 
   const stored = await getReport(id);
   if (!stored) {

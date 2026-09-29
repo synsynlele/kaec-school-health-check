@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { canAccessKshcAssessment, kshcUserFromCookie } from "@/lib/kshc-access";
+import { canAccessKshcReport, kshcUserFromCookie } from "@/lib/kshc-access";
 import { UUID_RE } from "@/lib/http";
 import {
   upgradeStoredReportIfNeeded,
@@ -19,7 +19,7 @@ export default async function ReportUpgradeLayout({
   const { id } = await params;
   const user = await kshcUserFromCookie();
   if (!user) redirect(`/account?next=${encodeURIComponent(`/report/${id}`)}`);
-  if (!UUID_RE.test(id) || !(await canAccessKshcAssessment(id, user.email))) redirect("/account");
+  if (!UUID_RE.test(id) || !(await canAccessKshcReport(id, user))) redirect("/account");
   let result: ReportUpgradeResult | null = null;
 
   if (UUID_RE.test(id)) {
