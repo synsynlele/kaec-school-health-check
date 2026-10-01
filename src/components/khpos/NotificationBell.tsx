@@ -39,7 +39,9 @@ export function NotificationBell({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(false);
   const [pushError, setPushError] = useState("");
-  const [pushState, setPushState] = useState<PushState>("off");
+  const [pushState, setPushState] = useState<PushState>(() =>
+    typeof window !== "undefined" && isPushSupported() ? "off" : "unsupported",
+  );
   const [permission, setPermission] = useState<
     NotificationPermission | "unsupported"
   >(() =>
@@ -156,10 +158,7 @@ export function NotificationBell({
 
   useEffect(() => {
     if (!isActiveBell(mobile)) return;
-    if (!isPushSupported()) {
-      setPushState("unsupported");
-      return;
-    }
+    if (!isPushSupported()) return;
 
     let active = true;
 
