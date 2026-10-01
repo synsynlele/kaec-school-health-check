@@ -79,6 +79,49 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
     });
   }
 
+  async function prepareStarter() {
+    if (!supabase || !policy || busy || current) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Your session ended. Sign in again.");
+      const response = await fetch(`/api/khpos/ops/library/${organisationId}/starter-draft`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ kind: "policy", controlId: policy.id }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Starter draft could not be prepared.");
+      const nextVersions = (body.versions ?? []) as Revision[];
+      setVersions(nextVersions);
+      if (body.library) onPublished(body.library);
+      const revision = nextVersions.find((item) => item.policy_id === policy.id && item.status === "draft");
+      if (revision) {
+        setPurpose(revision.purpose ?? "");
+        setScope(revision.scope ?? "");
+        setEffectiveDate(revision.effective_date ?? "");
+        setReviewDate(revision.review_date ?? "");
+        setSections({
+          principles: (revision.principles ?? []).join("\n"),
+          policy_statements: (revision.policy_statements ?? []).join("\n"),
+          roles_responsibilities: (revision.roles_responsibilities ?? []).join("\n"),
+          rules: (revision.rules ?? []).join("\n"),
+          exceptions: (revision.exceptions ?? []).join("\n"),
+          escalation: (revision.escalation ?? []).join("\n"),
+          records_evidence: (revision.records_evidence ?? []).join("\n"),
+        });
+      }
+      setMessage("Starter draft prepared. Edit it carefully before submitting for independent review.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Starter draft could not be prepared.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function act(action: "save" | "submit" | "return" | "approve") {
     if (!supabase || !policy || busy) return;
     setBusy(true); setError(""); setMessage("");
@@ -107,6 +150,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
     <p className="mt-2 text-sm text-slate-600">School leaders draft. A different leader reviews. Critical policies require the Custodian; other policies may be approved by the Guardian or Custodian. Approval takes effect immediately, so use today or an earlier effective date.</p>
+    <p className="mt-2 text-xs font-semibold text-brand-700">AI may prepare an editable starter draft. It cannot submit, review or approve a policy.</p>
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
         <option value="">Select a registered policy</option>
@@ -117,6 +161,13 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : "Start a new school revision"}</p>
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
+        {!current && <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <p className="text-sm font-black text-slate-950">Start faster without surrendering judgement.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">KHP-OS can prepare a substantive first draft from this policy register and its related processes. You remain the author and must edit it before review.</p>
+          <button type="button" disabled={busy} onClick={() => void prepareStarter()} className="mt-3 rounded-full border border-brand-700 bg-white px-4 py-2.5 text-sm font-black text-brand-800 disabled:opacity-50">
+            {busy ? "Preparing starter draft…" : "Prepare starter draft with AI"}
+          </button>
+        </div>}
         <label className="block text-sm font-bold">Purpose<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} /></label>
         <label className="block text-sm font-bold">Scope<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={scope} onChange={(e) => setScope(e.target.value)} /></label>
         <div className="grid gap-4 sm:grid-cols-2">
