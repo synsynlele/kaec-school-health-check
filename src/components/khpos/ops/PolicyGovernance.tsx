@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsLibrary, KhposOpsPolicy } from "@/lib/khpos/ops/library";
+import type { PolicyBaseline } from "@/lib/khpos/ops/baselines";
 
 type Revision = {
   id: string; policy_id: string; version: number; status: string;
@@ -12,6 +13,15 @@ type Revision = {
   rules: string[]; exceptions: string[]; escalation: string[]; records_evidence: string[];
 };
 type Field = "principles" | "policy_statements" | "roles_responsibilities" | "rules" | "exceptions" | "escalation" | "records_evidence";
+function dateForSchool(yearOffset = 0) {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + yearOffset);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const fields: { key: Field; label: string; api: string }[] = [
   { key: "principles", label: "Principles", api: "principles" },
   { key: "policy_statements", label: "Policy statements", api: "policyStatements" },
@@ -27,6 +37,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [versions, setVersions] = useState<Revision[]>([]);
+  const [baselines, setBaselines] = useState<Record<string, PolicyBaseline>>({});
   const [userId, setUserId] = useState("");
   const [selected, setSelected] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -41,6 +52,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [baselineLoaded, setBaselineLoaded] = useState(false);
   const policy = policies.find((item) => item.id === selected);
   const current = versions.find((item) => item.policy_id === selected && ["draft", "in_review"].includes(item.status));
 
@@ -54,7 +66,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       });
       const body = await response.json();
       if (alive) {
-        if (response.ok) { setVersions(body.versions ?? []); setUserId(data.session.user.id); }
+        if (response.ok) { setVersions(body.versions ?? []); setBaselines(body.baselines ?? {}); setUserId(data.session.user.id); }
         else setError(body.error ?? "Policy revisions could not be loaded.");
       }
     }).catch(() => { if (alive) setError("Policy revisions could not be loaded."); });
@@ -65,17 +77,22 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
     setSelected(id); setError(""); setMessage("");
     const revision = versions.find((item) => item.policy_id === id && ["draft", "in_review"].includes(item.status));
     const active = policies.find((item) => item.id === id)?.activeVersion;
+    const baseline = baselines[id];
     const source = revision ?? active;
-    setPurpose(source?.purpose ?? ""); setScope(source?.scope ?? "");
-    setEffectiveDate(revision?.effective_date ?? active?.effectiveDate ?? "");
-    setReviewDate(revision?.review_date ?? active?.reviewDate ?? "");
+    const useBaseline = !source && Boolean(baseline);
+    setBaselineLoaded(useBaseline);
+    setPurpose(source?.purpose ?? baseline?.purpose ?? "");
+    setScope(source?.scope ?? baseline?.scope ?? "");
+    setEffectiveDate(revision?.effective_date ?? active?.effectiveDate ?? (useBaseline ? dateForSchool() : ""));
+    setReviewDate(revision?.review_date ?? active?.reviewDate ?? (useBaseline ? dateForSchool(1) : ""));
     setSections({
-      principles: (source?.principles ?? []).join("\n"),
-      policy_statements: (revision?.policy_statements ?? active?.policyStatements ?? []).join("\n"),
-      roles_responsibilities: (revision?.roles_responsibilities ?? active?.rolesResponsibilities ?? []).join("\n"),
-      rules: (source?.rules ?? []).join("\n"), exceptions: (source?.exceptions ?? []).join("\n"),
-      escalation: (source?.escalation ?? []).join("\n"),
-      records_evidence: (revision?.records_evidence ?? active?.recordsEvidence ?? []).join("\n"),
+      principles: (source?.principles ?? baseline?.principles ?? []).join("\n"),
+      policy_statements: (revision?.policy_statements ?? active?.policyStatements ?? baseline?.policyStatements ?? []).join("\n"),
+      roles_responsibilities: (revision?.roles_responsibilities ?? active?.rolesResponsibilities ?? baseline?.rolesResponsibilities ?? []).join("\n"),
+      rules: (source?.rules ?? baseline?.rules ?? []).join("\n"),
+      exceptions: (source?.exceptions ?? baseline?.exceptions ?? []).join("\n"),
+      escalation: (source?.escalation ?? baseline?.escalation ?? []).join("\n"),
+      records_evidence: (revision?.records_evidence ?? active?.recordsEvidence ?? baseline?.recordsEvidence ?? []).join("\n"),
     });
   }
 
@@ -96,6 +113,8 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Policy action failed.");
       setVersions(body.versions ?? []);
+      setBaselines(body.baselines ?? baselines);
+      setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(action === "approve" ? "Approved and published. Staff acknowledgement now applies to this version." :
         action === "submit" ? "Submitted for independent review." : action === "return" ? "Returned to the author with your note." : "Draft saved.");
@@ -115,6 +134,10 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
     </label>
     {policy && <div className="mt-5 space-y-4">
       <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : "Start a new school revision"}</p>
+      {baselineLoaded && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
+        <p className="font-bold text-brand-900">KAEC baseline loaded</p>
+        <p className="mt-1">This registered policy did not yet have a school-owned version. Review and customise this baseline for your school before saving; it does not become policy until a different authorised leader approves it.</p>
+      </div>}
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
         <label className="block text-sm font-bold">Purpose<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} /></label>
