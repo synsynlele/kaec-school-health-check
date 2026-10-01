@@ -22,6 +22,7 @@ type Revision = {
   effective_date: string | null;
   status: string;
   author_id: string | null;
+  author_role_codes: string[];
   review_note: string | null;
 };
 
@@ -61,6 +62,7 @@ export function ProcessGovernance({
   const [versions, setVersions] = useState<Revision[]>([]);
   const [baselines, setBaselines] = useState<Record<string, ProcessBaseline>>({});
   const [userId, setUserId] = useState("");
+  const [roleCodes, setRoleCodes] = useState<string[]>([]);
   const [selected, setSelected] = useState("");
   const [purpose, setPurpose] = useState("");
   const [trigger, setTrigger] = useState("");
@@ -85,6 +87,33 @@ export function ProcessGovernance({
   const current = versions.find(
     (item) => item.process_id === selected && ["draft", "in_review"].includes(item.status),
   );
+  const reviewerIsVision = roleCodes.includes("VISION_CUSTODIAN");
+  const reviewerIsSchoolCustodian = roleCodes.includes("SCHOOL_CUSTODIAN");
+  const reviewerIsGuardian = roleCodes.includes("SCHOOL_GUARDIAN");
+  const authorIsVision = current?.author_role_codes.includes("VISION_CUSTODIAN") ?? false;
+  const canReviewCurrent = Boolean(
+    current &&
+      process &&
+      current.status === "in_review" &&
+      current.author_id !== userId &&
+      (
+        process.criticality === "P0"
+          ? authorIsVision
+            ? reviewerIsGuardian || reviewerIsSchoolCustodian
+            : reviewerIsVision || reviewerIsSchoolCustodian
+          : reviewerIsVision || reviewerIsSchoolCustodian || reviewerIsGuardian
+      ),
+  );
+
+  function approvalRoute() {
+    if (!process || !current) return "";
+    if (process.criticality === "P0") {
+      return authorIsVision
+        ? "School Guardian (or School Custodian, if configured)"
+        : "Vision Custodian or School Custodian";
+    }
+    return "Vision Custodian, School Custodian or School Guardian";
+  }
 
   useEffect(() => {
     if (!supabase) return;
@@ -104,6 +133,7 @@ export function ProcessGovernance({
       if (response.ok) {
         setVersions(body.versions ?? []);
         setBaselines(body.baselines ?? {});
+        setRoleCodes(body.library?.operatingRoleCodes ?? []);
         setUserId(data.session.user.id);
       } else {
         setError(body.error ?? "Process revisions could not be loaded.");
@@ -198,6 +228,7 @@ export function ProcessGovernance({
 
       setVersions(body.versions ?? []);
       setBaselines(body.baselines ?? baselines);
+      setRoleCodes(body.library?.operatingRoleCodes ?? roleCodes);
       setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(
@@ -221,9 +252,10 @@ export function ProcessGovernance({
     <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
       <h3 className="text-xl font-black">Process drafting and approval</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Leaders turn registered processes into school-owned operating procedures. A different leader
-        must review the draft. P0 processes require Custodian-level approval, and no process can be
-        published until every governing policy listed for it is already active.
+        Leaders turn registered processes into school-owned operating procedures. A different authorised leader
+        must review the draft. If the Vision Custodian authors a P0 process, the School Guardian becomes the
+        independent co-approver; if another leader authors it, the Vision Custodian approves. Governing policies
+        must already be active before publication.
       </p>
 
       <label className="mt-5 block text-sm font-bold">
@@ -234,11 +266,14 @@ export function ProcessGovernance({
           onChange={(event) => choose(event.target.value)}
         >
           <option value="">Select a registered process</option>
-          {processes.map((item) => (
-            <option value={item.id} key={item.id}>
-              {item.code} · {item.title} ({item.criticality})
-            </option>
-          ))}
+          {processes.map((item) => {
+            const open = versions.find((version) => version.process_id === item.id && ["draft", "in_review"].includes(version.status));
+            return (
+              <option value={item.id} key={item.id}>
+                {item.code} · {item.title} ({item.criticality}){open ? ` · ${open.status === "in_review" ? "AWAITING REVIEW" : "DRAFT OPEN"}` : ""}
+              </option>
+            );
+          })}
         </select>
       </label>
 
@@ -266,6 +301,22 @@ export function ProcessGovernance({
               <p className="mt-1">
                 This registered process did not yet have a school-owned procedure. Review and customise the baseline before saving. It remains a draft until a different authorised leader approves it, and governing policies must be active first.
               </p>
+            </div>
+          )}
+
+          {current?.status === "in_review" && current.author_id === userId && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+              <p className="font-bold">Awaiting independent approval</p>
+              <p className="mt-1">
+                You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same process in <b>Institutional Library → Process drafting and approval</b>, review the frozen draft, then approve or return it.
+              </p>
+            </div>
+          )}
+
+          {current?.status === "in_review" && current.author_id !== userId && !canReviewCurrent && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="font-bold">Independent approval is pending</p>
+              <p className="mt-1">This revision requires <b>{approvalRoute()}</b>. Your current role may view the queue but is not the authorised approver for this revision.</p>
             </div>
           )}
 
@@ -366,7 +417,7 @@ export function ProcessGovernance({
             </div>
           )}
 
-          {current?.status === "in_review" && current.author_id !== userId && (
+          {canReviewCurrent && current && (
             <div className="space-y-3 rounded-xl border border-amber-200 p-4">
               <p className="text-sm">
                 Review the complete frozen draft below. The author cannot approve their own revision.
