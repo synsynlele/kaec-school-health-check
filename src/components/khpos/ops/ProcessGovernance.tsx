@@ -82,9 +82,9 @@ export function ProcessGovernance({
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return;
       const response = await fetch(
-        \`/api/khpos/ops/library/\${organisationId}/process-governance\`,
+        `/api/khpos/ops/library/${organisationId}/process-governance`,
         {
-          headers: { Authorization: \`Bearer \${data.session.access_token}\` },
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
           cache: "no-store",
         },
       );
@@ -153,11 +153,11 @@ export function ProcessGovernance({
         : { versionId: current?.id, note };
 
       const response = await fetch(
-        \`/api/khpos/ops/library/\${organisationId}/process-governance\`,
+        `/api/khpos/ops/library/${organisationId}/process-governance`,
         {
           method: "POST",
           headers: {
-            Authorization: \`Bearer \${data.session.access_token}\`,
+            Authorization: `Bearer ${data.session.access_token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ processId: process.id, action, input }),
@@ -224,7 +224,7 @@ export function ProcessGovernance({
 
           <p className="text-sm font-semibold">
             {current
-              ? \`Revision v\${current.version}: \${current.status.replaceAll("_", " ")}\`
+              ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}`
               : "Start a new school revision"}
           </p>
 
