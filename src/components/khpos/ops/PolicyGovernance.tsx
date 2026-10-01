@@ -8,6 +8,7 @@ type Revision = {
   id: string; policy_id: string; version: number; status: string;
   purpose: string; scope: string; effective_date: string | null; review_date: string | null;
   author_id: string | null; review_note: string | null;
+  draft_source?: "human" | "ai_starter"; draft_model?: string | null;
   principles: string[]; policy_statements: string[]; roles_responsibilities: string[];
   rules: string[]; exceptions: string[]; escalation: string[]; records_evidence: string[];
 };
@@ -159,6 +160,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
     </label>
     {policy && <div className="mt-5 space-y-4">
       <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : "Start a new school revision"}</p>
+      {current?.draft_source === "ai_starter" && <p className="rounded-xl border border-brand-200 bg-brand-50 p-3 text-xs font-semibold text-brand-800">AI starter draft · human editing and independent review required{current.draft_model ? ` · ${current.draft_model}` : ""}</p>}
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
         {!current && <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
