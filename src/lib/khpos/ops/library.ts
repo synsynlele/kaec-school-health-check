@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getKaecPolicyBaseline, getKaecProcessBaseline } from "@/lib/khpos/ops/baselines";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -177,7 +178,13 @@ export async function getPolicyGovernance(organisationId: string, userId: string
     .in("policy_id", library.policies.map((policy) => policy.id))
     .order("version", { ascending: false });
   if (error) throw new KhposOpsLibraryError(error.message, 500);
-  return { library, versions: data ?? [] };
+  return {
+    library,
+    versions: data ?? [],
+    baselines: Object.fromEntries(
+      library.policies.map((policy) => [policy.id, getKaecPolicyBaseline(policy)]),
+    ),
+  };
 }
 
 export async function governPolicy(
@@ -217,7 +224,13 @@ export async function getProcessGovernance(
     .order("version", { ascending: false });
 
   if (error) throw new KhposOpsLibraryError(error.message, 500);
-  return { library, versions: data ?? [] };
+  return {
+    library,
+    versions: data ?? [],
+    baselines: Object.fromEntries(
+      library.processes.map((process) => [process.id, getKaecProcessBaseline(process)]),
+    ),
+  };
 }
 
 export async function governProcess(
