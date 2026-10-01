@@ -8,7 +8,7 @@ import type { PolicyBaseline } from "@/lib/khpos/ops/baselines";
 type Revision = {
   id: string; policy_id: string; version: number; status: string;
   purpose: string; scope: string; effective_date: string | null; review_date: string | null;
-  author_id: string | null; review_note: string | null;
+  author_id: string | null; author_role_codes: string[]; review_note: string | null;
   principles: string[]; policy_statements: string[]; roles_responsibilities: string[];
   rules: string[]; exceptions: string[]; escalation: string[]; records_evidence: string[];
 };
@@ -39,6 +39,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
   const [versions, setVersions] = useState<Revision[]>([]);
   const [baselines, setBaselines] = useState<Record<string, PolicyBaseline>>({});
   const [userId, setUserId] = useState("");
+  const [roleCodes, setRoleCodes] = useState<string[]>([]);
   const [selected, setSelected] = useState("");
   const [purpose, setPurpose] = useState("");
   const [scope, setScope] = useState("");
@@ -55,6 +56,33 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
   const [baselineLoaded, setBaselineLoaded] = useState(false);
   const policy = policies.find((item) => item.id === selected);
   const current = versions.find((item) => item.policy_id === selected && ["draft", "in_review"].includes(item.status));
+  const reviewerIsVision = roleCodes.includes("VISION_CUSTODIAN");
+  const reviewerIsSchoolCustodian = roleCodes.includes("SCHOOL_CUSTODIAN");
+  const reviewerIsGuardian = roleCodes.includes("SCHOOL_GUARDIAN");
+  const authorIsVision = current?.author_role_codes.includes("VISION_CUSTODIAN") ?? false;
+  const canReviewCurrent = Boolean(
+    current &&
+      policy &&
+      current.status === "in_review" &&
+      current.author_id !== userId &&
+      (
+        policy.priority === "C0"
+          ? authorIsVision
+            ? reviewerIsGuardian || reviewerIsSchoolCustodian
+            : reviewerIsVision || reviewerIsSchoolCustodian
+          : reviewerIsVision || reviewerIsSchoolCustodian || reviewerIsGuardian
+      ),
+  );
+
+  function approvalRoute() {
+    if (!policy || !current) return "";
+    if (policy.priority === "C0") {
+      return authorIsVision
+        ? "School Guardian (or School Custodian, if configured)"
+        : "Vision Custodian or School Custodian";
+    }
+    return "Vision Custodian, School Custodian or School Guardian";
+  }
 
   useEffect(() => {
     if (!supabase) return;
@@ -66,7 +94,12 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       });
       const body = await response.json();
       if (alive) {
-        if (response.ok) { setVersions(body.versions ?? []); setBaselines(body.baselines ?? {}); setUserId(data.session.user.id); }
+        if (response.ok) {
+          setVersions(body.versions ?? []);
+          setBaselines(body.baselines ?? {});
+          setRoleCodes(body.library?.operatingRoleCodes ?? []);
+          setUserId(data.session.user.id);
+        }
         else setError(body.error ?? "Policy revisions could not be loaded.");
       }
     }).catch(() => { if (alive) setError("Policy revisions could not be loaded."); });
@@ -114,6 +147,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       if (!response.ok) throw new Error(body.error ?? "Policy action failed.");
       setVersions(body.versions ?? []);
       setBaselines(body.baselines ?? baselines);
+      setRoleCodes(body.library?.operatingRoleCodes ?? roleCodes);
       setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(action === "approve" ? "Approved and published. Staff acknowledgement now applies to this version." :
@@ -125,11 +159,14 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
 
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
-    <p className="mt-2 text-sm text-slate-600">School leaders draft. A different leader reviews. Critical policies require the Custodian; other policies may be approved by the Guardian or Custodian. Approval takes effect immediately, so use today or an earlier effective date.</p>
+    <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the Vision Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the Vision Custodian approves. Approval happens here in the Institutional Library.</p>
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
         <option value="">Select a registered policy</option>
-        {policies.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.name} ({item.priority})</option>)}
+        {policies.map((item) => {
+          const open = versions.find((version) => version.policy_id === item.id && ["draft", "in_review"].includes(version.status));
+          return <option value={item.id} key={item.id}>{item.code} · {item.name} ({item.priority}){open ? ` · ${open.status === "in_review" ? "AWAITING REVIEW" : "DRAFT OPEN"}` : ""}</option>;
+        })}
       </select>
     </label>
     {policy && <div className="mt-5 space-y-4">
@@ -138,6 +175,20 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
         <p className="font-bold text-brand-900">KAEC baseline loaded</p>
         <p className="mt-1">This registered policy did not yet have a school-owned version. Review and customise this baseline for your school before saving; it does not become policy until a different authorised leader approves it.</p>
       </div>}
+      {current?.status === "in_review" && current.author_id === userId && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <p className="font-bold">Awaiting independent approval</p>
+          <p className="mt-1">
+            You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same policy in <b>Institutional Library → Policy drafting and approval</b>, review the frozen draft, then approve or return it.
+          </p>
+        </div>
+      )}
+      {current?.status === "in_review" && current.author_id !== userId && !canReviewCurrent && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-bold">Independent approval is pending</p>
+          <p className="mt-1">This revision requires <b>{approvalRoute()}</b>. Your current role may view the queue but is not the authorised approver for this revision.</p>
+        </div>
+      )}
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
         <label className="block text-sm font-bold">Purpose<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} /></label>
@@ -152,7 +203,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
         <button type="button" disabled={busy} onClick={() => void act("save")} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">Save draft</button>
         {current && <button type="button" disabled={busy} onClick={() => void act("submit")} className="ml-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">Submit for review</button>}
       </div>}
-      {current?.status === "in_review" && current.author_id !== userId && <div className="space-y-3 rounded-xl border border-amber-200 p-4">
+      {canReviewCurrent && current && <div className="space-y-3 rounded-xl border border-amber-200 p-4">
         <p className="text-sm">Review the full draft above or in the fields below before approving. The author cannot approve their own version.</p>
         <div className="space-y-2 text-sm"><p><b>Purpose:</b> {current.purpose}</p><p><b>Scope:</b> {current.scope}</p>
           {fields.map(({ key, label }) => <div key={key}><b>{label}:</b><ul className="list-disc pl-5">{current[key].map((line, index) => <li key={index}>{line}</li>)}</ul></div>)}
