@@ -2,7 +2,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   getKhposOpsLibrary,
   KhposOpsLibraryError,
+  POLICY_EDITORS,
 } from "@/lib/khpos/ops/library";
+import {
+  getKaecPolicyBaseline,
+  getKaecProcessBaseline,
+} from "@/lib/khpos/ops/baselines";
 
 let service: SupabaseClient | undefined;
 
@@ -39,6 +44,7 @@ export type ActivationAction = {
 export type ActivationSnapshot = {
   organisation: { id: string; name: string };
   foundationComplete: boolean;
+  canPrepareDrafts: boolean;
   blockerCount: number;
   people: {
     activeMembers: number;
@@ -92,6 +98,217 @@ export type ActivationSnapshot = {
 
 function unique(values: Array<string | null | undefined>) {
   return new Set(values.filter((value): value is string => !!value));
+}
+
+function schoolDate(yearOffset = 0) {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + yearOffset);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+async function runActivationDrafts<T>(
+  items: T[],
+  codeFor: (item: T) => string,
+  task: (item: T) => Promise<void>,
+) {
+  const queue = items.values();
+  const failedCodes: string[] = [];
+  let created = 0;
+
+  async function lane() {
+    for (const item of queue) {
+      try {
+        await task(item);
+        created += 1;
+      } catch {
+        failedCodes.push(codeFor(item));
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(4, Math.max(1, items.length)) },
+      () => lane(),
+    ),
+  );
+
+  return { created, failedCodes };
+}
+
+export type ActivationPackResult = {
+  kind: "critical_policies" | "ready_processes";
+  requested: number;
+  existingOpen: number;
+  created: number;
+  failedCodes: string[];
+};
+
+export async function prepareKhposActivationPack(
+  organisationId: string,
+  userId: string,
+  kind: ActivationPackResult["kind"],
+): Promise<ActivationPackResult> {
+  const library = await getKhposOpsLibrary(organisationId, userId);
+  if (!library.operatingRoleCodes.some((code) => POLICY_EDITORS.includes(code))) {
+    throw new KhposActivationError(
+      "An active school leadership assignment is required to prepare controlled drafts.",
+      403,
+    );
+  }
+
+  const client = admin();
+  const effectiveDate = schoolDate();
+  const reviewDate = schoolDate(1);
+
+  if (kind === "critical_policies") {
+    const missing = library.policies.filter(
+      (policy) =>
+        policy.priority === "C0" &&
+        policy.status !== "retired" &&
+        !policy.activeVersion,
+    );
+
+    if (!missing.length) {
+      return {
+        kind,
+        requested: 0,
+        existingOpen: 0,
+        created: 0,
+        failedCodes: [],
+      };
+    }
+
+    const { data: openRows, error: openError } = await client
+      .from("khpos_ops_policy_versions")
+      .select("policy_id")
+      .in("policy_id", missing.map((policy) => policy.id))
+      .in("status", ["draft", "in_review"]);
+
+    if (openError) {
+      throw new KhposActivationError(
+        openError.message || "Open policy drafts could not be checked.",
+        500,
+      );
+    }
+
+    const openIds = new Set((openRows ?? []).map((row) => row.policy_id));
+    const candidates = missing.filter((policy) => !openIds.has(policy.id));
+
+    const outcome = await runActivationDrafts(
+      candidates,
+      (policy) => policy.code,
+      async (policy) => {
+        const baseline = getKaecPolicyBaseline(policy);
+        const { error } = await client.rpc("khpos_ops_govern_policy_server", {
+          p_actor_user_id: userId,
+          p_organisation_id: organisationId,
+          p_policy_id: policy.id,
+          p_action: "save",
+          p_input: {
+            purpose: baseline.purpose,
+            scope: baseline.scope,
+            principles: baseline.principles,
+            policyStatements: baseline.policyStatements,
+            rolesResponsibilities: baseline.rolesResponsibilities,
+            rules: baseline.rules,
+            exceptions: baseline.exceptions,
+            escalation: baseline.escalation,
+            recordsEvidence: baseline.recordsEvidence,
+            effectiveDate,
+            reviewDate,
+          },
+        });
+        if (error) throw error;
+      },
+    );
+
+    return {
+      kind,
+      requested: missing.length,
+      existingOpen: missing.length - candidates.length,
+      created: outcome.created,
+      failedCodes: outcome.failedCodes,
+    };
+  }
+
+  const activePolicyCodes = new Set(
+    library.policies
+      .filter((policy) => !!policy.activeVersion)
+      .map((policy) => policy.code),
+  );
+  const ready = library.processes.filter(
+    (process) =>
+      process.criticality === "P0" &&
+      process.status !== "retired" &&
+      !process.activeVersion &&
+      process.governingPolicyCodes.every((code) => activePolicyCodes.has(code)),
+  );
+
+  if (!ready.length) {
+    return {
+      kind,
+      requested: 0,
+      existingOpen: 0,
+      created: 0,
+      failedCodes: [],
+    };
+  }
+
+  const { data: openRows, error: openError } = await client
+    .from("khpos_ops_process_versions")
+    .select("process_id")
+    .in("process_id", ready.map((process) => process.id))
+    .in("status", ["draft", "in_review"]);
+
+  if (openError) {
+    throw new KhposActivationError(
+      openError.message || "Open process drafts could not be checked.",
+      500,
+    );
+  }
+
+  const openIds = new Set((openRows ?? []).map((row) => row.process_id));
+  const candidates = ready.filter((process) => !openIds.has(process.id));
+
+  const outcome = await runActivationDrafts(
+    candidates,
+    (process) => process.code,
+    async (process) => {
+      const baseline = getKaecProcessBaseline(process);
+      const { error } = await client.rpc("khpos_ops_govern_process_server", {
+        p_actor_user_id: userId,
+        p_organisation_id: organisationId,
+        p_process_id: process.id,
+        p_action: "save",
+        p_input: {
+          purpose: baseline.purpose,
+          trigger: baseline.trigger,
+          inputs: baseline.inputs,
+          steps: baseline.steps,
+          sla: baseline.sla,
+          evidence: baseline.evidence,
+          expectedOutcome: baseline.expectedOutcome,
+          exceptionConditions: baseline.exceptionConditions,
+          escalation: baseline.escalation,
+          kpis: baseline.kpis,
+          effectiveDate,
+        },
+      });
+      if (error) throw error;
+    },
+  );
+
+  return {
+    kind,
+    requested: ready.length,
+    existingOpen: ready.length - candidates.length,
+    created: outcome.created,
+    failedCodes: outcome.failedCodes,
+  };
 }
 
 export async function getKhposActivation(
@@ -309,6 +526,9 @@ export async function getKhposActivation(
   return {
     organisation: library.organisation,
     foundationComplete: blockerCount === 0,
+    canPrepareDrafts: library.operatingRoleCodes.some((code) =>
+      POLICY_EDITORS.includes(code),
+    ),
     blockerCount,
     people: {
       activeMembers,
