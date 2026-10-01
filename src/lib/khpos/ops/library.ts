@@ -168,6 +168,62 @@ export const POLICY_EDITORS = [
   "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER",
 ];
 
+async function withAuthorRoleCodes<T extends { author_id: string | null }>(
+  organisationId: string,
+  rows: T[],
+): Promise<Array<T & { author_role_codes: string[] }>> {
+  const authorIds = Array.from(
+    new Set(rows.map((row) => row.author_id).filter((value): value is string => Boolean(value))),
+  );
+  if (!authorIds.length) {
+    return rows.map((row) => ({ ...row, author_role_codes: [] }));
+  }
+
+  const { data: assignments, error: assignmentError } = await admin()
+    .from("khpos_ops_role_assignments")
+    .select("user_id,role_id")
+    .in("user_id", authorIds)
+    .eq("status", "active");
+
+  if (assignmentError) {
+    throw new KhposOpsLibraryError(assignmentError.message, 500);
+  }
+
+  const roleIds = Array.from(
+    new Set((assignments ?? []).map((item) => item.role_id).filter(Boolean)),
+  );
+  if (!roleIds.length) {
+    return rows.map((row) => ({ ...row, author_role_codes: [] }));
+  }
+
+  const { data: roles, error: roleError } = await admin()
+    .from("khpos_ops_roles")
+    .select("id,code")
+    .in("id", roleIds)
+    .eq("organisation_id", organisationId)
+    .eq("status", "active");
+
+  if (roleError) {
+    throw new KhposOpsLibraryError(roleError.message, 500);
+  }
+
+  const codeByRoleId = new Map((roles ?? []).map((role) => [role.id, role.code]));
+  const codesByUser = new Map<string, string[]>();
+
+  for (const assignment of assignments ?? []) {
+    const code = codeByRoleId.get(assignment.role_id);
+    if (!code) continue;
+    const codes = codesByUser.get(assignment.user_id) ?? [];
+    if (!codes.includes(code)) codes.push(code);
+    codesByUser.set(assignment.user_id, codes);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    author_role_codes: row.author_id ? (codesByUser.get(row.author_id) ?? []) : [],
+  }));
+}
+
 export async function getPolicyGovernance(organisationId: string, userId: string) {
   const library = await getKhposOpsLibrary(organisationId, userId);
   if (!library.operatingRoleCodes.some((code) => POLICY_EDITORS.includes(code))) {
@@ -178,9 +234,10 @@ export async function getPolicyGovernance(organisationId: string, userId: string
     .in("policy_id", library.policies.map((policy) => policy.id))
     .order("version", { ascending: false });
   if (error) throw new KhposOpsLibraryError(error.message, 500);
+  const versions = await withAuthorRoleCodes(organisationId, data ?? []);
   return {
     library,
-    versions: data ?? [],
+    versions,
     baselines: Object.fromEntries(
       library.policies.map((policy) => [policy.id, getKaecPolicyBaseline(policy)]),
     ),
@@ -224,9 +281,10 @@ export async function getProcessGovernance(
     .order("version", { ascending: false });
 
   if (error) throw new KhposOpsLibraryError(error.message, 500);
+  const versions = await withAuthorRoleCodes(organisationId, data ?? []);
   return {
     library,
-    versions: data ?? [],
+    versions,
     baselines: Object.fromEntries(
       library.processes.map((process) => [process.id, getKaecProcessBaseline(process)]),
     ),
