@@ -226,6 +226,30 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
         </section>
 
+        <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-700 text-white">
+                <ShieldCheck className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Operational activation</p>
+                <h2 className="mt-2 text-2xl font-black text-slate-950">Is the school actually ready to run through KHP-OS?</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Installed modules are not enough. Check role coverage, safeguarding designations, critical policies and critical processes from one activation queue.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/khpos/${organisationId}/activation`}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-extrabold text-white"
+            >
+              Open Activation Centre
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </section>
+
         <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>

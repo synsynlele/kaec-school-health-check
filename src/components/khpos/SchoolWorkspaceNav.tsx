@@ -51,6 +51,12 @@ const transformLinks = [
   { suffix: "/improvement", label: "Improvement", icon: Activity },
 ] as const;
 
+const activationLink = {
+  suffix: "/activation",
+  label: "Activation Centre",
+  icon: ShieldCheck,
+} as const;
+
 const operationsLinks = [
   { suffix: "/work", label: "My Work", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
@@ -92,13 +98,20 @@ const intelligenceLinks = [
 
 const workspaceLinks = [
   ...transformLinks,
+  activationLink,
   ...operationsLinks,
   ...intelligenceLinks,
 ] as const;
 
-const dailyLinks = [transformLinks[0], operationsLinks[0], operationsLinks[1], operationsLinks[2], operationsLinks[21]] as const;
+const dailyLinks = [
+  transformLinks[0],
+  activationLink,
+  operationsLinks[0],
+  operationsLinks[1],
+  operationsLinks[2],
+] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
+  { title: "Leadership", icon: Gauge, links: [activationLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
@@ -303,7 +316,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   }`}
                 >
                   <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Home", "Work", "Issues", "Decisions"][dailyLinks.indexOf(item)]}</span>
+                  <span className="w-full truncate text-center">{["Home", "Activate", "Work", "Issues"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
