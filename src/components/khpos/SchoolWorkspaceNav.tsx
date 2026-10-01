@@ -115,7 +115,7 @@ const navigationGroups = [
   { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
-  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 21), operationsLinks[24], operationsLinks[28]] },
+  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 22), operationsLinks[24], operationsLinks[28]] },
   { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[27], operationsLinks[23]] },
 ] as const;
 
