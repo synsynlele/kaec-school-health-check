@@ -321,6 +321,24 @@ export function InstitutionalLibrary({
       .includes(needle),
   );
 
+  const policyRank = { C0: 0, C1: 1, C2: 2 } as const;
+  const processRank = { P0: 0, P1: 1, P2: 2 } as const;
+  const pendingPolicies = library.policies
+    .filter((item) => !item.activeVersion)
+    .sort((a, b) => policyRank[a.priority] - policyRank[b.priority] || a.code.localeCompare(b.code));
+  const activePolicyCodes = new Set(
+    library.policies.filter((item) => item.activeVersion).map((item) => item.code),
+  );
+  const pendingProcesses = library.processes
+    .filter((item) => !item.activeVersion)
+    .sort((a, b) => processRank[a.criticality] - processRank[b.criticality] || a.code.localeCompare(b.code));
+  const readyProcesses = pendingProcesses.filter((item) =>
+    item.governingPolicyCodes.every((code) => activePolicyCodes.has(code)),
+  );
+  const blockedProcesses = pendingProcesses.filter((item) =>
+    item.governingPolicyCodes.some((code) => !activePolicyCodes.has(code)),
+  );
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -375,6 +393,62 @@ export function InstitutionalLibrary({
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
+        )}
+
+        {(pendingPolicies.length > 0 || pendingProcesses.length > 0) && (
+          <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Activation roadmap</p>
+                <h2 className="mt-2 text-2xl font-black">Turn the register into the school&apos;s operating system</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Work policy-first. KAEC baselines remove blank-page work, but each school still customises, independently reviews and publishes its own controlled version. Processes unlock automatically when their governing policies are active.
+                </p>
+              </div>
+              <p className="text-sm font-bold text-slate-500">
+                {library.summary.activePolicyDocuments}/{library.summary.policyCount} policies · {library.summary.activeProcessDocuments}/{library.summary.processCount} processes active
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-800">1 · Publish policies</p>
+                <p className="mt-2 text-3xl font-black text-amber-950">{pendingPolicies.length}</p>
+                <p className="text-sm text-amber-900">school policy document(s) still pending</p>
+                {pendingPolicies.length > 0 && (
+                  <div className="mt-3 space-y-1 text-xs text-amber-950">
+                    {pendingPolicies.slice(0, 4).map((item) => (
+                      <p key={item.id}><b>{item.code}</b> · {item.name}</p>
+                    ))}
+                    {pendingPolicies.length > 4 && <p>+ {pendingPolicies.length - 4} more</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-800">2 · Processes ready now</p>
+                <p className="mt-2 text-3xl font-black text-emerald-950">{readyProcesses.length}</p>
+                <p className="text-sm text-emerald-900">process baseline(s) have all governing policies active</p>
+                {readyProcesses.length > 0 && (
+                  <div className="mt-3 space-y-1 text-xs text-emerald-950">
+                    {readyProcesses.slice(0, 4).map((item) => (
+                      <p key={item.id}><b>{item.code}</b> · {item.title}</p>
+                    ))}
+                    {readyProcesses.length > 4 && <p>+ {readyProcesses.length - 4} more</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-600">3 · Dependency blocked</p>
+                <p className="mt-2 text-3xl font-black text-slate-950">{blockedProcesses.length}</p>
+                <p className="text-sm text-slate-600">process(es) waiting for one or more governing policies</p>
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  These are intentionally blocked from publication. Finish their C0/C1 policies first rather than bypassing the governance gate.
+                </p>
+              </div>
+            </div>
+          </section>
         )}
 
         <section className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
