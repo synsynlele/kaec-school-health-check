@@ -9,6 +9,8 @@ type Revision = {
   id: string; policy_id: string; version: number; status: string;
   purpose: string; scope: string; effective_date: string | null; review_date: string | null;
   author_id: string | null; review_note: string | null;
+  draft_source?: "human" | "ai_starter" | "kaec_baseline";
+  draft_model?: string | null;
   principles: string[]; policy_statements: string[]; roles_responsibilities: string[];
   rules: string[]; exceptions: string[]; escalation: string[]; records_evidence: string[];
 };
@@ -55,6 +57,47 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
   const [baselineLoaded, setBaselineLoaded] = useState(false);
   const policy = policies.find((item) => item.id === selected);
   const current = versions.find((item) => item.policy_id === selected && ["draft", "in_review"].includes(item.status));
+  const policyOptions = useMemo(
+    () =>
+      policies
+        .map((item) => {
+          const revision = versions.find(
+            (version) =>
+              version.policy_id === item.id &&
+              ["draft", "in_review"].includes(version.status),
+          );
+          const state =
+            revision?.status === "in_review" && revision.author_id !== userId
+              ? "REVIEW"
+              : revision?.status === "draft" && revision.author_id === userId
+                ? "YOUR DRAFT"
+                : revision?.status === "in_review"
+                  ? "IN REVIEW"
+                  : !item.activeVersion
+                    ? "MISSING"
+                    : "ACTIVE";
+          const rank =
+            state === "REVIEW"
+              ? 0
+              : state === "YOUR DRAFT"
+                ? 1
+                : state === "IN REVIEW"
+                  ? 2
+                  : state === "MISSING" && item.priority === "C0"
+                    ? 3
+                    : state === "MISSING"
+                      ? 4
+                      : 5;
+          return { item, state, rank };
+        })
+        .sort(
+          (a, b) =>
+            a.rank - b.rank ||
+            a.item.priority.localeCompare(b.item.priority) ||
+            a.item.code.localeCompare(b.item.code),
+        ),
+    [policies, versions, userId],
+  );
 
   useEffect(() => {
     if (!supabase) return;
@@ -129,7 +172,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
         <option value="">Select a registered policy</option>
-        {policies.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.name} ({item.priority})</option>)}
+        {policyOptions.map(({ item, state }) => <option value={item.id} key={item.id}>[{state}] {item.code} · {item.name} ({item.priority})</option>)}
       </select>
     </label>
     {policy && <div className="mt-5 space-y-4">
@@ -137,6 +180,14 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       {baselineLoaded && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-brand-900">KAEC baseline loaded</p>
         <p className="mt-1">This registered policy did not yet have a school-owned version. Review and customise this baseline for your school before saving; it does not become policy until a different authorised leader approves it.</p>
+      </div>}
+      {current?.draft_source === "kaec_baseline" && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
+        <p className="font-bold text-brand-900">KAEC baseline draft</p>
+        <p className="mt-1">KHP-OS prepared this starting point from the controlled KAEC baseline. The named author must review and customise it; a different authorised leader must still approve it.</p>
+      </div>}
+      {current?.draft_source === "ai_starter" && <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-slate-700">
+        <p className="font-bold text-violet-900">AI-assisted starter draft</p>
+        <p className="mt-1">Human editing and independent approval remain mandatory.</p>
       </div>}
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
