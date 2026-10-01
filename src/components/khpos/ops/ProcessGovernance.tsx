@@ -197,6 +197,8 @@ export function ProcessGovernance({
       if (!response.ok) throw new Error(body.error ?? "Process action failed.");
 
       setVersions(body.versions ?? []);
+      setBaselines(body.baselines ?? baselines);
+      setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(
         action === "approve"
