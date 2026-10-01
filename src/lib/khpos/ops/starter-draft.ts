@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
   getPolicyGovernance,
@@ -12,6 +13,40 @@ const STARTER_MODEL =
   process.env.OPENAI_KHPOS_MODEL ||
   process.env.OPENAI_MODEL ||
   "gpt-4.1-mini-2025-04-14";
+
+let service: SupabaseClient | undefined;
+
+function admin() {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new KhposStarterDraftError("KHP-OS starter drafting is not configured.", 503);
+  }
+  return (service ??= createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  ));
+}
+
+async function markAiDraft(
+  table: "khpos_ops_policy_versions" | "khpos_ops_process_versions",
+  versionId: string,
+) {
+  const { error } = await admin()
+    .from(table)
+    .update({ draft_source: "ai_starter", draft_model: STARTER_MODEL })
+    .eq("id", versionId)
+    .eq("status", "draft");
+
+  if (error) {
+    throw new KhposStarterDraftError(
+      "The starter draft was created but its AI provenance could not be recorded. Do not submit it yet; retry after the platform is checked.",
+      500,
+    );
+  }
+}
 
 export class KhposStarterDraftError extends Error {
   constructor(message: string, public readonly status = 400) {
@@ -302,13 +337,27 @@ export async function createPolicyStarterDraft(
 
   const { effectiveDate, reviewDate } = dates();
   try {
-    return await governPolicy(
+    const result = await governPolicy(
       organisationId,
       userId,
       policyId,
       "save",
       { ...draft, effectiveDate, reviewDate },
     );
+    const version = result.versions.find(
+      (item) =>
+        item.policy_id === policyId &&
+        item.status === "draft" &&
+        item.author_id === userId,
+    );
+    if (!version) {
+      throw new KhposStarterDraftError(
+        "Starter draft was saved but could not be reloaded safely.",
+        500,
+      );
+    }
+    await markAiDraft("khpos_ops_policy_versions", version.id);
+    return getPolicyGovernance(organisationId, userId);
   } catch (error) {
     if (error instanceof KhposOpsLibraryError) {
       throw new KhposStarterDraftError(error.message, error.status);
@@ -382,13 +431,27 @@ export async function createProcessStarterDraft(
 
   const { effectiveDate } = dates();
   try {
-    return await governProcess(
+    const result = await governProcess(
       organisationId,
       userId,
       processId,
       "save",
       { ...draft, effectiveDate },
     );
+    const version = result.versions.find(
+      (item) =>
+        item.process_id === processId &&
+        item.status === "draft" &&
+        item.author_id === userId,
+    );
+    if (!version) {
+      throw new KhposStarterDraftError(
+        "Starter draft was saved but could not be reloaded safely.",
+        500,
+      );
+    }
+    await markAiDraft("khpos_ops_process_versions", version.id);
+    return getProcessGovernance(organisationId, userId);
   } catch (error) {
     if (error instanceof KhposOpsLibraryError) {
       throw new KhposStarterDraftError(error.message, error.status);
