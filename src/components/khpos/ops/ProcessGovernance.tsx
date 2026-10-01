@@ -130,6 +130,59 @@ export function ProcessGovernance({
     });
   }
 
+  async function prepareStarter() {
+    if (!supabase || !process || busy || current) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Your session ended. Sign in again.");
+
+      const response = await fetch(
+        `/api/khpos/ops/library/${organisationId}/starter-draft`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${data.session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ kind: "process", controlId: process.id }),
+        },
+      );
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Starter draft could not be prepared.");
+
+      const nextVersions = (body.versions ?? []) as Revision[];
+      setVersions(nextVersions);
+      if (body.library) onPublished(body.library);
+      const revision = nextVersions.find(
+        (item) => item.process_id === process.id && item.status === "draft",
+      );
+      if (revision) {
+        setPurpose(revision.purpose ?? "");
+        setTrigger(revision.trigger ?? "");
+        setSla(revision.sla ?? "");
+        setExpectedOutcome(revision.expected_outcome ?? "");
+        setEffectiveDate(revision.effective_date ?? "");
+        setSections({
+          inputs: (revision.inputs ?? []).join("\n"),
+          steps: (revision.steps ?? []).join("\n"),
+          evidence: (revision.evidence ?? []).join("\n"),
+          exception_conditions: (revision.exception_conditions ?? []).join("\n"),
+          escalation: (revision.escalation ?? []).join("\n"),
+          kpis: (revision.kpis ?? []).join("\n"),
+        });
+      }
+      setMessage("Starter draft prepared. Edit it before submitting for independent review.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Starter draft could not be prepared.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function act(action: "save" | "submit" | "return" | "approve") {
     if (!supabase || !process || busy) return;
     setBusy(true);
@@ -193,6 +246,9 @@ export function ProcessGovernance({
         must review the draft. P0 processes require Custodian-level approval, and no process can be
         published until every governing policy listed for it is already active.
       </p>
+      <p className="mt-2 text-xs font-semibold text-brand-700">
+        AI may prepare an editable starter procedure only after its governing policies are active. It cannot submit, review or publish it.
+      </p>
 
       <label className="mt-5 block text-sm font-bold">
         Process to work on
@@ -236,6 +292,22 @@ export function ProcessGovernance({
 
           {(!current || (current.status === "draft" && current.author_id === userId)) && (
             <div className="space-y-4">
+              {!current && (
+                <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+                  <p className="text-sm font-black text-slate-950">Turn the register into an executable first draft.</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    KHP-OS uses the active governing policies, registered owner, criticality and tools as drafting constraints. You must still edit and submit it yourself.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void prepareStarter()}
+                    className="mt-3 rounded-full border border-brand-700 bg-white px-4 py-2.5 text-sm font-black text-brand-800 disabled:opacity-50"
+                  >
+                    {busy ? "Preparing starter draft…" : "Prepare starter draft with AI"}
+                  </button>
+                </div>
+              )}
               <label className="block text-sm font-bold">
                 Purpose
                 <textarea
