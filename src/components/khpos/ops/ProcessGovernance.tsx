@@ -22,6 +22,8 @@ type Revision = {
   status: string;
   author_id: string | null;
   review_note: string | null;
+  draft_source?: "human" | "ai_starter";
+  draft_model?: string | null;
 };
 
 type ArrayField = "inputs" | "steps" | "evidence" | "exception_conditions" | "escalation" | "kpis";
@@ -283,6 +285,13 @@ export function ProcessGovernance({
               ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}`
               : "Start a new school revision"}
           </p>
+
+          {current?.draft_source === "ai_starter" && (
+            <p className="rounded-xl border border-brand-200 bg-brand-50 p-3 text-xs font-semibold text-brand-800">
+              AI starter draft · human editing and independent review required
+              {current.draft_model ? ` · ${current.draft_model}` : ""}
+            </p>
+          )}
 
           {current?.review_note && (
             <p className="rounded-xl bg-amber-50 p-3 text-sm">
