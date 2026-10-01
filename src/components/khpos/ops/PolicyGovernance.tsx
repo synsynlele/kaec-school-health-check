@@ -113,6 +113,8 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Policy action failed.");
       setVersions(body.versions ?? []);
+      setBaselines(body.baselines ?? baselines);
+      setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(action === "approve" ? "Approved and published. Staff acknowledgement now applies to this version." :
         action === "submit" ? "Submitted for independent review." : action === "return" ? "Returned to the author with your note." : "Draft saved.");
