@@ -139,6 +139,39 @@ async function runActivationDrafts<T>(
   return { created, failedCodes };
 }
 
+async function markKaecBaselineDraft(
+  table: "khpos_ops_policy_versions" | "khpos_ops_process_versions",
+  versionId: string,
+  userId: string,
+) {
+  const client = admin();
+  const { data, error } = await client
+    .from(table)
+    .update({
+      draft_source: "kaec_baseline",
+      draft_model: "kaec-baseline-v1",
+    })
+    .eq("id", versionId)
+    .eq("author_id", userId)
+    .eq("status", "draft")
+    .select("id")
+    .maybeSingle();
+
+  if (!error && data?.id) return;
+
+  await client
+    .from(table)
+    .delete()
+    .eq("id", versionId)
+    .eq("author_id", userId)
+    .eq("status", "draft");
+
+  throw new KhposActivationError(
+    "A KAEC baseline draft could not be marked safely, so it was rolled back.",
+    500,
+  );
+}
+
 export type ActivationPackResult = {
   kind: "critical_policies" | "ready_processes";
   requested: number;
@@ -203,7 +236,7 @@ export async function prepareKhposActivationPack(
       (policy) => policy.code,
       async (policy) => {
         const baseline = getKaecPolicyBaseline(policy);
-        const { error } = await client.rpc("khpos_ops_govern_policy_server", {
+        const { data: versionId, error } = await client.rpc("khpos_ops_govern_policy_server", {
           p_actor_user_id: userId,
           p_organisation_id: organisationId,
           p_policy_id: policy.id,
@@ -222,7 +255,14 @@ export async function prepareKhposActivationPack(
             reviewDate,
           },
         });
-        if (error) throw error;
+        if (error || typeof versionId !== "string") {
+          throw error ?? new Error("Policy draft version was not returned.");
+        }
+        await markKaecBaselineDraft(
+          "khpos_ops_policy_versions",
+          versionId,
+          userId,
+        );
       },
     );
 
@@ -279,7 +319,7 @@ export async function prepareKhposActivationPack(
     (process) => process.code,
     async (process) => {
       const baseline = getKaecProcessBaseline(process);
-      const { error } = await client.rpc("khpos_ops_govern_process_server", {
+      const { data: versionId, error } = await client.rpc("khpos_ops_govern_process_server", {
         p_actor_user_id: userId,
         p_organisation_id: organisationId,
         p_process_id: process.id,
@@ -298,7 +338,14 @@ export async function prepareKhposActivationPack(
           effectiveDate,
         },
       });
-      if (error) throw error;
+      if (error || typeof versionId !== "string") {
+        throw error ?? new Error("Process draft version was not returned.");
+      }
+      await markKaecBaselineDraft(
+        "khpos_ops_process_versions",
+        versionId,
+        userId,
+      );
     },
   );
 
