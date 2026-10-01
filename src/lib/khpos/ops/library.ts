@@ -191,3 +191,51 @@ export async function governPolicy(
   if (error) throw new KhposOpsLibraryError(error.message, 400);
   return getPolicyGovernance(organisationId, userId);
 }
+
+export async function getProcessGovernance(
+  organisationId: string,
+  userId: string,
+) {
+  const library = await getKhposOpsLibrary(organisationId, userId);
+  if (!library.operatingRoleCodes.some((code) => POLICY_EDITORS.includes(code))) {
+    throw new KhposOpsLibraryError(
+      "An active school leadership assignment is required.",
+      403,
+    );
+  }
+
+  if (!library.processes.length) {
+    return { library, versions: [] };
+  }
+
+  const { data, error } = await admin()
+    .from("khpos_ops_process_versions")
+    .select(
+      "id,process_id,version,purpose,trigger,inputs,steps,sla,evidence,expected_outcome,exception_conditions,escalation,kpis,effective_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_by,approved_at",
+    )
+    .in("process_id", library.processes.map((process) => process.id))
+    .order("version", { ascending: false });
+
+  if (error) throw new KhposOpsLibraryError(error.message, 500);
+  return { library, versions: data ?? [] };
+}
+
+export async function governProcess(
+  organisationId: string,
+  userId: string,
+  processId: string,
+  action: "save" | "submit" | "return" | "approve",
+  input: Record<string, unknown>,
+) {
+  const { error } = await admin().rpc("khpos_ops_govern_process_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+    p_process_id: processId,
+    p_action: action,
+    p_input: input,
+  });
+
+  if (error) throw new KhposOpsLibraryError(error.message, 400);
+  return getProcessGovernance(organisationId, userId);
+}
+
