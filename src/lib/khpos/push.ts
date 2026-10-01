@@ -1,3 +1,4 @@
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   sendPushNotification,
@@ -5,6 +6,7 @@ import {
   WebPushError,
   type PushSubscriptionData,
 } from "@mmmike/web-push/send";
+import { generateVapidKeys } from "@mmmike/web-push/vapid";
 import { getKhposAlerts, pushEligibleAlerts } from "@/lib/khpos/notifications";
 
 let service: SupabaseClient | undefined;
@@ -35,21 +37,87 @@ type StoredSubscription = {
   auth_secret: string;
 };
 
-function vapid() {
-  const publicKey = process.env.KHPOS_VAPID_PUBLIC_KEY?.trim();
-  const privateKey = process.env.KHPOS_VAPID_PRIVATE_KEY?.trim();
-  const subject =
-    process.env.KHPOS_VAPID_SUBJECT?.trim() || "https://www.kshc.name.ng";
+type PushConfig = {
+  publicKey: string;
+  privateKey: string;
+  subject: string;
+  cronSecret: string;
+};
 
-  if (!publicKey || !privateKey) {
+let configCache:
+  | { value: PushConfig; expiresAt: number }
+  | undefined;
+
+function normalizePushConfig(input: unknown): PushConfig | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const data = input as Record<string, unknown>;
+  const publicKey = data.khpos_vapid_public_key;
+  const privateKey = data.khpos_vapid_private_key;
+  const subject = data.khpos_vapid_subject;
+  const cronSecret = data.khpos_push_cron_secret;
+
+  if (
+    typeof publicKey !== "string" ||
+    typeof privateKey !== "string" ||
+    typeof subject !== "string" ||
+    typeof cronSecret !== "string"
+  ) {
+    return null;
+  }
+
+  return { publicKey, privateKey, subject, cronSecret };
+}
+
+async function pushConfig(): Promise<PushConfig> {
+  if (configCache && configCache.expiresAt > Date.now()) {
+    return configCache.value;
+  }
+
+  const client = admin();
+  const first = await client.rpc("khpos_get_push_config_server");
+  if (first.error) {
+    throw new Error("KHP-OS device alert configuration could not be read.");
+  }
+
+  let config = normalizePushConfig(first.data);
+
+  if (!config) {
+    const keys = await generateVapidKeys();
+    const cronSecret = randomBytes(48).toString("base64url");
+    const created = await client.rpc("khpos_save_push_config_server", {
+      p_public_key: keys.publicKey,
+      p_private_key: keys.privateKey,
+      p_cron_secret: cronSecret,
+      p_subject: "https://www.kshc.name.ng",
+    });
+
+    if (created.error) {
+      throw new Error("KHP-OS device alert configuration could not initialize.");
+    }
+    config = normalizePushConfig(created.data);
+  }
+
+  if (!config) {
     throw new Error("KHP-OS device alerts are not configured.");
   }
 
-  return { publicKey, privateKey, subject };
+  configCache = { value: config, expiresAt: Date.now() + 5 * 60_000 };
+  return config;
 }
 
-export function getKhposVapidPublicKey() {
-  return vapid().publicKey;
+export async function getKhposVapidPublicKey() {
+  return (await pushConfig()).publicKey;
+}
+
+export async function verifyKhposPushCronAuthorization(
+  authorization: string | null,
+) {
+  if (!authorization?.startsWith("Bearer ")) return false;
+  const provided = authorization.slice(7);
+  const expected = (await pushConfig()).cronSecret;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 function validEndpoint(endpoint: string) {
@@ -131,7 +199,7 @@ export async function savePushSubscription(
   userAgent?: string | null,
 ) {
   await assertKhposPushAccess(organisationId, userId);
-  getKhposVapidPublicKey();
+  await getKhposVapidPublicKey();
 
   const endpoint = subscription?.endpoint?.trim();
   const p256dh = subscription?.keys?.p256dh?.trim();
@@ -203,7 +271,7 @@ async function disableStoredSubscription(id: string) {
 
 export async function deliverKhposPushReminders() {
   const client = admin();
-  const config = vapid();
+  const config = await pushConfig();
   const today = new Date().toISOString().slice(0, 10);
 
   const { data, error } = await client
