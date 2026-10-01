@@ -53,7 +53,7 @@ export async function GET(request: Request, context: Context) {
     const { organisationId, userId } = await identity(request, context);
     await assertKhposPushAccess(organisationId, userId);
     return NextResponse.json(
-      { ok: true, publicKey: getKhposVapidPublicKey() },
+      { ok: true, publicKey: await getKhposVapidPublicKey() },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {
