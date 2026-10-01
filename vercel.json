@@ -7,11 +7,5 @@
       "*-preview": true,
       "**/*-preview": true
     }
-  },
-  "crons": [
-    {
-      "path": "/api/khpos/push/deliver",
-      "schedule": "0 6 * * *"
-    }
-  ]
+  }
 }
