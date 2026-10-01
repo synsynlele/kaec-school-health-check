@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PolicyGovernance } from "@/components/khpos/ops/PolicyGovernance";
+import { ProcessGovernance } from "@/components/khpos/ops/ProcessGovernance";
 import type {
   KhposOpsLibrary,
   KhposOpsPolicy,
@@ -438,7 +439,16 @@ export function InstitutionalLibrary({
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Process Register</p>
               <h2 className="mt-2 text-2xl font-black">How your school operates</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                Registered processes become authoritative only after a school leader drafts them, a different leader reviews them, and every governing policy is already active.
+              </p>
             </div>
+
+            {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
+              <div className="mt-6">
+                <ProcessGovernance organisationId={organisationId} processes={library.processes} onPublished={setLibrary} />
+              </div>
+            )}
 
             <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
