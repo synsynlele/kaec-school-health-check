@@ -12,7 +12,9 @@ export function NotificationBell({ organisationId, mobile = false }: { organisat
   const [total, setTotal] = useState(0);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    () => typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported",
+  );
   const seen = useRef<Set<string>>(new Set());
   const initialized = useRef(false);
   const lastFetch = useRef(0);
@@ -48,12 +50,11 @@ export function NotificationBell({ organisationId, mobile = false }: { organisat
   }, [organisationId, mobile]);
 
   useEffect(() => {
-    if ("Notification" in window) setPermission(Notification.permission);
-    void refresh();
+    const initial = window.setTimeout(() => { void refresh(); }, 0);
     const timer = window.setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 900000);
     const onFocus = () => void refresh();
     window.addEventListener("focus", onFocus);
-    return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
   }, [refresh]);
 
   async function enable() {

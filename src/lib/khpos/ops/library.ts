@@ -6,7 +6,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 let adminClient: SupabaseClient | null = null;
 
 export type KhposOpsControlStatus = "registered" | "active" | "retired";
-export type KhposOpsDocumentStatus = "draft" | "active" | "superseded" | "archived";
+export type KhposOpsDocumentStatus = "draft" | "in_review" | "active" | "superseded" | "archived";
 
 export interface KhposOpsPolicyVersion {
   id: string;
@@ -160,4 +160,34 @@ export async function acknowledgeKhposOpsPolicy(
   }
 
   return getKhposOpsLibrary(organisationId, userId);
+}
+
+export const POLICY_EDITORS = [
+  "VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN",
+  "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER",
+];
+
+export async function getPolicyGovernance(organisationId: string, userId: string) {
+  const library = await getKhposOpsLibrary(organisationId, userId);
+  if (!library.operatingRoleCodes.some((code) => POLICY_EDITORS.includes(code))) {
+    throw new KhposOpsLibraryError("An active school leadership assignment is required.", 403);
+  }
+  const { data, error } = await admin().from("khpos_ops_policy_versions")
+    .select("id,policy_id,version,purpose,scope,principles,policy_statements,roles_responsibilities,rules,exceptions,escalation,records_evidence,effective_date,review_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_at")
+    .in("policy_id", library.policies.map((policy) => policy.id))
+    .order("version", { ascending: false });
+  if (error) throw new KhposOpsLibraryError(error.message, 500);
+  return { library, versions: data ?? [] };
+}
+
+export async function governPolicy(
+  organisationId: string, userId: string, policyId: string,
+  action: "save" | "submit" | "return" | "approve", input: Record<string, unknown>,
+) {
+  const { error } = await admin().rpc("khpos_ops_govern_policy_server", {
+    p_actor_user_id: userId, p_organisation_id: organisationId,
+    p_policy_id: policyId, p_action: action, p_input: input,
+  });
+  if (error) throw new KhposOpsLibraryError(error.message, 400);
+  return getPolicyGovernance(organisationId, userId);
 }

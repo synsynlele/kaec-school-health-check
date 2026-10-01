@@ -15,6 +15,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { PolicyGovernance } from "@/components/khpos/ops/PolicyGovernance";
 import type {
   KhposOpsLibrary,
   KhposOpsPolicy,
@@ -416,6 +417,10 @@ export function InstitutionalLibrary({
                 Only an approved active version is authoritative. Registered policies without an active version remain visible so nobody mistakes “not yet written” for “does not exist.”
               </p>
             </div>
+
+            {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
+              <PolicyGovernance organisationId={organisationId} policies={library.policies} onPublished={setLibrary} />
+            )}
 
             {policies.map((policy) => (
               <PolicyDocument
