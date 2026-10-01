@@ -38,6 +38,8 @@ export function ActivationCentre({
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [activation, setActivation] = useState<ActivationSnapshot | null>(null);
   const [error, setError] = useState("");
+  const [busyAction, setBusyAction] = useState<"policies" | "processes" | null>(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     if (!supabase) return;
@@ -81,6 +83,75 @@ export function ActivationCentre({
       active = false;
     };
   }, [organisationId, supabase]);
+
+  async function prepareDrafts(kind: "policies" | "processes") {
+    if (!supabase || !activation?.canPrepareDrafts || busyAction) return;
+
+    setBusyAction(kind);
+    setActionMessage("");
+    setError("");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) {
+        throw new Error("Your session has ended. Sign in again.");
+      }
+
+      const response = await fetch(
+        `/api/khpos/ops/activation/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${data.session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action:
+              kind === "policies"
+                ? "prepare_critical_policy_drafts"
+                : "prepare_ready_process_drafts",
+          }),
+        },
+      );
+
+      const body = (await response.json()) as {
+        ok?: boolean;
+        activation?: ActivationSnapshot;
+        result?: {
+          requested: number;
+          existingOpen: number;
+          created: number;
+          failedCodes: string[];
+        };
+        error?: string;
+      };
+
+      if (!response.ok || !body.ok || !body.activation || !body.result) {
+        throw new Error(body.error || "Activation drafts could not be prepared.");
+      }
+
+      setActivation(body.activation);
+      const subject = kind === "policies" ? "critical policy" : "ready P0 process";
+      const failed = body.result.failedCodes.length;
+      setActionMessage(
+        `Prepared ${body.result.created} ${subject} draft${body.result.created === 1 ? "" : "s"}` +
+          (body.result.existingOpen
+            ? `; ${body.result.existingOpen} already had an open revision`
+            : "") +
+          (failed
+            ? `; ${failed} could not be prepared and still need attention`
+            : "."),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Activation drafts could not be prepared.",
+      );
+    } finally {
+      setBusyAction(null);
+    }
+  }
 
   if (!activation && !error) {
     return (
@@ -151,6 +222,16 @@ export function ActivationCentre({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6 sm:py-10">
+        {actionMessage && (
+          <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
+            {actionMessage}
+          </div>
+        )}
+        {error && (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
+            {error}
+          </div>
+        )}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <UsersRound className="size-6 text-brand-700" />
@@ -314,12 +395,29 @@ export function ActivationCentre({
                   Showing {policies.missingCritical.length} of {policies.criticalMissing}.
                 </p>
               )}
-              <Link
-                href={`/khpos/${organisationId}/library`}
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
-              >
-                Open policy register <ArrowRight className="size-4" />
-              </Link>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {activation.canPrepareDrafts && policies.criticalMissing > 0 && (
+                  <button
+                    type="button"
+                    disabled={busyAction !== null}
+                    onClick={() => void prepareDrafts("policies")}
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-700 px-4 py-2.5 text-sm font-black text-white disabled:opacity-50"
+                  >
+                    {busyAction === "policies" ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <FileCheck2 className="size-4" />
+                    )}
+                    Prepare missing C0 drafts
+                  </button>
+                )}
+                <Link
+                  href={`/khpos/${organisationId}/library`}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
+                >
+                  Open policy register <ArrowRight className="size-4" />
+                </Link>
+              </div>
             </div>
 
             <div className="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm sm:p-7">
@@ -366,12 +464,29 @@ export function ActivationCentre({
                   Showing {processes.missingCritical.length} of {processes.criticalMissing}.
                 </p>
               )}
-              <Link
-                href={`/khpos/${organisationId}/library`}
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
-              >
-                Open process register <ArrowRight className="size-4" />
-              </Link>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {activation.canPrepareDrafts && processes.readyForDrafting > 0 && (
+                  <button
+                    type="button"
+                    disabled={busyAction !== null}
+                    onClick={() => void prepareDrafts("processes")}
+                    className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-black text-white disabled:opacity-50"
+                  >
+                    {busyAction === "processes" ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <FileCheck2 className="size-4" />
+                    )}
+                    Prepare ready P0 drafts
+                  </button>
+                )}
+                <Link
+                  href={`/khpos/${organisationId}/library`}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
+                >
+                  Open process register <ArrowRight className="size-4" />
+                </Link>
+              </div>
             </div>
           </section>
         )}
