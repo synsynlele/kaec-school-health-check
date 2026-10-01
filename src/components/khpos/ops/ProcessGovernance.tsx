@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsLibrary, KhposOpsProcess } from "@/lib/khpos/ops/library";
+import type { ProcessBaseline } from "@/lib/khpos/ops/baselines";
 
 type Revision = {
   id: string;
@@ -23,6 +24,14 @@ type Revision = {
   author_id: string | null;
   review_note: string | null;
 };
+
+function dateForSchool() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 type ArrayField = "inputs" | "steps" | "evidence" | "exception_conditions" | "escalation" | "kpis";
 
@@ -50,6 +59,7 @@ export function ProcessGovernance({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [versions, setVersions] = useState<Revision[]>([]);
+  const [baselines, setBaselines] = useState<Record<string, ProcessBaseline>>({});
   const [userId, setUserId] = useState("");
   const [selected, setSelected] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -69,6 +79,7 @@ export function ProcessGovernance({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [baselineLoaded, setBaselineLoaded] = useState(false);
 
   const process = processes.find((item) => item.id === selected);
   const current = versions.find(
@@ -92,6 +103,7 @@ export function ProcessGovernance({
       if (!alive) return;
       if (response.ok) {
         setVersions(body.versions ?? []);
+        setBaselines(body.baselines ?? {});
         setUserId(data.session.user.id);
       } else {
         setError(body.error ?? "Process revisions could not be loaded.");
@@ -114,19 +126,37 @@ export function ProcessGovernance({
       (item) => item.process_id === id && ["draft", "in_review"].includes(item.status),
     );
     const active = processes.find((item) => item.id === id)?.activeVersion;
+    const baseline = baselines[id];
+    const source = revision ?? active;
+    const useBaseline = !source && Boolean(baseline);
 
-    setPurpose(revision?.purpose ?? active?.purpose ?? "");
-    setTrigger(revision?.trigger ?? active?.trigger ?? "");
-    setSla(revision?.sla ?? active?.sla ?? "");
-    setExpectedOutcome(revision?.expected_outcome ?? active?.expectedOutcome ?? "");
-    setEffectiveDate(revision?.effective_date ?? active?.effectiveDate ?? "");
+    setBaselineLoaded(useBaseline);
+    setPurpose(revision?.purpose ?? active?.purpose ?? baseline?.purpose ?? "");
+    setTrigger(revision?.trigger ?? active?.trigger ?? baseline?.trigger ?? "");
+    setSla(revision?.sla ?? active?.sla ?? baseline?.sla ?? "");
+    setExpectedOutcome(
+      revision?.expected_outcome ??
+        active?.expectedOutcome ??
+        baseline?.expectedOutcome ??
+        "",
+    );
+    setEffectiveDate(
+      revision?.effective_date ??
+        active?.effectiveDate ??
+        (useBaseline ? dateForSchool() : ""),
+    );
     setSections({
-      inputs: (revision?.inputs ?? active?.inputs ?? []).join("\n"),
-      steps: (revision?.steps ?? active?.steps ?? []).join("\n"),
-      evidence: (revision?.evidence ?? active?.evidence ?? []).join("\n"),
-      exception_conditions: (revision?.exception_conditions ?? active?.exceptionConditions ?? []).join("\n"),
-      escalation: (revision?.escalation ?? active?.escalation ?? []).join("\n"),
-      kpis: (revision?.kpis ?? active?.kpis ?? []).join("\n"),
+      inputs: (revision?.inputs ?? active?.inputs ?? baseline?.inputs ?? []).join("\n"),
+      steps: (revision?.steps ?? active?.steps ?? baseline?.steps ?? []).join("\n"),
+      evidence: (revision?.evidence ?? active?.evidence ?? baseline?.evidence ?? []).join("\n"),
+      exception_conditions: (
+        revision?.exception_conditions ??
+        active?.exceptionConditions ??
+        baseline?.exceptionConditions ??
+        []
+      ).join("\n"),
+      escalation: (revision?.escalation ?? active?.escalation ?? baseline?.escalation ?? []).join("\n"),
+      kpis: (revision?.kpis ?? active?.kpis ?? baseline?.kpis ?? []).join("\n"),
     });
   }
 
@@ -167,6 +197,8 @@ export function ProcessGovernance({
       if (!response.ok) throw new Error(body.error ?? "Process action failed.");
 
       setVersions(body.versions ?? []);
+      setBaselines(body.baselines ?? baselines);
+      setBaselineLoaded(false);
       if (body.library) onPublished(body.library);
       setMessage(
         action === "approve"
@@ -227,6 +259,15 @@ export function ProcessGovernance({
               ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}`
               : "Start a new school revision"}
           </p>
+
+          {baselineLoaded && (
+            <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
+              <p className="font-bold text-brand-900">KAEC baseline loaded</p>
+              <p className="mt-1">
+                This registered process did not yet have a school-owned procedure. Review and customise the baseline before saving. It remains a draft until a different authorised leader approves it, and governing policies must be active first.
+              </p>
+            </div>
+          )}
 
           {current?.review_note && (
             <p className="rounded-xl bg-amber-50 p-3 text-sm">
