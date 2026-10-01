@@ -173,7 +173,7 @@ export async function getPolicyGovernance(organisationId: string, userId: string
     throw new KhposOpsLibraryError("An active school leadership assignment is required.", 403);
   }
   const { data, error } = await admin().from("khpos_ops_policy_versions")
-    .select("id,policy_id,version,purpose,scope,principles,policy_statements,roles_responsibilities,rules,exceptions,escalation,records_evidence,effective_date,review_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_at")
+    .select("id,policy_id,version,purpose,scope,principles,policy_statements,roles_responsibilities,rules,exceptions,escalation,records_evidence,effective_date,review_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_at,draft_source,draft_model")
     .in("policy_id", library.policies.map((policy) => policy.id))
     .order("version", { ascending: false });
   if (error) throw new KhposOpsLibraryError(error.message, 500);
@@ -211,7 +211,7 @@ export async function getProcessGovernance(
   const { data, error } = await admin()
     .from("khpos_ops_process_versions")
     .select(
-      "id,process_id,version,purpose,trigger,inputs,steps,sla,evidence,expected_outcome,exception_conditions,escalation,kpis,effective_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_by,approved_at",
+      "id,process_id,version,purpose,trigger,inputs,steps,sla,evidence,expected_outcome,exception_conditions,escalation,kpis,effective_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_by,approved_at,draft_source,draft_model",
     )
     .in("process_id", library.processes.map((process) => process.id))
     .order("version", { ascending: false });
