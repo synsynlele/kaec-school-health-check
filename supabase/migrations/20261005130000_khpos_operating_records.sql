@@ -60,10 +60,14 @@ create index if not exists idx_khpos_ops_process_tool_req_process
   on public.khpos_ops_process_tool_requirements(process_id,status);
 create index if not exists idx_khpos_ops_process_tool_req_tool
   on public.khpos_ops_process_tool_requirements(tool_template_id);
+create index if not exists idx_khpos_ops_process_tool_req_org
+  on public.khpos_ops_process_tool_requirements(organisation_id);
 create index if not exists idx_khpos_ops_work_record_req_work
   on public.khpos_ops_work_record_requirements(work_item_id);
 create index if not exists idx_khpos_ops_work_record_req_tool
   on public.khpos_ops_work_record_requirements(tool_template_id);
+create index if not exists idx_khpos_ops_work_record_req_org
+  on public.khpos_ops_work_record_requirements(organisation_id);
 create index if not exists idx_khpos_ops_work_records_work
   on public.khpos_ops_work_records(work_item_id,submitted_at desc);
 create index if not exists idx_khpos_ops_work_records_org
@@ -72,6 +76,11 @@ create index if not exists idx_khpos_ops_work_records_submitter
   on public.khpos_ops_work_records(submitted_by,submitted_at desc);
 create index if not exists idx_khpos_ops_work_records_requirement
   on public.khpos_ops_work_records(requirement_id,status);
+create index if not exists idx_khpos_ops_work_records_tool
+  on public.khpos_ops_work_records(tool_template_id);
+create index if not exists idx_khpos_ops_work_records_reviewed_by
+  on public.khpos_ops_work_records(reviewed_by)
+  where reviewed_by is not null;
 
 alter table public.khpos_ops_process_tool_requirements enable row level security;
 alter table public.khpos_ops_work_record_requirements enable row level security;
