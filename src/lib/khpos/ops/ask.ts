@@ -262,7 +262,7 @@ async function governedSources(
           "Status: " + issue.status,
           "Severity: " + issue.severity,
           "Due: " + (issue.dueAt ?? "No fixed deadline"),
-          "Owner: " + (issue.ownerRoleTitle ?? "Unassigned"),
+          "Owner: " + (issue.owner?.roleTitle ?? "Unassigned"),
           "Escalated: " + String(Boolean(issue.isEscalationRecipient)),
           "Description: " + (issue.description ?? ""),
         ].join("\n"),
