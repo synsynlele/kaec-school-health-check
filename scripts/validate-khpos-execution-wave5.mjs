@@ -45,6 +45,18 @@ if (
   );
 }
 
+const hardening = read(
+  "supabase/migrations/20261005165500_khpos_execution_closure_wave5_hardening.sql",
+);
+for (const expected of [
+  "This manual process has no active accountable role.",
+  "ops_hpd_has_membership(a.user_id,p_organisation_id)",
+  "The accountable assignment campus is not active in this school.",
+  "The accountable assignment unit does not match the target campus.",
+]) {
+  requireText(hardening, expected, "post-deploy ownership and scope hardening");
+}
+
 const executionService = read("src/lib/khpos/ops/execution.ts");
 for (const expected of [
   "safeMappingCandidate",
