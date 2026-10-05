@@ -57,6 +57,176 @@ create index if not exists idx_khpos_ops_process_versions_standard_release
   on public.khpos_ops_process_versions(standard_release_id)
   where standard_release_id is not null;
 
+create or replace function public.khpos_ops_guard_policy_version_mutation()
+returns trigger
+language plpgsql
+set search_path=''
+as $func$
+begin
+  if tg_op='DELETE' then
+    if old.status <> 'draft' then
+      raise exception 'Submitted policy versions cannot be deleted.';
+    end if;
+    return old;
+  end if;
+
+  if old.status='draft' and new.status='draft'
+    and new.policy_id=old.policy_id and new.version=old.version then
+    return new;
+  end if;
+
+  if old.status='draft' and new.status='in_review'
+    and (to_jsonb(new)-'status'-'submitted_at')
+      =(to_jsonb(old)-'status'-'submitted_at') then
+    return new;
+  end if;
+
+  if old.status='draft' and new.status='active'
+    and old.standard_release_id is not null
+    and current_setting('khpos.standard_adoption',true)=old.standard_release_id::text
+    and (to_jsonb(new)-'status'-'effective_date'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+      =(to_jsonb(old)-'status'-'effective_date'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+  then
+    return new;
+  end if;
+
+  if old.status='in_review' and new.status in ('draft','active')
+    and (to_jsonb(new)-'status'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+      =(to_jsonb(old)-'status'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at') then
+    return new;
+  end if;
+
+  if old.status='active' and new.status='superseded'
+    and (to_jsonb(new)-'status')=(to_jsonb(old)-'status') then
+    return new;
+  end if;
+
+  raise exception 'Submitted and approved policy content is immutable.';
+end;
+$func$;
+
+create or replace function public.khpos_ops_guard_process_version_mutation()
+returns trigger
+language plpgsql
+set search_path=''
+as $func$
+begin
+  if tg_op='DELETE' then
+    if old.status<>'draft' then
+      raise exception 'Submitted process versions cannot be deleted.';
+    end if;
+    return old;
+  end if;
+
+  if old.status='draft' and new.status='draft'
+    and new.process_id=old.process_id and new.version=old.version then
+    return new;
+  end if;
+
+  if old.status='draft' and new.status='in_review'
+    and (to_jsonb(new)-'status'-'submitted_at')
+      =(to_jsonb(old)-'status'-'submitted_at') then
+    return new;
+  end if;
+
+  if old.status='draft' and new.status='active'
+    and old.standard_release_id is not null
+    and current_setting('khpos.standard_adoption',true)=old.standard_release_id::text
+    and (to_jsonb(new)-'status'-'effective_date'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+      =(to_jsonb(old)-'status'-'effective_date'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+  then
+    return new;
+  end if;
+
+  if old.status='in_review' and new.status in ('draft','active')
+    and (to_jsonb(new)-'status'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at')
+      =(to_jsonb(old)-'status'-'reviewed_by'-'reviewed_at'-'review_note'-'approved_by'-'approved_at') then
+    return new;
+  end if;
+
+  if old.status='active' and new.status='superseded'
+    and (to_jsonb(new)-'status')=(to_jsonb(old)-'status') then
+    return new;
+  end if;
+
+  raise exception 'Submitted and approved process content is immutable.';
+end;
+$func$;
+
+create or replace function khpos_private.ops_localise_standard_policy_draft()
+returns trigger
+language plpgsql
+set search_path=''
+as $func$
+begin
+  if old.status='draft'
+     and new.status='draft'
+     and old.standard_release_id is not null
+     and (
+       new.purpose is distinct from old.purpose
+       or new.scope is distinct from old.scope
+       or new.principles is distinct from old.principles
+       or new.policy_statements is distinct from old.policy_statements
+       or new.roles_responsibilities is distinct from old.roles_responsibilities
+       or new.rules is distinct from old.rules
+       or new.exceptions is distinct from old.exceptions
+       or new.escalation is distinct from old.escalation
+       or new.records_evidence is distinct from old.records_evidence
+       or new.effective_date is distinct from old.effective_date
+       or new.review_date is distinct from old.review_date
+     )
+  then
+    new.standard_release_id := null;
+    new.draft_source := 'human';
+    new.draft_model := null;
+  end if;
+  return new;
+end;
+$func$;
+
+create or replace function khpos_private.ops_localise_standard_process_draft()
+returns trigger
+language plpgsql
+set search_path=''
+as $func$
+begin
+  if old.status='draft'
+     and new.status='draft'
+     and old.standard_release_id is not null
+     and (
+       new.purpose is distinct from old.purpose
+       or new.trigger is distinct from old.trigger
+       or new.inputs is distinct from old.inputs
+       or new.steps is distinct from old.steps
+       or new.sla is distinct from old.sla
+       or new.evidence is distinct from old.evidence
+       or new.expected_outcome is distinct from old.expected_outcome
+       or new.exception_conditions is distinct from old.exception_conditions
+       or new.escalation is distinct from old.escalation
+       or new.kpis is distinct from old.kpis
+       or new.effective_date is distinct from old.effective_date
+     )
+  then
+    new.standard_release_id := null;
+    new.draft_source := 'human';
+    new.draft_model := null;
+  end if;
+  return new;
+end;
+$func$;
+
+drop trigger if exists trg_a_khpos_localise_standard_policy_draft
+  on public.khpos_ops_policy_versions;
+create trigger trg_a_khpos_localise_standard_policy_draft
+before update on public.khpos_ops_policy_versions
+for each row execute function khpos_private.ops_localise_standard_policy_draft();
+
+drop trigger if exists trg_a_khpos_localise_standard_process_draft
+  on public.khpos_ops_process_versions;
+create trigger trg_a_khpos_localise_standard_process_draft
+before update on public.khpos_ops_process_versions
+for each row execute function khpos_private.ops_localise_standard_process_draft();
+
 alter table public.khpos_standard_releases enable row level security;
 alter table public.khpos_standard_installations enable row level security;
 
@@ -648,6 +818,54 @@ begin
   if v_release.id is null then
     raise exception 'KAEC Standard release not found.';
   end if;
+
+  if exists (
+    select 1
+    from public.khpos_ops_policies p
+    where p.organisation_id=p_organisation_id
+      and exists (
+        select 1
+        from jsonb_array_elements(v_release.snapshot->'policies') item
+        where item->>'code'=p.code
+      )
+      and not exists (
+        select 1 from public.khpos_ops_policy_versions pv
+        where pv.policy_id=p.id and pv.status='active'
+      )
+      and not exists (
+        select 1 from public.khpos_ops_policy_versions pv
+        where pv.policy_id=p.id
+          and pv.status='draft'
+          and pv.standard_release_id=v_release.id
+      )
+  ) then
+    raise exception 'A locally customised policy must complete independent governance before the KAEC Standard can be adopted.';
+  end if;
+
+  if exists (
+    select 1
+    from public.khpos_ops_processes p
+    where p.organisation_id=p_organisation_id
+      and exists (
+        select 1
+        from jsonb_array_elements(v_release.snapshot->'processes') item
+        where item->>'code'=p.code
+      )
+      and not exists (
+        select 1 from public.khpos_ops_process_versions pv
+        where pv.process_id=p.id and pv.status='active'
+      )
+      and not exists (
+        select 1 from public.khpos_ops_process_versions pv
+        where pv.process_id=p.id
+          and pv.status='draft'
+          and pv.standard_release_id=v_release.id
+      )
+  ) then
+    raise exception 'A locally customised process must complete independent governance before the KAEC Standard can be adopted.';
+  end if;
+
+  perform set_config('khpos.standard_adoption',v_release.id::text,true);
 
   for v_item in
     select value from jsonb_array_elements(v_release.snapshot->'policies')
