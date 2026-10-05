@@ -19,6 +19,7 @@ export const KHPOSEventTypes = [
   "academic_recovery_required",
   "learner_support_required",
   "asset_fault_reported",
+  "assessment_results_followup_required",
   "decision_approved",
   "critical_issue_created",
   "work_blocked",
@@ -31,6 +32,7 @@ export const KHPOSConditionKeys = [
   "decision_overdue",
   "kpi_failing",
   "process_unmapped",
+  "policy_review_due",
 ] as const;
 
 export interface KhposExecutionItem {

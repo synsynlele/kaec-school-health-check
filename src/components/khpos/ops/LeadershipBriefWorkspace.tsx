@@ -30,7 +30,7 @@ export function LeadershipBriefWorkspace({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [brief, setBrief] = useState<KhposLeadershipBrief | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(supabase ? "" : "Sign-in is not configured. Please contact your school administrator.");
 
   useEffect(() => {
     if (!supabase) return;
@@ -62,6 +62,8 @@ export function LeadershipBriefWorkspace({
       }
       setBrief(body.brief);
       setError("");
+    }).catch(() => {
+      if (active) setError("The leadership brief could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -191,7 +193,7 @@ export function LeadershipBriefWorkspace({
 
           {!brief.attention.items.length && (
             <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-              No current exception requires leadership intervention.
+              No current exception appears in your authorised attention queue.
             </p>
           )}
         </section>
@@ -223,6 +225,32 @@ export function LeadershipBriefWorkspace({
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Meeting preparation</p>
+              <h2 className="mt-2 text-2xl font-black">Evidence and outcomes for the agenda</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Prioritised from your authorised attention queue. Review each source before recording an outcome.</p>
+            </div>
+            <Link href={`/khpos/${organisationId}/decisions`} className="rounded-full bg-slate-950 px-4 py-2.5 text-xs font-black text-white">Record a decision</Link>
+          </div>
+          <ol className="mt-5 space-y-3">
+            {brief.meetingAgenda.items.map((item, index) => (
+              <li key={item.sourceId} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black uppercase tracking-wide text-brand-700">{index + 1}. {item.purpose} · {item.severity}</p>
+                <h3 className="mt-2 font-black">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.evidence}</p>
+                {item.dueAt && <p className="mt-2 text-xs font-semibold text-slate-500">Due {formatDate(item.dueAt)}</p>}
+                <p className="mt-3 text-sm font-semibold leading-6">{item.requestedOutcome}</p>
+                <Link href={item.href} className="mt-3 inline-flex items-center gap-2 text-sm font-black text-brand-700">Review source <ArrowRight className="size-4" /></Link>
+              </li>
+            ))}
+          </ol>
+          {!brief.meetingAgenda.items.length && <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Your attention queue has no items for this agenda. Use the operating signals and upcoming obligations to prepare improvement discussions.</p>}
+          {brief.meetingAgenda.remainingCount > 0 && <p className="mt-4 text-sm text-slate-600">{brief.meetingAgenda.remainingCount} more items remain in your attention queue. <Link href={`/khpos/${organisationId}/work`} className="font-bold text-brand-700">Review Today</Link></p>}
+          <p className="mt-4 text-xs leading-5 text-slate-500">Agenda prompts do not approve decisions or change work. Record conclusions in their source workspace so existing authority, evidence and verification controls apply.</p>
         </section>
 
         <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">

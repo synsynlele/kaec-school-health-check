@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { prepareKhposMeetingAgenda } from "@/lib/khpos/ops/meeting-agenda";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
@@ -29,6 +30,7 @@ export interface KhposLeadershipBrief {
     kind: string;
   }>;
   meetingQuestions: string[];
+  meetingAgenda: ReturnType<typeof prepareKhposMeetingAgenda>;
 }
 
 export class KhposLeadershipBriefError extends Error {
@@ -190,5 +192,6 @@ export async function getKhposLeadershipBrief(
     },
     upcoming,
     meetingQuestions,
+    meetingAgenda: prepareKhposMeetingAgenda(attention.items),
   };
 }

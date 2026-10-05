@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import { createRequire } from 'node:module';
+const source = fs.readFileSync('src/lib/khpos/ops/meeting-agenda.ts', 'utf8');
+const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.CommonJS}}).outputText;
+const testModule = {exports:{}};
+new Function('require', 'module', 'exports', compiled)(createRequire(import.meta.url), testModule, testModule.exports);
+const {prepareKhposMeetingAgenda} = testModule.exports;
+const item = (id, kind='work', severity='medium', dueAt=null) => ({id,kind,severity,dueAt,title:id,detail:'Authorised evidence',href:'/source/'+id,actionLabel:'Review'});
+const input = [item('later','work','high','2026-10-10'), item('decide','decision','critical'), item('earlier','issue','high','2026-10-01'), item('verify','verification'), item('action','implementation'), item('invalid','work','medium','bad-date')];
+const before=JSON.stringify(input);
+const result=prepareKhposMeetingAgenda([...input,input[0]]);
+assert.equal(JSON.stringify(input), before, 'Do not mutate the authorised queue');
+assert.deepEqual(result.items.slice(0,3).map(x=>x.sourceId), ['decide','earlier','later']);
+assert.equal(result.items.length,6,'Duplicate sources appear only once');
+assert.equal(result.items.find(x=>x.sourceId==='verify').purpose,'Verify');
+assert.equal(result.items.find(x=>x.sourceId==='action').purpose,'Follow through');
+assert.equal(result.items[0].purpose,'Decide');
+for(const row of result.items){const source=input.find(x=>x.id===row.sourceId);assert.equal(row.href,source.href);assert.equal(row.evidence,source.detail);}
+const bounded=prepareKhposMeetingAgenda(Array.from({length:20},(_,i)=>item(String(i))));
+assert.equal(bounded.items.length,12);assert.equal(bounded.remainingCount,8);
+assert.deepEqual(prepareKhposMeetingAgenda([]),{items:[],remainingCount:0});
+console.log('Meeting agenda: permission-preserving sources, urgency, actions, deduplication, bounds and empty states passed.');

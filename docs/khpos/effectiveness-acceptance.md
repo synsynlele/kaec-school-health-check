@@ -6,14 +6,14 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 |---|---|---|---|
 | 1 | Process to execution | Execution profiles; safe manual mapping and starts | Every approved process classified with staffed owner, controls, verifier and escalation |
 | 2 | Today | Role work, attention, verification and available starts | Full daily journey for every role; returned work and completion categories |
-| 3 | Triggers | Recurring, events, conditions; Wave 6 coverage, recovery, learner support and asset faults | Assessment completion, policy review and protected safeguarding flow; institution-specific mappings |
+| 3 | Triggers | Recurring, events, conditions; Coverage, recovery, learner support, asset faults, assessment results handoff and policy reviews | Protected safeguarding flow and institution-specific mappings; verify each school’s assessment/results process |
 | 4 | Exceptions | Overdue work/issues/decisions, blocked work and trigger failures | Repeated lateness, returned reports, missing controls, attendance and academic patterns |
 | 5 | Command Centre | Action-required leadership view and derived operating signals | Every agreed domain pulse linked to evidence, with honest insufficient-data states |
 | 6 | Ask KHPOS | Authorised governed-source answers and fallback | Verify all six agreed question types against role-authorised real records |
 | 7 | Operational intelligence | Evidence-to-process learning | Repeated narrative themes with source references and root-cause actions |
 | 8 | Performance | Evidence-derived institutional operating performance | Individual staff review assembled from timeliness, verification, KPIs and development |
 | 9 | Decision outcomes | Implementation work, evidence and independent outcome verification | Full approve-to-outcome journey across roles and returned outcomes |
-| 10 | Meetings | Leadership brief with questions and current exceptions | Meeting preparation, decisions, action follow-up and outcome linkage |
+| 10 | Meetings | Leadership brief with source-linked, prioritised agenda and requested outcomes | Saved meeting conclusions and complete meeting-to-decision-to-verified-outcome journey |
 | 11 | Calendar | Work, decisions, events, policy reviews and recurring obligations | Assessments, inspections, staff reviews, academic milestones and compliance coverage |
 | 12 | Notifications | Attention notifications and push infrastructure | Classification, deduplication, delivery retries and real closed-app delivery |
 | 13 | Mobile/PWA | Responsive workspaces and PWA | All critical journeys at 360, 390 and 430 px, including uploads and idle recovery |
@@ -41,3 +41,12 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 1. Complete assessment and policy-review connections, then review remaining event routing with actual school owners.
 2. Complete repeated failure detection and evidence-assembled staff review/meeting flows.
 3. Verify mobile, closed-app push, reliability alerts and multi-school journeys end to end.
+
+## Quota-protected handoff batch
+
+- Assessment cycles entering results pending create a configured results follow-up task; assessment or result approval remains governed.
+- Active policy review dates feed the existing hourly condition scheduler. A stable key per version and review date prevents duplicate daily review tasks.
+- Latest KPI state is selected before testing failure, so a past red measurement cannot override a newer healthy one.
+- Meeting preparation uses only the requesting leader’s authorised queue, ranks urgency, links evidence, and exposes remaining items beyond its twelve-item agenda.
+- Database rollback tests cover assessment transitions, controls, privacy, policy eligibility, deduplication and latest KPI state. Unit tests cover agenda priority, preserved sources, bounds and empty states.
+- Ordinary feature branches remain deployment-disabled. Local checks precede one production merge for the batch.
