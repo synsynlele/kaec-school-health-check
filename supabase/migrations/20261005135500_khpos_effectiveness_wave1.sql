@@ -260,7 +260,8 @@ begin
 
     select a.id into v_assignment_id
     from public.khpos_ops_role_assignments a
-    where a.organisation_id=p_organisation_id
+    join public.khpos_ops_roles ar on ar.id=a.role_id
+    where ar.organisation_id=p_organisation_id
       and a.role_id=v_profile.owner_role_id
       and a.status='active'
       and (
@@ -503,7 +504,10 @@ begin
     v_event_type := 'role_assignment_activated';
     v_event_key := 'role_assignment_activated:'||new.id::text;
     v_subject_id := new.id::text;
-    v_org := new.organisation_id;
+    select organisation_id into v_org
+    from public.khpos_ops_roles
+    where id=new.role_id;
+    if v_org is null then return new; end if;
     v_payload := jsonb_build_object(
       'roleId',new.role_id,'userId',new.user_id,'campusId',new.campus_id,'unitId',new.unit_id
     );
