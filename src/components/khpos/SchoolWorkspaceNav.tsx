@@ -93,6 +93,12 @@ const systemIntegrityLink = {
   icon: ShieldCheck,
 } as const;
 
+const standardLink = {
+  suffix: "/standard",
+  label: "KAEC Standard",
+  icon: LibraryBig,
+} as const;
+
 const operationsLinks = [
   { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
@@ -142,6 +148,7 @@ const workspaceLinks = [
   askKhposLink,
   onboardingLink,
   systemIntegrityLink,
+  standardLink,
   ...operationsLinks,
   ...intelligenceLinks,
 ] as const;
@@ -154,7 +161,7 @@ const dailyLinks = [
   operationsLinks[2],
 ] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [activationLink, askKhposLink, leadershipBriefLink, calendarLink, executionControlLink, systemIntegrityLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
+  { title: "Leadership", icon: Gauge, links: [activationLink, standardLink, askKhposLink, leadershipBriefLink, calendarLink, executionControlLink, systemIntegrityLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [onboardingLink, ...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },

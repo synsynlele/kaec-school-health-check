@@ -10,6 +10,7 @@ import {
   Loader2,
   ShieldCheck,
   TrendingUp,
+  Workflow,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposPortfolioIntelligence } from "@/lib/khpos/benchmarking";
@@ -153,6 +154,118 @@ export function PortfolioIntelligenceWorkspace() {
               <p className="mt-2 text-3xl font-black">{value}</p>
             </div>
           ))}
+        </section>
+
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                Portfolio observability
+              </p>
+              <h2 className="mt-2 text-2xl font-black">
+                Is the operating network healthy enough to scale?
+              </h2>
+              <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-500">
+                This privileged layer watches standard adoption, automation failures,
+                overdue execution, verification bottlenecks and unmapped critical processes.
+                It contains no learner-level data or raw evidence content.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-950 p-4 text-white">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                Current standard
+              </p>
+              <p className="mt-1 font-black">
+                {portfolio.observability.release?.code ?? "No active release"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              ["On current standard", portfolio.observability.summary.currentStandard],
+              ["Pending adoption", portfolio.observability.summary.pendingAdoption],
+              ["Missing standard", portfolio.observability.summary.missingInstallation],
+              ["Trigger failures · 7d", portfolio.observability.summary.failedTriggers7d],
+              ["P0 processes unmapped", portfolio.observability.summary.p0Unmapped],
+              ["Overdue work", portfolio.observability.summary.overdueWork],
+              ["Stale verification", portfolio.observability.summary.staleVerification],
+              ["Paused routines", portfolio.observability.summary.pausedRoutines],
+              ["Active routines", portfolio.observability.summary.activeRoutines],
+              ["Eligible institutions", portfolio.observability.summary.eligibleInstitutions],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                  {label}
+                </p>
+                <p className="mt-1 text-2xl font-black">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-black">Institution</th>
+                  <th className="px-4 py-3 font-black">Standard</th>
+                  <th className="px-4 py-3 font-black">Failed triggers</th>
+                  <th className="px-4 py-3 font-black">Overdue</th>
+                  <th className="px-4 py-3 font-black">Verification</th>
+                  <th className="px-4 py-3 font-black">P0 unmapped</th>
+                  <th className="px-4 py-3 font-black">Routines</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {portfolio.observability.institutions.map((institution) => (
+                  <tr key={institution.organisationId}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-start gap-2">
+                        {institution.attention === "standard" ? (
+                          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-700" />
+                        ) : (
+                          <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-700" />
+                        )}
+                        <div>
+                          <p className="font-black">{institution.name}</p>
+                          <p className="mt-1 text-[10px] font-black uppercase text-slate-500">
+                            {institution.attention}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={
+                          "rounded-full px-2.5 py-1 text-[10px] font-black uppercase " +
+                          (institution.standardStatus === "current"
+                            ? "bg-emerald-50 text-emerald-800"
+                            : institution.standardStatus === "pending_adoption"
+                              ? "bg-amber-50 text-amber-900"
+                              : "bg-red-50 text-red-800")
+                        }
+                      >
+                        {institution.standardStatus.replaceAll("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 font-black">{institution.failedTriggers7d}</td>
+                    <td className="px-4 py-4 font-black">{institution.overdueWork}</td>
+                    <td className="px-4 py-4 font-black">{institution.staleVerification}</td>
+                    <td className="px-4 py-4 font-black">{institution.p0Unmapped}</td>
+                    <td className="px-4 py-4">
+                      <div className="inline-flex items-center gap-2">
+                        <Workflow className="size-4 text-slate-400" />
+                        <span className="font-black">{institution.activeRoutines}</span>
+                        <span className="text-xs text-slate-400">
+                          active · {institution.pausedRoutines} paused
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section>
