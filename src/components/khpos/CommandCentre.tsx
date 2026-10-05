@@ -7,7 +7,9 @@ import {
   Activity,
   ArrowRight,
   Building2,
+  BrainCircuit,
   CheckCircle2,
+  Compass,
   Circle,
   FileText,
   Gauge,
@@ -277,6 +279,48 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             )}
           </section>
         )}
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <Link
+            href={`/khpos/${organisationId}/ask`}
+            className="rounded-3xl border border-brand-200 bg-brand-50 p-6 shadow-sm transition hover:border-brand-400"
+          >
+            <BrainCircuit className="size-6 text-brand-700" />
+            <p className="mt-5 text-xs font-black uppercase tracking-wide text-brand-700">
+              Ask KHP-OS
+            </p>
+            <p className="mt-2 text-lg font-black">Ask the institution, not your memory.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Query approved policies, processes and authorised operating evidence with source-backed answers.
+            </p>
+          </Link>
+          <Link
+            href={`/khpos/${organisationId}/system-integrity`}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300"
+          >
+            <ShieldCheck className="size-6 text-brand-700" />
+            <p className="mt-5 text-xs font-black uppercase tracking-wide text-slate-600">
+              System Integrity
+            </p>
+            <p className="mt-2 text-lg font-black">Find broken operating links.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Detect ownerless work, unmapped processes, stalled verification and governance contradictions.
+            </p>
+          </Link>
+          <Link
+            href={`/khpos/${organisationId}/onboarding`}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300"
+          >
+            <Compass className="size-6 text-brand-700" />
+            <p className="mt-5 text-xs font-black uppercase tracking-wide text-slate-600">
+              My Operating Guide
+            </p>
+            <p className="mt-2 text-lg font-black">Learn KHP-OS through your role.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              See your reporting line, required policies, processes and safe practice workflow.
+            </p>
+          </Link>
+        </section>
 
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
