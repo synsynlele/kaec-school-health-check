@@ -379,10 +379,15 @@ export async function getKhposOperationalRecords(
       item,
     ]),
   );
-  const checklistItemsByTemplate = new Map<
-    string,
-    NonNullable<typeof checklistItemResult.data>
-  >();
+  type ChecklistItemRow = {
+    id: string;
+    template_id: string;
+    position: number;
+    label: string;
+    guidance: string | null;
+    required: boolean;
+  };
+  const checklistItemsByTemplate = new Map<string, ChecklistItemRow[]>();
   for (const item of checklistItemResult.data ?? []) {
     const list = checklistItemsByTemplate.get(item.template_id) ?? [];
     list.push(item);
