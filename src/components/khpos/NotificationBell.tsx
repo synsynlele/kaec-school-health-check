@@ -19,6 +19,8 @@ type Alert = {
   href: string;
   dueAt: string | null;
   urgent: boolean;
+  level: "urgent" | "action" | "watch";
+  category: string;
 };
 
 type PushState = "unsupported" | "off" | "on" | "busy" | "unconfigured";
@@ -321,7 +323,7 @@ export function NotificationBell({
       {open && (
         <div className="absolute right-0 z-[90] mt-2 w-[min(90vw,22rem)] rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold">Active alerts</h2>
+            <h2 className="font-bold">Action Centre</h2>
             <button
               type="button"
               aria-label="Close notifications"
@@ -332,8 +334,8 @@ export function NotificationBell({
           </div>
 
           <p className="mt-1 text-xs text-slate-400">
-            Work and decisions due within seven days. Background device reminders
-            focus on urgent items and actions due within 24 hours.
+            Urgent and action-required items across work, verification, issues and
+            decisions. Device alerts stay focused on urgent or near-term action.
           </p>
 
           {pushState === "on" && (
@@ -407,7 +409,7 @@ export function NotificationBell({
           >
             {!error && alerts.length === 0 && (
               <p className="py-4 text-sm text-slate-400">
-                No work or decisions due soon.
+                Nothing currently needs your attention.
               </p>
             )}
 
@@ -420,10 +422,17 @@ export function NotificationBell({
               >
                 <span
                   className={`block text-xs font-bold ${
-                    alert.urgent ? "text-rose-300" : "text-mint-300"
+                    alert.level === "urgent"
+                      ? "text-rose-300"
+                      : alert.level === "action"
+                        ? "text-amber-300"
+                        : "text-mint-300"
                   }`}
                 >
                   {alert.detail}
+                </span>
+                <span className="block text-[10px] font-black uppercase tracking-wide text-slate-500">
+                  {alert.category.replaceAll("_", " ")} · {alert.level}
                 </span>
                 <span className="block truncate text-sm">{alert.title}</span>
                 {alert.dueAt && (
