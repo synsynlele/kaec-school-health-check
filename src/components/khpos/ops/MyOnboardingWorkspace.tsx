@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -47,16 +47,16 @@ export function MyOnboardingWorkspace({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [sampleEvidence, setSampleEvidence] = useState("");
 
-  async function accessToken() {
+  const accessToken = useCallback(async () => {
     if (!supabase) throw new Error("KHP-OS sign-in is not configured.");
     const { data: session } = await supabase.auth.getSession();
     if (!session.session?.access_token) {
       throw new Error("Your session has ended. Sign in again.");
     }
     return session.session.access_token;
-  }
+  }, [supabase]);
 
-  async function load() {
+  const load = useCallback(async () => {
     const token = await accessToken();
     const response = await fetch(
       `/api/khpos/ops/onboarding/${organisationId}`,
@@ -71,7 +71,7 @@ export function MyOnboardingWorkspace({
       throw new Error(body.error ?? "My Onboarding could not be loaded.");
     }
     setData(body.onboarding);
-  }
+  }, [accessToken, organisationId]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -88,7 +88,7 @@ export function MyOnboardingWorkspace({
     return () => {
       active = false;
     };
-  }, [organisationId, supabase]);
+  }, [load, supabase]);
 
   async function post(payload: Record<string, unknown>, key: string) {
     setBusy(key);
