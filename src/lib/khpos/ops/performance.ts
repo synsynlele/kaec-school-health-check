@@ -102,6 +102,40 @@ export interface KhposOpsPerformanceWorkspace {
     critical: number;
     criticalControlsFailing: number;
   };
+  derivedPerformance: {
+    periodDays: 30;
+    executionCoverage: {
+      percent: number | null;
+      configured: number;
+      approved: number;
+    };
+    workCompletionReliability: {
+      percent: number | null;
+      completed: number;
+      due: number;
+    };
+    onTimeCompletion: {
+      percent: number | null;
+      onTime: number;
+      completedWithDeadline: number;
+    };
+    verificationFirstPass: {
+      percent: number | null;
+      firstPass: number;
+      verified: number;
+    };
+    issueClosure: {
+      percent: number | null;
+      closed: number;
+      opened: number;
+    };
+    decisionActionClosure: {
+      percent: number | null;
+      implemented: number;
+      requiringAction: number;
+    };
+    recordsSubmitted: number;
+  };
   items: KhposOpsKpi[];
 }
 
@@ -179,6 +213,155 @@ function statusFor(message: string | undefined) {
       : 400;
 }
 
+function percent(numerator: number, denominator: number) {
+  if (denominator <= 0) return null;
+  return Math.round((numerator / denominator) * 1000) / 10;
+}
+
+async function getDerivedPerformance(organisationId: string) {
+  const client = admin();
+  const now = new Date();
+  const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const nowIso = now.toISOString();
+
+  const [
+    profilesResult,
+    dueWorkResult,
+    verifiedWorkResult,
+    issuesResult,
+    decisionsResult,
+    recordsResult,
+  ] = await Promise.all([
+    client
+      .from("khpos_ops_process_execution_profiles")
+      .select("id,status")
+      .eq("organisation_id", organisationId)
+      .neq("status", "not_applicable"),
+    client
+      .from("khpos_ops_work_items")
+      .select("id,status,due_at,completed_at")
+      .eq("organisation_id", organisationId)
+      .neq("status", "cancelled")
+      .gte("due_at", since)
+      .lte("due_at", nowIso),
+    client
+      .from("khpos_ops_work_items")
+      .select("id,verified_at")
+      .eq("organisation_id", organisationId)
+      .not("verified_at", "is", null)
+      .gte("verified_at", since),
+    client
+      .from("khpos_ops_issues")
+      .select("id,status")
+      .eq("organisation_id", organisationId)
+      .gte("created_at", since),
+    client
+      .from("khpos_ops_decisions")
+      .select("id,status")
+      .eq("organisation_id", organisationId)
+      .eq("action_required", true)
+      .not("decided_at", "is", null)
+      .gte("decided_at", since),
+    client
+      .from("khpos_ops_work_records")
+      .select("id", { count: "exact", head: true })
+      .eq("organisation_id", organisationId)
+      .gte("submitted_at", since),
+  ]);
+
+  const firstError = [
+    profilesResult.error,
+    dueWorkResult.error,
+    verifiedWorkResult.error,
+    issuesResult.error,
+    decisionsResult.error,
+    recordsResult.error,
+  ].find(Boolean);
+  if (firstError) {
+    throw new KhposOpsPerformanceError(
+      firstError?.message ?? "Derived performance could not be calculated.",
+      500,
+    );
+  }
+
+  const profiles = profilesResult.data ?? [];
+  const dueWork = dueWorkResult.data ?? [];
+  const verifiedWork = verifiedWorkResult.data ?? [];
+  const issues = issuesResult.data ?? [];
+  const decisions = decisionsResult.data ?? [];
+
+  const configured = profiles.filter((item) => item.status === "configured").length;
+  const completed = dueWork.filter((item) => item.status === "completed");
+  const onTime = completed.filter(
+    (item) =>
+      item.completed_at &&
+      item.due_at &&
+      Date.parse(item.completed_at) <= Date.parse(item.due_at),
+  ).length;
+
+  let returnedIds = new Set<string>();
+  if (verifiedWork.length) {
+    const { data: returns, error: returnsError } = await client
+      .from("khpos_ops_audit_events")
+      .select("object_id")
+      .eq("organisation_id", organisationId)
+      .eq("object_type", "work_item")
+      .eq("event_type", "ops_work_return")
+      .in(
+        "object_id",
+        verifiedWork.map((item) => item.id),
+      );
+
+    if (returnsError) {
+      throw new KhposOpsPerformanceError(returnsError.message, 500);
+    }
+    returnedIds = new Set((returns ?? []).map((item) => item.object_id));
+  }
+
+  const closedIssues = issues.filter((item) =>
+    ["resolved", "verified", "closed"].includes(item.status),
+  ).length;
+  const implementedDecisions = decisions.filter((item) =>
+    ["implemented", "closed"].includes(item.status),
+  ).length;
+  const firstPass = verifiedWork.filter((item) => !returnedIds.has(item.id)).length;
+
+  return {
+    periodDays: 30 as const,
+    executionCoverage: {
+      percent: percent(configured, profiles.length),
+      configured,
+      approved: profiles.length,
+    },
+    workCompletionReliability: {
+      percent: percent(completed.length, dueWork.length),
+      completed: completed.length,
+      due: dueWork.length,
+    },
+    onTimeCompletion: {
+      percent: percent(onTime, completed.length),
+      onTime,
+      completedWithDeadline: completed.length,
+    },
+    verificationFirstPass: {
+      percent: percent(firstPass, verifiedWork.length),
+      firstPass,
+      verified: verifiedWork.length,
+    },
+    issueClosure: {
+      percent: percent(closedIssues, issues.length),
+      closed: closedIssues,
+      opened: issues.length,
+    },
+    decisionActionClosure: {
+      percent: percent(implementedDecisions, decisions.length),
+      implemented: implementedDecisions,
+      requiringAction: decisions.length,
+    },
+    recordsSubmitted: recordsResult.count ?? 0,
+  };
+}
+
 export async function getKhposOpsPerformance(
   organisationId: string,
   userId: string,
@@ -198,7 +381,16 @@ export async function getKhposOpsPerformance(
     );
   }
 
-  return data as unknown as KhposOpsPerformanceWorkspace;
+  const workspace = data as unknown as Omit<
+    KhposOpsPerformanceWorkspace,
+    "derivedPerformance"
+  >;
+  const derivedPerformance = await getDerivedPerformance(organisationId);
+
+  return {
+    ...workspace,
+    derivedPerformance,
+  };
 }
 
 export async function createKhposOpsKpi(
