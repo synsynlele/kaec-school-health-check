@@ -469,8 +469,7 @@ begin
         ) values (
           v_policy_id,v_role_id,v_role->>'requirementType'
         )
-        on conflict (policy_id,role_id) do update
-        set requirement_type=excluded.requirement_type;
+        on conflict (policy_id,role_id) do nothing;
       end if;
     end loop;
   end loop;
@@ -1073,22 +1072,6 @@ begin
       published_at=excluded.published_at,
       updated_at=now()
   returning id into v_release;
-
-  update public.khpos_ops_policy_versions pv
-  set standard_release_id=v_release
-  from public.khpos_ops_policies p
-  where pv.policy_id=p.id
-    and p.organisation_id=v_source
-    and pv.status='active'
-    and pv.standard_release_id is null;
-
-  update public.khpos_ops_process_versions pv
-  set standard_release_id=v_release
-  from public.khpos_ops_processes p
-  where pv.process_id=p.id
-    and p.organisation_id=v_source
-    and pv.status='active'
-    and pv.standard_release_id is null;
 
   insert into public.khpos_standard_installations(
     organisation_id,release_id,status,installed_by,installed_at,
