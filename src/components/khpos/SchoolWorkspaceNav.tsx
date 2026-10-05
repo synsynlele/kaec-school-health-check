@@ -46,7 +46,7 @@ const transformLinks = [
   { suffix: "/priorities", label: "Priorities", icon: Target },
   { suffix: "/implementation", label: "Implementation", icon: Workflow },
   { suffix: "/playbooks", label: "Playbooks", icon: BookOpen },
-  { suffix: "/evidence", label: "Evidence", icon: FileCheck2 },
+  { suffix: "/evidence", label: "Transformation Evidence", icon: FileCheck2 },
   { suffix: "/reviews", label: "Reviews", icon: Gauge },
   { suffix: "/improvement", label: "Improvement", icon: Activity },
 ] as const;
@@ -88,6 +88,7 @@ const operationsLinks = [
   { suffix: "/events", label: "Events & Programmes", icon: CalendarClock },
   { suffix: "/parent-journeys", label: "Parent Journey", icon: MessageCircle },
   { suffix: "/network-pulse", label: "Network Pulse", icon: Gauge },
+  { suffix: "/records", label: "Records & Evidence", icon: FileCheck2 },
 ] as const;
 
 const intelligenceLinks = [
@@ -116,7 +117,7 @@ const navigationGroups = [
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
   { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 22), operationsLinks[24], operationsLinks[28]] },
-  { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[27], operationsLinks[23]] },
+  { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[27], operationsLinks[23], operationsLinks[30]] },
 ] as const;
 
 function NavigationGroup({ group, base, pathname, onNavigate }: {
