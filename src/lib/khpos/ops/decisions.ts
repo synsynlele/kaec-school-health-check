@@ -290,10 +290,11 @@ export async function actOnKhposOpsDecision(
   action: KhposOpsDecisionAction,
   payload: KhposOpsDecisionActionPayload = {},
 ): Promise<KhposOpsDecisionsWorkspace> {
+  const outcomeNote = payload.outcomeNote?.trim();
   const outcomeClose =
     action === "close" &&
-    payload.outcomeStatus &&
-    payload.outcomeNote?.trim();
+    Boolean(payload.outcomeStatus) &&
+    Boolean(outcomeNote);
 
   const { error } = outcomeClose
     ? await admin().rpc("khpos_ops_close_decision_outcome_server", {
@@ -301,7 +302,7 @@ export async function actOnKhposOpsDecision(
         p_organisation_id: organisationId,
         p_decision_id: decisionId,
         p_outcome_status: payload.outcomeStatus,
-        p_outcome_note: payload.outcomeNote.trim(),
+        p_outcome_note: outcomeNote!,
       })
     : await admin().rpc("khpos_ops_decision_action_server", {
         p_actor_user_id: userId,
