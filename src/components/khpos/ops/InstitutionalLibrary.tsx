@@ -541,7 +541,7 @@ export function InstitutionalLibrary({
             <div className="mt-6 space-y-4">
               {processes.length ? (
                 processes.map((process) => (
-                  <ProcessDocument key={process.id} process={process} />
+                  <ProcessDocument key={process.id} process={process} organisationId={organisationId} />
                 ))
               ) : (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm leading-6 text-slate-600">
