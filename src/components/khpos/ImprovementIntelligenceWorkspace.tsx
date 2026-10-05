@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import type { KhposOperationalLearningWorkspace } from "@/lib/khpos/ops/learning";
 
 const SYSTEM_NAMES: Record<string, string> = {
   identity_direction: "Identity & Direction",
@@ -66,6 +67,8 @@ export function ImprovementIntelligenceWorkspace({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [workspace, setWorkspace] = useState<KhposImprovementWorkspace | null>(null);
+  const [operationalLearning, setOperationalLearning] =
+    useState<KhposOperationalLearningWorkspace | null>(null);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -83,21 +86,49 @@ export function ImprovementIntelligenceWorkspace({
         return;
       }
 
-      const response = await fetch(`/api/khpos/improvement/${organisationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const body = (await response.json()) as {
-        ok?: boolean;
-        workspace?: KhposImprovementWorkspace;
-        error?: string;
-      };
+      const [response, learningResponse] = await Promise.all([
+        fetch(`/api/khpos/improvement/${organisationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch(`/api/khpos/ops/learning/${organisationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+      ]);
+
+      const [body, learningBody] = (await Promise.all([
+        response.json(),
+        learningResponse.json(),
+      ])) as [
+        {
+          ok?: boolean;
+          workspace?: KhposImprovementWorkspace;
+          error?: string;
+        },
+        {
+          ok?: boolean;
+          workspace?: KhposOperationalLearningWorkspace;
+          error?: string;
+        },
+      ];
+
       if (!active) return;
       if (!response.ok || !body.ok || !body.workspace) {
         setError(body.error ?? "Improvement intelligence could not be loaded.");
         return;
       }
+
       setWorkspace(body.workspace);
+      if (
+        learningResponse.ok &&
+        learningBody.ok &&
+        learningBody.workspace
+      ) {
+        setOperationalLearning(learningBody.workspace);
+      } else {
+        setOperationalLearning(null);
+      }
       setError("");
     });
 
@@ -354,7 +385,7 @@ export function ImprovementIntelligenceWorkspace({
           </>
         )}
 
-        {workspace.operationalLearning.access && (
+        {operationalLearning && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -373,9 +404,9 @@ export function ImprovementIntelligenceWorkspace({
               <Wrench className="hidden size-8 shrink-0 text-brand-700 sm:block" />
             </div>
 
-            {workspace.operationalLearning.signals.length ? (
+            {operationalLearning.signals.length ? (
               <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                {workspace.operationalLearning.signals.map((signal) => (
+                {operationalLearning.signals.map((signal) => (
                   <article
                     key={signal.processId}
                     className={"rounded-3xl border p-5 " + learningTone(signal.severity)}
