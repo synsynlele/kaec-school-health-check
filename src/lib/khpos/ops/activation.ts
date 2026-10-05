@@ -602,7 +602,7 @@ export async function getKhposActivation(
         unassignedMembers > 0
           ? `${unassignedMembers} active school member${unassignedMembers === 1 ? "" : "s"} still need an operating-role assignment.`
           : "Core School Custodian / School Guardian authority is incomplete.",
-      href: `/khpos/${organisationId}/team`,
+      href: `/khpos/${organisationId}/people`,
       blocking: true,
     });
   }
