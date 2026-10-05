@@ -93,6 +93,21 @@ export interface KhposOpsVerificationItem extends KhposOpsWorkItem {
   ownerUserId: string;
 }
 
+export interface KhposOpsAvailableProcess {
+  processId: string;
+  code: string;
+  title: string;
+  criticality: "P0" | "P1" | "P2";
+  ownerRoleTitle: string;
+  campusId: string | null;
+  campusName: string | null;
+  unitId: string | null;
+  unitName: string | null;
+  triggerSummary: string | null;
+  evidenceRequired: boolean;
+  verificationRequired: boolean;
+}
+
 export interface KhposOpsMyWork {
   organisation: { id: string; name: string };
   membershipRole: string;
@@ -105,6 +120,7 @@ export interface KhposOpsMyWork {
     completed: number;
   };
   items: KhposOpsWorkItem[];
+  availableProcesses: KhposOpsAvailableProcess[];
   verificationQueue: KhposOpsVerificationItem[];
 }
 
@@ -266,6 +282,155 @@ async function hydrateArtifacts<T extends KhposOpsWorkItem>(
     recordRequirements: requirementsByWork.get(item.id) ?? [],
     evidenceRecords: evidenceByWork.get(item.id) ?? [],
   }));
+}
+
+async function getAvailableManualProcesses(
+  organisationId: string,
+  userId: string,
+): Promise<KhposOpsAvailableProcess[]> {
+  const client = admin();
+
+  const { data: assignments, error: assignmentError } = await client
+    .from("khpos_ops_role_assignments")
+    .select("id,role_id,campus_id,unit_id")
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  if (assignmentError) {
+    throw new KhposOpsWorkError(assignmentError.message, 500);
+  }
+  if (!assignments?.length) return [];
+
+  const assignmentRoleIds = unique(assignments.map((item) => item.role_id));
+  const { data: roles, error: rolesError } = await client
+    .from("khpos_ops_roles")
+    .select("id,title")
+    .eq("organisation_id", organisationId)
+    .eq("status", "active")
+    .in("id", assignmentRoleIds);
+
+  if (rolesError) throw new KhposOpsWorkError(rolesError.message, 500);
+  if (!roles?.length) return [];
+
+  const roleById = new Map(roles.map((role) => [role.id, role]));
+  const roleIds = roles.map((role) => role.id);
+
+  const { data: profiles, error: profileError } = await client
+    .from("khpos_ops_process_execution_profiles")
+    .select(
+      "process_id,owner_role_id,trigger_summary,evidence_required,verification_required",
+    )
+    .eq("organisation_id", organisationId)
+    .eq("status", "configured")
+    .eq("activation_mode", "manual_on_demand")
+    .in("owner_role_id", roleIds);
+
+  if (profileError) throw new KhposOpsWorkError(profileError.message, 500);
+  if (!profiles?.length) return [];
+
+  const processIds = unique(profiles.map((profile) => profile.process_id));
+  const campusIds = unique(assignments.map((assignment) => assignment.campus_id));
+  const unitIds = unique(assignments.map((assignment) => assignment.unit_id));
+  const [
+    { data: processes, error: processError },
+    { data: versions, error: versionError },
+    { data: campuses, error: campusError },
+    { data: units, error: unitError },
+  ] = await Promise.all([
+    client
+      .from("khpos_ops_processes")
+      .select("id,code,title,criticality,status")
+      .eq("organisation_id", organisationId)
+      .in("id", processIds)
+      .neq("status", "retired"),
+    client
+      .from("khpos_ops_process_versions")
+      .select("process_id")
+      .in("process_id", processIds)
+      .eq("status", "active"),
+    campusIds.length
+      ? client
+          .from("khpos_ops_campuses")
+          .select("id,name")
+          .eq("organisation_id", organisationId)
+          .in("id", campusIds)
+      : Promise.resolve({ data: [], error: null }),
+    unitIds.length
+      ? client
+          .from("khpos_ops_units")
+          .select("id,name")
+          .eq("organisation_id", organisationId)
+          .in("id", unitIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (processError || versionError || campusError || unitError) {
+    throw new KhposOpsWorkError(
+      processError?.message ??
+        versionError?.message ??
+        campusError?.message ??
+        unitError?.message ??
+        "Available processes could not be loaded.",
+      500,
+    );
+  }
+
+  const activeProcessIds = new Set(
+    (versions ?? []).map((version) => version.process_id),
+  );
+  const processById = new Map(
+    (processes ?? [])
+      .filter((process) => activeProcessIds.has(process.id))
+      .map((process) => [process.id, process]),
+  );
+
+  const campusById = new Map(
+    (campuses ?? []).map((campus) => [campus.id, campus.name]),
+  );
+  const unitById = new Map(
+    (units ?? []).map((unit) => [unit.id, unit.name]),
+  );
+
+  const items: KhposOpsAvailableProcess[] = [];
+  for (const profile of profiles) {
+    const process = processById.get(profile.process_id);
+    const role = profile.owner_role_id
+      ? roleById.get(profile.owner_role_id)
+      : undefined;
+    if (!process || !role || !profile.owner_role_id) continue;
+
+    for (const assignment of assignments.filter(
+      (item) => item.role_id === profile.owner_role_id,
+    )) {
+      items.push({
+        processId: process.id,
+        code: process.code,
+        title: process.title,
+        criticality: process.criticality as "P0" | "P1" | "P2",
+        ownerRoleTitle: role.title,
+        campusId: assignment.campus_id,
+        campusName: assignment.campus_id
+          ? campusById.get(assignment.campus_id) ?? null
+          : null,
+        unitId: assignment.unit_id,
+        unitName: assignment.unit_id
+          ? unitById.get(assignment.unit_id) ?? null
+          : null,
+        triggerSummary: profile.trigger_summary,
+        evidenceRequired: profile.evidence_required,
+        verificationRequired: profile.verification_required,
+      });
+    }
+  }
+
+  const criticalityRank = { P0: 0, P1: 1, P2: 2 };
+  items.sort(
+    (a, b) =>
+      criticalityRank[a.criticality] - criticalityRank[b.criticality] ||
+      a.code.localeCompare(b.code),
+  );
+
+  return items;
 }
 
 async function getVerificationQueue(
@@ -555,10 +720,10 @@ export async function getKhposOpsMyWork(
 
   const base = data as unknown as Omit<
     KhposOpsMyWork,
-    "verificationQueue" | "items"
+    "verificationQueue" | "availableProcesses" | "items"
   > & { items: KhposOpsWorkItem[] };
 
-  const [items, verificationQueue] = await Promise.all([
+  const [items, verificationQueue, availableProcesses] = await Promise.all([
     hydrateArtifacts(
       organisationId,
       base.items.map((item) => ({
@@ -569,11 +734,13 @@ export async function getKhposOpsMyWork(
       })),
     ),
     getVerificationQueue(organisationId, userId),
+    getAvailableManualProcesses(organisationId, userId),
   ]);
 
   return {
     ...base,
     items,
+    availableProcesses,
     verificationQueue,
   };
 }

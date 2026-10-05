@@ -56,6 +56,9 @@ export interface KhposExecutionItem {
   } | null;
   controlledRecordCount: number;
   ownerParticipationRoleId: string | null;
+  ownerParticipationCount: number;
+  safeMappingCandidate: boolean;
+  blockedByMissingAssignment: boolean;
   recentTriggerFailures: number;
 }
 
@@ -74,6 +77,10 @@ export interface KhposExecutionSnapshot {
     continuous: number;
     external: number;
     triggerFailures7d: number;
+    safeMappingCandidates: number;
+    blockedMissingAssignment: number;
+    multipleOwner: number;
+    noOwner: number;
   };
   items: KhposExecutionItem[];
 }
@@ -92,11 +99,42 @@ export interface ConfigureKhposExecutionInput {
   kpiCodes?: string[];
 }
 
+export interface KhposSafeExecutionMappingResult {
+  mapped: number;
+  mappedP0: number;
+  blockedMissingAssignment: number;
+  multipleOwner: number;
+  noOwner: number;
+}
+
+export interface KhposManualProcessStartResult {
+  workId: string;
+  processId: string;
+  processCode: string;
+  processTitle: string;
+  ownerRoleId: string;
+  ownerRoleTitle: string;
+  ownerIsActor: boolean;
+  campusId: string | null;
+  unitId: string | null;
+  dueAt: string | null;
+}
+
+export interface StartKhposManualProcessInput {
+  processId: string;
+  campusId?: string | null;
+  unitId?: string | null;
+}
+
 export class KhposExecutionError extends Error {
   constructor(message: string, public readonly status = 400) {
     super(message);
     this.name = "KhposExecutionError";
   }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function admin(): SupabaseClient {
@@ -253,6 +291,20 @@ export async function getKhposExecutionSnapshot(
   ].find(Boolean);
   if (error) throw new KhposExecutionError(error?.message ?? "Execution control could not be loaded.", 500);
 
+  const activeRoleIds = (roleResult.data ?? []).map((role) => role.id);
+  const { data: activeAssignments, error: activeAssignmentsError } =
+    activeRoleIds.length
+      ? await client
+          .from("khpos_ops_role_assignments")
+          .select("role_id")
+          .in("role_id", activeRoleIds)
+          .eq("status", "active")
+      : { data: [], error: null };
+
+  if (activeAssignmentsError) {
+    throw new KhposExecutionError(activeAssignmentsError.message, 500);
+  }
+
   const activeProcessIds = new Set((versionResult.data ?? []).map((row) => row.process_id));
   const processes = (processResult.data ?? []).filter((row) => activeProcessIds.has(row.id));
   const profileByProcess = new Map((profileResult.data ?? []).map((row) => [row.process_id, row]));
@@ -262,8 +314,14 @@ export async function getKhposExecutionSnapshot(
   for (const row of recordResult.data ?? []) {
     recordCount.set(row.process_id, (recordCount.get(row.process_id) ?? 0) + 1);
   }
-  const ownerRoleByProcess = new Map(
-    (processRoleResult.data ?? []).map((row) => [row.process_id, row.role_id]),
+  const ownerRolesByProcess = new Map<string, string[]>();
+  for (const row of processRoleResult.data ?? []) {
+    const roles = ownerRolesByProcess.get(row.process_id) ?? [];
+    roles.push(row.role_id);
+    ownerRolesByProcess.set(row.process_id, roles);
+  }
+  const activeAssignedRoleIds = new Set(
+    (activeAssignments ?? []).map((assignment) => assignment.role_id),
   );
   const failuresByProfile = new Map<string, number>();
   for (const row of failureResult.data ?? []) {
@@ -279,6 +337,12 @@ export async function getKhposExecutionSnapshot(
       if (!profile) return null;
       const recurring = recurringByProcess.get(process.id);
       const ownerRole = profile.owner_role_id ? roleById.get(profile.owner_role_id) : null;
+      const participationRoles = ownerRolesByProcess.get(process.id) ?? [];
+      const singleParticipationRoleId =
+        participationRoles.length === 1 ? participationRoles[0] : null;
+      const singleOwnerHasAssignment =
+        !!singleParticipationRoleId &&
+        activeAssignedRoleIds.has(singleParticipationRoleId);
       return {
         profileId: profile.id,
         processId: process.id,
@@ -303,7 +367,17 @@ export async function getKhposExecutionSnapshot(
           ? { code: recurring.code, title: recurring.title, cadence: recurring.cadence }
           : null,
         controlledRecordCount: recordCount.get(process.id) ?? 0,
-        ownerParticipationRoleId: ownerRoleByProcess.get(process.id) ?? null,
+        ownerParticipationRoleId: singleParticipationRoleId,
+        ownerParticipationCount: participationRoles.length,
+        safeMappingCandidate:
+          profile.status === "needs_mapping" &&
+          profile.activation_mode === "manual_on_demand" &&
+          participationRoles.length === 1 &&
+          singleOwnerHasAssignment,
+        blockedByMissingAssignment:
+          profile.status === "needs_mapping" &&
+          participationRoles.length === 1 &&
+          !singleOwnerHasAssignment,
         recentTriggerFailures: failuresByProfile.get(profile.id) ?? 0,
       };
     })
@@ -326,6 +400,20 @@ export async function getKhposExecutionSnapshot(
     continuous: items.filter((item) => item.status === "configured" && item.mode === "continuous_control").length,
     external: items.filter((item) => item.status === "configured" && item.mode === "external_system").length,
     triggerFailures7d: items.reduce((sum, item) => sum + item.recentTriggerFailures, 0),
+    safeMappingCandidates: items.filter((item) => item.safeMappingCandidate).length,
+    blockedMissingAssignment: items.filter(
+      (item) => item.blockedByMissingAssignment,
+    ).length,
+    multipleOwner: items.filter(
+      (item) =>
+        item.status === "needs_mapping" &&
+        item.ownerParticipationCount > 1,
+    ).length,
+    noOwner: items.filter(
+      (item) =>
+        item.status === "needs_mapping" &&
+        item.ownerParticipationCount === 0,
+    ).length,
   };
 
   return {
@@ -464,4 +552,84 @@ export async function configureKhposExecution(
   if (error) throw new KhposExecutionError(error.message, 400);
 
   return getKhposExecutionSnapshot(organisationId, userId);
+}
+
+
+export async function applySafeKhposExecutionMappings(
+  organisationId: string,
+  userId: string,
+): Promise<{
+  result: KhposSafeExecutionMappingResult;
+  execution: KhposExecutionSnapshot;
+}> {
+  const { data, error } = await admin().rpc(
+    "khpos_ops_apply_safe_execution_mappings_server",
+    {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+    },
+  );
+
+  if (error || !isObject(data)) {
+    const message =
+      error?.message ?? "Safe execution mappings could not be applied.";
+    throw new KhposExecutionError(
+      message,
+      /membership|leadership|required/i.test(message) ? 403 : 400,
+    );
+  }
+
+  const result: KhposSafeExecutionMappingResult = {
+    mapped: Number(data.mapped ?? 0),
+    mappedP0: Number(data.mappedP0 ?? 0),
+    blockedMissingAssignment: Number(data.blockedMissingAssignment ?? 0),
+    multipleOwner: Number(data.multipleOwner ?? 0),
+    noOwner: Number(data.noOwner ?? 0),
+  };
+
+  return {
+    result,
+    execution: await getKhposExecutionSnapshot(organisationId, userId),
+  };
+}
+
+export async function startKhposManualProcess(
+  organisationId: string,
+  userId: string,
+  input: StartKhposManualProcessInput,
+): Promise<KhposManualProcessStartResult> {
+  const { data, error } = await admin().rpc(
+    "khpos_ops_start_manual_process_server",
+    {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+      p_process_id: input.processId,
+      p_campus_id: input.campusId ?? null,
+      p_unit_id: input.unitId ?? null,
+    },
+  );
+
+  if (error || !isObject(data)) {
+    const message = error?.message ?? "The process could not be started.";
+    throw new KhposExecutionError(
+      message,
+      /membership|leader|accountable role holder|authorised/i.test(message)
+        ? 403
+        : 400,
+    );
+  }
+
+  return {
+    workId: String(data.workId),
+    processId: String(data.processId),
+    processCode: String(data.processCode),
+    processTitle: String(data.processTitle),
+    ownerRoleId: String(data.ownerRoleId),
+    ownerRoleTitle: String(data.ownerRoleTitle),
+    ownerIsActor: Boolean(data.ownerIsActor),
+    campusId:
+      typeof data.campusId === "string" ? data.campusId : null,
+    unitId: typeof data.unitId === "string" ? data.unitId : null,
+    dueAt: typeof data.dueAt === "string" ? data.dueAt : null,
+  };
 }

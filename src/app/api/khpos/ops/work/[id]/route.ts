@@ -14,12 +14,20 @@ import {
   updateKhposOpsWork,
   verifyKhposOpsWork,
 } from "@/lib/khpos/ops/work";
+import {
+  KhposExecutionError,
+  startKhposManualProcess,
+} from "@/lib/khpos/ops/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function errorResponse(error: unknown) {
-  if (error instanceof KhposAuthError || error instanceof KhposOpsWorkError) {
+  if (
+    error instanceof KhposAuthError ||
+    error instanceof KhposOpsWorkError ||
+    error instanceof KhposExecutionError
+  ) {
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: error.status },
@@ -83,8 +91,12 @@ export async function POST(
       | "evidence"
       | "record_submit"
       | "verify"
-      | "return_verification";
+      | "return_verification"
+      | "start_process";
     workItemId?: string;
+    processId?: string;
+    campusId?: string | null;
+    unitId?: string | null;
     note?: string;
     templateItemId?: string;
     response?: unknown;
@@ -104,15 +116,45 @@ export async function POST(
     );
   }
 
-  if (!payload.workItemId || !UUID_RE.test(payload.workItemId)) {
-    return NextResponse.json(
-      { ok: false, error: "A valid work item is required." },
-      { status: 400 },
-    );
-  }
-
   try {
     const user = await authenticatedUser(request);
+
+    if (payload.action === "start_process") {
+      if (!payload.processId || !UUID_RE.test(payload.processId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid controlled process is required." },
+          { status: 400 },
+        );
+      }
+
+      if (payload.campusId && !UUID_RE.test(payload.campusId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid campus is required." },
+          { status: 400 },
+        );
+      }
+      if (payload.unitId && !UUID_RE.test(payload.unitId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid unit is required." },
+          { status: 400 },
+        );
+      }
+
+      await startKhposManualProcess(id, user.id, {
+        processId: payload.processId,
+        campusId: payload.campusId ?? null,
+        unitId: payload.unitId ?? null,
+      });
+      const work = await getKhposOpsMyWork(id, user.id);
+      return NextResponse.json({ ok: true, work });
+    }
+
+    if (!payload.workItemId || !UUID_RE.test(payload.workItemId)) {
+      return NextResponse.json(
+        { ok: false, error: "A valid work item is required." },
+        { status: 400 },
+      );
+    }
 
     if (
       payload.action === "start" ||

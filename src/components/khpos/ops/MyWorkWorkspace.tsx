@@ -20,6 +20,7 @@ import { WorkRecordRequirementCard } from "@/components/khpos/ops/WorkRecordRequ
 import type { KhposOpsLibrary } from "@/lib/khpos/ops/library";
 import type { KhposAttentionSnapshot } from "@/lib/khpos/ops/attention";
 import type {
+  KhposOpsAvailableProcess,
   KhposOpsMyWork,
   KhposOpsWorkItem,
 } from "@/lib/khpos/ops/work";
@@ -47,6 +48,7 @@ export function MyWorkWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
@@ -131,6 +133,65 @@ export function MyWorkWorkspace({
     };
   }, [organisationId, supabase]);
 
+  async function startAvailableProcess(item: KhposOpsAvailableProcess) {
+    const token = await accessToken();
+    if (!token) {
+      setError("Your session has ended. Sign in again to continue.");
+      return;
+    }
+
+    const busyKey = [
+      "process",
+      item.processId,
+      item.campusId ?? "school",
+      item.unitId ?? "all",
+    ].join(":");
+    setBusyId(busyKey);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "start_process",
+          processId: item.processId,
+          campusId: item.campusId,
+          unitId: item.unitId,
+        }),
+      });
+
+      const body = (await response.json()) as {
+        ok?: boolean;
+        work?: KhposOpsMyWork;
+        error?: string;
+      };
+
+      if (!response.ok || !body.ok || !body.work) {
+        setError(body.error ?? "The process could not be started.");
+        return;
+      }
+
+      setWork(body.work);
+      setMessage(
+        item.code +
+          " has been started and added to your work queue.",
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The process could not be started.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function act(
     item: KhposOpsWorkItem,
     payload: Record<string, unknown>,
@@ -143,6 +204,7 @@ export function MyWorkWorkspace({
 
     setBusyId(item.id);
     setError("");
+    setMessage("");
 
     const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
       method: "POST",
@@ -252,6 +314,12 @@ export function MyWorkWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        {message && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
+            {message}
+          </div>
+        )}
+
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
@@ -320,6 +388,102 @@ export function MyWorkWorkspace({
                   </div>
                 </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+
+        {work.availableProcesses.length > 0 && (
+          <section className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                  Available to start
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  On-demand responsibilities you own
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  These approved processes are mapped to roles you currently hold.
+                  Start one only when its real trigger occurs; KHP-OS will create the
+                  governed work, route it to your operating scope and preserve its
+                  reports, evidence and verification controls.
+                </p>
+              </div>
+              <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-800">
+                {work.availableProcesses.length} available
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {work.availableProcesses.map((process) => {
+                const busyKey = [
+                  "process",
+                  process.processId,
+                  process.campusId ?? "school",
+                  process.unitId ?? "all",
+                ].join(":");
+                const isBusy = busyId === busyKey;
+                const scope = [
+                  process.campusName,
+                  process.unitName,
+                ].filter(Boolean).join(" · ");
+
+                return (
+                  <article
+                    key={busyKey}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black text-brand-800">
+                        {process.code}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black text-slate-600">
+                        {process.criticality}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black">{process.title}</h3>
+                    <p className="mt-1 text-xs font-bold text-slate-500">
+                      {process.ownerRoleTitle}
+                      {scope ? ` · ${scope}` : " · School-wide role"}
+                    </p>
+
+                    {process.triggerSummary && (
+                      <p className="mt-4 text-sm leading-6 text-slate-600">
+                        <span className="font-black text-slate-900">Start when: </span>
+                        {process.triggerSummary}
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-black">
+                      {process.evidenceRequired && (
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-900">
+                          Evidence required
+                        </span>
+                      )}
+                      {process.verificationRequired && (
+                        <span className="rounded-full bg-violet-50 px-3 py-1 text-violet-900">
+                          Independent verification
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => void startAvailableProcess(process)}
+                      className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
+                    >
+                      {isBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Play className="size-4" />
+                      )}
+                      Start Process
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}
