@@ -147,8 +147,6 @@ export interface KhposOpsCreateDecisionInput {
   implementationTitle?: string | null;
   implementationExpectedOutcome?: string | null;
   implementationDueAt?: string | null;
-  outcomeStatus?: "achieved" | "partially_achieved" | "not_achieved" | null;
-  outcomeNote?: string | null;
 }
 
 export type KhposOpsDecisionAction =
@@ -168,6 +166,8 @@ export interface KhposOpsDecisionActionPayload {
   implementationTitle?: string | null;
   implementationExpectedOutcome?: string | null;
   implementationDueAt?: string | null;
+  outcomeStatus?: "achieved" | "partially_achieved" | "not_achieved" | null;
+  outcomeNote?: string | null;
 }
 
 export class KhposOpsDecisionError extends Error {
