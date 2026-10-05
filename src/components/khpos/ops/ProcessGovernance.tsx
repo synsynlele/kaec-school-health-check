@@ -24,6 +24,8 @@ type Revision = {
   author_id: string | null;
   author_role_codes: string[];
   review_note: string | null;
+  draft_source?: "human" | "ai_starter" | "kaec_baseline";
+  draft_model?: string | null;
 };
 
 function dateForSchool() {
@@ -86,6 +88,47 @@ export function ProcessGovernance({
   const process = processes.find((item) => item.id === selected);
   const current = versions.find(
     (item) => item.process_id === selected && ["draft", "in_review"].includes(item.status),
+  );
+  const processOptions = useMemo(
+    () =>
+      processes
+        .map((item) => {
+          const revision = versions.find(
+            (version) =>
+              version.process_id === item.id &&
+              ["draft", "in_review"].includes(version.status),
+          );
+          const state =
+            revision?.status === "in_review" && revision.author_id !== userId
+              ? "REVIEW"
+              : revision?.status === "draft" && revision.author_id === userId
+                ? "YOUR DRAFT"
+                : revision?.status === "in_review"
+                  ? "IN REVIEW"
+                  : !item.activeVersion
+                    ? "MISSING"
+                    : "ACTIVE";
+          const rank =
+            state === "REVIEW"
+              ? 0
+              : state === "YOUR DRAFT"
+                ? 1
+                : state === "IN REVIEW"
+                  ? 2
+                  : state === "MISSING" && item.criticality === "P0"
+                    ? 3
+                    : state === "MISSING"
+                      ? 4
+                      : 5;
+          return { item, state, rank };
+        })
+        .sort(
+          (a, b) =>
+            a.rank - b.rank ||
+            a.item.criticality.localeCompare(b.item.criticality) ||
+            a.item.code.localeCompare(b.item.code),
+        ),
+    [processes, versions, userId],
   );
   const reviewerIsVision = roleCodes.includes("VISION_CUSTODIAN");
   const reviewerIsSchoolCustodian = roleCodes.includes("SCHOOL_CUSTODIAN");
@@ -266,14 +309,11 @@ export function ProcessGovernance({
           onChange={(event) => choose(event.target.value)}
         >
           <option value="">Select a registered process</option>
-          {processes.map((item) => {
-            const open = versions.find((version) => version.process_id === item.id && ["draft", "in_review"].includes(version.status));
-            return (
-              <option value={item.id} key={item.id}>
-                {item.code} · {item.title} ({item.criticality}){open ? ` · ${open.status === "in_review" ? "AWAITING REVIEW" : "DRAFT OPEN"}` : ""}
-              </option>
-            );
-          })}
+          {processOptions.map(({ item, state }) => (
+            <option value={item.id} key={item.id}>
+              [{state}] {item.code} · {item.title} ({item.criticality})
+            </option>
+          ))}
         </select>
       </label>
 
@@ -301,6 +341,22 @@ export function ProcessGovernance({
               <p className="mt-1">
                 This registered process did not yet have a school-owned procedure. Review and customise the baseline before saving. It remains a draft until a different authorised leader approves it, and governing policies must be active first.
               </p>
+            </div>
+          )}
+
+          {current?.draft_source === "kaec_baseline" && (
+            <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
+              <p className="font-bold text-brand-900">KAEC baseline draft</p>
+              <p className="mt-1">
+                KHP-OS prepared this starting procedure from the controlled KAEC baseline. The named author must review and customise it; independent approval remains mandatory.
+              </p>
+            </div>
+          )}
+
+          {current?.draft_source === "ai_starter" && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-slate-700">
+              <p className="font-bold text-violet-900">AI-assisted starter draft</p>
+              <p className="mt-1">This is a drafting aid only. Human editing and independent approval remain mandatory.</p>
             </div>
           )}
 
