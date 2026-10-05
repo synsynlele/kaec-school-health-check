@@ -181,6 +181,12 @@ export function MyWorkWorkspace({
         item.code +
           " has been started and added to your work queue.",
       );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The process could not be started.",
+      );
     } finally {
       setBusyId(null);
     }
