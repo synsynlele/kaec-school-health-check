@@ -32,6 +32,52 @@ export type BenchmarkPosition =
   | "below_peer_band"
   | "insufficient";
 
+export type OperatingBenchmarkPosition =
+  | "above_peer_band"
+  | "within_peer_band"
+  | "below_peer_band"
+  | "insufficient_own_data"
+  | "insufficient_peers";
+
+export interface OperatingBenchmarkMetric {
+  id:
+    | "execution_coverage"
+    | "work_completion_reliability"
+    | "on_time_completion"
+    | "verification_first_pass"
+    | "issue_closure"
+    | "decision_action_closure";
+  label: string;
+  ownPercent: number | null;
+  ownNumerator: number;
+  ownDenominator: number;
+  minimumObservations: number;
+  ownEligible: boolean;
+  peerCount: number;
+  peerP25: number | null;
+  peerMedian: number | null;
+  peerP75: number | null;
+  position: OperatingBenchmarkPosition;
+}
+
+export interface KhposOperatingBenchmark {
+  status: "standard_required" | "insufficient_peers" | "ready";
+  generatedAt: string;
+  windowDays: 30;
+  standardCode?: string;
+  policy: {
+    minimumPeers: 5;
+    availablePeers?: number;
+    minimumObservationsPerMetric: 5;
+    scope?: "country_school_level" | "country" | "global";
+    scopeLabel?: string;
+    rankingDisabled: true;
+    namedPeersExposed: false;
+    sameStandardRequired: true;
+  };
+  metrics: OperatingBenchmarkMetric[];
+}
+
 export interface BenchmarkBand {
   ownScore: number;
   peerCount: number;
@@ -75,6 +121,7 @@ export interface KhposBenchmarkWorkspace {
     peerP75: number | null;
     peerVerifiedImprovementRate: number | null;
   };
+  operating: KhposOperatingBenchmark;
   portfolioAccess: boolean;
 }
 
@@ -152,19 +199,44 @@ export async function getKhposBenchmarkWorkspace(
   organisationId: string,
   userId: string,
 ): Promise<KhposBenchmarkWorkspace> {
-  const { data, error } = await retryReadOnJwtClockSkew(() =>
-    admin().rpc("khpos_get_school_benchmark_server", {
-      p_actor_user_id: userId,
-      p_organisation_id: organisationId,
-    }),
-  );
-  if (error || !isObject(data)) {
+  const [diagnosticResult, operatingResult] = await Promise.all([
+    retryReadOnJwtClockSkew(() =>
+      admin().rpc("khpos_get_school_benchmark_server", {
+        p_actor_user_id: userId,
+        p_organisation_id: organisationId,
+      }),
+    ),
+    retryReadOnJwtClockSkew(() =>
+      admin().rpc("khpos_get_school_operating_benchmark_server", {
+        p_actor_user_id: userId,
+        p_organisation_id: organisationId,
+      }),
+    ),
+  ]);
+
+  if (
+    diagnosticResult.error ||
+    !isObject(diagnosticResult.data) ||
+    operatingResult.error ||
+    !isObject(operatingResult.data)
+  ) {
+    const message =
+      diagnosticResult.error?.message ??
+      operatingResult.error?.message ??
+      "Benchmark Intelligence could not be loaded.";
     throw new KhposBenchmarkingError(
-      error?.message ?? "Benchmark Intelligence could not be loaded.",
-      error?.message?.includes("membership") ? 403 : 500,
+      message,
+      message.includes("membership") ? 403 : 500,
     );
   }
-  return data as unknown as KhposBenchmarkWorkspace;
+
+  return {
+    ...(diagnosticResult.data as unknown as Omit<
+      KhposBenchmarkWorkspace,
+      "operating"
+    >),
+    operating: operatingResult.data as unknown as KhposOperatingBenchmark,
+  };
 }
 
 export async function getKhposPortfolioIntelligence(
