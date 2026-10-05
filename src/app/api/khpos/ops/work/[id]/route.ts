@@ -14,6 +14,7 @@ import {
   updateKhposOpsWork,
   verifyKhposOpsWork,
 } from "@/lib/khpos/ops/work";
+import { startKhposManualProcess } from "@/lib/khpos/ops/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
