@@ -10,7 +10,9 @@ import {
   getKhposOpsMyWork,
   KhposOpsWorkError,
   setKhposOpsChecklistResponse,
+  submitKhposOpsWorkRecord,
   updateKhposOpsWork,
+  verifyKhposOpsWork,
 } from "@/lib/khpos/ops/work";
 
 export const runtime = "nodejs";
@@ -73,13 +75,24 @@ export async function POST(
   }
 
   let payload: {
-    action?: "start" | "block" | "complete" | "checklist" | "evidence";
+    action?:
+      | "start"
+      | "block"
+      | "complete"
+      | "checklist"
+      | "evidence"
+      | "record_submit"
+      | "verify"
+      | "return_verification";
     workItemId?: string;
     note?: string;
     templateItemId?: string;
     response?: unknown;
     evidenceType?: "note" | "link";
     externalUrl?: string;
+    requirementId?: string;
+    recordId?: string;
+    recordPayload?: Record<string, unknown>;
   } = {};
 
   try {
@@ -146,6 +159,46 @@ export async function POST(
           note: payload.note,
           externalUrl: payload.externalUrl,
         },
+      );
+      return NextResponse.json({ ok: true, work });
+    }
+
+    if (
+      payload.action === "record_submit" &&
+      payload.requirementId &&
+      UUID_RE.test(payload.requirementId) &&
+      payload.recordPayload &&
+      typeof payload.recordPayload === "object" &&
+      !Array.isArray(payload.recordPayload)
+    ) {
+      if (payload.recordId && !UUID_RE.test(payload.recordId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid returned record is required." },
+          { status: 400 },
+        );
+      }
+
+      const work = await submitKhposOpsWorkRecord(
+        id,
+        user.id,
+        payload.workItemId,
+        payload.requirementId,
+        payload.recordPayload,
+        payload.recordId ?? null,
+      );
+      return NextResponse.json({ ok: true, work });
+    }
+
+    if (
+      payload.action === "verify" ||
+      payload.action === "return_verification"
+    ) {
+      const work = await verifyKhposOpsWork(
+        id,
+        user.id,
+        payload.workItemId,
+        payload.action === "verify" ? "verify" : "return",
+        payload.note,
       );
       return NextResponse.json({ ok: true, work });
     }
