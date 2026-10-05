@@ -1,5 +1,4 @@
-import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
-import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
+import { getKhposAttention } from "@/lib/khpos/ops/attention";
 
 export type KhposAlert = {
   id: string;
@@ -8,6 +7,8 @@ export type KhposAlert = {
   href: string;
   dueAt: string | null;
   urgent: boolean;
+  level: "urgent" | "action" | "watch";
+  category: string;
 };
 
 async function retryClockSkew<T>(operation: () => Promise<T>): Promise<T> {
@@ -21,9 +22,6 @@ async function retryClockSkew<T>(operation: () => Promise<T>): Promise<T> {
       throw error;
     }
 
-    // Supabase can very occasionally reject an internal service request while
-    // infrastructure clocks converge. Retry this read-only notification query
-    // once; never weaken token validation or retry mutations.
     await new Promise((resolve) => setTimeout(resolve, 750));
     return operation();
   }
@@ -34,70 +32,49 @@ export async function getKhposAlerts(
   userId: string,
   nowMs = Date.now(),
 ): Promise<KhposAlert[]> {
-  const [work, decisions] = await Promise.all([
-    retryClockSkew(() => getKhposOpsMyWork(organisationId, userId)),
-    retryClockSkew(() => getKhposOpsDecisions(organisationId, userId)),
-  ]);
-
-  const week = nowMs + 7 * 86_400_000;
-  const alerts: KhposAlert[] = [];
-
-  for (const item of work.items) {
-    if (item.status === "completed") continue;
-
-    const due = item.dueAt ? Date.parse(item.dueAt) : Number.NaN;
-    if (item.status !== "blocked" && !(due <= week)) continue;
-
-    alerts.push({
-      id: `work:${item.id}`,
-      title: item.title,
-      detail:
-        item.status === "blocked"
-          ? "Blocked work needs attention"
-          : due < nowMs
-            ? "Overdue work"
-            : "Work due soon",
-      href: `/khpos/${organisationId}/work`,
-      dueAt: item.dueAt,
-      urgent: item.status === "blocked" || due < nowMs,
-    });
-  }
-
-  for (const item of decisions.items) {
-    const pending =
-      item.isAuthority && ["submitted", "under_review"].includes(item.status);
-    const implementation =
-      item.isImplementationOwner &&
-      item.actionRequired &&
-      item.status === "approved";
-
-    if (!pending && !implementation) continue;
-
-    const dueAt = implementation ? item.implementationDueAt : item.decisionDueAt;
-    const due = dueAt ? Date.parse(dueAt) : Number.NaN;
-    if (!(due <= week)) continue;
-
-    alerts.push({
-      id: `decision:${item.id}`,
-      title: item.title,
-      detail: pending
-        ? due < nowMs
-          ? "Decision overdue"
-          : "Decision due soon"
-        : due < nowMs
-          ? "Action overdue"
-          : "Action due soon",
-      href: `/khpos/${organisationId}/decisions`,
-      dueAt,
-      urgent: due < nowMs,
-    });
-  }
-
-  return alerts.sort(
-    (a, b) =>
-      Number(b.urgent) - Number(a.urgent) ||
-      Date.parse(a.dueAt ?? "") - Date.parse(b.dueAt ?? ""),
+  const attention = await retryClockSkew(() =>
+    getKhposAttention(organisationId, userId, nowMs),
   );
+  const week = nowMs + 7 * 86_400_000;
+
+  return attention.items
+    .filter((item) => {
+      if (item.severity === "critical" || item.severity === "high") return true;
+      if (!item.dueAt) return item.kind === "verification";
+      const due = Date.parse(item.dueAt);
+      return Number.isFinite(due) && due <= week;
+    })
+    .map((item) => {
+      const due = item.dueAt ? Date.parse(item.dueAt) : Number.NaN;
+      const overdue = Number.isFinite(due) && due < nowMs;
+      const urgent =
+        item.severity === "critical" ||
+        (item.severity === "high" && overdue);
+      const level: KhposAlert["level"] = urgent
+        ? "urgent"
+        : item.severity === "high" || item.severity === "medium"
+          ? "action"
+          : "watch";
+
+      return {
+        id: item.id,
+        title: item.title,
+        detail: item.detail,
+        href: item.href,
+        dueAt: item.dueAt,
+        urgent,
+        level,
+        category: item.kind,
+      };
+    })
+    .sort(
+      (a, b) =>
+        Number(b.urgent) - Number(a.urgent) ||
+        (a.level === "action" ? -1 : 1) -
+          (b.level === "action" ? -1 : 1) ||
+        (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
+          (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
+    );
 }
 
 export function pushEligibleAlerts(
@@ -105,9 +82,11 @@ export function pushEligibleAlerts(
   nowMs = Date.now(),
 ): KhposAlert[] {
   const tomorrow = nowMs + 24 * 60 * 60 * 1000;
+
   return alerts.filter((alert) => {
     if (alert.urgent) return true;
-    if (!alert.dueAt) return false;
+    if (alert.level !== "action") return false;
+    if (!alert.dueAt) return alert.category === "verification";
     const due = Date.parse(alert.dueAt);
     return Number.isFinite(due) && due <= tomorrow;
   });
