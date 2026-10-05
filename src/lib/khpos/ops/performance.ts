@@ -73,6 +73,32 @@ export interface KhposOpsKpi {
   previous: Pick<KhposOpsKpiMeasurement, "value" | "status"> | null;
 }
 
+export interface KhposOpsKpiStarterSuggestion {
+  id: string;
+  processCode: string;
+  processTitle: string;
+  sourceKpi: string;
+  code: string;
+  name: string;
+  definition: string;
+  domain: string;
+  ownerRoleId: string;
+  ownerRoleTitle: string;
+  systemCode: string;
+  indicatorType: "outcome" | "process" | "risk";
+  unit:
+    | "number"
+    | "percent"
+    | "currency"
+    | "days"
+    | "hours"
+    | "minutes"
+    | "boolean"
+    | "ratio";
+  cadence: "weekly" | "monthly" | "termly" | "quarterly" | "annual" | "ad_hoc";
+  criticalControl: boolean;
+}
+
 export interface KhposOpsPerformanceWorkspace {
   organisation: { id: string; name: string };
   membershipRole: string;
@@ -93,6 +119,12 @@ export interface KhposOpsPerformanceWorkspace {
     roles: { total: number; assigned: number; unassigned: number };
     processes: { total: number; active: number; notPublished: number };
   };
+  coreScorecard: {
+    total: 6;
+    adopted: number;
+    missing: number;
+  };
+  starterSuggestions: KhposOpsKpiStarterSuggestion[];
   scorecardSummary: {
     activeKpis: number;
     unbaselined: number;
@@ -172,6 +204,131 @@ export interface KhposOpsCreateKpiInput {
   targetConfig: Record<string, unknown>;
   criticalControl: boolean;
 }
+
+
+const CORE_SCORECARD_CODES = [
+  "KHP-CORE-EXEC-COVERAGE",
+  "KHP-CORE-WORK-RELIABILITY",
+  "KHP-CORE-ONTIME",
+  "KHP-CORE-FIRST-PASS",
+  "KHP-CORE-ISSUE-CLOSURE",
+  "KHP-CORE-DECISION-CLOSURE",
+] as const;
+
+const PROCESS_KPI_STARTER_TEMPLATES = [
+  {
+    id: "academic-verified-delivery",
+    processCode: "ACD-009",
+    sourceKpi: "Verified targets",
+    code: "ACD-VERIFIED-DELIVERY",
+    name: "Verified curriculum delivery",
+    domain: "learner_progress",
+    definition:
+      "Percentage of planned curriculum targets in the review period that have verified delivery evidence.",
+    indicatorType: "outcome" as const,
+    unit: "percent" as const,
+    cadence: "weekly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "academic-uncovered-streams",
+    processCode: "ACD-003",
+    sourceKpi: "Uncovered delivery streams",
+    code: "ACD-UNCOVERED-STREAMS",
+    name: "Uncovered delivery streams",
+    domain: "learner_progress",
+    definition:
+      "Number of active academic delivery streams that do not currently have an effective teacher/deployment owner.",
+    indicatorType: "risk" as const,
+    unit: "number" as const,
+    cadence: "weekly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "learner-baseline-coverage",
+    processCode: "LPI-001",
+    sourceKpi: "Active learners with current baseline",
+    code: "LPI-BASELINE-COVERAGE",
+    name: "Learner baseline coverage",
+    domain: "learner_progress",
+    definition:
+      "Percentage of active learners who have a current approved baseline appropriate to their entry or transition stage.",
+    indicatorType: "process" as const,
+    unit: "percent" as const,
+    cadence: "termly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "learner-intervention-evidence",
+    processCode: "LPI-005",
+    sourceKpi: "Interventions without activity evidence",
+    code: "LPI-INTERVENTION-EVIDENCE-GAPS",
+    name: "Interventions without activity evidence",
+    domain: "learner_progress",
+    definition:
+      "Number of active learner interventions that have no current activity evidence for the review period.",
+    indicatorType: "risk" as const,
+    unit: "number" as const,
+    cadence: "weekly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "human-potential-competency",
+    processCode: "HPD-004",
+    sourceKpi: "Competency progression",
+    code: "HPD-COMPETENCY-PROGRESS",
+    name: "Skills competency progression",
+    domain: "human_potential",
+    definition:
+      "Percentage of active skills learners whose latest verified competency evidence shows positive progression during the review period.",
+    indicatorType: "outcome" as const,
+    unit: "percent" as const,
+    cadence: "termly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "people-onboarding-ontime",
+    processCode: "PEO-006",
+    sourceKpi: "Onboarding completed by deadline",
+    code: "PEO-ONBOARDING-ONTIME",
+    name: "On-time staff onboarding",
+    domain: "people",
+    definition:
+      "Percentage of staff onboarding cycles completed by their governed onboarding due date.",
+    indicatorType: "process" as const,
+    unit: "percent" as const,
+    cadence: "monthly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "governance-acknowledgement",
+    processCode: "GOV-007",
+    sourceKpi: "Required acknowledgements completed",
+    code: "GOV-ACK-COVERAGE",
+    name: "Controlled-document acknowledgement coverage",
+    domain: "governance",
+    definition:
+      "Percentage of required acknowledgements for active controlled policies and processes that are completed for the review period.",
+    indicatorType: "process" as const,
+    unit: "percent" as const,
+    cadence: "monthly" as const,
+    criticalControl: false,
+  },
+  {
+    id: "institution-founder-dependency",
+    processCode: "IPA-008",
+    sourceKpi: "Founder-dependency defects",
+    code: "IPA-FOUNDER-DEPENDENCY",
+    name: "Founder-dependency defects",
+    domain: "governance",
+    definition:
+      "Count of operating or decision bottlenecks in the review period that required Vision Custodian intervention because authority, process, ownership or system capability was missing or ineffective.",
+    indicatorType: "risk" as const,
+    unit: "number" as const,
+    cadence: "monthly" as const,
+    criticalControl: false,
+  },
+] as const;
 
 export class KhposOpsPerformanceError extends Error {
   constructor(message: string, public readonly status = 400) {
@@ -362,34 +519,260 @@ async function getDerivedPerformance(organisationId: string) {
   };
 }
 
+
+async function syncCoreScorecard(
+  organisationId: string,
+  userId: string,
+  derived: KhposOpsPerformanceWorkspace["derivedPerformance"],
+) {
+  const metrics = {
+    execution_coverage: derived.executionCoverage.percent,
+    work_completion_reliability: derived.workCompletionReliability.percent,
+    on_time_completion: derived.onTimeCompletion.percent,
+    verification_first_pass: derived.verificationFirstPass.percent,
+    issue_closure: derived.issueClosure.percent,
+    decision_action_closure: derived.decisionActionClosure.percent,
+  };
+
+  const { error } = await admin().rpc(
+    "khpos_ops_sync_core_scorecard_server",
+    {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+      p_metrics: metrics,
+    },
+  );
+
+  if (error) {
+    throw new KhposOpsPerformanceError(
+      error.message,
+      statusFor(error.message),
+    );
+  }
+}
+
+async function getStarterKpiSuggestions(
+  organisationId: string,
+): Promise<KhposOpsKpiStarterSuggestion[]> {
+  const client = admin();
+  const processCodes = PROCESS_KPI_STARTER_TEMPLATES.map(
+    (item) => item.processCode,
+  );
+
+  const [
+    processResult,
+    roleResult,
+    assignmentResult,
+    membershipResult,
+    existingKpiResult,
+  ] = await Promise.all([
+    client
+      .from("khpos_ops_processes")
+      .select("id,code,title,operating_system,status")
+      .eq("organisation_id", organisationId)
+      .in("code", processCodes)
+      .neq("status", "retired"),
+    client
+      .from("khpos_ops_roles")
+      .select("id,code,title")
+      .eq("organisation_id", organisationId)
+      .eq("status", "active"),
+    client
+      .from("khpos_ops_role_assignments")
+      .select("role_id,user_id")
+      .eq("status", "active"),
+    client
+      .from("organisation_memberships")
+      .select("user_id")
+      .eq("organisation_id", organisationId)
+      .eq("status", "active"),
+    client
+      .from("khpos_ops_kpis")
+      .select("code")
+      .eq("organisation_id", organisationId),
+  ]);
+
+  const firstError = [
+    processResult.error,
+    roleResult.error,
+    assignmentResult.error,
+    membershipResult.error,
+    existingKpiResult.error,
+  ].find(Boolean);
+  if (firstError) {
+    throw new KhposOpsPerformanceError(
+      firstError?.message ?? "KPI starter suggestions could not be loaded.",
+      500,
+    );
+  }
+
+  const processes = processResult.data ?? [];
+  if (!processes.length) return [];
+
+  const processIds = processes.map((process) => process.id);
+  const [versionResult, profileResult] = await Promise.all([
+    client
+      .from("khpos_ops_process_versions")
+      .select("process_id,kpis")
+      .in("process_id", processIds)
+      .eq("status", "active"),
+    client
+      .from("khpos_ops_process_execution_profiles")
+      .select("process_id,owner_role_id,status")
+      .eq("organisation_id", organisationId)
+      .in("process_id", processIds)
+      .eq("status", "configured"),
+  ]);
+
+  const detailError = [versionResult.error, profileResult.error].find(Boolean);
+  if (detailError) {
+    throw new KhposOpsPerformanceError(
+      detailError?.message ?? "KPI starter lineage could not be loaded.",
+      500,
+    );
+  }
+
+  const processByCode = new Map(processes.map((process) => [process.code, process]));
+  const versionByProcess = new Map(
+    (versionResult.data ?? []).map((version) => [version.process_id, version]),
+  );
+  const profileByProcess = new Map(
+    (profileResult.data ?? []).map((profile) => [profile.process_id, profile]),
+  );
+  const roleById = new Map(
+    (roleResult.data ?? []).map((role) => [role.id, role]),
+  );
+  const activeMemberIds = new Set(
+    (membershipResult.data ?? []).map((membership) => membership.user_id),
+  );
+  const staffedRoleIds = new Set(
+    (assignmentResult.data ?? [])
+      .filter((assignment) => activeMemberIds.has(assignment.user_id))
+      .map((assignment) => assignment.role_id),
+  );
+  const existingCodes = new Set(
+    (existingKpiResult.data ?? []).map((kpi) => kpi.code),
+  );
+
+  const suggestions: KhposOpsKpiStarterSuggestion[] = [];
+
+  for (const template of PROCESS_KPI_STARTER_TEMPLATES) {
+    if (existingCodes.has(template.code)) continue;
+
+    const process = processByCode.get(template.processCode);
+    if (!process) continue;
+
+    const version = versionByProcess.get(process.id);
+    const profile = profileByProcess.get(process.id);
+    if (!version || !profile?.owner_role_id) continue;
+    if (!staffedRoleIds.has(profile.owner_role_id)) continue;
+
+    const role = roleById.get(profile.owner_role_id);
+    if (!role) continue;
+
+    const sourceKpis = Array.isArray(version.kpis)
+      ? version.kpis.filter((value): value is string => typeof value === "string")
+      : [];
+    if (!sourceKpis.includes(template.sourceKpi)) continue;
+
+    suggestions.push({
+      id: template.id,
+      processCode: process.code,
+      processTitle: process.title,
+      sourceKpi: template.sourceKpi,
+      code: template.code,
+      name: template.name,
+      definition: template.definition,
+      domain: template.domain,
+      ownerRoleId: profile.owner_role_id,
+      ownerRoleTitle: role.title,
+      systemCode: process.operating_system,
+      indicatorType: template.indicatorType,
+      unit: template.unit,
+      cadence: template.cadence,
+      criticalControl: template.criticalControl,
+    });
+  }
+
+  return suggestions;
+}
+
 export async function getKhposOpsPerformance(
   organisationId: string,
   userId: string,
 ): Promise<KhposOpsPerformanceWorkspace> {
-  const { data, error } = await admin().rpc(
-    "khpos_ops_get_performance_server",
-    {
-      p_actor_user_id: userId,
-      p_organisation_id: organisationId,
-    },
-  );
+  const first = await admin().rpc("khpos_ops_get_performance_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+  });
 
-  if (error || !isObject(data)) {
+  if (first.error || !isObject(first.data)) {
     throw new KhposOpsPerformanceError(
-      error?.message ?? "Performance workspace could not be loaded.",
-      statusFor(error?.message),
+      first.error?.message ?? "Performance workspace could not be loaded.",
+      statusFor(first.error?.message),
     );
   }
 
-  const workspace = data as unknown as Omit<
+  let workspace = first.data as unknown as Omit<
     KhposOpsPerformanceWorkspace,
-    "derivedPerformance"
+    "derivedPerformance" | "coreScorecard" | "starterSuggestions"
   >;
+
   const derivedPerformance = await getDerivedPerformance(organisationId);
+  const adoptedBefore = workspace.items.filter((item) =>
+    CORE_SCORECARD_CODES.includes(
+      item.code as (typeof CORE_SCORECARD_CODES)[number],
+    ),
+  ).length;
+
+  if (adoptedBefore > 0) {
+    await syncCoreScorecard(
+      organisationId,
+      userId,
+      derivedPerformance,
+    );
+
+    const refreshed = await admin().rpc("khpos_ops_get_performance_server", {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+    });
+
+    if (refreshed.error || !isObject(refreshed.data)) {
+      throw new KhposOpsPerformanceError(
+        refreshed.error?.message ??
+          "Performance workspace could not be refreshed after scorecard sync.",
+        statusFor(refreshed.error?.message),
+      );
+    }
+
+    workspace = refreshed.data as unknown as Omit<
+      KhposOpsPerformanceWorkspace,
+      "derivedPerformance" | "coreScorecard" | "starterSuggestions"
+    >;
+  }
+
+  const adopted = workspace.items.filter((item) =>
+    CORE_SCORECARD_CODES.includes(
+      item.code as (typeof CORE_SCORECARD_CODES)[number],
+    ),
+  ).length;
+  const starterSuggestions =
+    await getStarterKpiSuggestions(organisationId);
 
   return {
     ...workspace,
+    items: workspace.items.map((item) =>
+      item.sourceType === "operational_engine"
+        ? { ...item, canRecord: false }
+        : item,
+    ),
     derivedPerformance,
+    coreScorecard: {
+      total: 6,
+      adopted,
+      missing: Math.max(0, 6 - adopted),
+    },
+    starterSuggestions,
   };
 }
 
@@ -411,6 +794,65 @@ export async function createKhposOpsKpi(
   return getKhposOpsPerformance(organisationId, userId);
 }
 
+export async function adoptKhposCoreScorecard(
+  organisationId: string,
+  userId: string,
+): Promise<KhposOpsPerformanceWorkspace> {
+  const { error } = await admin().rpc(
+    "khpos_ops_adopt_core_scorecard_server",
+    {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+    },
+  );
+
+  if (error) {
+    throw new KhposOpsPerformanceError(
+      error.message,
+      statusFor(error.message),
+    );
+  }
+
+  return getKhposOpsPerformance(organisationId, userId);
+}
+
+export async function adoptKhposStarterKpi(
+  organisationId: string,
+  userId: string,
+  suggestionId: string,
+): Promise<KhposOpsPerformanceWorkspace> {
+  const suggestions = await getStarterKpiSuggestions(organisationId);
+  const suggestion = suggestions.find((item) => item.id === suggestionId);
+  if (!suggestion) {
+    throw new KhposOpsPerformanceError(
+      "This KPI suggestion is no longer available. Refresh Performance and review the current governed process.",
+      409,
+    );
+  }
+
+  return createKhposOpsKpi(organisationId, userId, {
+    code: suggestion.code,
+    name: suggestion.name,
+    domain: suggestion.domain,
+    definition: suggestion.definition,
+    ownerRoleId: suggestion.ownerRoleId,
+    scopeType: "system",
+    systemCode: suggestion.systemCode,
+    indicatorType: suggestion.indicatorType,
+    unit: suggestion.unit,
+    direction: "baseline_only",
+    cadence: suggestion.cadence,
+    sourceType: "manual",
+    sourceKey:
+      "process-kpi:" +
+      suggestion.processCode +
+      ":" +
+      suggestion.id,
+    targetConfig: {},
+    criticalControl: suggestion.criticalControl,
+  });
+}
+
 export async function recordKhposOpsKpiMeasurement(
   organisationId: string,
   userId: string,
@@ -423,6 +865,29 @@ export async function recordKhposOpsKpiMeasurement(
     evidenceReference?: string | null;
   },
 ): Promise<KhposOpsPerformanceWorkspace> {
+  const { data: version, error: versionError } = await admin()
+    .from("khpos_ops_kpi_versions")
+    .select("source_type,khpos_ops_kpis!inner(organisation_id,status)")
+    .eq("kpi_id", input.kpiId)
+    .eq("status", "active")
+    .eq("khpos_ops_kpis.organisation_id", organisationId)
+    .eq("khpos_ops_kpis.status", "active")
+    .maybeSingle();
+
+  if (versionError || !version) {
+    throw new KhposOpsPerformanceError(
+      versionError?.message ?? "Active KPI definition not found.",
+      404,
+    );
+  }
+
+  if (version.source_type === "operational_engine") {
+    throw new KhposOpsPerformanceError(
+      "This KPI is measured by the KHP-OS operational engine and cannot be overwritten manually.",
+      409,
+    );
+  }
+
   const { error } = await admin().rpc(
     "khpos_ops_record_kpi_measurement_server",
     {

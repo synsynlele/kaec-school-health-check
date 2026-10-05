@@ -6,6 +6,8 @@ import {
   verifyKhposAccessToken,
 } from "@/lib/khpos/auth";
 import {
+  adoptKhposCoreScorecard,
+  adoptKhposStarterKpi,
   configureKhposOpsKpiTarget,
   createKhposOpsKpi,
   getKhposOpsPerformance,
@@ -80,7 +82,13 @@ export async function POST(
   }
 
   let payload: {
-    mode?: "create_kpi" | "record_measurement" | "configure_target" | "retire";
+    mode?:
+      | "adopt_core_scorecard"
+      | "adopt_starter_kpi"
+      | "create_kpi"
+      | "record_measurement"
+      | "configure_target"
+      | "retire";
     kpi?: KhposOpsCreateKpiInput;
     kpiId?: string;
     periodStart?: string;
@@ -90,6 +98,7 @@ export async function POST(
     evidenceReference?: string | null;
     direction?: KhposOpsKpiDirection;
     targetConfig?: Record<string, unknown>;
+    suggestionId?: string;
   } = {};
 
   try {
@@ -103,6 +112,23 @@ export async function POST(
 
   try {
     const user = await authenticatedUser(request);
+
+    if (payload.mode === "adopt_core_scorecard") {
+      const performance = await adoptKhposCoreScorecard(id, user.id);
+      return NextResponse.json({ ok: true, performance });
+    }
+
+    if (
+      payload.mode === "adopt_starter_kpi" &&
+      payload.suggestionId?.trim()
+    ) {
+      const performance = await adoptKhposStarterKpi(
+        id,
+        user.id,
+        payload.suggestionId.trim(),
+      );
+      return NextResponse.json({ ok: true, performance });
+    }
 
     if (payload.mode === "create_kpi" && payload.kpi) {
       const kpi = payload.kpi;
