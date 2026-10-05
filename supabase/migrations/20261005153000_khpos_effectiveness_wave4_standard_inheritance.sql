@@ -247,7 +247,7 @@ returns jsonb
 language plpgsql
 stable
 security definer
-set search_path=public,auth,khpos_private,pg_temp
+set search_path=''
 as $func$
 declare
   v_policies jsonb := '[]'::jsonb;
@@ -524,7 +524,7 @@ create or replace function public.khpos_ops_install_standard_release_server(
 returns uuid
 language plpgsql
 security definer
-set search_path=public,auth,khpos_private,pg_temp
+set search_path=''
 as $func$
 declare
   v_release public.khpos_standard_releases%rowtype;
@@ -799,7 +799,7 @@ create or replace function public.khpos_ops_adopt_standard_release_server(
 returns void
 language plpgsql
 security definer
-set search_path=public,auth,khpos_private,pg_temp
+set search_path=''
 as $func$
 declare
   v_installation public.khpos_standard_installations%rowtype;
@@ -1343,7 +1343,7 @@ create or replace function public.khpos_ops_bootstrap_approved_partner_trigger()
 returns trigger
 language plpgsql
 security definer
-set search_path=public,auth,khpos_private,pg_temp
+set search_path=''
 as $func$
 begin
   if new.status='active'
