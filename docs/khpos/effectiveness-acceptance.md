@@ -4,8 +4,8 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 
 | # | Capability | Shipped foundation | Acceptance still required |
 |---|---|---|---|
-| 1 | Process to execution | Execution profiles; safe manual mapping and starts | Every approved process classified with staffed owner, controls, verifier and escalation |
-| 2 | Today | Role work, attention, verification and available starts | Full daily journey for every role; returned work and completion categories |
+| 1 | Process to execution | Execution profiles; safe manual mapping and starts; reviewable recommendations from approved controls | Every approved process classified with staffed owner, controls, verifier and escalation |
+| 2 | Today | Role work, attention, verification, available starts and exact-record attention links | Full daily journey for every role; returned work and completion categories |
 | 3 | Triggers | Recurring, events, conditions; Coverage, recovery, learner support, asset faults, assessment results handoff and policy reviews | Protected safeguarding flow and institution-specific mappings; verify each school’s assessment/results process |
 | 4 | Exceptions | Overdue work/issues/decisions, blocked work and trigger failures | Repeated lateness, returned reports, missing controls, attendance and academic patterns |
 | 5 | Command Centre | Action-required leadership view and derived operating signals | Every agreed domain pulse linked to evidence, with honest insufficient-data states |
@@ -38,7 +38,7 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 
 ## Next release priorities
 
-1. Complete assessment and policy-review connections, then review remaining event routing with actual school owners.
+1. Review and activate supported event/condition mappings with actual school owners; preserve local routing choices.
 2. Complete repeated failure detection and evidence-assembled staff review/meeting flows.
 3. Verify mobile, closed-app push, reliability alerts and multi-school journeys end to end.
 
@@ -50,3 +50,14 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 - Meeting preparation uses only the requesting leader’s authorised queue, ranks urgency, links evidence, and exposes remaining items beyond its twelve-item agenda.
 - Database rollback tests cover assessment transitions, controls, privacy, policy eligibility, deduplication and latest KPI state. Unit tests cover agenda priority, preserved sources, bounds and empty states.
 - Ordinary feature branches remain deployment-disabled. Local checks precede one production merge for the batch.
+
+## Today navigation and execution guidance
+
+- Today attention links identify the exact work, verification, issue or decision record. After authorised data loads, the workspace scrolls to and focuses that rendered record. Fragment IDs never fetch or reveal additional records.
+- Execution Control shows all approved processes by default, so configured processes remain available for review.
+- Recommended mode, role and trigger come from active approved process versions, governed owner participation and active schedules. Unsupported triggers remain manual; ambiguous roles require leadership choice.
+- Approved versions and owner participation are filtered to the school before API row limits, so additional schools cannot crowd out its recommendation inputs.
+- A role counts as staffed only when an active assignment belongs to an active school member.
+- Explicit approved elapsed intervals can be converted to minutes. Other suggested intervals are labelled proposals; conflicting numeric instructions require review. Immediate escalation instructions remain visible.
+- Using a recommendation edits a draft only. Existing evidence, verification, due dates and KPI controls are retained. Saving an escalation interval alone does not create timed notifications.
+- Unit tests verify sources, ambiguous/unappointed ownership, automatic source eligibility, controls, interval ambiguity, record links and authorised DOM focus. Typecheck, lint and the production build validate the integration. Live signed-in browser acceptance remains outstanding.

@@ -1,3 +1,4 @@
+import { recommendKhposExecution, type KhposExecutionRecommendation } from "@/lib/khpos/ops/execution-recommendations";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,6 +67,7 @@ export interface KhposExecutionItem {
   safeMappingCandidate: boolean;
   blockedByMissingAssignment: boolean;
   recentTriggerFailures: number;
+  recommendation: KhposExecutionRecommendation;
 }
 
 export interface KhposExecutionSnapshot {
@@ -249,7 +251,8 @@ export async function getKhposExecutionSnapshot(
       .neq("status", "retired"),
     client
       .from("khpos_ops_process_versions")
-      .select("process_id")
+      .select("process_id,version,trigger,sla,escalation,evidence,khpos_ops_processes!inner(organisation_id)")
+      .eq("khpos_ops_processes.organisation_id", organisationId)
       .eq("status", "active"),
     client
       .from("khpos_ops_process_execution_profiles")
@@ -275,7 +278,8 @@ export async function getKhposExecutionSnapshot(
       .eq("status", "active"),
     client
       .from("khpos_ops_process_roles")
-      .select("process_id,role_id,participation")
+      .select("process_id,role_id,participation,khpos_ops_processes!inner(organisation_id)")
+      .eq("khpos_ops_processes.organisation_id", organisationId)
       .eq("participation", "owner"),
     client
       .from("khpos_ops_trigger_events")
@@ -302,13 +306,28 @@ export async function getKhposExecutionSnapshot(
     activeRoleIds.length
       ? await client
           .from("khpos_ops_role_assignments")
-          .select("role_id")
+          .select("role_id,user_id")
           .in("role_id", activeRoleIds)
           .eq("status", "active")
       : { data: [], error: null };
 
   if (activeAssignmentsError) {
     throw new KhposExecutionError(activeAssignmentsError.message, 500);
+  }
+
+  const assignmentUsers = [...new Set((activeAssignments ?? []).map((assignment) => assignment.user_id))];
+  const membershipResult = assignmentUsers.length
+    ? await client.from("organisation_memberships").select("user_id")
+      .eq("organisation_id", organisationId).eq("status", "active").in("user_id", assignmentUsers)
+    : { data: [], error: null };
+  if (membershipResult.error) throw new KhposExecutionError(membershipResult.error.message, 500);
+  const activeMembers = new Set((membershipResult.data ?? []).map((row) => row.user_id));
+  const versionByProcess = new Map((versionResult.data ?? []).map((row) => [row.process_id, row]));
+  const schedulesByProcess = new Map<string, Array<{ ownerRoleId: string; cadence: string }>>();
+  for (const row of recurringResult.data ?? []) {
+    const schedules = schedulesByProcess.get(row.process_id) ?? [];
+    schedules.push({ ownerRoleId: row.owner_role_id, cadence: row.cadence });
+    schedulesByProcess.set(row.process_id, schedules);
   }
 
   const activeProcessIds = new Set((versionResult.data ?? []).map((row) => row.process_id));
@@ -327,7 +346,7 @@ export async function getKhposExecutionSnapshot(
     ownerRolesByProcess.set(row.process_id, roles);
   }
   const activeAssignedRoleIds = new Set(
-    (activeAssignments ?? []).map((assignment) => assignment.role_id),
+    (activeAssignments ?? []).filter((assignment) => activeMembers.has(assignment.user_id)).map((assignment) => assignment.role_id),
   );
   const failuresByProfile = new Map<string, number>();
   for (const row of failureResult.data ?? []) {
@@ -340,7 +359,8 @@ export async function getKhposExecutionSnapshot(
   const items: KhposExecutionItem[] = processes
     .map((process) => {
       const profile = profileByProcess.get(process.id);
-      if (!profile) return null;
+      const version = versionByProcess.get(process.id);
+      if (!profile || !version) return null;
       const recurring = recurringByProcess.get(process.id);
       const ownerRole = profile.owner_role_id ? roleById.get(profile.owner_role_id) : null;
       const participationRoles = ownerRolesByProcess.get(process.id) ?? [];
@@ -385,6 +405,16 @@ export async function getKhposExecutionSnapshot(
           participationRoles.length === 1 &&
           !singleOwnerHasAssignment,
         recentTriggerFailures: failuresByProfile.get(profile.id) ?? 0,
+        recommendation: recommendKhposExecution({
+          code: process.code, criticality: process.criticality, version,
+          owners: participationRoles.flatMap((id) => {
+            const role = roleById.get(id);
+            return role ? [{ id, title: role.title, staffed: activeAssignedRoleIds.has(id) }] : [];
+          }),
+          recurring: schedulesByProcess.get(process.id) ?? [],
+          roles: (roleResult.data ?? []).map((role) => ({ id: role.id, title: role.title, staffed: activeAssignedRoleIds.has(role.id) })),
+          current: { evidenceRequired: profile.evidence_required, verificationRequired: profile.verification_required },
+        }),
       };
     })
     .filter((item): item is KhposExecutionItem => Boolean(item))
@@ -474,6 +504,15 @@ export async function configureKhposExecution(
       "Only an approved active process can be mapped for execution.",
       400,
     );
+  }
+
+  for (const [label, value, minimum] of [
+    ["Due interval", input.dueOffsetMinutes, 0],
+    ["Escalation interval", input.escalationMinutes, 1],
+  ] as const) {
+    if (value != null && (!Number.isInteger(value) || value < minimum || value > 525600)) {
+      throw new KhposExecutionError(`${label} must be a whole number between ${minimum} and 525600 minutes.`, 400);
+    }
   }
 
   let ownerRoleId = input.ownerRoleId ?? null;

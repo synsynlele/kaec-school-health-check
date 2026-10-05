@@ -43,6 +43,7 @@ for (const script of [
   "scripts/validate-khpos-execution-wave5.mjs",
   "scripts/validate-khpos-performance-wave6.mjs",
   "scripts/test-khpos-meeting-agenda.mjs",
+  "scripts/test-khpos-execution-guidance.mjs",
   "scripts/test-scoring.mjs",
 ]) {
   const run = spawnSync(process.execPath, [script], { stdio: "inherit" });

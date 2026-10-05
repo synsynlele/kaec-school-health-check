@@ -1,3 +1,4 @@
+import { khposRecordHref } from "@/lib/khpos/ops/record-links";
 import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
 import { getKhposOpsIssues } from "@/lib/khpos/ops/issues";
 import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
@@ -104,7 +105,7 @@ export async function getKhposAttention(
             : due.today
               ? "Due today"
               : "Priority work needs attention",
-      href: "/khpos/" + organisationId + "/work",
+      href: khposRecordHref(organisationId, "work", item.id),
       dueAt: item.dueAt,
       actionLabel: item.status === "blocked" ? "Resolve blocker" : "Open work",
     });
@@ -117,7 +118,7 @@ export async function getKhposAttention(
       severity: item.priority === "critical" ? "high" : "medium",
       title: item.title,
       detail: "Independent verification is waiting for you.",
-      href: "/khpos/" + organisationId + "/work",
+      href: khposRecordHref(organisationId, "verification", item.id),
       dueAt: item.submittedForVerificationAt,
       actionLabel: "Verify work",
     });
@@ -152,7 +153,7 @@ export async function getKhposAttention(
             : issue.status === "resolved"
               ? "Resolution needs verification or closure."
               : "Issue requires action.",
-      href: "/khpos/" + organisationId + "/issues",
+      href: khposRecordHref(organisationId, "issue", issue.id),
       dueAt: issue.dueAt,
       actionLabel: "Open issue",
     });
@@ -193,7 +194,7 @@ export async function getKhposAttention(
         : due.overdue
           ? "Decision is overdue."
           : "Decision is waiting for your authority.",
-      href: "/khpos/" + organisationId + "/decisions",
+      href: khposRecordHref(organisationId, "decision", decision.id),
       dueAt,
       actionLabel: implementation ? "Execute action" : "Review decision",
     });

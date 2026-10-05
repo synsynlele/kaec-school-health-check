@@ -10,6 +10,7 @@ import {
   Save,
   Sparkles,
 } from "lucide-react";
+import { draftKhposExecutionRecommendation } from "@/lib/khpos/ops/execution-recommendations";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   KHPOSEventTypes,
@@ -29,7 +30,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
   const [snapshot, setSnapshot] = useState<KhposExecutionSnapshot | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState<ConfigureKhposExecutionInput | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [busy, setBusy] = useState(false);
   const [mappingBusy, setMappingBusy] = useState(false);
   const [startBusy, setStartBusy] = useState(false);
@@ -312,14 +313,37 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
             )}
 
 
+            <section className="mt-5 rounded-2xl border border-brand-200 bg-brand-50 p-5" aria-label="Recommended execution settings">
+              <p className="text-xs font-black uppercase tracking-wide text-brand-700">Recommended execution settings</p>
+              <p className="mt-2 text-sm leading-6 text-slate-700">{selected.recommendation.rationale}</p>
+              <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+                <div><dt className="font-bold text-slate-500">Execution mode</dt><dd className="mt-1 font-black capitalize">{readable(selected.recommendation.mode)}</dd></div>
+                <div><dt className="font-bold text-slate-500">Accountable role</dt><dd className="mt-1 font-black">{selected.recommendation.ownerRoleTitle ?? "Leadership must choose"}</dd></div>
+                <div className="sm:col-span-2"><dt className="font-bold text-slate-500">Approved trigger · version {selected.recommendation.approvedVersion}</dt><dd className="mt-1 leading-6">{selected.recommendation.triggerSummary}</dd>
+                  {(selected.recommendation.eventType || selected.recommendation.conditionKey) && <p className="mt-2 font-semibold text-brand-800">Automatic source: {readable(selected.recommendation.eventType ?? selected.recommendation.conditionKey ?? "")}</p>}
+                </div>
+                <div><dt className="font-bold text-slate-500">Escalation interval</dt><dd className="mt-1 font-black">{selected.recommendation.escalationMinutes === null ? "Leadership must set the applicable interval" : `${selected.recommendation.escalationMinutes} minutes`}</dd><p className="mt-1 text-xs text-slate-600">{selected.recommendation.escalationBasis === "approved_interval" ? "From an explicit approved interval" : "Proposed interval; review before saving"}</p></div>
+                <div><dt className="font-bold text-slate-500">Approved completion timing</dt><dd className="mt-1 leading-6">{selected.recommendation.approvedSla ?? "No timing stated in the approved process"}</dd></div>
+              </dl>
+              {selected.recommendation.approvedEscalation.length > 0 && <div className="mt-4"><p className="text-xs font-black text-slate-500">Approved escalation route</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6">{selected.recommendation.approvedEscalation.map((instruction, index) => <li key={index}>{instruction}</li>)}</ul></div>}
+              {selected.recommendation.cautions.length > 0 && <ul className="mt-4 list-disc space-y-2 rounded-xl bg-white/70 p-4 pl-8 text-xs leading-5 text-slate-700">{selected.recommendation.cautions.map((caution) => <li key={caution}>{caution}</li>)}</ul>}
+              <button type="button" disabled={!snapshot.canConfigure || busy || mappingBusy || startBusy} onClick={() => {
+                setForm(draftKhposExecutionRecommendation(form, selected.recommendation));
+                setMessage("Recommendation copied into your draft. Review the fields, then save when ready.");
+              }} className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><Sparkles className="size-4" />Use recommendation in draft</button>
+              <p className="mt-3 text-xs leading-5 text-slate-600">Your saved mapping stays active until you save this draft. Existing evidence, verification, deadlines and KPI controls are retained.</p>
+            </section>
+
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <label className="text-sm font-bold">Execution mode<select value={form.mode} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, mode: e.target.value as KhposExecutionMode })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="recurring">Recurring schedule</option><option value="event">Institutional event</option><option value="condition">Detected condition</option><option value="manual_on_demand">Manual / on demand</option><option value="continuous_control">Continuous control</option><option value="external_system">External system</option></select></label>
               <label className="text-sm font-bold">Accountable role<select value={form.ownerRoleId ?? ""} disabled={!snapshot.canConfigure || form.mode === "recurring"} onChange={(e) => setForm({ ...form, ownerRoleId: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose role…</option>{snapshot.roles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select></label>
               {form.mode === "event" && <label className="text-sm font-bold">Event<select value={form.eventType ?? ""} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, eventType: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose event…</option>{KHPOSEventTypes.map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label>}
               {form.mode === "condition" && <label className="text-sm font-bold">Condition<select value={form.conditionKey ?? ""} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, conditionKey: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose condition…</option>{KHPOSConditionKeys.map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label>}
-              <label className="text-sm font-bold">Due after trigger (minutes)<input type="number" min={0} disabled={!snapshot.canConfigure} value={form.dueOffsetMinutes ?? ""} onChange={(e) => setForm({ ...form, dueOffsetMinutes: numeric(e.target.value) })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal" /></label>
-              <label className="text-sm font-bold">Escalate after (minutes)<input type="number" min={1} disabled={!snapshot.canConfigure} value={form.escalationMinutes ?? ""} onChange={(e) => setForm({ ...form, escalationMinutes: numeric(e.target.value) })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal" /></label>
+              <label className="text-sm font-bold">Due after trigger (minutes)<input type="number" min={0} max={525600} step={1} disabled={!snapshot.canConfigure} value={form.dueOffsetMinutes ?? ""} onChange={(e) => setForm({ ...form, dueOffsetMinutes: numeric(e.target.value) })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal" /></label>
+              <label className="text-sm font-bold">Escalate after (minutes)<input type="number" min={1} max={525600} step={1} disabled={!snapshot.canConfigure} value={form.escalationMinutes ?? ""} onChange={(e) => setForm({ ...form, escalationMinutes: numeric(e.target.value) })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal" /></label>
             </div>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">The escalation interval is recorded in this mapping. Saving it alone does not send a timed notification; follow the approved escalation route.</p>
 
             <label className="mt-5 block text-sm font-bold">Trigger / execution summary<textarea rows={4} disabled={!snapshot.canConfigure} value={form.triggerSummary ?? ""} onChange={(e) => setForm({ ...form, triggerSummary: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal leading-6" /></label>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
