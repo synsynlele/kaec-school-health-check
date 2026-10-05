@@ -57,6 +57,33 @@ export interface KhposOpsProcessVersion {
   status: KhposOpsDocumentStatus;
 }
 
+export interface KhposOpsProcessConnections {
+  execution: {
+    status: "needs_mapping" | "configured" | "not_applicable";
+    activationMode: string;
+    ownerRoleTitle: string | null;
+    triggerSummary: string | null;
+    evidenceRequired: boolean;
+    verificationRequired: boolean;
+    escalationMinutes: number | null;
+    kpiCodes: string[];
+  } | null;
+  tools: Array<{
+    requirementId: string;
+    label: string;
+    required: boolean;
+    minimumEntries: number;
+    verificationRequired: boolean;
+    toolCode: string;
+    toolName: string;
+    toolType: string;
+  }>;
+  currentWorkCount: number;
+  completedWorkCount: number;
+  lastCompletedAt: string | null;
+  controlledRecordCount: number;
+}
+
 export interface KhposOpsProcess {
   id: string;
   code: string;
@@ -68,6 +95,7 @@ export interface KhposOpsProcess {
   technology: string[];
   status: KhposOpsControlStatus;
   activeVersion: KhposOpsProcessVersion | null;
+  connections?: KhposOpsProcessConnections;
 }
 
 export interface KhposOpsToolTemplate {
@@ -145,26 +173,47 @@ export async function getKhposOpsLibrary(
 
   const library = data as unknown as KhposOpsLibrary;
 
-  if (!library.tools.length) return library;
+  const [toolSchemaResult, connectionResult] = await Promise.all([
+    library.tools.length
+      ? admin()
+          .from("khpos_ops_tool_templates")
+          .select("id,schema_definition")
+          .eq("organisation_id", organisationId)
+          .eq("status", "active")
+      : Promise.resolve({ data: [], error: null }),
+    admin().rpc("khpos_ops_get_process_connections_server", {
+      p_organisation_id: organisationId,
+    }),
+  ]);
 
-  const { data: toolSchemas, error: toolSchemaError } = await admin()
-    .from("khpos_ops_tool_templates")
-    .select("id,schema_definition")
-    .eq("organisation_id", organisationId)
-    .eq("status", "active");
-
-  if (toolSchemaError) {
+  if (toolSchemaResult.error) {
     throw new KhposOpsLibraryError(
-      toolSchemaError.message || "Tool definitions could not be loaded.",
+      toolSchemaResult.error.message || "Tool definitions could not be loaded.",
       500,
     );
   }
 
+  if (connectionResult.error) {
+    throw new KhposOpsLibraryError(
+      connectionResult.error.message || "Process connections could not be loaded.",
+      /does not exist/i.test(connectionResult.error.message) ? 503 : 500,
+    );
+  }
+
   const schemaById = new Map(
-    (toolSchemas ?? []).map((row) => [
+    (toolSchemaResult.data ?? []).map((row) => [
       row.id,
       isObject(row.schema_definition) ? row.schema_definition : {},
     ]),
+  );
+
+  const connectionRows = Array.isArray(connectionResult.data)
+    ? (connectionResult.data as Array<Record<string, unknown>>)
+    : [];
+  const connectionsByProcess = new Map(
+    connectionRows
+      .filter((row) => typeof row.processId === "string")
+      .map((row) => [row.processId as string, row as unknown as KhposOpsProcessConnections]),
   );
 
   return {
@@ -172,6 +221,10 @@ export async function getKhposOpsLibrary(
     tools: library.tools.map((tool) => ({
       ...tool,
       schemaDefinition: schemaById.get(tool.id) ?? {},
+    })),
+    processes: library.processes.map((process) => ({
+      ...process,
+      connections: connectionsByProcess.get(process.id),
     })),
   };
 }
