@@ -57,8 +57,12 @@ begin
     raise exception 'This process is not configured for manual/on-demand execution.';
   end if;
 
-  if v_profile.owner_role_id is null then
-    raise exception 'This manual process has no accountable role.';
+  if v_profile.owner_role_id is null or not exists (
+    select 1 from public.khpos_ops_roles r
+    where r.id=v_profile.owner_role_id
+      and r.organisation_id=p_organisation_id and r.status='active'
+  ) then
+    raise exception 'This manual process has no active accountable role.';
   end if;
 
   if p_campus_id is not null and not exists (
@@ -103,6 +107,7 @@ begin
   where a.role_id=v_profile.owner_role_id
     and a.user_id=p_actor_user_id
     and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
     and (
       p_campus_id is null
       or a.campus_id is null
@@ -120,6 +125,7 @@ begin
     where a.role_id=v_profile.owner_role_id
       and a.user_id=p_actor_user_id
       and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
       and (
         p_campus_id is null
         or a.campus_id is null
@@ -151,6 +157,7 @@ begin
     from public.khpos_ops_role_assignments a
     where a.role_id=v_profile.owner_role_id
       and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
       and (
         p_campus_id is null
         or a.campus_id is null
@@ -172,6 +179,7 @@ begin
     from public.khpos_ops_role_assignments a
     where a.role_id=v_profile.owner_role_id
       and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
       and (
         p_campus_id is null
         or a.campus_id is null
@@ -209,6 +217,22 @@ begin
 
   v_target_campus := coalesce(p_campus_id,v_assignment.campus_id);
   v_target_unit := coalesce(p_unit_id,v_assignment.unit_id);
+
+  if v_target_campus is not null and not exists (
+    select 1 from public.khpos_ops_campuses c
+    where c.id=v_target_campus and c.organisation_id=p_organisation_id
+      and c.status='active'
+  ) then
+    raise exception 'The accountable assignment campus is not active in this school.';
+  end if;
+  if v_target_unit is not null and not exists (
+    select 1 from public.khpos_ops_units u
+    where u.id=v_target_unit and u.organisation_id=p_organisation_id
+      and u.status='active'
+      and (u.campus_id is null or u.campus_id=v_target_campus)
+  ) then
+    raise exception 'The accountable assignment unit does not match the target campus.';
+  end if;
 
   if v_profile.due_offset_minutes is not null then
     v_due_at := now() + make_interval(mins => v_profile.due_offset_minutes);
@@ -375,10 +399,16 @@ begin
     where c.owner_count=1
       and c.owner_role_id is not null
       and exists (
+        select 1 from public.khpos_ops_roles r
+        where r.id=c.owner_role_id
+          and r.organisation_id=p_organisation_id and r.status='active'
+      )
+      and exists (
         select 1
         from public.khpos_ops_role_assignments a
         where a.role_id=c.owner_role_id
           and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
       )
   ),
   updated as (
@@ -473,6 +503,7 @@ begin
           from public.khpos_ops_role_assignments a
           where a.role_id=c.owner_role_id
             and a.status='active'
+      and khpos_private.ops_hpd_has_membership(a.user_id,p_organisation_id)
         )
     )::integer,
     count(*) filter (where owner_count>1)::integer,
