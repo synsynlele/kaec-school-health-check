@@ -15,6 +15,10 @@ export type KhposExecutionMode =
 
 export const KHPOSEventTypes = [
   "role_assignment_activated",
+  "staff_coverage_required",
+  "academic_recovery_required",
+  "learner_support_required",
+  "asset_fault_reported",
   "decision_approved",
   "critical_issue_created",
   "work_blocked",
