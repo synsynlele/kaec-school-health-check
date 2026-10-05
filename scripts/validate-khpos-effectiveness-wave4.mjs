@@ -90,16 +90,43 @@ for (const expected of [
   requireText(standardUi, expected, "KAEC Standard leadership experience");
 }
 
-const improvement = read("src/lib/khpos/improvement.ts");
+const operationsLearning = read("src/lib/khpos/ops/learning.ts");
 for (const expected of [
   "KhposOperationalLearningSignal",
-  "operationalLearning",
+  "getKhposOperationalLearning",
   "returnedRecords",
   "completionReliability",
   "process redesign question",
   "windowDays: 90",
 ]) {
-  requireText(improvement, expected, "evidence-to-process learning loop");
+  requireText(
+    operationsLearning,
+    expected,
+    "evidence-to-process learning loop inside Operations",
+  );
+}
+
+const operationsLearningApi = read(
+  "src/app/api/khpos/ops/learning/[id]/route.ts",
+);
+for (const expected of [
+  "bearerTokenFromRequest",
+  "verifyKhposAccessToken",
+  "getKhposOperationalLearning",
+  '"Cache-Control": "private, no-store"',
+]) {
+  requireText(
+    operationsLearningApi,
+    expected,
+    "operational learning API",
+  );
+}
+
+const transformationImprovement = read("src/lib/khpos/improvement.ts");
+if (transformationImprovement.includes("khpos_ops_")) {
+  throw new Error(
+    "KHP-OS effectiveness Wave 4 contract failed: transformation improvement must remain separate from routine Operations data.",
+  );
 }
 
 const improvementUi = read(
