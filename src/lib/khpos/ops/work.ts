@@ -539,21 +539,8 @@ export async function getKhposOpsMyWork(
   organisationId: string,
   userId: string,
 ): Promise<KhposOpsMyWork> {
-  const { error: materialiseError } = await admin().rpc(
-    "khpos_ops_materialize_due_work_server",
-    {
-      p_actor_user_id: userId,
-      p_organisation_id: organisationId,
-    },
-  );
-
-  if (materialiseError) {
-    throw new KhposOpsWorkError(
-      materialiseError.message,
-      statusFor(materialiseError.message),
-    );
-  }
-
+  // The database read function materialises due recurring work atomically
+  // before returning the queue, so one RPC is sufficient here.
   const { data, error } = await admin().rpc("khpos_ops_get_my_work_server", {
     p_actor_user_id: userId,
     p_organisation_id: organisationId,
