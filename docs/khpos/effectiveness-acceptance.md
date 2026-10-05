@@ -56,6 +56,7 @@ The 5 October 2026 agreement covers all twenty capabilities below. A shipped fou
 - Today attention links identify the exact work, verification, issue or decision record. After authorised data loads, the workspace scrolls to and focuses that rendered record. Fragment IDs never fetch or reveal additional records.
 - Execution Control shows all approved processes by default, so configured processes remain available for review.
 - Recommended mode, role and trigger come from active approved process versions, governed owner participation and active schedules. Unsupported triggers remain manual; ambiguous roles require leadership choice.
+- Approved versions and owner participation are filtered to the school before API row limits, so additional schools cannot crowd out its recommendation inputs.
 - A role counts as staffed only when an active assignment belongs to an active school member.
 - Explicit approved elapsed intervals can be converted to minutes. Other suggested intervals are labelled proposals; conflicting numeric instructions require review. Immediate escalation instructions remain visible.
 - Using a recommendation edits a draft only. Existing evidence, verification, due dates and KPI controls are retained. Saving an escalation interval alone does not create timed notifications.

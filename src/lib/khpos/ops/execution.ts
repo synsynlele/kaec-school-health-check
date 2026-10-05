@@ -251,7 +251,8 @@ export async function getKhposExecutionSnapshot(
       .neq("status", "retired"),
     client
       .from("khpos_ops_process_versions")
-      .select("process_id,version,trigger,sla,escalation,evidence")
+      .select("process_id,version,trigger,sla,escalation,evidence,khpos_ops_processes!inner(organisation_id)")
+      .eq("khpos_ops_processes.organisation_id", organisationId)
       .eq("status", "active"),
     client
       .from("khpos_ops_process_execution_profiles")
@@ -277,7 +278,8 @@ export async function getKhposExecutionSnapshot(
       .eq("status", "active"),
     client
       .from("khpos_ops_process_roles")
-      .select("process_id,role_id,participation")
+      .select("process_id,role_id,participation,khpos_ops_processes!inner(organisation_id)")
+      .eq("khpos_ops_processes.organisation_id", organisationId)
       .eq("participation", "owner"),
     client
       .from("khpos_ops_trigger_events")

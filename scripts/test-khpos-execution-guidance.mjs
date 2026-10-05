@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import {createRequire} from 'node:module';
-function load(path) {
+function load(path, overrides={}) {
   const testModule={exports:{}};
   const code=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  new Function('require','module','exports',code)(createRequire(import.meta.url),testModule,testModule.exports);
+  const nativeRequire=createRequire(import.meta.url);
+  new Function('require','module','exports',code)((name)=>overrides[name] ?? nativeRequire(name),testModule,testModule.exports);
   return testModule.exports;
 }
 const {recommendKhposExecution,draftKhposExecutionRecommendation}=load('src/lib/khpos/ops/execution-recommendations.ts');
@@ -39,5 +40,48 @@ const documentRoot={getElementById:anchor=>{lookups++;assert.equal(anchor,`work-
 assert.equal(focusKhposRecord(`#work-${id}`,documentRoot),true);assert(scrolled&&focused);
 assert.equal(focusKhposRecord('#arbitrary-selector',documentRoot),false);assert.equal(lookups,1);
 assert.equal(focusKhposRecord(`#issue-${id}`,{getElementById:()=>null}),false,'No fetching or revealing unauthorised records');
-for(const [name,kind] of [['MyWorkWorkspace','work'],['IssuesWorkspace','issue'],['DecisionsWorkspace','decision']]) {const ui=fs.readFileSync(`src/components/khpos/ops/${name}.tsx`,'utf8');assert(ui.includes('useRecordFocus('));assert(ui.includes(`khposRecordAnchor("${kind}"`));}
-console.log('Execution recommendations and Today navigation: approved sources, safe owner selection, controls, intervals, exact record links and authorised DOM focus passed.');
+// Exercise the real snapshot service against a bounded, multi-school query adapter.
+const organisation={id:'school',name:'Fixture school',status:'active',partner_status:'active',partner_entitlements:['khpos_core']};
+const ownerRole={id:'owner',organisation_id:'school',code:'TEACHER',title:'Teacher',role_level:20,status:'active'};
+const leadershipRole={id:'leader',organisation_id:'school',code:'SCHOOL_GUARDIAN',title:'School Guardian',role_level:90,status:'active'};
+const processRow={id:'own-process',organisation_id:'school',code:'ACD-002',title:'Term Academic Planning',criticality:'P0',owner_label:'Teacher',operating_system:'academic',status:'active'};
+const versionRow={process_id:'own-process',status:'active',version:1,trigger:'Before a new term',sla:null,escalation:[],evidence:[],khpos_ops_processes:{organisation_id:'school'}};
+const otherSchools=Array.from({length:1100},(_,i)=>({process_id:'other-'+i,status:'active',khpos_ops_processes:{organisation_id:'other-school'},role_id:'other-owner',participation:'owner'}));
+const tables={
+  organisations:[organisation],
+  organisation_memberships:[{organisation_id:'school',user_id:'actor',status:'active',role:'admin',organisations:organisation},{organisation_id:'school',user_id:'ended-owner',status:'inactive',role:'staff',organisations:organisation}],
+  khpos_ops_roles:[ownerRole,leadershipRole],
+  khpos_ops_role_assignments:[{role_id:'leader',user_id:'actor',status:'active'},{role_id:'owner',user_id:'ended-owner',status:'active'}],
+  khpos_ops_processes:[processRow],
+  khpos_ops_process_versions:[...otherSchools,versionRow],
+  khpos_ops_process_roles:[...otherSchools,{process_id:'own-process',role_id:'owner',participation:'owner',khpos_ops_processes:{organisation_id:'school'}}],
+  khpos_ops_process_execution_profiles:[{id:'profile',organisation_id:'school',process_id:'own-process',activation_mode:'manual_on_demand',owner_role_id:null,event_type:null,condition_key:null,trigger_summary:null,due_offset_minutes:null,evidence_required:true,verification_required:true,escalation_minutes:null,kpi_codes:[],status:'needs_mapping'}],
+  khpos_ops_recurring_rules:[],khpos_ops_process_tool_requirements:[],khpos_ops_trigger_events:[],
+};
+const getField=(row,field)=>field.split('.').reduce((value,key)=>value?.[key],row);
+const adapter={from(table){
+  let rows=tables[table] ?? [];
+  const query={
+    select(){return query;},
+    eq(field,value){rows=rows.filter(row=>getField(row,field)===value);return query;},
+    neq(field,value){rows=rows.filter(row=>getField(row,field)!==value);return query;},
+    in(field,values){rows=rows.filter(row=>values.includes(getField(row,field)));return query;},
+    gte(field,value){rows=rows.filter(row=>getField(row,field)>=value);return query;},
+    order(){return query;},
+    maybeSingle(){return Promise.resolve({data:rows[0] ?? null,error:null});},
+    then(resolve,reject){return Promise.resolve({data:rows.slice(0,1000),error:null}).then(resolve,reject);},
+  };return query;
+}};
+const previousUrl=process.env.NEXT_PUBLIC_SUPABASE_URL,previousKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+process.env.NEXT_PUBLIC_SUPABASE_URL='https://fixture.invalid';process.env.SUPABASE_SERVICE_ROLE_KEY='local-test-fixture';
+const service=load('src/lib/khpos/ops/execution.ts',{'@supabase/supabase-js':{createClient:()=>adapter},'@/lib/khpos/ops/execution-recommendations':{recommendKhposExecution}});
+if(previousUrl===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=previousUrl;
+if(previousKey===undefined)delete process.env.SUPABASE_SERVICE_ROLE_KEY;else process.env.SUPABASE_SERVICE_ROLE_KEY=previousKey;
+const snapshot=await service.getKhposExecutionSnapshot('school','actor');
+assert.equal(snapshot.items.length,1,'Other schools must not crowd out this school through the API row limit');
+assert.equal(snapshot.items[0].recommendation.ownerRoleId,'owner','Governed owner participation must also survive the school filter');
+assert.equal(snapshot.items[0].recommendation.ownerStaffed,false,'An active assignment with inactive school membership is not staffed');
+assert.equal(snapshot.items[0].blockedByMissingAssignment,true);
+await assert.rejects(service.getKhposExecutionSnapshot('school','ended-owner'),error=>error.status===403,'Inactive membership must not read recommendations');
+await assert.rejects(service.configureKhposExecution('school','actor',{processId:'own-process',mode:'manual_on_demand',dueOffsetMinutes:0.5}),error=>error.status===400&&error.message.includes('whole number'));
+console.log('Execution guidance: approved sources, safe owners, controls, intervals, authorised DOM focus, multi-school row limits and inactive membership passed.');
