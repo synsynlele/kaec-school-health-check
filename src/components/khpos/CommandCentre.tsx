@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposWorkspaceSnapshot } from "@/lib/khpos/workspace";
+import type { KhposAttentionSnapshot } from "@/lib/khpos/ops/attention";
 
 const TRANSFORMATION_STAGES = [
   "Diagnose",
@@ -35,6 +36,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [workspace, setWorkspace] = useState<KhposWorkspaceSnapshot | null>(null);
+  const [attention, setAttention] = useState<KhposAttentionSnapshot | null>(null);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -72,14 +74,25 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         return;
       }
 
-      const response = await fetch(`/api/khpos/workspace/${organisationId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      });
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      const [response, attentionResponse] = await Promise.all([
+        fetch(`/api/khpos/workspace/${organisationId}`, {
+          headers,
+          cache: "no-store",
+        }),
+        fetch(`/api/khpos/ops/attention/${organisationId}`, {
+          headers,
+          cache: "no-store",
+        }),
+      ]);
       const body = (await response.json()) as {
         ok?: boolean;
         workspace?: KhposWorkspaceSnapshot;
         error?: string;
+      };
+      const attentionBody = (await attentionResponse.json()) as {
+        ok?: boolean;
+        attention?: KhposAttentionSnapshot;
       };
       if (!active) return;
       if (!response.ok || !body.ok || !body.workspace) {
@@ -87,6 +100,13 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         return;
       }
       setWorkspace(body.workspace);
+      if (
+        attentionResponse.ok &&
+        attentionBody.ok &&
+        attentionBody.attention
+      ) {
+        setAttention(attentionBody.attention);
+      }
     });
 
     return () => {
@@ -184,6 +204,80 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        {attention && (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                  Institutional attention
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {attention.summary.actionRequired > 0
+                    ? attention.summary.actionRequired + " things currently need action"
+                    : "No immediate action is waiting for you"}
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Normal operations stay quiet. KHP-OS surfaces exceptions,
+                  overdue work, approvals, verification and escalations here.
+                </p>
+              </div>
+              <Link
+                href={`/khpos/${organisationId}/work`}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white"
+              >
+                Open Today
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Critical", attention.summary.critical],
+                ["Overdue", attention.summary.overdue],
+                ["Blocked", attention.summary.blocked],
+                ["Waiting approval", attention.summary.waitingApproval],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-bold text-slate-500">{label}</p>
+                  <p className="mt-1 text-3xl font-black">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {attention.items.length > 0 && (
+              <div className="mt-6 grid gap-3 lg:grid-cols-2">
+                {attention.items.slice(0, 5).map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className="rounded-2xl border border-slate-200 p-4 transition hover:border-brand-300 hover:bg-brand-50/40"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={
+                        "mt-1 size-2.5 shrink-0 rounded-full " +
+                        (item.severity === "critical"
+                          ? "bg-red-600"
+                          : item.severity === "high"
+                            ? "bg-amber-500"
+                            : "bg-brand-600")
+                      } />
+                      <span className="min-w-0">
+                        <span className="block text-xs font-black uppercase tracking-wide text-slate-500">
+                          {item.kind.replaceAll("_", " ")}
+                        </span>
+                        <span className="mt-1 block font-black">{item.title}</span>
+                        <span className="mt-1 block text-sm leading-6 text-slate-600">
+                          {item.detail}
+                        </span>
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Gauge className="size-6 text-brand-700" />

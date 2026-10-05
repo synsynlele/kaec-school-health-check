@@ -96,6 +96,14 @@ export type ActivationSnapshot = {
       stage: "not_started" | "draft" | "in_review";
     }>;
   };
+  execution: {
+    approvedProcesses: number;
+    configured: number;
+    needsMapping: number;
+    criticalNeedsMapping: number;
+    automated: number;
+    triggerFailures7d: number;
+  };
   adoption: {
     workItems: number;
     issues: number;
@@ -389,6 +397,8 @@ export async function getKhposActivation(
     workCountResult,
     issueCountResult,
     decisionCountResult,
+    executionProfilesResult,
+    triggerFailuresResult,
   ] = await Promise.all([
     client
       .from("organisation_memberships")
@@ -422,6 +432,16 @@ export async function getKhposActivation(
       .from("khpos_ops_decisions")
       .select("id", { count: "exact", head: true })
       .eq("organisation_id", organisationId),
+    client
+      .from("khpos_ops_process_execution_profiles")
+      .select("process_id,status,activation_mode")
+      .eq("organisation_id", organisationId),
+    client
+      .from("khpos_ops_trigger_events")
+      .select("id", { count: "exact", head: true })
+      .eq("organisation_id", organisationId)
+      .eq("status", "failed")
+      .gte("occurred_at", new Date(Date.now() - 7 * 86_400_000).toISOString()),
   ]);
 
   const firstError = [
@@ -432,6 +452,8 @@ export async function getKhposActivation(
     workCountResult.error,
     issueCountResult.error,
     decisionCountResult.error,
+    executionProfilesResult.error,
+    triggerFailuresResult.error,
   ].find(Boolean);
 
   if (firstError) {
@@ -593,6 +615,32 @@ export async function getKhposActivation(
       process.missingPolicyCodes.length === 0,
   ).length;
 
+  const approvedProcesses = library.processes.filter(
+    (process) => !!process.activeVersion && process.status !== "retired",
+  );
+  const executionByProcess = new Map(
+    (executionProfilesResult.data ?? []).map((profile) => [
+      profile.process_id,
+      profile,
+    ]),
+  );
+  const executionConfigured = approvedProcesses.filter(
+    (process) => executionByProcess.get(process.id)?.status === "configured",
+  ).length;
+  const executionNeedsMapping = approvedProcesses.length - executionConfigured;
+  const criticalExecutionNeedsMapping = approvedProcesses.filter(
+    (process) =>
+      process.criticality === "P0" &&
+      executionByProcess.get(process.id)?.status !== "configured",
+  ).length;
+  const automatedExecution = approvedProcesses.filter((process) => {
+    const profile = executionByProcess.get(process.id);
+    return (
+      profile?.status === "configured" &&
+      ["recurring", "event", "condition"].includes(profile.activation_mode)
+    );
+  }).length;
+
   const actions: ActivationAction[] = [];
   if (unassignedMembers > 0 || !custodianPresent || !guardianPresent) {
     actions.push({
@@ -633,6 +681,15 @@ export async function getKhposActivation(
           ? `${criticalProcessMissing} P0 processes are inactive; ${blockedByPolicy} are blocked by policy. ${criticalProcessDraft} draft · ${criticalProcessInReview} in review.`
           : `${criticalProcessNotStarted} not started · ${criticalProcessDraft} draft · ${criticalProcessInReview} in review.`,
       href: `/khpos/${organisationId}/library?tab=processes&critical=missing`,
+      blocking: true,
+    });
+  }
+  if (criticalExecutionNeedsMapping > 0) {
+    actions.push({
+      key: "execution",
+      title: "Map critical processes to execution",
+      detail: `${criticalExecutionNeedsMapping} approved P0 process${criticalExecutionNeedsMapping === 1 ? "" : "es"} still lack an explicit execution mode and accountable operating control.`,
+      href: `/khpos/${organisationId}/execution-control`,
       blocking: true,
     });
   }
@@ -703,6 +760,14 @@ export async function getKhposActivation(
       blockedByPolicy,
       readyForDrafting,
       missingCritical: missingCriticalProcesses.slice(0, 12),
+    },
+    execution: {
+      approvedProcesses: approvedProcesses.length,
+      configured: executionConfigured,
+      needsMapping: executionNeedsMapping,
+      criticalNeedsMapping: criticalExecutionNeedsMapping,
+      automated: automatedExecution,
+      triggerFailures7d: triggerFailuresResult.count ?? 0,
     },
     adoption: {
       workItems: workCountResult.count ?? 0,

@@ -18,6 +18,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
 import { WorkRecordRequirementCard } from "@/components/khpos/ops/WorkRecordRequirementCard";
 import type { KhposOpsLibrary } from "@/lib/khpos/ops/library";
+import type { KhposAttentionSnapshot } from "@/lib/khpos/ops/attention";
 import type {
   KhposOpsMyWork,
   KhposOpsWorkItem,
@@ -49,6 +50,7 @@ export function MyWorkWorkspace({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
+  const [attention, setAttention] = useState<KhposAttentionSnapshot | null>(null);
 
   async function accessToken() {
     if (!supabase) return null;
@@ -70,12 +72,16 @@ export function MyWorkWorkspace({
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      const [workResponse, libraryResponse] = await Promise.all([
+      const [workResponse, libraryResponse, attentionResponse] = await Promise.all([
         fetch(`/api/khpos/ops/work/${organisationId}`, {
           headers,
           cache: "no-store",
         }),
         fetch(`/api/khpos/ops/library/${organisationId}`, {
+          headers,
+          cache: "no-store",
+        }),
+        fetch(`/api/khpos/ops/attention/${organisationId}`, {
           headers,
           cache: "no-store",
         }),
@@ -91,6 +97,10 @@ export function MyWorkWorkspace({
         library?: KhposOpsLibrary;
         error?: string;
       };
+      const attentionBody = (await attentionResponse.json()) as {
+        ok?: boolean;
+        attention?: KhposAttentionSnapshot;
+      };
 
       if (!active) return;
 
@@ -100,6 +110,9 @@ export function MyWorkWorkspace({
       }
 
       setWork(workBody.work);
+      if (attentionResponse.ok && attentionBody.ok && attentionBody.attention) {
+        setAttention(attentionBody.attention);
+      }
 
       if (libraryResponse.ok && libraryBody.ok && libraryBody.library) {
         setLibrary(libraryBody.library);
@@ -212,10 +225,10 @@ export function MyWorkWorkspace({
           </div>
 
           <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-5xl">
-            My Work
+            Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            Your role decides what appears here. Recurring institutional responsibilities become work automatically; completion is tied to the required checklist and evidence rather than verbal confirmation.
+            Start with what needs your attention now. Work, verification, issues and decisions are prioritised around your operating role; the full work queue remains below.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -243,6 +256,72 @@ export function MyWorkWorkspace({
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
           </div>
+        )}
+
+        {attention && attention.items.length > 0 && (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                  Action required
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  What needs you now
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  KHP-OS combines your urgent work, verifications, issues and decisions so you do not have to search the app.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs font-black">
+                <span className="rounded-full bg-red-50 px-3 py-1.5 text-red-800">
+                  {attention.summary.critical} critical
+                </span>
+                <span className="rounded-full bg-amber-50 px-3 py-1.5 text-amber-900">
+                  {attention.summary.overdue} overdue
+                </span>
+                <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">
+                  {attention.summary.actionRequired} actions
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 lg:grid-cols-2">
+              {attention.items.slice(0, 8).map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-300 hover:bg-brand-50/40"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={
+                      "mt-1 size-2.5 shrink-0 rounded-full " +
+                      (item.severity === "critical"
+                        ? "bg-red-600"
+                        : item.severity === "high"
+                          ? "bg-amber-500"
+                          : item.severity === "medium"
+                            ? "bg-brand-600"
+                            : "bg-slate-400")
+                    } />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-black uppercase tracking-wide text-slate-500">
+                        {item.kind.replaceAll("_", " ")}
+                      </span>
+                      <span className="mt-1 block font-black text-slate-950">
+                        {item.title}
+                      </span>
+                      <span className="mt-1 block text-sm leading-6 text-slate-600">
+                        {item.detail}
+                      </span>
+                      <span className="mt-2 block text-xs font-black text-brand-700">
+                        {item.actionLabel}
+                      </span>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {work.verificationQueue.length > 0 && (

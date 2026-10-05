@@ -11,6 +11,7 @@ import {
   Loader2,
   ShieldCheck,
   UsersRound,
+  Workflow,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { ActivationSnapshot } from "@/lib/khpos/ops/activation";
@@ -179,7 +180,7 @@ export function ActivationCentre({
     );
   }
 
-  const { people, safeguarding, policies, processes, adoption } = activation;
+  const { people, safeguarding, policies, processes, execution, adoption } = activation;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -232,7 +233,7 @@ export function ActivationCentre({
             {error}
           </div>
         )}
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <UsersRound className="size-6 text-brand-700" />
             <p className="mt-4 text-xs font-black uppercase tracking-[0.15em] text-slate-500">
@@ -310,6 +311,28 @@ export function ActivationCentre({
               All processes: {processes.active}/{processes.registered}
             </p>
           </div>
+
+          <Link
+            href={`/khpos/${organisationId}/execution-control`}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300"
+          >
+            <Workflow className="size-6 text-brand-700" />
+            <p className="mt-4 text-xs font-black uppercase tracking-[0.15em] text-slate-500">
+              Execution mapping
+            </p>
+            <div className="mt-2">
+              <Fraction
+                complete={execution.configured}
+                total={execution.approvedProcesses}
+              />
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Approved processes explicitly mapped to how work starts and who owns it.
+            </p>
+            <p className="mt-3 text-xs font-semibold text-slate-500">
+              {execution.automated} automated · {execution.criticalNeedsMapping} critical gaps
+            </p>
+          </Link>
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

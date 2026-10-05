@@ -57,8 +57,14 @@ const activationLink = {
   icon: ShieldCheck,
 } as const;
 
+const executionControlLink = {
+  suffix: "/execution-control",
+  label: "Execution Control",
+  icon: Workflow,
+} as const;
+
 const operationsLinks = [
-  { suffix: "/work", label: "My Work", icon: ListTodo },
+  { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
   { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
@@ -100,6 +106,7 @@ const intelligenceLinks = [
 const workspaceLinks = [
   ...transformLinks,
   activationLink,
+  executionControlLink,
   ...operationsLinks,
   ...intelligenceLinks,
 ] as const;
@@ -112,7 +119,7 @@ const dailyLinks = [
   operationsLinks[2],
 ] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [activationLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
+  { title: "Leadership", icon: Gauge, links: [activationLink, executionControlLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
@@ -317,7 +324,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   }`}
                 >
                   <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Home", "Activate", "Work", "Issues"][dailyLinks.indexOf(item)]}</span>
+                  <span className="w-full truncate text-center">{["Home", "Activate", "Today", "Issues"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
