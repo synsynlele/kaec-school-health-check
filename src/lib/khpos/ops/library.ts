@@ -339,8 +339,6 @@ export async function getKhposOpsLibrary(
   const visibleWork = (workResult.data ?? []).filter(
     (work) => institutionScope || actorAssignmentIds.has(work.owner_assignment_id),
   );
-  const workById = new Map(visibleWork.map((work) => [work.id, work]));
-
   const operatingMapByProcess = new Map<
     string,
     KhposOpsProcessOperatingMap
