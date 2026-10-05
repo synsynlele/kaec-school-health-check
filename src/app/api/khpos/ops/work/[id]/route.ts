@@ -14,13 +14,20 @@ import {
   updateKhposOpsWork,
   verifyKhposOpsWork,
 } from "@/lib/khpos/ops/work";
-import { startKhposManualProcess } from "@/lib/khpos/ops/execution";
+import {
+  KhposExecutionError,
+  startKhposManualProcess,
+} from "@/lib/khpos/ops/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function errorResponse(error: unknown) {
-  if (error instanceof KhposAuthError || error instanceof KhposOpsWorkError) {
+  if (
+    error instanceof KhposAuthError ||
+    error instanceof KhposOpsWorkError ||
+    error instanceof KhposExecutionError
+  ) {
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: error.status },
@@ -88,6 +95,8 @@ export async function POST(
       | "start_process";
     workItemId?: string;
     processId?: string;
+    campusId?: string | null;
+    unitId?: string | null;
     note?: string;
     templateItemId?: string;
     response?: unknown;
@@ -118,8 +127,23 @@ export async function POST(
         );
       }
 
+      if (payload.campusId && !UUID_RE.test(payload.campusId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid campus is required." },
+          { status: 400 },
+        );
+      }
+      if (payload.unitId && !UUID_RE.test(payload.unitId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid unit is required." },
+          { status: 400 },
+        );
+      }
+
       await startKhposManualProcess(id, user.id, {
         processId: payload.processId,
+        campusId: payload.campusId ?? null,
+        unitId: payload.unitId ?? null,
       });
       const work = await getKhposOpsMyWork(id, user.id);
       return NextResponse.json({ ok: true, work });
