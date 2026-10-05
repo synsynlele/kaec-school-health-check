@@ -314,7 +314,9 @@ export function WorkRecordRequirementCard({
                           ...current,
                           [field.key]:
                             field.type === "number"
-                              ? event.target.value
+                              ? event.target.value === ""
+                                ? ""
+                                : Number(event.target.value)
                               : event.target.value,
                         }))
                       }
