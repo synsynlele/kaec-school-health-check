@@ -54,6 +54,67 @@ function SectionList({
   );
 }
 
+function ToolDefinition({ schema }: { schema: Record<string, unknown> }) {
+  const entries = Object.entries(schema);
+
+  if (!entries.length) {
+    return (
+      <p className="text-sm leading-6 text-slate-500">
+        No additional configurable field schema is registered for this reusable
+        operating primitive.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {entries.map(([key, value]) => (
+        <section key={key}>
+          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">
+            {readable(key)}
+          </h4>
+          {Array.isArray(value) ? (
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              {value.map((item, itemIndex) => (
+                <li
+                  key={`${key}-${itemIndex}`}
+                  className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700"
+                >
+                  {typeof item === "string" ? readable(item) : JSON.stringify(item)}
+                </li>
+              ))}
+            </ul>
+          ) : value && typeof value === "object" ? (
+            <div className="mt-2 space-y-2">
+              {Object.entries(value as Record<string, unknown>).map(
+                ([childKey, childValue]) => (
+                  <div
+                    key={childKey}
+                    className="flex flex-col gap-1 rounded-xl bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-start sm:justify-between"
+                  >
+                    <span className="font-bold text-slate-700">
+                      {readable(childKey)}
+                    </span>
+                    <span className="text-slate-500">
+                      {Array.isArray(childValue)
+                        ? childValue.map(String).join(", ")
+                        : String(childValue)}
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {String(value)}
+            </p>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function PolicyDocument({
   policy,
   busyVersionId,
@@ -501,16 +562,36 @@ export function InstitutionalLibrary({
               </p>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {tools.map((tool) => (
-                <div key={tool.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-800">{tool.code}</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold capitalize text-slate-600">{readable(tool.toolType)}</span>
+                <details
+                  key={tool.id}
+                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm open:shadow-md"
+                >
+                  <summary className="cursor-pointer list-none p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-800">
+                        {tool.code}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold capitalize text-slate-600">
+                        {readable(tool.toolType)}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-lg font-black">{tool.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {tool.purpose}
+                    </p>
+                    <p className="mt-4 text-xs font-black text-brand-700 group-open:hidden">
+                      View tool definition
+                    </p>
+                    <p className="mt-4 hidden text-xs font-black text-brand-700 group-open:block">
+                      Hide tool definition
+                    </p>
+                  </summary>
+                  <div className="border-t border-slate-100 px-6 pb-6 pt-5">
+                    <ToolDefinition schema={tool.schemaDefinition} />
                   </div>
-                  <h3 className="mt-4 text-lg font-black">{tool.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{tool.purpose}</p>
-                </div>
+                </details>
               ))}
             </div>
           </section>
