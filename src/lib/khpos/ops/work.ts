@@ -99,6 +99,10 @@ export interface KhposOpsAvailableProcess {
   title: string;
   criticality: "P0" | "P1" | "P2";
   ownerRoleTitle: string;
+  campusId: string | null;
+  campusName: string | null;
+  unitId: string | null;
+  unitName: string | null;
   triggerSummary: string | null;
   evidenceRequired: boolean;
   verificationRequired: boolean;
@@ -288,7 +292,7 @@ async function getAvailableManualProcesses(
 
   const { data: assignments, error: assignmentError } = await client
     .from("khpos_ops_role_assignments")
-    .select("role_id")
+    .select("id,role_id,campus_id,unit_id")
     .eq("user_id", userId)
     .eq("status", "active");
 
@@ -325,25 +329,47 @@ async function getAvailableManualProcesses(
   if (!profiles?.length) return [];
 
   const processIds = unique(profiles.map((profile) => profile.process_id));
-  const [{ data: processes, error: processError }, { data: versions, error: versionError }] =
-    await Promise.all([
-      client
-        .from("khpos_ops_processes")
-        .select("id,code,title,criticality,status")
-        .eq("organisation_id", organisationId)
-        .in("id", processIds)
-        .neq("status", "retired"),
-      client
-        .from("khpos_ops_process_versions")
-        .select("process_id")
-        .in("process_id", processIds)
-        .eq("status", "active"),
-    ]);
+  const campusIds = unique(assignments.map((assignment) => assignment.campus_id));
+  const unitIds = unique(assignments.map((assignment) => assignment.unit_id));
+  const [
+    { data: processes, error: processError },
+    { data: versions, error: versionError },
+    { data: campuses, error: campusError },
+    { data: units, error: unitError },
+  ] = await Promise.all([
+    client
+      .from("khpos_ops_processes")
+      .select("id,code,title,criticality,status")
+      .eq("organisation_id", organisationId)
+      .in("id", processIds)
+      .neq("status", "retired"),
+    client
+      .from("khpos_ops_process_versions")
+      .select("process_id")
+      .in("process_id", processIds)
+      .eq("status", "active"),
+    campusIds.length
+      ? client
+          .from("khpos_ops_campuses")
+          .select("id,name")
+          .eq("organisation_id", organisationId)
+          .in("id", campusIds)
+      : Promise.resolve({ data: [], error: null }),
+    unitIds.length
+      ? client
+          .from("khpos_ops_units")
+          .select("id,name")
+          .eq("organisation_id", organisationId)
+          .in("id", unitIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
-  if (processError || versionError) {
+  if (processError || versionError || campusError || unitError) {
     throw new KhposOpsWorkError(
       processError?.message ??
         versionError?.message ??
+        campusError?.message ??
+        unitError?.message ??
         "Available processes could not be loaded.",
       500,
     );
@@ -358,26 +384,44 @@ async function getAvailableManualProcesses(
       .map((process) => [process.id, process]),
   );
 
-  const items = profiles
-    .map((profile) => {
-      const process = processById.get(profile.process_id);
-      const role = profile.owner_role_id
-        ? roleById.get(profile.owner_role_id)
-        : undefined;
-      if (!process || !role) return null;
+  const campusById = new Map(
+    (campuses ?? []).map((campus) => [campus.id, campus.name]),
+  );
+  const unitById = new Map(
+    (units ?? []).map((unit) => [unit.id, unit.name]),
+  );
 
-      return {
+  const items: KhposOpsAvailableProcess[] = [];
+  for (const profile of profiles) {
+    const process = processById.get(profile.process_id);
+    const role = profile.owner_role_id
+      ? roleById.get(profile.owner_role_id)
+      : undefined;
+    if (!process || !role || !profile.owner_role_id) continue;
+
+    for (const assignment of assignments.filter(
+      (item) => item.role_id === profile.owner_role_id,
+    )) {
+      items.push({
         processId: process.id,
         code: process.code,
         title: process.title,
         criticality: process.criticality as "P0" | "P1" | "P2",
         ownerRoleTitle: role.title,
+        campusId: assignment.campus_id,
+        campusName: assignment.campus_id
+          ? campusById.get(assignment.campus_id) ?? null
+          : null,
+        unitId: assignment.unit_id,
+        unitName: assignment.unit_id
+          ? unitById.get(assignment.unit_id) ?? null
+          : null,
         triggerSummary: profile.trigger_summary,
         evidenceRequired: profile.evidence_required,
         verificationRequired: profile.verification_required,
-      };
-    })
-    .filter((item): item is KhposOpsAvailableProcess => Boolean(item));
+      });
+    }
+  }
 
   const criticalityRank = { P0: 0, P1: 1, P2: 2 };
   items.sort(
