@@ -64,7 +64,7 @@ const executionControlLink = {
 } as const;
 
 const operationsLinks = [
-  { suffix: "/work", label: "My Work", icon: ListTodo },
+  { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
   { suffix: "/performance", label: "Performance & Scorecards", icon: BarChart3 },
@@ -324,7 +324,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   }`}
                 >
                   <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Home", "Activate", "Work", "Issues"][dailyLinks.indexOf(item)]}</span>
+                  <span className="w-full truncate text-center">{["Home", "Activate", "Today", "Issues"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
