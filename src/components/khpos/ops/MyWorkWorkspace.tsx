@@ -592,7 +592,7 @@ export function MyWorkWorkspace({
                       <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-brand-700">
                         Approved operating process
                       </p>
-                      <ProcessDocument process={operatingProcess} compact />
+                      <ProcessDocument process={operatingProcess} compact organisationId={organisationId} />
                     </section>
                   )}
 
