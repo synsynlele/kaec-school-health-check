@@ -178,13 +178,20 @@ function PolicyDocument({
 
 export function InstitutionalLibrary({
   organisationId,
+  initialTab = "policies",
+  initialQuery = "",
+  initialCriticalOnly = false,
 }: {
   organisationId: string;
+  initialTab?: Tab;
+  initialQuery?: string;
+  initialCriticalOnly?: boolean;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
-  const [tab, setTab] = useState<Tab>("policies");
-  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [query, setQuery] = useState(initialQuery);
+  const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
@@ -303,17 +310,21 @@ export function InstitutionalLibrary({
   if (!library) return null;
 
   const needle = query.trim().toLowerCase();
-  const policies = library.policies.filter((item) =>
-    !needle ||
-    `${item.code} ${item.name} ${item.operatingSystem} ${item.ownerLabel}`
-      .toLowerCase()
-      .includes(needle),
+  const policies = library.policies.filter(
+    (item) =>
+      (!criticalOnly || (item.priority === "C0" && !item.activeVersion)) &&
+      (!needle ||
+        `${item.code} ${item.name} ${item.operatingSystem} ${item.ownerLabel}`
+          .toLowerCase()
+          .includes(needle)),
   );
-  const processes = library.processes.filter((item) =>
-    !needle ||
-    `${item.code} ${item.title} ${item.operatingSystem} ${item.ownerLabel}`
-      .toLowerCase()
-      .includes(needle),
+  const processes = library.processes.filter(
+    (item) =>
+      (!criticalOnly || (item.criticality === "P0" && !item.activeVersion)) &&
+      (!needle ||
+        `${item.code} ${item.title} ${item.operatingSystem} ${item.ownerLabel}`
+          .toLowerCase()
+          .includes(needle)),
   );
   const tools = library.tools.filter((item) =>
     !needle ||
@@ -399,15 +410,30 @@ export function InstitutionalLibrary({
             ))}
           </div>
 
-          <label className="relative block min-w-0 lg:w-96">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search code, title, system or owner"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-            />
-          </label>
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            {tab !== "tools" && (
+              <button
+                type="button"
+                onClick={() => setCriticalOnly((value) => !value)}
+                className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                  criticalOnly
+                    ? "border-amber-300 bg-amber-50 text-amber-900"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-brand-300"
+                }`}
+              >
+                {criticalOnly ? "Critical missing only" : "Show critical missing"}
+              </button>
+            )}
+            <label className="relative block min-w-0 sm:w-80 lg:w-96">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search code, title, system or owner"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+              />
+            </label>
+          </div>
         </section>
 
         {tab === "policies" && (
@@ -421,7 +447,7 @@ export function InstitutionalLibrary({
             </div>
 
             {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
-              <PolicyGovernance organisationId={organisationId} policies={library.policies} onPublished={setLibrary} />
+              <PolicyGovernance organisationId={organisationId} policies={policies} onPublished={setLibrary} />
             )}
 
             {policies.map((policy) => (
@@ -447,7 +473,7 @@ export function InstitutionalLibrary({
 
             {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
               <div className="mt-6">
-                <ProcessGovernance organisationId={organisationId} processes={library.processes} onPublished={setLibrary} />
+                <ProcessGovernance organisationId={organisationId} processes={processes} onPublished={setLibrary} />
               </div>
             )}
 
