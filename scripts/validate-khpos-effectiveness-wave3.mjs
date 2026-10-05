@@ -55,7 +55,6 @@ for (const expected of [
 const onboarding = read("src/lib/khpos/ops/onboarding.ts");
 for (const expected of [
   "KHPOS_PRACTICE_STEPS",
-  "PEO-ONB-007",
   "getKhposMyOnboarding",
   "saveKhposPractice",
   "submitMyOnboardingItem",
@@ -77,6 +76,7 @@ for (const expected of [
   "attach_evidence",
   "handle_return",
   "system://khpos/practice/KHPOS_CORE_V1",
+  "PEO-ONB-007",
   "ops_refresh_staff_readiness",
 ]) {
   requireText(practiceMigration, expected, "safe onboarding practice");
