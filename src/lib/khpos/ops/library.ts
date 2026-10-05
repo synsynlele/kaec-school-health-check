@@ -76,6 +76,7 @@ export interface KhposOpsToolTemplate {
   name: string;
   toolType: string;
   purpose: string;
+  schemaDefinition: Record<string, unknown>;
   status: "active" | "inactive";
 }
 
@@ -142,7 +143,37 @@ export async function getKhposOpsLibrary(
     throw new KhposOpsLibraryError(message, status);
   }
 
-  return data as unknown as KhposOpsLibrary;
+  const library = data as unknown as KhposOpsLibrary;
+
+  if (!library.tools.length) return library;
+
+  const { data: toolSchemas, error: toolSchemaError } = await admin()
+    .from("khpos_ops_tool_templates")
+    .select("id,schema_definition")
+    .eq("organisation_id", organisationId)
+    .eq("status", "active");
+
+  if (toolSchemaError) {
+    throw new KhposOpsLibraryError(
+      toolSchemaError.message || "Tool definitions could not be loaded.",
+      500,
+    );
+  }
+
+  const schemaById = new Map(
+    (toolSchemas ?? []).map((row) => [
+      row.id,
+      isObject(row.schema_definition) ? row.schema_definition : {},
+    ]),
+  );
+
+  return {
+    ...library,
+    tools: library.tools.map((tool) => ({
+      ...tool,
+      schemaDefinition: schemaById.get(tool.id) ?? {},
+    })),
+  };
 }
 
 export async function acknowledgeKhposOpsPolicy(
