@@ -76,7 +76,7 @@ export function MyOnboardingWorkspace({
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    void load().catch((cause) => {
+    void Promise.resolve().then(load).catch((cause) => {
       if (active) {
         setError(
           cause instanceof Error
