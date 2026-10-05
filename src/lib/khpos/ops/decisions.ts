@@ -76,6 +76,9 @@ export interface KhposOpsDecision {
   implementationExpectedOutcome: string | null;
   implementationDueAt: string | null;
   implementedAt: string | null;
+  outcomeStatus: "achieved" | "partially_achieved" | "not_achieved" | null;
+  outcomeNote: string | null;
+  outcomeVerifiedAt: string | null;
   createdAt: string;
   requester: {
     roleTitle: string | null;
@@ -144,6 +147,8 @@ export interface KhposOpsCreateDecisionInput {
   implementationTitle?: string | null;
   implementationExpectedOutcome?: string | null;
   implementationDueAt?: string | null;
+  outcomeStatus?: "achieved" | "partially_achieved" | "not_achieved" | null;
+  outcomeNote?: string | null;
 }
 
 export type KhposOpsDecisionAction =
@@ -218,7 +223,46 @@ export async function getKhposOpsDecisions(
     );
   }
 
-  return data as unknown as KhposOpsDecisionsWorkspace;
+  const workspace = data as unknown as KhposOpsDecisionsWorkspace;
+  if (!workspace.items.length) return workspace;
+
+  const { data: outcomes, error: outcomeError } = await admin()
+    .from("khpos_ops_decisions")
+    .select("id,outcome_status,outcome_note,outcome_verified_at")
+    .eq("organisation_id", organisationId)
+    .in(
+      "id",
+      workspace.items.map((item) => item.id),
+    );
+
+  if (outcomeError) {
+    throw new KhposOpsDecisionError(outcomeError.message, 500);
+  }
+
+  const byId = new Map(
+    (outcomes ?? []).map((item) => [
+      item.id,
+      {
+        outcomeStatus: item.outcome_status as
+          | "achieved"
+          | "partially_achieved"
+          | "not_achieved"
+          | null,
+        outcomeNote: item.outcome_note,
+        outcomeVerifiedAt: item.outcome_verified_at,
+      },
+    ]),
+  );
+
+  return {
+    ...workspace,
+    items: workspace.items.map((item) => ({
+      ...item,
+      outcomeStatus: byId.get(item.id)?.outcomeStatus ?? null,
+      outcomeNote: byId.get(item.id)?.outcomeNote ?? null,
+      outcomeVerifiedAt: byId.get(item.id)?.outcomeVerifiedAt ?? null,
+    })),
+  };
 }
 
 export async function createKhposOpsDecision(
@@ -246,13 +290,26 @@ export async function actOnKhposOpsDecision(
   action: KhposOpsDecisionAction,
   payload: KhposOpsDecisionActionPayload = {},
 ): Promise<KhposOpsDecisionsWorkspace> {
-  const { error } = await admin().rpc("khpos_ops_decision_action_server", {
-    p_actor_user_id: userId,
-    p_organisation_id: organisationId,
-    p_decision_id: decisionId,
-    p_action: action,
-    p_payload: payload,
-  });
+  const outcomeClose =
+    action === "close" &&
+    payload.outcomeStatus &&
+    payload.outcomeNote?.trim();
+
+  const { error } = outcomeClose
+    ? await admin().rpc("khpos_ops_close_decision_outcome_server", {
+        p_actor_user_id: userId,
+        p_organisation_id: organisationId,
+        p_decision_id: decisionId,
+        p_outcome_status: payload.outcomeStatus,
+        p_outcome_note: payload.outcomeNote.trim(),
+      })
+    : await admin().rpc("khpos_ops_decision_action_server", {
+        p_actor_user_id: userId,
+        p_organisation_id: organisationId,
+        p_decision_id: decisionId,
+        p_action: action,
+        p_payload: payload,
+      });
 
   if (error) {
     throw new KhposOpsDecisionError(error.message, statusFor(error.message));
