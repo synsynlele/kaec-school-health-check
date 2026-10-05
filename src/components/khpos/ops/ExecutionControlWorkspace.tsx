@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, CircleAlert, Loader2, Save } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -25,12 +25,12 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function token() {
+  const token = useCallback(async () => {
     if (!supabase) throw new Error("KHP-OS sign-in is not configured.");
     const { data } = await supabase.auth.getSession();
     if (!data.session?.access_token) throw new Error("Your session has ended. Sign in again.");
     return data.session.access_token;
-  }
+  }, [supabase]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -49,26 +49,28 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
       setSnapshot(body.execution);
     }).catch((cause) => active && setError(cause instanceof Error ? cause.message : "Execution control could not be loaded."));
     return () => { active = false; };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, token]);
 
   const selected = snapshot?.items.find((item) => item.processId === selectedId) ?? null;
 
-  useEffect(() => {
-    if (!selected) return;
+  function selectProcess(processId: string) {
+    const item = snapshot?.items.find((process) => process.processId === processId);
+    if (!item) return;
+    setSelectedId(processId);
     setForm({
-      processId: selected.processId,
-      mode: selected.mode,
-      ownerRoleId: selected.ownerRoleId,
-      eventType: selected.eventType,
-      conditionKey: selected.conditionKey,
-      triggerSummary: selected.triggerSummary,
-      dueOffsetMinutes: selected.dueOffsetMinutes,
-      evidenceRequired: selected.evidenceRequired,
-      verificationRequired: selected.verificationRequired,
-      escalationMinutes: selected.escalationMinutes,
-      kpiCodes: selected.kpiCodes,
+      processId: item.processId,
+      mode: item.mode,
+      ownerRoleId: item.ownerRoleId,
+      eventType: item.eventType,
+      conditionKey: item.conditionKey,
+      triggerSummary: item.triggerSummary,
+      dueOffsetMinutes: item.dueOffsetMinutes,
+      evidenceRequired: item.evidenceRequired,
+      verificationRequired: item.verificationRequired,
+      escalationMinutes: item.escalationMinutes,
+      kpiCodes: item.kpiCodes,
     });
-  }, [selected]);
+  }
 
   async function save() {
     if (!form) return;
@@ -123,7 +125,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Process coverage</p><h2 className="mt-2 text-xl font-black">{showAll ? "All approved processes" : "Processes needing mapping"}</h2></div><button type="button" onClick={() => setShowAll((value) => !value)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black">{showAll ? "Show gaps" : "Show all"}</button></div>
           <div className="mt-5 max-h-[70vh] space-y-2 overflow-y-auto">
-            {visible.map((item) => <button key={item.processId} type="button" onClick={() => setSelectedId(item.processId)} className={"w-full rounded-2xl border p-4 text-left " + (selectedId === item.processId ? "border-brand-400 bg-brand-50" : "border-slate-200 bg-slate-50")}>
+            {visible.map((item) => <button key={item.processId} type="button" onClick={() => selectProcess(item.processId)} className={"w-full rounded-2xl border p-4 text-left " + (selectedId === item.processId ? "border-brand-400 bg-brand-50" : "border-slate-200 bg-slate-50")}>
               <div className="flex items-start justify-between gap-3"><div><div className="flex gap-2"><span className="text-xs font-black text-brand-700">{item.code}</span><span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black">{item.criticality}</span></div><p className="mt-2 text-sm font-black">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.status === "configured" ? readable(item.mode) : "mapping needed"}</p></div>{item.status === "configured" ? <CheckCircle2 className="size-5 text-emerald-700" /> : <CircleAlert className="size-5 text-amber-700" />}</div>
             </button>)}
             {!visible.length && <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50 p-6 text-center text-sm font-semibold text-emerald-900">Every approved process in this view is mapped.</div>}
