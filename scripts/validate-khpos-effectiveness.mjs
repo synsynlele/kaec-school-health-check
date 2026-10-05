@@ -58,7 +58,7 @@ for (const expected of [
 }
 
 const decisionMigration = read(
-  "supabase/migrations/20261005143200_khpos_effectiveness_wave2_outcome_closure.sql",
+  "supabase/migrations/20261005133548_khpos_effectiveness_wave2_outcome_closure.sql",
 );
 for (const expected of [
   "outcome_status",
@@ -71,7 +71,7 @@ for (const expected of [
 }
 
 const verificationMigration = read(
-  "supabase/migrations/20261005141000_khpos_effectiveness_wave2_decision_verification.sql",
+  "supabase/migrations/20261005133539_khpos_effectiveness_wave2_decision_verification.sql",
 );
 for (const expected of [
   "verification_required := true",
