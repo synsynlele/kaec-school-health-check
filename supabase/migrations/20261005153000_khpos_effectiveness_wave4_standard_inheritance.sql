@@ -481,6 +481,41 @@ $func$;
 revoke all on function khpos_private.ops_build_standard_snapshot(uuid)
   from public,anon,authenticated;
 
+create or replace function khpos_private.ops_standard_target_role(
+  p_organisation_id uuid,
+  p_source_role_code text
+)
+returns uuid
+language sql
+stable
+security definer
+set search_path=''
+as $func$
+  select r.id
+  from public.khpos_ops_roles r
+  where r.organisation_id=p_organisation_id
+    and r.status='active'
+    and (
+      r.code=p_source_role_code
+      or (
+        p_source_role_code='VISION_CUSTODIAN'
+        and r.code='SCHOOL_CUSTODIAN'
+      )
+      or (
+        p_source_role_code='SCHOOL_CUSTODIAN'
+        and r.code='VISION_CUSTODIAN'
+      )
+    )
+  order by
+    case when r.code=p_source_role_code then 0 else 1 end,
+    r.role_level,
+    r.code
+  limit 1;
+$func$;
+
+revoke all on function khpos_private.ops_standard_target_role(uuid,text)
+  from public,anon,authenticated;
+
 create or replace function public.khpos_ops_install_standard_release_server(
   p_organisation_id uuid,
   p_actor_user_id uuid,
@@ -627,11 +662,9 @@ begin
     for v_role in
       select value from jsonb_array_elements(coalesce(v_item->'roles','[]'::jsonb))
     loop
-      select id into v_role_id
-      from public.khpos_ops_roles
-      where organisation_id=p_organisation_id
-        and code=v_role->>'roleCode'
-        and status='active';
+      v_role_id := khpos_private.ops_standard_target_role(
+        p_organisation_id,v_role->>'roleCode'
+      );
 
       if v_role_id is not null then
         insert into public.khpos_ops_policy_roles(
@@ -790,9 +823,10 @@ begin
   if not khpos_private.ops_hpd_has_membership(
     p_actor_user_id,p_organisation_id
   ) or not khpos_private.ops_hpd_actor_has_role(
-    p_actor_user_id,p_organisation_id,array['VISION_CUSTODIAN']::text[]
+    p_actor_user_id,p_organisation_id,
+    array['VISION_CUSTODIAN','SCHOOL_CUSTODIAN']::text[]
   ) then
-    raise exception 'Only the active Vision Custodian can adopt a KAEC Standard release for the school.';
+    raise exception 'Only the active institutional Custodian can adopt a KAEC Standard release for the school.';
   end if;
 
   select * into v_installation
@@ -1062,11 +1096,9 @@ begin
 
     v_role_id := null;
     if nullif(v_item->>'ownerRoleCode','') is not null then
-      select id into v_role_id
-      from public.khpos_ops_roles
-      where organisation_id=p_organisation_id
-        and code=v_item->>'ownerRoleCode'
-        and status='active';
+      v_role_id := khpos_private.ops_standard_target_role(
+        p_organisation_id,v_item->>'ownerRoleCode'
+      );
     end if;
 
     if v_process_id is not null then
@@ -1110,11 +1142,9 @@ begin
     where organisation_id=p_organisation_id
       and code=v_item->>'processCode';
 
-    select id into v_role_id
-    from public.khpos_ops_roles
-    where organisation_id=p_organisation_id
-      and code=v_item->>'ownerRoleCode'
-      and status='active';
+    v_role_id := khpos_private.ops_standard_target_role(
+      p_organisation_id,v_item->>'ownerRoleCode'
+    );
 
     v_campus_id := null;
     if nullif(v_item->>'campusCode','') is not null then
