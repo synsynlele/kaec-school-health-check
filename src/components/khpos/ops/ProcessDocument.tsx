@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import {
   CheckCircle2,
   Clock3,
   FileCheck2,
   ShieldAlert,
   Workflow,
+  Activity,
+  Wrench,
 } from "lucide-react";
 import type { KhposOpsProcess } from "@/lib/khpos/ops/library";
 
@@ -48,10 +51,12 @@ export function ProcessDocument({
   process,
   compact = false,
   defaultOpen = false,
+  organisationId,
 }: {
   process: KhposOpsProcess;
   compact?: boolean;
   defaultOpen?: boolean;
+  organisationId?: string;
 }) {
   const version = process.activeVersion;
 
@@ -176,6 +181,116 @@ export function ProcessDocument({
                 </p>
               </section>
             </div>
+
+            {process.connections && (
+              <section className="rounded-3xl border border-brand-200 bg-brand-50 p-5">
+                <div className="flex items-center gap-2 text-brand-800">
+                  <Activity className="size-4" />
+                  <h4 className="text-xs font-black uppercase tracking-[0.14em]">
+                    Connected operating system
+                  </h4>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-2xl bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                      Execution
+                    </p>
+                    <p className="mt-1 text-sm font-black capitalize">
+                      {process.connections.execution
+                        ? readable(process.connections.execution.activationMode)
+                        : "Not mapped"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {process.connections.execution?.ownerRoleTitle ??
+                        "No accountable execution role"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                      Live work
+                    </p>
+                    <p className="mt-1 text-2xl font-black">
+                      {process.connections.currentWorkCount}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {process.connections.completedWorkCount} completed historically
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                      Controlled records
+                    </p>
+                    <p className="mt-1 text-2xl font-black">
+                      {process.connections.controlledRecordCount}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Reports, logs or other process records submitted
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                      Verification
+                    </p>
+                    <p className="mt-1 text-sm font-black">
+                      {process.connections.execution?.verificationRequired
+                        ? "Independent verification"
+                        : "No process-level verification"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {process.connections.execution?.evidenceRequired
+                        ? "Evidence required"
+                        : "Evidence rule follows work/tool mapping"}
+                    </p>
+                  </div>
+                </div>
+
+                {process.connections.tools.length > 0 && (
+                  <div className="mt-4 rounded-2xl bg-white p-4">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="size-4 text-brand-700" />
+                      <p className="text-xs font-black uppercase tracking-wide text-slate-600">
+                        Required tools / records
+                      </p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {process.connections.tools.map((tool) => (
+                        <span
+                          key={tool.requirementId}
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700"
+                        >
+                          {tool.toolCode} · {tool.label}
+                          {tool.verificationRequired ? " · verify" : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {organisationId && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/khpos/${organisationId}/work`}
+                      className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white"
+                    >
+                      Open related work
+                    </Link>
+                    <Link
+                      href={`/khpos/${organisationId}/records`}
+                      className="rounded-full border border-brand-300 bg-white px-4 py-2 text-xs font-black text-brand-800"
+                    >
+                      Open records
+                    </Link>
+                    <Link
+                      href={`/khpos/${organisationId}/execution-control`}
+                      className="rounded-full border border-brand-300 bg-white px-4 py-2 text-xs font-black text-brand-800"
+                    >
+                      Execution control
+                    </Link>
+                  </div>
+                )}
+              </section>
+            )}
           </article>
         )}
       </div>
