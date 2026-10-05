@@ -84,8 +84,10 @@ export async function POST(
       | "evidence"
       | "record_submit"
       | "verify"
-      | "return_verification";
+      | "return_verification"
+      | "start_process";
     workItemId?: string;
+    processId?: string;
     note?: string;
     templateItemId?: string;
     response?: unknown;
@@ -105,15 +107,30 @@ export async function POST(
     );
   }
 
-  if (!payload.workItemId || !UUID_RE.test(payload.workItemId)) {
-    return NextResponse.json(
-      { ok: false, error: "A valid work item is required." },
-      { status: 400 },
-    );
-  }
-
   try {
     const user = await authenticatedUser(request);
+
+    if (payload.action === "start_process") {
+      if (!payload.processId || !UUID_RE.test(payload.processId)) {
+        return NextResponse.json(
+          { ok: false, error: "A valid controlled process is required." },
+          { status: 400 },
+        );
+      }
+
+      await startKhposManualProcess(id, user.id, {
+        processId: payload.processId,
+      });
+      const work = await getKhposOpsMyWork(id, user.id);
+      return NextResponse.json({ ok: true, work });
+    }
+
+    if (!payload.workItemId || !UUID_RE.test(payload.workItemId)) {
+      return NextResponse.json(
+        { ok: false, error: "A valid work item is required." },
+        { status: 400 },
+      );
+    }
 
     if (
       payload.action === "start" ||
