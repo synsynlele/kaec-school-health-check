@@ -279,6 +279,18 @@ begin
     raise exception 'The required operating record was not found.';
   end if;
 
+  if p_record_id is null
+    and v_requirement.tool_type_snapshot <> 'operating_log'
+    and exists (
+      select 1
+      from public.khpos_ops_work_records existing
+      where existing.requirement_id=v_requirement.id
+        and existing.status in ('submitted','verified')
+    )
+  then
+    raise exception 'This report has already been submitted for this work.';
+  end if;
+
   if jsonb_typeof(v_requirement.schema_snapshot->'fields')='array' then
     for v_field in
       select value
