@@ -17,6 +17,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PolicyGovernance } from "@/components/khpos/ops/PolicyGovernance";
 import { ProcessGovernance } from "@/components/khpos/ops/ProcessGovernance";
+import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
 import type {
   KhposOpsLibrary,
   KhposOpsPolicy,
@@ -450,44 +451,16 @@ export function InstitutionalLibrary({
               </div>
             )}
 
-            <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-950 text-white">
-                    <tr>
-                      <th className="px-4 py-3 font-black">Code</th>
-                      <th className="px-4 py-3 font-black">Process</th>
-                      <th className="px-4 py-3 font-black">System</th>
-                      <th className="px-4 py-3 font-black">Owner</th>
-                      <th className="px-4 py-3 font-black">Policy</th>
-                      <th className="px-4 py-3 font-black">State</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {processes.map((process) => (
-                      <tr key={process.id} className="border-t border-slate-100 align-top">
-                        <td className="px-4 py-4 font-black text-brand-700">{process.code}</td>
-                        <td className="px-4 py-4">
-                          <p className="font-black text-slate-950">{process.title}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {process.technology.join(" · ") || "Execution technology not assigned"}
-                          </p>
-                        </td>
-                        <td className="px-4 py-4 capitalize text-slate-600">{readable(process.operatingSystem)}</td>
-                        <td className="px-4 py-4 text-slate-600">{process.ownerLabel}</td>
-                        <td className="px-4 py-4 text-slate-600">{process.governingPolicyCodes.join(", ") || "—"}</td>
-                        <td className="px-4 py-4">
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${
-                            process.activeVersion ? "bg-mint-50 text-mint-800" : "bg-slate-100 text-slate-600"
-                          }`}>
-                            {process.activeVersion ? `Published v${process.activeVersion.version}` : "Registered"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="mt-6 space-y-4">
+              {processes.length ? (
+                processes.map((process) => (
+                  <ProcessDocument key={process.id} process={process} />
+                ))
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm leading-6 text-slate-600">
+                  No process matches this search.
+                </div>
+              )}
             </div>
           </section>
         )}
