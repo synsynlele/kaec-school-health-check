@@ -761,6 +761,11 @@ export async function getKhposOpsPerformance(
 
   return {
     ...workspace,
+    items: workspace.items.map((item) =>
+      item.sourceType === "operational_engine"
+        ? { ...item, canRecord: false }
+        : item,
+    ),
     derivedPerformance,
     coreScorecard: {
       total: 6,
@@ -860,6 +865,29 @@ export async function recordKhposOpsKpiMeasurement(
     evidenceReference?: string | null;
   },
 ): Promise<KhposOpsPerformanceWorkspace> {
+  const { data: version, error: versionError } = await admin()
+    .from("khpos_ops_kpi_versions")
+    .select("source_type,khpos_ops_kpis!inner(organisation_id,status)")
+    .eq("kpi_id", input.kpiId)
+    .eq("status", "active")
+    .eq("khpos_ops_kpis.organisation_id", organisationId)
+    .eq("khpos_ops_kpis.status", "active")
+    .maybeSingle();
+
+  if (versionError || !version) {
+    throw new KhposOpsPerformanceError(
+      versionError?.message ?? "Active KPI definition not found.",
+      404,
+    );
+  }
+
+  if (version.source_type === "operational_engine") {
+    throw new KhposOpsPerformanceError(
+      "This KPI is measured by the KHP-OS operational engine and cannot be overwritten manually.",
+      409,
+    );
+  }
+
   const { error } = await admin().rpc(
     "khpos_ops_record_kpi_measurement_server",
     {
