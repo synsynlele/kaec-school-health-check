@@ -15,6 +15,7 @@ import {
   Target,
   TrendingDown,
   TrendingUp,
+  Wrench,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposImprovementWorkspace } from "@/lib/khpos/improvement";
@@ -50,6 +51,12 @@ function outcomeTone(outcome: string) {
   if (outcome === "improving") return "border-brand-200 bg-brand-50 text-brand-800";
   if (outcome === "regressed") return "border-red-200 bg-red-50 text-red-800";
   return "border-amber-200 bg-amber-50 text-amber-900";
+}
+
+function learningTone(severity: "critical" | "high" | "medium") {
+  if (severity === "critical") return "border-red-200 bg-red-50";
+  if (severity === "high") return "border-amber-200 bg-amber-50";
+  return "border-brand-200 bg-brand-50";
 }
 
 export function ImprovementIntelligenceWorkspace({
@@ -345,6 +352,101 @@ export function ImprovementIntelligenceWorkspace({
               </section>
             )}
           </>
+        )}
+
+        {workspace.operationalLearning.access && (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                  Operational learning loop · 90 days
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  Which processes are teaching us that the system needs redesign?
+                </h2>
+                <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-500">
+                  KHP-OS looks for repeated overdue work, blockers, returned controlled records,
+                  issues and weak completion reliability. These are redesign signals—not automatic
+                  blame and not automatic policy changes.
+                </p>
+              </div>
+              <Wrench className="hidden size-8 shrink-0 text-brand-700 sm:block" />
+            </div>
+
+            {workspace.operationalLearning.signals.length ? (
+              <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                {workspace.operationalLearning.signals.map((signal) => (
+                  <article
+                    key={signal.processId}
+                    className={"rounded-3xl border p-5 " + learningTone(signal.severity)}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wide text-brand-700">
+                          {signal.processCode} · {signal.criticality}
+                        </p>
+                        <h3 className="mt-1 text-lg font-black">{signal.processTitle}</h3>
+                      </div>
+                      <span className="rounded-full bg-white/70 px-3 py-1 text-[10px] font-black uppercase">
+                        {signal.severity}
+                      </span>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-6 text-slate-700">{signal.reason}</p>
+
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl bg-white/70 p-3">
+                        <p className="text-[10px] font-black uppercase text-slate-500">Issues</p>
+                        <p className="mt-1 text-lg font-black">{signal.issues}</p>
+                      </div>
+                      <div className="rounded-xl bg-white/70 p-3">
+                        <p className="text-[10px] font-black uppercase text-slate-500">Overdue</p>
+                        <p className="mt-1 text-lg font-black">{signal.overdueOpen}</p>
+                      </div>
+                      <div className="rounded-xl bg-white/70 p-3">
+                        <p className="text-[10px] font-black uppercase text-slate-500">Returned</p>
+                        <p className="mt-1 text-lg font-black">{signal.returnedRecords}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-black/5 bg-white/80 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                        System question
+                      </p>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-slate-700">
+                        {signal.recommendation}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={
+                        "/khpos/" +
+                        organisationId +
+                        "/library?tab=processes&q=" +
+                        encodeURIComponent(signal.processCode)
+                      }
+                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white"
+                    >
+                      Review the controlled process
+                      <ArrowRight className="size-3.5" />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-700" />
+                <div>
+                  <p className="font-black text-emerald-950">
+                    No repeated process-redesign signal meets the current threshold.
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-emerald-900">
+                    KHP-OS will keep watching operating evidence as real work accumulates.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         <section className="rounded-[30px] border border-brand-100 bg-brand-50 p-6 sm:p-8">
