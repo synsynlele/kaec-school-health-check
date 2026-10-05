@@ -739,11 +739,9 @@ begin
     for v_role in
       select value from jsonb_array_elements(coalesce(v_item->'roles','[]'::jsonb))
     loop
-      select id into v_role_id
-      from public.khpos_ops_roles
-      where organisation_id=p_organisation_id
-        and code=v_role->>'roleCode'
-        and status='active';
+      v_role_id := khpos_private.ops_standard_target_role(
+        p_organisation_id,v_role->>'roleCode'
+      );
 
       if v_role_id is not null then
         insert into public.khpos_ops_process_roles(
