@@ -68,6 +68,9 @@ begin
   update public.khpos_ops_process_execution_profiles set owner_role_id=ambiguous_role where id=profile;
   perform khpos_private.ops_emit_system_event(org,'asset_fault_reported','ambiguous:'||suffix,'test',suffix,jsonb_build_object('campusId',campus));
   if not exists(select 1 from public.khpos_ops_trigger_events where execution_profile_id=profile and event_key='ambiguous:'||suffix and status='failed' and work_item_id is null) then raise exception 'Ambiguous routing was not blocked'; end if;
+  update public.khpos_ops_process_execution_profiles set owner_role_id=role_id where id=profile;
+  perform khpos_private.ops_emit_system_event(org,'asset_fault_reported','invalid-scope:'||suffix,'test',suffix,jsonb_build_object('campusId',gen_random_uuid()));
+  if not exists(select 1 from public.khpos_ops_trigger_events where execution_profile_id=profile and event_key='invalid-scope:'||suffix and status='failed' and work_item_id is null) then raise exception 'Invalid scope was not blocked'; end if;
 end;
 $test$;
 rollback;

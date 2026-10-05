@@ -16,6 +16,7 @@ import {
   Loader2,
   Plus,
   ShieldAlert,
+  Sparkles,
   Target,
   UsersRound,
   XCircle,
@@ -114,6 +115,7 @@ export function PerformanceWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
   const [code, setCode] = useState("");
@@ -204,6 +206,7 @@ export function PerformanceWorkspace({
     };
   }, [organisationId, supabase]);
 
+
   async function submit(payload: Record<string, unknown>, busyKey: string) {
     const accessToken = await token();
     if (!accessToken) {
@@ -213,32 +216,74 @@ export function PerformanceWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setMessage("");
 
-    const response = await fetch(
-      `/api/khpos/ops/performance/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        "/api/khpos/ops/performance/" + organisationId,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-    const body = (await response.json()) as {
-      ok?: boolean;
-      performance?: KhposOpsPerformanceWorkspace;
-      error?: string;
-    };
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        performance?: KhposOpsPerformanceWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.performance) {
-      setError(body.error ?? "Performance operation could not be completed.");
+      if (!response.ok || !body.ok || !body.performance) {
+        setError(body.error ?? "Performance operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.performance);
+      return true;
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Performance operation could not be completed.",
+      );
       return false;
+    } finally {
+      setBusyId(null);
     }
+  }
 
-    setWorkspace(body.performance);
-    return true;
+  async function adoptCoreScorecard() {
+    const ok = await submit(
+      { mode: "adopt_core_scorecard" },
+      "adopt-core-scorecard",
+    );
+    if (ok) {
+      setMessage(
+        "Core Operating Baseline adopted. KHP-OS will maintain its system-derived weekly measurements; no target thresholds were created.",
+      );
+    }
+  }
+
+  async function adoptStarterSuggestion(
+    suggestionId: string,
+    suggestionName: string,
+  ) {
+    const ok = await submit(
+      {
+        mode: "adopt_starter_kpi",
+        suggestionId,
+      },
+      "starter-" + suggestionId,
+    );
+    if (ok) {
+      setMessage(
+        suggestionName +
+          " was adopted as a baseline KPI. Record evidence before setting any performance threshold.",
+      );
+    }
   }
 
   async function createKpi() {
@@ -469,6 +514,12 @@ export function PerformanceWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        {message && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
+            {message}
+          </div>
+        )}
+
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
@@ -620,6 +671,138 @@ export function PerformanceWorkspace({
             A dash means there is not yet enough real activity to calculate a rate.
           </p>
         </section>
+
+
+        <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-700 text-white">
+                <Sparkles className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                  Core Operating Baseline
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  Turn the indicators KHP-OS already calculates into governed history.
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Six operating KPIs use the same evidence-derived measures above:
+                  execution coverage, work reliability, on-time completion,
+                  first-pass verification, issue closure and decision-action closure.
+                  They begin in baseline-only mode. KHP-OS records the current
+                  weekly snapshot automatically; leadership adds targets only after
+                  evidence justifies them.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
+                  <span className="rounded-full bg-white px-3 py-1.5 text-brand-800">
+                    {workspace.coreScorecard.adopted}/{workspace.coreScorecard.total} adopted
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1.5 text-slate-700">
+                    No invented targets
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1.5 text-slate-700">
+                    System-measured
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {workspace.coreScorecard.missing > 0 && workspace.canGovernKpis ? (
+              <button
+                type="button"
+                disabled={busyId === "adopt-core-scorecard"}
+                onClick={() => void adoptCoreScorecard()}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-50"
+              >
+                {busyId === "adopt-core-scorecard" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                Adopt Core Baseline
+              </button>
+            ) : workspace.coreScorecard.missing === 0 ? (
+              <div className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-100 px-4 py-2.5 text-sm font-black text-emerald-900">
+                <CheckCircle2 className="size-4" />
+                Core baseline active
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        {workspace.starterSuggestions.length > 0 && (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                Suggested from approved processes
+              </p>
+              <h2 className="mt-2 text-2xl font-black">
+                Add only the outcome and control KPIs that matter next.
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                These suggestions come from approved, executable KHP-OS processes
+                with a staffed accountable role. Adopting one creates a baseline KPI
+                only; it does not invent a target or score.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {workspace.starterSuggestions.map((suggestion) => {
+                const key = "starter-" + suggestion.id;
+                return (
+                  <article
+                    key={suggestion.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black text-brand-800">
+                        {suggestion.processCode}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black text-slate-600">
+                        {readable(suggestion.indicatorType)}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black text-slate-600">
+                        {readable(suggestion.cadence)}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black">{suggestion.name}</h3>
+                    <p className="mt-1 text-xs font-bold text-slate-500">
+                      {suggestion.processTitle} · owner: {suggestion.ownerRoleTitle}
+                    </p>
+                    <p className="mt-4 text-sm leading-6 text-slate-600">
+                      {suggestion.definition}
+                    </p>
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      Process KPI lineage: {suggestion.sourceKpi}
+                    </p>
+
+                    {workspace.canGovernKpis && (
+                      <button
+                        type="button"
+                        disabled={busyId === key}
+                        onClick={() =>
+                          void adoptStarterSuggestion(
+                            suggestion.id,
+                            suggestion.name,
+                          )
+                        }
+                        className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50"
+                      >
+                        {busyId === key ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Plus className="size-4" />
+                        )}
+                        Adopt KPI
+                      </button>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -948,10 +1131,9 @@ export function PerformanceWorkspace({
             <Gauge className="mx-auto size-10 text-brand-700" />
             <h2 className="mt-4 text-2xl font-black">No governed KPIs yet.</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              That is preferable to invented targets. KHP-OS is already showing
-              the factual operating pulse above; School Guardian or Vision
-              Custodian can define the first evidence-based scorecards when
-              ready.
+              The factual operating pulse above is already live. Adopt the Core
+              Operating Baseline to begin governed history without inventing
+              targets, then add only the process-origin KPIs that matter next.
             </p>
           </section>
         ) : (
@@ -1060,7 +1242,7 @@ export function PerformanceWorkspace({
                     </p>
                   </div>
 
-                  {kpi.canRecord && (
+                  {kpi.canRecord && kpi.sourceType !== "operational_engine" && (
                     <details className="mt-5 rounded-2xl border border-slate-200 p-4">
                       <summary className="cursor-pointer text-sm font-black text-slate-800">
                         Record measurement
