@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
+import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -474,6 +476,8 @@ export function DecisionsWorkspace({
     }
   }
 
+  useRecordFocus(!!workspace);
+
   if (!workspace && !error) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
@@ -931,7 +935,9 @@ export function DecisionsWorkspace({
               return (
                 <article
                   key={decision.id}
-                  className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
+                  id={khposRecordAnchor("decision", decision.id)}
+                  tabIndex={-1}
+                  className="scroll-mt-24 target:ring-4 target:ring-brand-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">

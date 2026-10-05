@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
+import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -126,6 +128,8 @@ export function MyWorkWorkspace({
             "Your work loaded, but its operating processes could not be loaded.",
         );
       }
+    }).catch(() => {
+      if (active) setError("Today could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -230,6 +234,8 @@ export function MyWorkWorkspace({
 
     setWork(body.work);
   }
+
+  useRecordFocus(!!work);
 
   if (!work && !error) {
     return (
@@ -510,7 +516,9 @@ export function MyWorkWorkspace({
               return (
                 <article
                   key={item.id}
-                  className="rounded-[28px] border border-amber-200 bg-white p-6 shadow-sm sm:p-7"
+                  id={khposRecordAnchor("verification", item.id)}
+                  tabIndex={-1}
+                  className="scroll-mt-24 target:ring-4 target:ring-brand-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 rounded-[28px] border border-amber-200 bg-white p-6 shadow-sm sm:p-7"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -706,7 +714,9 @@ export function MyWorkWorkspace({
               return (
                 <article
                   key={item.id}
-                  className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
+                  id={khposRecordAnchor("work", item.id)}
+                  tabIndex={-1}
+                  className="scroll-mt-24 target:ring-4 target:ring-brand-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
