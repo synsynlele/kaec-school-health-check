@@ -10,14 +10,33 @@ export type KhposAlert = {
   urgent: boolean;
 };
 
+async function retryClockSkew<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !/JWT issued at future/i.test(error.message)
+    ) {
+      throw error;
+    }
+
+    // Supabase can very occasionally reject an internal service request while
+    // infrastructure clocks converge. Retry this read-only notification query
+    // once; never weaken token validation or retry mutations.
+    await new Promise((resolve) => setTimeout(resolve, 750));
+    return operation();
+  }
+}
+
 export async function getKhposAlerts(
   organisationId: string,
   userId: string,
   nowMs = Date.now(),
 ): Promise<KhposAlert[]> {
   const [work, decisions] = await Promise.all([
-    getKhposOpsMyWork(organisationId, userId),
-    getKhposOpsDecisions(organisationId, userId),
+    retryClockSkew(() => getKhposOpsMyWork(organisationId, userId)),
+    retryClockSkew(() => getKhposOpsDecisions(organisationId, userId)),
   ]);
 
   const week = nowMs + 7 * 86_400_000;

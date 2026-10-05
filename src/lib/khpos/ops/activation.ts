@@ -65,11 +65,15 @@ export type ActivationSnapshot = {
     criticalRegistered: number;
     criticalActive: number;
     criticalMissing: number;
+    draft: number;
+    inReview: number;
+    notStarted: number;
     missingCritical: Array<{
       id: string;
       code: string;
       name: string;
       ownerLabel: string;
+      stage: "not_started" | "draft" | "in_review";
     }>;
   };
   processes: {
@@ -78,6 +82,9 @@ export type ActivationSnapshot = {
     criticalRegistered: number;
     criticalActive: number;
     criticalMissing: number;
+    draft: number;
+    inReview: number;
+    notStarted: number;
     blockedByPolicy: number;
     readyForDrafting: number;
     missingCritical: Array<{
@@ -86,6 +93,7 @@ export type ActivationSnapshot = {
       title: string;
       ownerLabel: string;
       missingPolicyCodes: string[];
+      stage: "not_started" | "draft" | "in_review";
     }>;
   };
   adoption: {
@@ -137,6 +145,39 @@ async function runActivationDrafts<T>(
   );
 
   return { created, failedCodes };
+}
+
+async function markKaecBaselineDraft(
+  table: "khpos_ops_policy_versions" | "khpos_ops_process_versions",
+  versionId: string,
+  userId: string,
+) {
+  const client = admin();
+  const { data, error } = await client
+    .from(table)
+    .update({
+      draft_source: "kaec_baseline",
+      draft_model: "kaec-baseline-v1",
+    })
+    .eq("id", versionId)
+    .eq("author_id", userId)
+    .eq("status", "draft")
+    .select("id")
+    .maybeSingle();
+
+  if (!error && data?.id) return;
+
+  await client
+    .from(table)
+    .delete()
+    .eq("id", versionId)
+    .eq("author_id", userId)
+    .eq("status", "draft");
+
+  throw new KhposActivationError(
+    "A KAEC baseline draft could not be marked safely, so it was rolled back.",
+    500,
+  );
 }
 
 export type ActivationPackResult = {
@@ -203,7 +244,7 @@ export async function prepareKhposActivationPack(
       (policy) => policy.code,
       async (policy) => {
         const baseline = getKaecPolicyBaseline(policy);
-        const { error } = await client.rpc("khpos_ops_govern_policy_server", {
+        const { data: versionId, error } = await client.rpc("khpos_ops_govern_policy_server", {
           p_actor_user_id: userId,
           p_organisation_id: organisationId,
           p_policy_id: policy.id,
@@ -222,7 +263,14 @@ export async function prepareKhposActivationPack(
             reviewDate,
           },
         });
-        if (error) throw error;
+        if (error || typeof versionId !== "string") {
+          throw error ?? new Error("Policy draft version was not returned.");
+        }
+        await markKaecBaselineDraft(
+          "khpos_ops_policy_versions",
+          versionId,
+          userId,
+        );
       },
     );
 
@@ -279,7 +327,7 @@ export async function prepareKhposActivationPack(
     (process) => process.code,
     async (process) => {
       const baseline = getKaecProcessBaseline(process);
-      const { error } = await client.rpc("khpos_ops_govern_process_server", {
+      const { data: versionId, error } = await client.rpc("khpos_ops_govern_process_server", {
         p_actor_user_id: userId,
         p_organisation_id: organisationId,
         p_process_id: process.id,
@@ -298,7 +346,14 @@ export async function prepareKhposActivationPack(
           effectiveDate,
         },
       });
-      if (error) throw error;
+      if (error || typeof versionId !== "string") {
+        throw error ?? new Error("Process draft version was not returned.");
+      }
+      await markKaecBaselineDraft(
+        "khpos_ops_process_versions",
+        versionId,
+        userId,
+      );
     },
   );
 
@@ -432,7 +487,7 @@ export async function getKhposActivation(
   const criticalProcesses = library.processes.filter(
     (process) => process.criticality === "P0" && process.status !== "retired",
   );
-  const missingCriticalProcesses = criticalProcesses
+  const missingCriticalProcessRows = criticalProcesses
     .filter((process) => !process.activeVersion)
     .map((process) => ({
       id: process.id,
@@ -443,6 +498,55 @@ export async function getKhposActivation(
         (code) => !activePolicyCodes.has(code),
       ),
     }));
+
+  let policyOpenRows: Array<{ policy_id: string; status: string }> = [];
+  if (missingCriticalPolicies.length) {
+    const { data, error } = await client
+      .from("khpos_ops_policy_versions")
+      .select("policy_id,status")
+      .in("policy_id", missingCriticalPolicies.map((policy) => policy.id))
+      .in("status", ["draft", "in_review"]);
+    if (error) {
+      throw new KhposActivationError(
+        error.message || "Critical policy workflow state could not be loaded.",
+        500,
+      );
+    }
+    policyOpenRows = data ?? [];
+  }
+
+  let processOpenRows: Array<{ process_id: string; status: string }> = [];
+  if (missingCriticalProcessRows.length) {
+    const { data, error } = await client
+      .from("khpos_ops_process_versions")
+      .select("process_id,status")
+      .in("process_id", missingCriticalProcessRows.map((process) => process.id))
+      .in("status", ["draft", "in_review"]);
+    if (error) {
+      throw new KhposActivationError(
+        error.message || "Critical process workflow state could not be loaded.",
+        500,
+      );
+    }
+    processOpenRows = data ?? [];
+  }
+
+  const policyOpenById = new Map(
+    policyOpenRows.map((row) => [row.policy_id, row.status]),
+  );
+  const processOpenById = new Map(
+    processOpenRows.map((row) => [row.process_id, row.status]),
+  );
+
+  const missingCriticalProcesses = missingCriticalProcessRows.map((process) => ({
+    ...process,
+    stage:
+      processOpenById.get(process.id) === "in_review"
+        ? ("in_review" as const)
+        : processOpenById.get(process.id) === "draft"
+          ? ("draft" as const)
+          : ("not_started" as const),
+  }));
 
   const activeCampusIds = unique(campuses.map((campus) => campus.id));
   const designatedCampusIds = unique(
@@ -462,9 +566,31 @@ export async function getKhposActivation(
     assignedRoleCodes.has("SCHOOL_CUSTODIAN");
   const guardianPresent = assignedRoleCodes.has("SCHOOL_GUARDIAN");
   const criticalPolicyMissing = missingCriticalPolicies.length;
+  const criticalPolicyDraft = missingCriticalPolicies.filter(
+    (policy) => policyOpenById.get(policy.id) === "draft",
+  ).length;
+  const criticalPolicyInReview = missingCriticalPolicies.filter(
+    (policy) => policyOpenById.get(policy.id) === "in_review",
+  ).length;
+  const criticalPolicyNotStarted =
+    criticalPolicyMissing - criticalPolicyDraft - criticalPolicyInReview;
+
   const criticalProcessMissing = missingCriticalProcesses.length;
+  const criticalProcessDraft = missingCriticalProcesses.filter(
+    (process) => process.stage === "draft",
+  ).length;
+  const criticalProcessInReview = missingCriticalProcesses.filter(
+    (process) => process.stage === "in_review",
+  ).length;
+  const criticalProcessNotStarted =
+    criticalProcessMissing - criticalProcessDraft - criticalProcessInReview;
   const blockedByPolicy = missingCriticalProcesses.filter(
     (process) => process.missingPolicyCodes.length > 0,
+  ).length;
+  const readyForDrafting = missingCriticalProcesses.filter(
+    (process) =>
+      process.stage === "not_started" &&
+      process.missingPolicyCodes.length === 0,
   ).length;
 
   const actions: ActivationAction[] = [];
@@ -476,7 +602,7 @@ export async function getKhposActivation(
         unassignedMembers > 0
           ? `${unassignedMembers} active school member${unassignedMembers === 1 ? "" : "s"} still need an operating-role assignment.`
           : "Core School Custodian / School Guardian authority is incomplete.",
-      href: `/khpos/${organisationId}/team`,
+      href: `/khpos/${organisationId}/people`,
       blocking: true,
     });
   }
@@ -493,8 +619,8 @@ export async function getKhposActivation(
     actions.push({
       key: "policies",
       title: "Publish critical school policies",
-      detail: `${criticalPolicyMissing} C0 polic${criticalPolicyMissing === 1 ? "y is" : "ies are"} still without an active school-approved version. Policies come before dependent processes.`,
-      href: `/khpos/${organisationId}/library`,
+      detail: `${criticalPolicyNotStarted} not started · ${criticalPolicyDraft} draft · ${criticalPolicyInReview} in review. Policies come before dependent processes.`,
+      href: `/khpos/${organisationId}/library?tab=policies&critical=missing`,
       blocking: true,
     });
   }
@@ -504,9 +630,9 @@ export async function getKhposActivation(
       title: "Publish critical operating processes",
       detail:
         blockedByPolicy > 0
-          ? `${criticalProcessMissing} P0 processes are still inactive; ${blockedByPolicy} are currently blocked by unpublished governing policies.`
-          : `${criticalProcessMissing} P0 processes are ready to be drafted, reviewed and published.`,
-      href: `/khpos/${organisationId}/library`,
+          ? `${criticalProcessMissing} P0 processes are inactive; ${blockedByPolicy} are blocked by policy. ${criticalProcessDraft} draft · ${criticalProcessInReview} in review.`
+          : `${criticalProcessNotStarted} not started · ${criticalProcessDraft} draft · ${criticalProcessInReview} in review.`,
+      href: `/khpos/${organisationId}/library?tab=processes&critical=missing`,
       blocking: true,
     });
   }
@@ -549,11 +675,20 @@ export async function getKhposActivation(
       criticalRegistered: criticalPolicies.length,
       criticalActive: criticalPolicies.length - criticalPolicyMissing,
       criticalMissing: criticalPolicyMissing,
+      draft: criticalPolicyDraft,
+      inReview: criticalPolicyInReview,
+      notStarted: criticalPolicyNotStarted,
       missingCritical: missingCriticalPolicies.slice(0, 12).map((policy) => ({
         id: policy.id,
         code: policy.code,
         name: policy.name,
         ownerLabel: policy.ownerLabel,
+        stage:
+          policyOpenById.get(policy.id) === "in_review"
+            ? ("in_review" as const)
+            : policyOpenById.get(policy.id) === "draft"
+              ? ("draft" as const)
+              : ("not_started" as const),
       })),
     },
     processes: {
@@ -562,8 +697,11 @@ export async function getKhposActivation(
       criticalRegistered: criticalProcesses.length,
       criticalActive: criticalProcesses.length - criticalProcessMissing,
       criticalMissing: criticalProcessMissing,
+      draft: criticalProcessDraft,
+      inReview: criticalProcessInReview,
+      notStarted: criticalProcessNotStarted,
       blockedByPolicy,
-      readyForDrafting: criticalProcessMissing - blockedByPolicy,
+      readyForDrafting,
       missingCritical: missingCriticalProcesses.slice(0, 12),
     },
     adoption: {

@@ -76,6 +76,7 @@ export interface KhposOpsToolTemplate {
   name: string;
   toolType: string;
   purpose: string;
+  schemaDefinition: Record<string, unknown>;
   status: "active" | "inactive";
 }
 
@@ -142,7 +143,37 @@ export async function getKhposOpsLibrary(
     throw new KhposOpsLibraryError(message, status);
   }
 
-  return data as unknown as KhposOpsLibrary;
+  const library = data as unknown as KhposOpsLibrary;
+
+  if (!library.tools.length) return library;
+
+  const { data: toolSchemas, error: toolSchemaError } = await admin()
+    .from("khpos_ops_tool_templates")
+    .select("id,schema_definition")
+    .eq("organisation_id", organisationId)
+    .eq("status", "active");
+
+  if (toolSchemaError) {
+    throw new KhposOpsLibraryError(
+      toolSchemaError.message || "Tool definitions could not be loaded.",
+      500,
+    );
+  }
+
+  const schemaById = new Map(
+    (toolSchemas ?? []).map((row) => [
+      row.id,
+      isObject(row.schema_definition) ? row.schema_definition : {},
+    ]),
+  );
+
+  return {
+    ...library,
+    tools: library.tools.map((tool) => ({
+      ...tool,
+      schemaDefinition: schemaById.get(tool.id) ?? {},
+    })),
+  };
 }
 
 export async function acknowledgeKhposOpsPolicy(
@@ -230,7 +261,7 @@ export async function getPolicyGovernance(organisationId: string, userId: string
     throw new KhposOpsLibraryError("An active school leadership assignment is required.", 403);
   }
   const { data, error } = await admin().from("khpos_ops_policy_versions")
-    .select("id,policy_id,version,purpose,scope,principles,policy_statements,roles_responsibilities,rules,exceptions,escalation,records_evidence,effective_date,review_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_at")
+    .select("id,policy_id,version,purpose,scope,principles,policy_statements,roles_responsibilities,rules,exceptions,escalation,records_evidence,effective_date,review_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_at,draft_source,draft_model")
     .in("policy_id", library.policies.map((policy) => policy.id))
     .order("version", { ascending: false });
   if (error) throw new KhposOpsLibraryError(error.message, 500);
@@ -275,7 +306,7 @@ export async function getProcessGovernance(
   const { data, error } = await admin()
     .from("khpos_ops_process_versions")
     .select(
-      "id,process_id,version,purpose,trigger,inputs,steps,sla,evidence,expected_outcome,exception_conditions,escalation,kpis,effective_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_by,approved_at",
+      "id,process_id,version,purpose,trigger,inputs,steps,sla,evidence,expected_outcome,exception_conditions,escalation,kpis,effective_date,status,author_id,submitted_at,reviewed_by,reviewed_at,review_note,approved_by,approved_at,draft_source,draft_model",
     )
     .in("process_id", library.processes.map((process) => process.id))
     .order("version", { ascending: false });

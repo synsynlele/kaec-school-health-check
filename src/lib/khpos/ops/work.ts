@@ -101,6 +101,24 @@ export async function getKhposOpsMyWork(
   organisationId: string,
   userId: string,
 ): Promise<KhposOpsMyWork> {
+  // Recurring work is deterministic and idempotent. Materialise any due
+  // occurrence before reading My Work so scheduled operations do not depend on
+  // a leader manually creating tasks or remembering to run a generator.
+  const { error: materialiseError } = await admin().rpc(
+    "khpos_ops_materialize_due_work_server",
+    {
+      p_actor_user_id: userId,
+      p_organisation_id: organisationId,
+    },
+  );
+
+  if (materialiseError) {
+    throw new KhposOpsWorkError(
+      materialiseError.message,
+      statusFor(materialiseError.message),
+    );
+  }
+
   const { data, error } = await admin().rpc("khpos_ops_get_my_work_server", {
     p_actor_user_id: userId,
     p_organisation_id: organisationId,
