@@ -149,7 +149,6 @@ async function actorContext(organisationId: string, userId: string) {
   const { data: assignments, error: assignmentError } = await client
     .from("khpos_ops_role_assignments")
     .select("role_id")
-    .eq("organisation_id", organisationId)
     .eq("user_id", userId)
     .eq("status", "active");
 
