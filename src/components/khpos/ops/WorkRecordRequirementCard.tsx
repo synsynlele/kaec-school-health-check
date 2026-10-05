@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CheckCircle2,
   ClipboardList,
@@ -104,16 +104,10 @@ export function WorkRecordRequirementCard({
   const satisfied = acceptedCount >= requirement.minimumEntries;
   const canAddAnother =
     requirement.toolType === "operating_log" || !satisfied || Boolean(returned);
-  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [values, setValues] = useState<Record<string, unknown>>(
+    () => returned?.payload ?? {},
+  );
   const [localError, setLocalError] = useState("");
-
-  useEffect(() => {
-    if (returned) {
-      setValues(returned.payload);
-      return;
-    }
-    setValues({});
-  }, [returned?.id]);
 
   async function submit() {
     setLocalError("");
