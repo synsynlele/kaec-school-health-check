@@ -641,7 +641,9 @@ export function MyWorkWorkspace({
                       </div>
                       {item.recordRequirements.map((requirement) => (
                         <WorkRecordRequirementCard
-                          key={requirement.id}
+                          key={`${requirement.id}:${requirement.records
+                            .map((record) => `${record.id}-${record.status}`)
+                            .join("|")}`}
                           requirement={requirement}
                           enabled={item.status === "in_progress"}
                           busy={isBusy}
