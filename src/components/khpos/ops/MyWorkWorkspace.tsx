@@ -15,6 +15,8 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
+import type { KhposOpsLibrary } from "@/lib/khpos/ops/library";
 import type {
   KhposOpsMyWork,
   KhposOpsWorkItem,
@@ -44,6 +46,7 @@ export function MyWorkWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
 
   async function accessToken() {
     if (!supabase) return null;
@@ -64,25 +67,48 @@ export function MyWorkWorkspace({
         return;
       }
 
-      const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const body = (await response.json()) as {
+      const headers = { Authorization: `Bearer ${token}` };
+      const [workResponse, libraryResponse] = await Promise.all([
+        fetch(`/api/khpos/ops/work/${organisationId}`, {
+          headers,
+          cache: "no-store",
+        }),
+        fetch(`/api/khpos/ops/library/${organisationId}`, {
+          headers,
+          cache: "no-store",
+        }),
+      ]);
+
+      const workBody = (await workResponse.json()) as {
         ok?: boolean;
         work?: KhposOpsMyWork;
+        error?: string;
+      };
+      const libraryBody = (await libraryResponse.json()) as {
+        ok?: boolean;
+        library?: KhposOpsLibrary;
         error?: string;
       };
 
       if (!active) return;
 
-      if (!response.ok || !body.ok || !body.work) {
-        setError(body.error ?? "My Work could not be loaded.");
+      if (!workResponse.ok || !workBody.ok || !workBody.work) {
+        setError(workBody.error ?? "My Work could not be loaded.");
         return;
       }
 
-      setWork(body.work);
-      setError("");
+      setWork(workBody.work);
+
+      if (libraryResponse.ok && libraryBody.ok && libraryBody.library) {
+        setLibrary(libraryBody.library);
+        setError("");
+      } else {
+        setLibrary(null);
+        setError(
+          libraryBody.error ??
+            "Your work loaded, but its operating processes could not be loaded.",
+        );
+      }
     });
 
     return () => {
@@ -162,6 +188,9 @@ export function MyWorkWorkspace({
 
   const openItems = work.items.filter((item) => item.status !== "completed");
   const completedItems = work.items.filter((item) => item.status === "completed");
+  const processByCode = new Map(
+    (library?.processes ?? []).map((process) => [process.code, process]),
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -240,6 +269,9 @@ export function MyWorkWorkspace({
             {openItems.map((item) => {
               const note = notes[item.id] ?? "";
               const isBusy = busyId === item.id;
+              const operatingProcess = item.processCode
+                ? processByCode.get(item.processCode)
+                : undefined;
 
               return (
                 <article
@@ -288,6 +320,15 @@ export function MyWorkWorkspace({
                       </div>
                     )}
                   </div>
+
+                  {operatingProcess && (
+                    <section className="mt-6">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-brand-700">
+                        Approved operating process
+                      </p>
+                      <ProcessDocument process={operatingProcess} compact />
+                    </section>
+                  )}
 
                   {item.checklist && (
                     <section className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
