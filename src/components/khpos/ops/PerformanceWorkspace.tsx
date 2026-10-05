@@ -424,6 +424,7 @@ export function PerformanceWorkspace({
 
   const pulse = workspace.operationalPulse;
   const summary = workspace.scorecardSummary;
+  const derived = workspace.derivedPerformance;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -542,6 +543,82 @@ export function PerformanceWorkspace({
             published · {pulse.processes.notPublished} still registered/not
             published.
           </div>
+        </section>
+
+        <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                Evidence-derived performance
+              </p>
+              <h2 className="mt-2 text-2xl font-black">
+                What the last {derived.periodDays} days of real execution say
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                These indicators are calculated from work, verification, issues,
+                decisions and controlled records. Nobody fills another appraisal
+                form to manufacture them.
+              </p>
+            </div>
+            <span className="rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-black text-brand-800">
+              Auto-derived
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                label: "Execution coverage",
+                value: derived.executionCoverage.percent,
+                detail: `${derived.executionCoverage.configured}/${derived.executionCoverage.approved} approved processes mapped`,
+              },
+              {
+                label: "Work completion reliability",
+                value: derived.workCompletionReliability.percent,
+                detail: `${derived.workCompletionReliability.completed}/${derived.workCompletionReliability.due} due work completed`,
+              },
+              {
+                label: "On-time completion",
+                value: derived.onTimeCompletion.percent,
+                detail: `${derived.onTimeCompletion.onTime}/${derived.onTimeCompletion.completedWithDeadline} completed by deadline`,
+              },
+              {
+                label: "First-pass verification",
+                value: derived.verificationFirstPass.percent,
+                detail: `${derived.verificationFirstPass.firstPass}/${derived.verificationFirstPass.verified} verified without return`,
+              },
+              {
+                label: "Issue closure",
+                value: derived.issueClosure.percent,
+                detail: `${derived.issueClosure.closed}/${derived.issueClosure.opened} issues opened in period now resolved/closed`,
+              },
+              {
+                label: "Decision action closure",
+                value: derived.decisionActionClosure.percent,
+                detail: `${derived.decisionActionClosure.implemented}/${derived.decisionActionClosure.requiringAction} decided actions implemented`,
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-brand-100 bg-white p-5"
+              >
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-3xl font-black text-slate-950">
+                  {item.value === null ? "—" : `${item.value}%`}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {item.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 text-xs font-semibold text-slate-500">
+            Controlled reports/logs submitted in the period: {derived.recordsSubmitted}.
+            A dash means there is not yet enough real activity to calculate a rate.
+          </p>
         </section>
 
         <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
