@@ -75,6 +75,24 @@ const calendarLink = {
   icon: CalendarClock,
 } as const;
 
+const askKhposLink = {
+  suffix: "/ask",
+  label: "Ask KHP-OS",
+  icon: BrainCircuit,
+} as const;
+
+const onboardingLink = {
+  suffix: "/onboarding",
+  label: "My Onboarding",
+  icon: UserRoundCheck,
+} as const;
+
+const systemIntegrityLink = {
+  suffix: "/system-integrity",
+  label: "System Integrity",
+  icon: ShieldCheck,
+} as const;
+
 const operationsLinks = [
   { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
@@ -121,6 +139,9 @@ const workspaceLinks = [
   executionControlLink,
   leadershipBriefLink,
   calendarLink,
+  askKhposLink,
+  onboardingLink,
+  systemIntegrityLink,
   ...operationsLinks,
   ...intelligenceLinks,
 ] as const;
@@ -133,8 +154,8 @@ const dailyLinks = [
   operationsLinks[2],
 ] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [activationLink, executionControlLink, leadershipBriefLink, calendarLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
-  { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
+  { title: "Leadership", icon: Gauge, links: [activationLink, askKhposLink, leadershipBriefLink, calendarLink, executionControlLink, systemIntegrityLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
+  { title: "People & roles", icon: UsersRound, links: [onboardingLink, ...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
   { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 22), operationsLinks[24], operationsLinks[28]] },

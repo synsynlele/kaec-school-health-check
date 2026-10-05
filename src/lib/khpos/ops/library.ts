@@ -57,6 +57,42 @@ export interface KhposOpsProcessVersion {
   status: KhposOpsDocumentStatus;
 }
 
+export interface KhposOpsProcessOperatingMap {
+  scope: "institution" | "my_role";
+  execution: {
+    status: "needs_mapping" | "configured" | "not_applicable";
+    mode: string;
+    ownerRoleTitle: string | null;
+    triggerSummary: string | null;
+    evidenceRequired: boolean;
+    verificationRequired: boolean;
+    escalationMinutes: number | null;
+  } | null;
+  roles: Array<{
+    code: string;
+    title: string;
+    participation: string;
+  }>;
+  checklists: Array<{
+    code: string;
+    name: string;
+    status: string;
+  }>;
+  controlledRecords: Array<{
+    label: string;
+    toolCode: string;
+    toolName: string;
+    required: boolean;
+    verificationRequired: boolean;
+  }>;
+  currentWork: number;
+  awaitingVerification: number;
+  completedLast30Days: number;
+  recordsLast30Days: number;
+  versionCount: number;
+  lastChangedAt: string | null;
+}
+
 export interface KhposOpsProcess {
   id: string;
   code: string;
@@ -68,6 +104,7 @@ export interface KhposOpsProcess {
   technology: string[];
   status: KhposOpsControlStatus;
   activeVersion: KhposOpsProcessVersion | null;
+  operatingMap?: KhposOpsProcessOperatingMap;
 }
 
 export interface KhposOpsToolTemplate {
@@ -145,13 +182,13 @@ export async function getKhposOpsLibrary(
 
   const library = data as unknown as KhposOpsLibrary;
 
-  if (!library.tools.length) return library;
-
-  const { data: toolSchemas, error: toolSchemaError } = await admin()
-    .from("khpos_ops_tool_templates")
-    .select("id,schema_definition")
-    .eq("organisation_id", organisationId)
-    .eq("status", "active");
+  const { data: toolSchemas, error: toolSchemaError } = library.tools.length
+    ? await admin()
+        .from("khpos_ops_tool_templates")
+        .select("id,schema_definition")
+        .eq("organisation_id", organisationId)
+        .eq("status", "active")
+    : { data: [], error: null };
 
   if (toolSchemaError) {
     throw new KhposOpsLibraryError(
@@ -167,11 +204,249 @@ export async function getKhposOpsLibrary(
     ]),
   );
 
+  const processIds = library.processes.map((process) => process.id);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const leadershipCodes = new Set([
+    "VISION_CUSTODIAN",
+    "SCHOOL_CUSTODIAN",
+    "SCHOOL_GUARDIAN",
+    "ACADEMIC_INSPECTOR",
+    "SKILL_INSPECTOR",
+    "SECTIONAL_PROMOTER",
+  ]);
+  const institutionScope = library.operatingRoleCodes.some((code) =>
+    leadershipCodes.has(code),
+  );
+
+  const [
+    processRolesResult,
+    executionResult,
+    checklistResult,
+    requirementResult,
+    actorAssignmentsResult,
+    workResult,
+    recordResult,
+    versionResult,
+  ] = await Promise.all([
+    processIds.length
+      ? admin()
+          .from("khpos_ops_process_roles")
+          .select("process_id,role_id,participation")
+          .in("process_id", processIds)
+      : Promise.resolve({ data: [], error: null }),
+    processIds.length
+      ? admin()
+          .from("khpos_ops_process_execution_profiles")
+          .select(
+            "process_id,status,activation_mode,owner_role_id,trigger_summary,evidence_required,verification_required,escalation_minutes",
+          )
+          .eq("organisation_id", organisationId)
+          .in("process_id", processIds)
+      : Promise.resolve({ data: [], error: null }),
+    processIds.length
+      ? admin()
+          .from("khpos_ops_checklist_templates")
+          .select("process_id,code,name,status")
+          .eq("organisation_id", organisationId)
+          .in("process_id", processIds)
+      : Promise.resolve({ data: [], error: null }),
+    processIds.length
+      ? admin()
+          .from("khpos_ops_process_tool_requirements")
+          .select(
+            "process_id,tool_template_id,label,required,verification_required,status",
+          )
+          .eq("organisation_id", organisationId)
+          .eq("status", "active")
+          .in("process_id", processIds)
+      : Promise.resolve({ data: [], error: null }),
+    admin()
+      .from("khpos_ops_role_assignments")
+      .select("id,role_id")
+      .eq("user_id", userId)
+      .eq("status", "active"),
+    processIds.length
+      ? admin()
+          .from("khpos_ops_work_items")
+          .select(
+            "id,process_id,owner_assignment_id,status,completed_at,submitted_for_verification_at,created_at",
+          )
+          .eq("organisation_id", organisationId)
+          .neq("status", "cancelled")
+          .in("process_id", processIds)
+          .limit(2500)
+      : Promise.resolve({ data: [], error: null }),
+    admin()
+      .from("khpos_ops_work_records")
+      .select("work_item_id,submitted_at")
+      .eq("organisation_id", organisationId)
+      .gte("submitted_at", thirtyDaysAgo)
+      .limit(2500),
+    processIds.length
+      ? admin()
+          .from("khpos_ops_process_versions")
+          .select("process_id,version,status,created_at,approved_at")
+          .in("process_id", processIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  const mapError = [
+    processRolesResult.error,
+    executionResult.error,
+    checklistResult.error,
+    requirementResult.error,
+    actorAssignmentsResult.error,
+    workResult.error,
+    recordResult.error,
+    versionResult.error,
+  ].find(Boolean);
+  if (mapError) {
+    throw new KhposOpsLibraryError(
+      mapError?.message ?? "Process operating connections could not be loaded.",
+      500,
+    );
+  }
+
+  const roleIds = Array.from(
+    new Set([
+      ...(processRolesResult.data ?? []).map((row) => row.role_id),
+      ...(executionResult.data ?? [])
+        .map((row) => row.owner_role_id)
+        .filter((value): value is string => Boolean(value)),
+    ]),
+  );
+  const { data: operatingRoles, error: operatingRolesError } = roleIds.length
+    ? await admin()
+        .from("khpos_ops_roles")
+        .select("id,code,title")
+        .eq("organisation_id", organisationId)
+        .in("id", roleIds)
+    : { data: [], error: null };
+
+  if (operatingRolesError) {
+    throw new KhposOpsLibraryError(operatingRolesError.message, 500);
+  }
+
+  const roleById = new Map(
+    (operatingRoles ?? []).map((role) => [role.id, role]),
+  );
+  const toolById = new Map(
+    library.tools.map((tool) => [tool.id, tool]),
+  );
+  const actorAssignmentIds = new Set(
+    (actorAssignmentsResult.data ?? []).map((assignment) => assignment.id),
+  );
+  const visibleWork = (workResult.data ?? []).filter(
+    (work) => institutionScope || actorAssignmentIds.has(work.owner_assignment_id),
+  );
+  const operatingMapByProcess = new Map<
+    string,
+    KhposOpsProcessOperatingMap
+  >();
+
+  for (const processId of processIds) {
+    const execution = (executionResult.data ?? []).find(
+      (row) => row.process_id === processId,
+    );
+    const processWork = visibleWork.filter(
+      (work) => work.process_id === processId,
+    );
+    const relevantWorkIds = new Set(processWork.map((work) => work.id));
+    const roles = (processRolesResult.data ?? [])
+      .filter((row) => row.process_id === processId)
+      .map((row) => {
+        const role = roleById.get(row.role_id);
+        return role
+          ? {
+              code: role.code,
+              title: role.title,
+              participation: row.participation,
+            }
+          : null;
+      })
+      .filter(
+        (
+          row,
+        ): row is { code: string; title: string; participation: string } =>
+          Boolean(row),
+      );
+
+    const versions = (versionResult.data ?? []).filter(
+      (row) => row.process_id === processId,
+    );
+    const latestVersionAt =
+      versions
+        .map((row) => row.approved_at ?? row.created_at)
+        .filter(Boolean)
+        .sort()
+        .at(-1) ?? null;
+
+    operatingMapByProcess.set(processId, {
+      scope: institutionScope ? "institution" : "my_role",
+      execution: execution
+        ? {
+            status: execution.status,
+            mode: execution.activation_mode,
+            ownerRoleTitle: execution.owner_role_id
+              ? roleById.get(execution.owner_role_id)?.title ?? null
+              : null,
+            triggerSummary: execution.trigger_summary,
+            evidenceRequired: execution.evidence_required,
+            verificationRequired: execution.verification_required,
+            escalationMinutes: execution.escalation_minutes,
+          }
+        : null,
+      roles,
+      checklists: (checklistResult.data ?? [])
+        .filter((row) => row.process_id === processId)
+        .map((row) => ({
+          code: row.code,
+          name: row.name,
+          status: row.status,
+        })),
+      controlledRecords: (requirementResult.data ?? [])
+        .filter((row) => row.process_id === processId)
+        .map((row) => {
+          const tool = toolById.get(row.tool_template_id);
+          return {
+            label: row.label,
+            toolCode: tool?.code ?? "Controlled tool",
+            toolName: tool?.name ?? "Controlled tool",
+            required: row.required,
+            verificationRequired: row.verification_required,
+          };
+        }),
+      currentWork: processWork.filter((work) =>
+        ["pending", "in_progress", "blocked", "awaiting_verification"].includes(
+          work.status,
+        ),
+      ).length,
+      awaitingVerification: processWork.filter(
+        (work) => work.status === "awaiting_verification",
+      ).length,
+      completedLast30Days: processWork.filter(
+        (work) =>
+          work.status === "completed" &&
+          work.completed_at &&
+          work.completed_at >= thirtyDaysAgo,
+      ).length,
+      recordsLast30Days: (recordResult.data ?? []).filter(
+        (record) => relevantWorkIds.has(record.work_item_id),
+      ).length,
+      versionCount: versions.length,
+      lastChangedAt: latestVersionAt,
+    });
+  }
+
   return {
     ...library,
     tools: library.tools.map((tool) => ({
       ...tool,
       schemaDefinition: schemaById.get(tool.id) ?? {},
+    })),
+    processes: library.processes.map((process) => ({
+      ...process,
+      operatingMap: operatingMapByProcess.get(process.id),
     })),
   };
 }

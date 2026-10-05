@@ -40,7 +40,7 @@ export function StaffJoinWorkspace({ token }: { token: string }) {
       const response = await fetch("/api/khpos/ops/staff-join", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ token }), cache: "no-store" });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || "Joining failed.");
-      router.replace(`/khpos/${result.organisationId}/people`);
+      router.replace(`/khpos/${result.organisationId}/onboarding`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Joining failed."); setBusy(false); }
   }
   return <main className="grid min-h-screen place-items-center bg-slate-950 p-5 text-white"><section className="w-full max-w-lg space-y-5 rounded-2xl border border-white/15 bg-white/5 p-7"><p className="text-xs font-bold uppercase tracking-widest text-mint-300">KHP-OS · Staff access</p><h1 className="text-3xl font-bold">Join your school team</h1><p className="text-sm text-slate-300">Use the Google account with the exact email on your staff appointment. Joining lets you complete onboarding; campus leadership activates your operating role after the required checks.</p>
