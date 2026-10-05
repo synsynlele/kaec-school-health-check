@@ -113,6 +113,13 @@ export function DecisionsWorkspace({
     {},
   );
   const [approveDue, setApproveDue] = useState<Record<string, string>>({});
+  const [outcomeStatus, setOutcomeStatus] = useState<
+    Record<
+      string,
+      "" | "achieved" | "partially_achieved" | "not_achieved"
+    >
+  >({});
+  const [outcomeNote, setOutcomeNote] = useState<Record<string, string>>({});
 
   async function token() {
     if (!supabase) return null;
@@ -401,6 +408,20 @@ export function DecisionsWorkspace({
 
     const actionRequired =
       action === "approve" ? approveAction[decision.id] ?? false : false;
+    const closingImplementedOutcome =
+      action === "close" &&
+      decision.status === "implemented" &&
+      decision.actionRequired;
+
+    if (
+      closingImplementedOutcome &&
+      (!outcomeStatus[decision.id] || !outcomeNote[decision.id]?.trim())
+    ) {
+      setError(
+        "Record whether the expected outcome was achieved and describe the observed outcome before closing this decision.",
+      );
+      return;
+    }
 
     if (
       action === "approve" &&
@@ -437,6 +458,12 @@ export function DecisionsWorkspace({
             actionRequired && approveDue[decision.id]
               ? new Date(approveDue[decision.id]).toISOString()
               : null,
+          outcomeStatus: closingImplementedOutcome
+            ? outcomeStatus[decision.id]
+            : null,
+          outcomeNote: closingImplementedOutcome
+            ? outcomeNote[decision.id]?.trim()
+            : null,
         },
       },
       decision.id,
@@ -989,6 +1016,27 @@ export function DecisionsWorkspace({
                     </div>
                   )}
 
+                  {decision.outcomeStatus && (
+                    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-800">
+                        Verified outcome
+                      </p>
+                      <p className="mt-2 text-sm font-black capitalize text-emerald-950">
+                        {readable(decision.outcomeStatus)}
+                      </p>
+                      {decision.outcomeNote && (
+                        <p className="mt-2 text-sm leading-6 text-emerald-900">
+                          {decision.outcomeNote}
+                        </p>
+                      )}
+                      {decision.outcomeVerifiedAt && (
+                        <p className="mt-2 text-xs font-semibold text-emerald-800">
+                          Verified {formatDate(decision.outcomeVerifiedAt)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {decision.work && (
                     <div className="mt-5 rounded-2xl border border-brand-200 bg-brand-50 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1113,6 +1161,64 @@ export function DecisionsWorkspace({
                       </div>
                     )}
 
+                  {decision.status === "implemented" &&
+                    decision.actionRequired &&
+                    (decision.isRequester || decision.isAuthority) && (
+                      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-800">
+                          Outcome verification
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-emerald-950">
+                          Expected outcome:{" "}
+                          <strong>
+                            {decision.implementationExpectedOutcome ??
+                              "Outcome was not recorded."}
+                          </strong>
+                        </p>
+                        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                          <label className="text-xs font-black">
+                            Actual outcome
+                            <select
+                              value={outcomeStatus[decision.id] ?? ""}
+                              onChange={(event) =>
+                                setOutcomeStatus((current) => ({
+                                  ...current,
+                                  [decision.id]: event.target.value as
+                                    | ""
+                                    | "achieved"
+                                    | "partially_achieved"
+                                    | "not_achieved",
+                                }))
+                              }
+                              className="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 font-normal"
+                            >
+                              <option value="">Choose outcome…</option>
+                              <option value="achieved">Achieved</option>
+                              <option value="partially_achieved">
+                                Partially achieved
+                              </option>
+                              <option value="not_achieved">Not achieved</option>
+                            </select>
+                          </label>
+                          <label className="text-xs font-black">
+                            Evidence-based outcome note
+                            <textarea
+                              rows={3}
+                              value={outcomeNote[decision.id] ?? ""}
+                              onChange={(event) =>
+                                setOutcomeNote((current) => ({
+                                  ...current,
+                                  [decision.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="What actually changed? Reference the verified implementation evidence."
+                              className="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 font-normal leading-6"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
                   {decision.status !== "closed" && (
                     <div className="mt-5">
                       <label className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
@@ -1212,11 +1318,20 @@ export function DecisionsWorkspace({
                           !decision.actionRequired)) && (
                         <button
                           type="button"
-                          disabled={busy}
+                          disabled={
+                            busy ||
+                            (decision.status === "implemented" &&
+                              decision.actionRequired &&
+                              (!outcomeStatus[decision.id] ||
+                                !outcomeNote[decision.id]?.trim()))
+                          }
                           onClick={() => void act(decision, "close")}
                           className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
                         >
-                          Close
+                          {decision.status === "implemented" &&
+                          decision.actionRequired
+                            ? "Verify outcome & close"
+                            : "Close"}
                         </button>
                       )}
 
