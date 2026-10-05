@@ -129,22 +129,22 @@ export function LeadershipBriefWorkspace({
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["Work completed", brief.progress.workCompleted, CheckCircle2],
-              ["Issues resolved", brief.progress.issuesResolved, CircleAlert],
-              ["Decisions implemented", brief.progress.decisionsImplemented, Target],
-              ["Reports / logs submitted", brief.progress.recordsSubmitted, FileText],
-            ].map(([label, value, Icon]) => {
-              const ItemIcon = Icon as typeof CheckCircle2;
+              { label: "Work completed", value: brief.progress.workCompleted, icon: CheckCircle2 },
+              { label: "Issues resolved", value: brief.progress.issuesResolved, icon: CircleAlert },
+              { label: "Decisions implemented", value: brief.progress.decisionsImplemented, icon: Target },
+              { label: "Reports / logs submitted", value: brief.progress.recordsSubmitted, icon: FileText },
+            ].map((item) => {
+              const ItemIcon = item.icon;
               return (
                 <div
-                  key={String(label)}
+                  key={item.label}
                   className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
                   <ItemIcon className="size-5 text-brand-700" />
                   <p className="mt-4 text-xs font-black uppercase tracking-wide text-slate-500">
-                    {label}
+                    {item.label}
                   </p>
-                  <p className="mt-1 text-3xl font-black">{value}</p>
+                  <p className="mt-1 text-3xl font-black">{item.value}</p>
                 </div>
               );
             })}
