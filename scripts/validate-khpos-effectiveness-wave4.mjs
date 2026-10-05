@@ -65,6 +65,17 @@ if (
   );
 }
 
+const hardening = read(
+  "supabase/migrations/20261005154000_khpos_effectiveness_wave4_fk_index_hardening.sql",
+);
+for (const expected of [
+  "idx_khpos_standard_releases_published_by",
+  "idx_khpos_standard_installations_installed_by",
+  "idx_khpos_standard_installations_adopted_by",
+]) {
+  requireText(hardening, expected, "Wave 4 standard foreign-key index hardening");
+}
+
 const standardService = read("src/lib/khpos/ops/standard.ts");
 for (const expected of [
   "getKhposStandardWorkspace",
