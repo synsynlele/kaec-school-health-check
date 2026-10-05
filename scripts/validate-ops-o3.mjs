@@ -12,11 +12,11 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/work"', "school workspace navigation");
-requireText(nav, 'label: "My Work"', "school workspace navigation");
+requireText(nav, 'label: "Today"', "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/work/page.tsx");
-requireText(page, "MyWorkWorkspace", "My Work route");
-requireText(page, "UUID_RE", "My Work route validation");
+requireText(page, "MyWorkWorkspace", "Today / My Work route");
+requireText(page, "UUID_RE", "Today / My Work route validation");
 
 const api = read("src/app/api/khpos/ops/work/[id]/route.ts");
 for (const expected of [
@@ -27,7 +27,7 @@ for (const expected of [
   "addKhposOpsWorkEvidence",
   '"Cache-Control": "private, no-store"',
 ]) {
-  requireText(api, expected, "My Work API");
+  requireText(api, expected, "Today / My Work API");
 }
 
 const service = read("src/lib/khpos/ops/work.ts");
@@ -38,18 +38,18 @@ for (const expected of [
   "khpos_ops_add_work_evidence_server",
   "SUPABASE_SERVICE_ROLE_KEY",
 ]) {
-  requireText(service, expected, "My Work service");
+  requireText(service, expected, "Today / My Work service");
 }
 
 const workspace = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
 for (const expected of [
   "Operations · O3",
-  "My Work",
-  "Your role decides what appears here.",
+  "Today",
+  "Start with what needs your attention now.",
   "KHP-OS does not create busywork.",
   "Evidence / operating note",
 ]) {
-  requireText(workspace, expected, "My Work workspace");
+  requireText(workspace, expected, "Today / My Work workspace");
 }
 
 const migration = read(
