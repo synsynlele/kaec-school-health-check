@@ -129,6 +129,8 @@ for (const expected of [
   "decision_action_closure",
   "namedPeersExposed',false",
   "rankingDisabled',true",
+  "revoke all on function public.khpos_get_school_operating_benchmark_server",
+  "grant execute on function public.khpos_get_school_operating_benchmark_server",
 ]) {
   requireText(operatingBenchmark, expected, "privacy-safe operating benchmark");
 }
