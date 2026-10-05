@@ -21,6 +21,7 @@ import type {
   BenchmarkPosition,
   BenchmarkSystem,
   KhposBenchmarkWorkspace,
+  OperatingBenchmarkPosition,
 } from "@/lib/khpos/benchmarking";
 
 const systemLabels: Record<string, string> = {
@@ -57,6 +58,42 @@ function positionCopy(position: BenchmarkPosition) {
   }
   return {
     label: "Insufficient peer data",
+    className: "border-slate-200 bg-slate-50 text-slate-600",
+    icon: LockKeyhole,
+  };
+}
+
+function operatingPositionCopy(position: OperatingBenchmarkPosition) {
+  if (position === "above_peer_band") {
+    return {
+      label: "Above peer middle band",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      icon: MoveUpRight,
+    };
+  }
+  if (position === "below_peer_band") {
+    return {
+      label: "Below peer middle band",
+      className: "border-amber-200 bg-amber-50 text-amber-900",
+      icon: MoveDownRight,
+    };
+  }
+  if (position === "within_peer_band") {
+    return {
+      label: "Within peer middle band",
+      className: "border-blue-200 bg-blue-50 text-blue-800",
+      icon: Minus,
+    };
+  }
+  if (position === "insufficient_own_data") {
+    return {
+      label: "More school data needed",
+      className: "border-slate-200 bg-slate-50 text-slate-600",
+      icon: LockKeyhole,
+    };
+  }
+  return {
+    label: "Peer metric withheld",
     className: "border-slate-200 bg-slate-50 text-slate-600",
     icon: LockKeyhole,
   };
@@ -339,6 +376,135 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
             </section>
           </>
         )}
+
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                Operating benchmark · last {workspace.operating.windowDays} days
+              </p>
+              <h2 className="mt-2 text-2xl font-black">
+                How reliably does the operating system execute?
+              </h2>
+              <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-500">
+                This compares evidence-derived execution rates only among schools on the same
+                KAEC Standard release. Another school&apos;s name, exact record or rank is never exposed.
+              </p>
+            </div>
+            {workspace.operating.standardCode && (
+              <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-800">
+                {workspace.operating.standardCode}
+              </span>
+            )}
+          </div>
+
+          {workspace.operating.status === "standard_required" && (
+            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <LockKeyhole className="size-5 text-amber-800" />
+              <p className="mt-3 font-black text-amber-950">
+                Adopt the KAEC Standard before operating peer comparison.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-amber-900">
+                Operating comparisons are meaningful only when schools are executing the same
+                governed standard.
+              </p>
+              <Link
+                href={"/khpos/" + organisationId + "/standard"}
+                className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white"
+              >
+                Open KAEC Standard
+              </Link>
+            </div>
+          )}
+
+          {workspace.operating.status === "insufficient_peers" && (
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <LockKeyhole className="size-5 text-brand-700" />
+                <p className="mt-3 font-black">
+                  Operating peer bands are deliberately withheld.
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  KHP-OS requires at least {workspace.operating.policy.minimumPeers} other
+                  schools on the same standard. There are currently{" "}
+                  {workspace.operating.policy.availablePeers ?? 0} qualifying peers in the
+                  broadest safe cohort.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-950 p-5 text-white">
+                <ShieldCheck className="size-5 text-mint-300" />
+                <p className="mt-3 font-black">No thin-cohort inference.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  The platform waits for enough institutions rather than exposing identifiable
+                  or statistically weak operating comparisons.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {workspace.operating.status === "ready" && (
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {workspace.operating.metrics.map((metric) => {
+                const state = operatingPositionCopy(metric.position);
+                const Icon = state.icon;
+                return (
+                  <article
+                    key={metric.id}
+                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-black">{metric.label}</h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Your evidence: {metric.ownNumerator}/{metric.ownDenominator}
+                        </p>
+                      </div>
+                      <span
+                        className={
+                          "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-black " +
+                          state.className
+                        }
+                      >
+                        <Icon className="size-3.5" />
+                        {state.label}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl bg-slate-950 p-4 text-white">
+                        <p className="text-xs font-bold text-slate-400">Your rate</p>
+                        <p className="mt-1 text-2xl font-black">
+                          {metric.ownPercent === null ? "—" : metric.ownPercent + "%"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4">
+                        <p className="text-xs font-bold text-slate-500">Peer median</p>
+                        <p className="mt-1 text-2xl font-black">
+                          {metric.peerMedian === null ? "—" : metric.peerMedian + "%"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {metric.peerCount >= workspace.operating.policy.minimumPeers &&
+                    metric.peerP25 !== null &&
+                    metric.peerP75 !== null ? (
+                      <p className="mt-4 text-xs leading-5 text-slate-500">
+                        Peer middle 50%: {metric.peerP25}%–{metric.peerP75}% ·{" "}
+                        {metric.peerCount} qualifying peers.
+                      </p>
+                    ) : (
+                      <p className="mt-4 text-xs leading-5 text-slate-500">
+                        This individual metric remains private until at least{" "}
+                        {workspace.operating.policy.minimumPeers} peers meet its minimum
+                        evidence threshold.
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
           <div className="flex gap-3">
