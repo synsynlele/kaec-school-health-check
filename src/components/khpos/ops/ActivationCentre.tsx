@@ -367,18 +367,23 @@ export function ActivationCentre({
                 Policy comes before process.
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                {policies.criticalMissing} critical policies still need a controlled,
-                approved version.
+                {policies.notStarted} not started · {policies.draft} draft · {policies.inReview} in review.
               </p>
               <div className="mt-5 space-y-2">
                 {policies.missingCritical.map((policy) => (
-                  <div
+                  <Link
                     key={policy.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3"
+                    href={`/khpos/${organisationId}/library?tab=policies&critical=missing&q=${encodeURIComponent(policy.code)}`}
+                    className="block rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-amber-300 hover:bg-amber-50/40"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-black text-amber-700">{policy.code}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs font-black text-amber-700">{policy.code}</p>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">
+                            {policy.stage.replaceAll("_", " ")}
+                          </span>
+                        </div>
                         <p className="mt-1 text-sm font-black text-slate-900">
                           {policy.name}
                         </p>
@@ -387,7 +392,7 @@ export function ActivationCentre({
                         {policy.ownerLabel}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               {policies.criticalMissing > policies.missingCritical.length && (
@@ -396,7 +401,7 @@ export function ActivationCentre({
                 </p>
               )}
               <div className="mt-5 flex flex-wrap gap-2">
-                {activation.canPrepareDrafts && policies.criticalMissing > 0 && (
+                {activation.canPrepareDrafts && policies.notStarted > 0 && (
                   <button
                     type="button"
                     disabled={busyAction !== null}
@@ -412,10 +417,10 @@ export function ActivationCentre({
                   </button>
                 )}
                 <Link
-                  href={`/khpos/${organisationId}/library`}
+                  href={`/khpos/${organisationId}/library?tab=policies&critical=missing`}
                   className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
                 >
-                  Open policy register <ArrowRight className="size-4" />
+                  Open critical policy queue <ArrowRight className="size-4" />
                 </Link>
               </div>
             </div>
@@ -428,21 +433,27 @@ export function ActivationCentre({
                 Critical execution must be controlled.
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                {processes.criticalMissing} critical processes are inactive.{" "}
-                {processes.blockedByPolicy} are blocked by policy dependencies;{" "}
-                {processes.readyForDrafting} can proceed now.
+                {processes.notStarted} not started · {processes.draft} draft · {processes.inReview} in review.{" "}
+                {processes.blockedByPolicy} are blocked by unpublished policy;{" "}
+                {processes.readyForDrafting} can be prepared now.
               </p>
               <div className="mt-5 space-y-2">
                 {processes.missingCritical.map((process) => (
-                  <div
+                  <Link
                     key={process.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3"
+                    href={`/khpos/${organisationId}/library?tab=processes&critical=missing&q=${encodeURIComponent(process.code)}`}
+                    className="block rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-emerald-300 hover:bg-emerald-50/40"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-black text-emerald-700">
-                          {process.code}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs font-black text-emerald-700">
+                            {process.code}
+                          </p>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">
+                            {process.stage.replaceAll("_", " ")}
+                          </span>
+                        </div>
                         <p className="mt-1 text-sm font-black text-slate-900">
                           {process.title}
                         </p>
@@ -456,7 +467,7 @@ export function ActivationCentre({
                         {process.ownerLabel}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               {processes.criticalMissing > processes.missingCritical.length && (
@@ -481,10 +492,10 @@ export function ActivationCentre({
                   </button>
                 )}
                 <Link
-                  href={`/khpos/${organisationId}/library`}
+                  href={`/khpos/${organisationId}/library?tab=processes&critical=missing`}
                   className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
                 >
-                  Open process register <ArrowRight className="size-4" />
+                  Open critical process queue <ArrowRight className="size-4" />
                 </Link>
               </div>
             </div>
