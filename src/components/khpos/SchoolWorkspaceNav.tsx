@@ -57,6 +57,12 @@ const activationLink = {
   icon: ShieldCheck,
 } as const;
 
+const executionControlLink = {
+  suffix: "/execution-control",
+  label: "Execution Control",
+  icon: Workflow,
+} as const;
+
 const operationsLinks = [
   { suffix: "/work", label: "My Work", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
@@ -100,6 +106,7 @@ const intelligenceLinks = [
 const workspaceLinks = [
   ...transformLinks,
   activationLink,
+  executionControlLink,
   ...operationsLinks,
   ...intelligenceLinks,
 ] as const;
@@ -112,7 +119,7 @@ const dailyLinks = [
   operationsLinks[2],
 ] as const;
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [activationLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
+  { title: "Leadership", icon: Gauge, links: [activationLink, executionControlLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [...operationsLinks.slice(4, 10), operationsLinks[22]] },
   { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
   { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
