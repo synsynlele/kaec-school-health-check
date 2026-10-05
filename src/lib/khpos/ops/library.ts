@@ -182,13 +182,13 @@ export async function getKhposOpsLibrary(
 
   const library = data as unknown as KhposOpsLibrary;
 
-  if (!library.tools.length) return library;
-
-  const { data: toolSchemas, error: toolSchemaError } = await admin()
-    .from("khpos_ops_tool_templates")
-    .select("id,schema_definition")
-    .eq("organisation_id", organisationId)
-    .eq("status", "active");
+  const { data: toolSchemas, error: toolSchemaError } = library.tools.length
+    ? await admin()
+        .from("khpos_ops_tool_templates")
+        .select("id,schema_definition")
+        .eq("organisation_id", organisationId)
+        .eq("status", "active")
+    : { data: [], error: null };
 
   if (toolSchemaError) {
     throw new KhposOpsLibraryError(
