@@ -79,7 +79,7 @@ assert.equal(
 
 // Exercise the exact new migration's privileged reviewer predicate in isolated PG.
 const migration = fs.readFileSync(
-  "supabase/migrations/20261012190000_independent_issue_review.sql",
+  "supabase/migrations/20261012183941_independent_custodian_issue_review.sql",
   "utf8",
 );
 assert.match(migration, /revoke all on function khpos_private\.ops_issue_can_independent_guardian/);
