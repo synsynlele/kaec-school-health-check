@@ -469,12 +469,14 @@ export function IssuesWorkspace({
                 issue.status === "resolved" &&
                 (issue.isReporter ||
                   issue.isDirectManager ||
-                  issue.isEscalationRecipient);
+                  issue.isEscalationRecipient ||
+                  issue.isGuardianReviewer);
               const canClose =
                 issue.status === "verified" &&
                 (issue.isReporter ||
                   issue.isDirectManager ||
-                  issue.isEscalationRecipient);
+                  issue.isEscalationRecipient ||
+                  issue.isGuardianReviewer);
               const canEscalate =
                 !["verified", "closed"].includes(issue.status) &&
                 (issue.isOwner ||
