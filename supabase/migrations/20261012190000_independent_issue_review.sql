@@ -20,7 +20,7 @@ create or replace function khpos_private.ops_issue_can_independent_guardian(
       and reviewer_role.organisation_id=p_org
       and reviewer_role.status='active'
       and reviewer_role.code='SCHOOL_GUARDIAN'
-      and owner_a.user_id is distinct from p_actor
+      and owner_a.user_id <> p_actor
       and khpos_private.ops_hpd_has_membership(p_actor,p_org)
       and (reviewer_a.campus_id is null or reviewer_a.campus_id=i.campus_id)
       and (reviewer_a.unit_id is null or reviewer_a.unit_id=i.unit_id)
