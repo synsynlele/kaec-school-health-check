@@ -42,7 +42,9 @@ export async function GET(
   }
   try {
     const actor = await user(request);
-    const onboarding = await getKhposMyOnboarding(id, actor.id);
+    const roleId = new URL(request.url).searchParams.get("roleId");
+    if (roleId && !UUID_RE.test(roleId)) throw new KhposOnboardingError("Invalid position reference.", 400);
+    const onboarding = await getKhposMyOnboarding(id, actor.id, roleId);
     return NextResponse.json(
       { ok: true, onboarding },
       { headers: { "Cache-Control": "private, no-store" } },

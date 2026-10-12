@@ -42,6 +42,7 @@ export interface KhposMyOnboarding {
     onboardingDueDate: string | null;
     mandatoryOutstanding: number;
   } | null;
+  roleChoices: Array<{ id: string; title: string; primary: boolean }>;
   role: {
     id: string;
     code: string;
@@ -141,6 +142,7 @@ async function membership(organisationId: string, userId: string) {
 export async function getKhposMyOnboarding(
   organisationId: string,
   userId: string,
+  selectedRoleId: string | null = null,
 ): Promise<KhposMyOnboarding> {
   const client = admin();
   const organisation = await membership(organisationId, userId);
@@ -167,13 +169,25 @@ export async function getKhposMyOnboarding(
 
   if (assignmentsError) throw new KhposOnboardingError(assignmentsError.message, 500);
 
-  const assignmentRoleIds = (assignments ?? []).map((item) => item.role_id);
-  let roleId = staff?.desired_role_id ?? null;
-  if (!roleId && assignments?.length) {
-    roleId =
-      assignments.find((item) => item.primary_assignment)?.role_id ??
-      assignments[0].role_id;
+  const ownRoleIds = [...new Set([
+    ...(assignments ?? []).map((item) => item.role_id),
+    ...(staff?.desired_role_id ? [staff.desired_role_id] : []),
+  ])];
+  const { data: schoolRoles, error: schoolRolesError } = ownRoleIds.length
+    ? await client.from("khpos_ops_roles").select("id,title")
+      .eq("organisation_id", organisationId).eq("status", "active").in("id", ownRoleIds)
+    : { data: [], error: null };
+  if (schoolRolesError) throw new KhposOnboardingError(schoolRolesError.message, 500);
+  const roleChoices = (schoolRoles ?? []).map((role) => ({
+    id: role.id, title: role.title,
+    primary: role.id === staff?.desired_role_id || (assignments ?? []).some((item) => item.role_id === role.id && item.primary_assignment),
+  }));
+  if (selectedRoleId && !roleChoices.some((role) => role.id === selectedRoleId)) {
+    throw new KhposOnboardingError("Choose one of your positions in this school.", 403);
   }
+  const assignmentRoleIds = (assignments ?? []).map((item) => item.role_id)
+    .filter((id) => roleChoices.some((role) => role.id === id));
+  const roleId = selectedRoleId ?? roleChoices.find((role) => role.primary)?.id ?? roleChoices[0]?.id ?? null;
 
   const [
     roleResult,
@@ -324,6 +338,7 @@ export async function getKhposMyOnboarding(
 
   return {
     organisation,
+    roleChoices,
     staff: staff
       ? {
           id: staff.id,

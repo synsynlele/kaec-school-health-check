@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
-import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
+import { focusKhposRecord, khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -45,6 +45,7 @@ export function MyWorkWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [roleFilter, setRoleFilter] = useState("");
   const [work, setWork] = useState<KhposOpsMyWork | null>(null);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
@@ -55,6 +56,16 @@ export function MyWorkWorkspace({
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
   const [attention, setAttention] = useState<KhposAttentionSnapshot | null>(null);
+
+  useEffect(() => {
+    const showAll = () => setRoleFilter("");
+    window.addEventListener("hashchange", showAll);
+    return () => window.removeEventListener("hashchange", showAll);
+  }, []);
+
+  useEffect(() => {
+    if (!roleFilter) focusKhposRecord(window.location.hash, document);
+  }, [roleFilter]);
 
   async function accessToken() {
     if (!supabase) return null;
@@ -269,8 +280,11 @@ export function MyWorkWorkspace({
     );
   }
 
-  const openItems = work.items.filter((item) => item.status !== "completed");
-  const completedItems = work.items.filter((item) => item.status === "completed");
+  const roleTitles = [...new Set([...work.items.map((item) => item.roleTitle), ...work.availableProcesses.map((process) => process.ownerRoleTitle)])].sort();
+  const visibleItems = work.items.filter((item) => !roleFilter || item.roleTitle === roleFilter);
+  const availableProcesses = work.availableProcesses.filter((process) => !roleFilter || process.ownerRoleTitle === roleFilter);
+  const openItems = visibleItems.filter((item) => item.status !== "completed");
+  const completedItems = visibleItems.filter((item) => item.status === "completed");
   const processByCode = new Map(
     (library?.processes ?? []).map((process) => [process.code, process]),
   );
@@ -281,7 +295,7 @@ export function MyWorkWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O3
+              Today
             </span>
             <Link
               href={`/khpos/${organisationId}`}
@@ -363,6 +377,7 @@ export function MyWorkWorkspace({
               {attention.items.slice(0, 8).map((item) => (
                 <Link
                   key={item.id}
+                  onClick={() => setRoleFilter("")}
                   href={item.href}
                   className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-300 hover:bg-brand-50/40"
                 >
@@ -399,7 +414,13 @@ export function MyWorkWorkspace({
         )}
 
 
-        {work.availableProcesses.length > 0 && (
+        {roleTitles.length > 1 && <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold">My work by position
+          <select className="mt-2 block w-full rounded-xl border p-3" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+            <option value="">All my work</option>{roleTitles.map((title) => <option key={title} value={title}>{title}</option>)}
+          </select><span className="mt-2 block font-normal text-slate-600">Reviews for other staff remain visible below.</span>
+        </label>}
+        {roleFilter && !openItems.length && !completedItems.length && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
+        {availableProcesses.length > 0 && (
           <section className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -417,12 +438,12 @@ export function MyWorkWorkspace({
                 </p>
               </div>
               <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-800">
-                {work.availableProcesses.length} available
+                {availableProcesses.length} available
               </span>
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {work.availableProcesses.map((process) => {
+              {availableProcesses.map((process) => {
                 const busyKey = [
                   "process",
                   process.processId,
@@ -534,7 +555,7 @@ export function MyWorkWorkspace({
                       </div>
                       <h3 className="mt-3 text-xl font-black">{item.title}</h3>
                       <p className="mt-1 text-sm text-slate-500">
-                        Submitted by {item.roleTitle}
+                        Submitted by {item.roleTitle} · Reviewing as {item.reviewerRoleTitle}
                         {item.campusName ? ` · ${item.campusName}` : ""}
                       </p>
                     </div>

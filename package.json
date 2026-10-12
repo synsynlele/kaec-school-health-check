@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -18,7 +18,8 @@
     "validate:stage9": "node scripts/validate-stage9.mjs",
     "validate:stage10": "node scripts/validate-stage10.mjs",
     "validate:navigation": "node scripts/validate-navigation.mjs",
-    "validate:khpos-lite": "node scripts/validate-khpos-lite.mjs"
+    "validate:khpos-lite": "node scripts/validate-khpos-lite.mjs",
+    "test:positions": "node scripts/test-staff-positions.mjs && node scripts/test-staff-role-onboarding.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
@@ -41,6 +42,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.9",
     "@tailwindcss/postcss": "4.1.17",
     "@types/node": "22.19.15",
     "@types/pg": "8.18.0",

@@ -91,6 +91,7 @@ export interface KhposOpsWorkItem {
 
 export interface KhposOpsVerificationItem extends KhposOpsWorkItem {
   ownerUserId: string;
+  reviewerRoleTitle: string;
 }
 
 export interface KhposOpsAvailableProcess {
@@ -439,37 +440,16 @@ async function getVerificationQueue(
 ): Promise<KhposOpsVerificationItem[]> {
   const client = admin();
 
-  const { data: actorAssignments, error: actorAssignmentError } = await client
-    .from("khpos_ops_role_assignments")
-    .select("id,role_id,campus_id")
-    .eq("user_id", userId)
-    .eq("status", "active");
-
-  if (actorAssignmentError) {
-    throw new KhposOpsWorkError(actorAssignmentError.message, 500);
-  }
-  if (!actorAssignments?.length) return [];
-
-  const actorRoleIds = unique(actorAssignments.map((item) => item.role_id));
-  const { data: actorRoles, error: actorRolesError } = await client
-    .from("khpos_ops_roles")
-    .select("id,code")
-    .eq("organisation_id", organisationId)
-    .eq("status", "active")
-    .in("id", actorRoleIds);
-
-  if (actorRolesError) {
-    throw new KhposOpsWorkError(actorRolesError.message, 500);
-  }
-
-  const actorCodeByRole = new Map(
-    (actorRoles ?? []).map((role) => [role.id, role.code]),
+  const { data: routes, error: routeError } = await client.rpc(
+    "khpos_ops_get_verification_routes_server",
+    { p_actor: userId, p_org: organisationId },
   );
-  const leadershipCodes = new Set([
-    "VISION_CUSTODIAN",
-    "SCHOOL_CUSTODIAN",
-    "SCHOOL_GUARDIAN",
-  ]);
+  if (routeError) throw new KhposOpsWorkError(routeError.message, 500);
+  const routeByWork = new Map<string, string>(
+    ((routes ?? []) as Array<{ workItemId: string; reviewerRoleTitle: string }>)
+      .map((route) => [route.workItemId, route.reviewerRoleTitle]),
+  );
+  if (!routeByWork.size) return [];
 
   const { data: workRows, error: workError } = await client
     .from("khpos_ops_work_items")
@@ -478,6 +458,7 @@ async function getVerificationQueue(
     )
     .eq("organisation_id", organisationId)
     .eq("status", "awaiting_verification")
+    .in("id", [...routeByWork.keys()])
     .order("submitted_for_verification_at", { ascending: true });
 
   if (workError) throw new KhposOpsWorkError(workError.message, 500);
@@ -516,17 +497,7 @@ async function getVerificationQueue(
     const ownerRole = ownerRoleById.get(ownerAssignment.role_id);
     if (!ownerRole) return false;
 
-    return actorAssignments.some((actorAssignment) => {
-      const actorCode = actorCodeByRole.get(actorAssignment.role_id);
-      const roleAllowed =
-        actorAssignment.role_id === ownerRole.reports_to_role_id ||
-        (actorCode ? leadershipCodes.has(actorCode) : false);
-      const campusAllowed =
-        !actorAssignment.campus_id ||
-        !work.campus_id ||
-        actorAssignment.campus_id === work.campus_id;
-      return roleAllowed && campusAllowed;
-    });
+    return routeByWork.has(work.id);
   });
 
   if (!eligibleRows.length) return [];
@@ -668,6 +639,7 @@ async function getVerificationQueue(
       processTitle: process?.title ?? null,
       roleTitle: ownerRole.title,
       ownerUserId: ownerAssignment.user_id,
+      reviewerRoleTitle: routeByWork.get(work.id)!,
       campusName: work.campus_id ? campusById.get(work.campus_id) ?? null : null,
       unitName: work.unit_id ? unitById.get(work.unit_id) ?? null : null,
       checklist: checklistTemplate
