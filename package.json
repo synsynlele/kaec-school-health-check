@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -19,7 +19,8 @@
     "validate:stage10": "node scripts/validate-stage10.mjs",
     "validate:navigation": "node scripts/validate-navigation.mjs",
     "validate:khpos-lite": "node scripts/validate-khpos-lite.mjs",
-    "test:positions": "node scripts/test-staff-positions.mjs && node scripts/test-staff-role-onboarding.mjs"
+    "test:positions": "node scripts/test-staff-positions.mjs && node scripts/test-staff-role-onboarding.mjs",
+    "test:attention": "node scripts/test-attention-lifecycle.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
