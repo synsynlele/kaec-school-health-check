@@ -122,7 +122,7 @@ await db.exec(`
 await db.exec(helperSQL);
 // Compile both complete replaced RPCs; catch missing SQL terminators before production.
 const serverFunctions = [
-  ...migration.matchAll(/CREATE OR REPLACE FUNCTION public\\.khpos_ops_(?:get_issues_server|issue_action_server)[\\s\\S]*?\\$function\\$;/g),
+  ...migration.matchAll(/CREATE OR REPLACE FUNCTION public\.khpos_ops_(?:get_issues_server|issue_action_server)[\s\S]*?\$function\$;/g),
 ].map((match) => match[0]);
 assert.equal(serverFunctions.length, 2, "both issue RPCs must end with valid SQL terminators");
 for (const definition of serverFunctions) await db.exec(definition);
