@@ -7,7 +7,7 @@ declare
 begin
   select r.organisation_id,a.user_id,r.id into org,actor,role_id
   from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id
-  where r.code='VISION_CUSTODIAN' and r.status='active' and a.status='active'
+  where r.code in ('SCHOOL_CUSTODIAN','VISION_CUSTODIAN') and r.status='active' and a.status='active'
     and khpos_private.ops_hpd_has_membership(a.user_id,r.organisation_id) limit 1;
   select id into campus from public.khpos_ops_campuses where organisation_id=org and status='active' limit 1;
   select ep.id into profile from public.khpos_ops_process_execution_profiles ep

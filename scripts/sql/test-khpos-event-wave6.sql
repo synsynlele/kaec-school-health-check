@@ -1,4 +1,4 @@
--- Run against a KHPOS database with an active school and Vision Custodian.
+-- Run against a KHPOS database with an active school and School Custodian.
 -- Every fixture, mapping and generated record is rolled back.
 begin;
 do $test$
@@ -12,7 +12,7 @@ declare
 begin
   select r.organisation_id,a.user_id,r.id,a.id into org,actor,role_id,assignment
   from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id
-  where r.code='VISION_CUSTODIAN' and r.status='active' and a.status='active'
+  where r.code in ('SCHOOL_CUSTODIAN','VISION_CUSTODIAN') and r.status='active' and a.status='active'
     and khpos_private.ops_hpd_has_membership(a.user_id,r.organisation_id) limit 1;
   if org is null then raise exception 'An active school fixture is required'; end if;
   select c.id into campus from public.khpos_ops_campuses c where c.organisation_id=org and c.status='active' limit 1;

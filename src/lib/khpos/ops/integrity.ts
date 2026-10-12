@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { hasIndependentSchoolReviewer } from "@/lib/khpos/ops/school-governance";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -292,6 +293,24 @@ export async function getKhposSystemIntegrity(
   const add = (finding: KhposIntegrityFinding) => {
     if (finding.count > 0) findings.push(finding);
   };
+
+  const roleCodeById = new Map(roles.map((role) => [role.id, role.code]));
+  const independentReviewerPresent = hasIndependentSchoolReviewer(
+    assignments.filter((assignment) => activeMembershipUsers.has(assignment.user_id)).map((assignment) => ({
+      userId: assignment.user_id,
+      roleCode: roleCodeById.get(assignment.role_id) ?? "",
+    })),
+  );
+  add({
+    id: "governance:independent_reviewer_missing",
+    severity: "critical",
+    category: "governance",
+    title: "Independent school governance review is unavailable",
+    detail: "Critical Custodian-authored policies and processes cannot be independently reviewed by the same person wearing another title.",
+    count: independentReviewerPresent ? 0 : 1,
+    href: `/khpos/${organisationId}/team`,
+    remediation: "Appoint a different authorised school reviewer with active school membership. Keep self-approval prohibited and routine school approvals within the school.",
+  });
 
   const assignmentsWithoutMembership = assignments.filter(
     (item) => !activeMembershipUsers.has(item.user_id),

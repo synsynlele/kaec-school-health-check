@@ -322,7 +322,7 @@ const PROCESS_KPI_STARTER_TEMPLATES = [
     name: "Founder-dependency defects",
     domain: "governance",
     definition:
-      "Count of operating or decision bottlenecks in the review period that required Vision Custodian intervention because authority, process, ownership or system capability was missing or ineffective.",
+      "Count of operating or decision bottlenecks in the review period that required School Custodian intervention because authority, process, ownership or system capability was missing or ineffective.",
     indicatorType: "risk" as const,
     unit: "number" as const,
     cadence: "monthly" as const,

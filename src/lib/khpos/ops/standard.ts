@@ -161,11 +161,7 @@ async function authorise(organisationId: string, userId: string) {
     },
     roleCodes,
     canAdopt,
-    custodianLabel: roleCodes.includes("VISION_CUSTODIAN")
-      ? "Vision Custodian"
-      : roleCodes.includes("SCHOOL_CUSTODIAN")
-        ? "School Custodian"
-        : "Institutional Custodian",
+    custodianLabel: "School Custodian",
   };
 }
 

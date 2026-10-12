@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { canReviewSchoolControl, schoolControlReviewer } from "@/lib/khpos/ops/school-governance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsLibrary, KhposOpsProcess } from "@/lib/khpos/ops/library";
 import type { ProcessBaseline } from "@/lib/khpos/ops/baselines";
@@ -130,32 +131,18 @@ export function ProcessGovernance({
         ),
     [processes, versions, userId],
   );
-  const reviewerIsVision = roleCodes.includes("VISION_CUSTODIAN");
-  const reviewerIsSchoolCustodian = roleCodes.includes("SCHOOL_CUSTODIAN");
-  const reviewerIsGuardian = roleCodes.includes("SCHOOL_GUARDIAN");
-  const authorIsVision = current?.author_role_codes.includes("VISION_CUSTODIAN") ?? false;
-  const canReviewCurrent = Boolean(
-    current &&
-      process &&
-      current.status === "in_review" &&
-      current.author_id !== userId &&
-      (
-        process.criticality === "P0"
-          ? authorIsVision
-            ? reviewerIsGuardian || reviewerIsSchoolCustodian
-            : reviewerIsVision || reviewerIsSchoolCustodian
-          : reviewerIsVision || reviewerIsSchoolCustodian || reviewerIsGuardian
-      ),
-  );
+  const canReviewCurrent = Boolean(current && process && canReviewSchoolControl({
+    critical: process.criticality === "P0",
+    status: current.status,
+    authorId: current.author_id,
+    reviewerId: userId,
+    authorRoleCodes: current.author_role_codes,
+    reviewerRoleCodes: roleCodes,
+  }));
 
   function approvalRoute() {
     if (!process || !current) return "";
-    if (process.criticality === "P0") {
-      return authorIsVision
-        ? "School Guardian (or School Custodian, if configured)"
-        : "Vision Custodian or School Custodian";
-    }
-    return "Vision Custodian, School Custodian or School Guardian";
+    return schoolControlReviewer(process.criticality === "P0", current.author_role_codes);
   }
 
   useEffect(() => {
@@ -296,8 +283,8 @@ export function ProcessGovernance({
       <h3 className="text-xl font-black">Process drafting and approval</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600">
         Leaders turn registered processes into school-owned operating procedures. A different authorised leader
-        must review the draft. If the Vision Custodian authors a P0 process, the School Guardian becomes the
-        independent co-approver; if another leader authors it, the Vision Custodian approves. Governing policies
+        must review the draft. If the School Custodian authors a P0 process, the School Guardian becomes the
+        independent co-approver; if another leader authors it, the School Custodian approves. Governing policies
         must already be active before publication.
       </p>
 

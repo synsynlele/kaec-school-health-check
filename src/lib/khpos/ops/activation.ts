@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { hasIndependentSchoolReviewer } from "@/lib/khpos/ops/school-governance";
 import {
   getKhposOpsLibrary,
   KhposOpsLibraryError,
@@ -491,7 +492,7 @@ export async function getKhposActivation(
       .map((assignment) => assignment.user_id),
   );
   const assignedRoleCodes = unique(
-    assignments.map((assignment) => roleCodeById.get(assignment.role_id)),
+    assignments.filter((assignment) => activeMemberIds.has(assignment.user_id)).map((assignment) => roleCodeById.get(assignment.role_id)),
   );
 
   const activePolicyCodes = unique(
@@ -587,6 +588,12 @@ export async function getKhposActivation(
     assignedRoleCodes.has("VISION_CUSTODIAN") ||
     assignedRoleCodes.has("SCHOOL_CUSTODIAN");
   const guardianPresent = assignedRoleCodes.has("SCHOOL_GUARDIAN");
+  const independentReviewerPresent = hasIndependentSchoolReviewer(
+    assignments.filter((assignment) => activeMemberIds.has(assignment.user_id)).map((assignment) => ({
+      userId: assignment.user_id,
+      roleCode: roleCodeById.get(assignment.role_id) ?? "",
+    })),
+  );
   const criticalPolicyMissing = missingCriticalPolicies.length;
   const criticalPolicyDraft = missingCriticalPolicies.filter(
     (policy) => policyOpenById.get(policy.id) === "draft",
@@ -651,6 +658,15 @@ export async function getKhposActivation(
           ? `${unassignedMembers} active school member${unassignedMembers === 1 ? "" : "s"} still need an operating-role assignment.`
           : "Core School Custodian / School Guardian authority is incomplete.",
       href: `/khpos/${organisationId}/people`,
+      blocking: true,
+    });
+  }
+  if (custodianPresent && guardianPresent && !independentReviewerPresent) {
+    actions.push({
+      key: "independent-review",
+      title: "Appoint an independent school reviewer",
+      detail: "The same account holds the Custodian and Guardian seats. Custodian-authored critical policies and processes need a different authorised person to review them.",
+      href: `/khpos/${organisationId}/team`,
       blocking: true,
     });
   }
