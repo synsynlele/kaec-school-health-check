@@ -26,8 +26,8 @@ Automated coverage includes 32 isolated PostgreSQL behaviour and privilege check
 ## Release order
 
 1. Review and approve this batch for production.
-2. Apply `20261012100923_multiple_staff_positions.sql` before deploying the application code. The new Today service requires the verification-routes RPC.
+2. Apply `20261012104812_multiple_staff_positions.sql` before deploying the application code. The new Today service requires the verification-routes RPC.
 3. Deploy the reviewed code; verify authenticated People, My Onboarding and Today flows using two different authorised accounts. Check a teacher who also holds a Promoter appointment, a rejected cross-school request, and blocked self-review.
 4. Confirm that pending appointments grant no new assignment and that existing primary assignments remain active.
 
-No production migration or appointment changes were applied while preparing this batch. This batch does not certify full school readiness. Remaining school-readiness and signed-in acceptance checks from the earlier audit still apply.
+Production migration applied on 12 October 2026 as version 20261012104812. No staff positions or appointment changes were made by the migration; application deployment and signed-in acceptance remain separate gates. This batch does not certify full school readiness. Remaining school-readiness and signed-in acceptance checks from the earlier audit still apply.
