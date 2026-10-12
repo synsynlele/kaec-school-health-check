@@ -314,10 +314,10 @@ export function IssuesWorkspace({
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["Open", workspace.summary.open],
-              ["P1 critical", workspace.summary.critical],
-              ["Overdue", workspace.summary.overdue],
-              ["Resolved / verified", workspace.summary.resolvedAwaitingClosure],
+              ["Needs handling", workspace.items.filter((item) => !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Active P1", workspace.items.filter((item) => item.severity === "P1" && !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Overdue action", workspace.items.filter((item) => item.dueAt && Date.parse(item.dueAt) < Date.now() && !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Awaiting review / closure", workspace.summary.resolvedAwaitingClosure],
             ].map(([label, value]) => (
               <div
                 key={String(label)}
