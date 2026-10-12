@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import type {
   KhposOpsIssue,
   KhposOpsIssuesWorkspace,
@@ -143,33 +144,39 @@ export function IssuesWorkspace({
     setBusyId(busyKey);
     setError("");
 
-    const response = await fetch(
-      `/api/khpos/ops/issues/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/issues/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      issues?: KhposOpsIssuesWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        issues?: KhposOpsIssuesWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
+      if (!response.ok || !body.ok || !body.issues) {
+        setError(body.error ?? "Issue operation could not be completed.");
+        return false;
+      }
 
-    if (!response.ok || !body.ok || !body.issues) {
-      setError(body.error ?? "Issue operation could not be completed.");
+      setWorkspace(body.issues);
+      announceKhposActivityChanged(organisationId);
+      return true;
+    } catch {
+      setError("Issue could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+      setBusyId(null);
     }
-
-    setWorkspace(body.issues);
-    return true;
   }
 
   async function createIssue() {
