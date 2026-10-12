@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { canReviewSchoolControl, schoolControlReviewer } from "@/lib/khpos/ops/school-governance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsLibrary, KhposOpsPolicy } from "@/lib/khpos/ops/library";
 import type { PolicyBaseline } from "@/lib/khpos/ops/baselines";
@@ -98,32 +99,18 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
         ),
     [policies, versions, userId],
   );
-  const reviewerIsVision = roleCodes.includes("VISION_CUSTODIAN");
-  const reviewerIsSchoolCustodian = roleCodes.includes("SCHOOL_CUSTODIAN");
-  const reviewerIsGuardian = roleCodes.includes("SCHOOL_GUARDIAN");
-  const authorIsVision = current?.author_role_codes.includes("VISION_CUSTODIAN") ?? false;
-  const canReviewCurrent = Boolean(
-    current &&
-      policy &&
-      current.status === "in_review" &&
-      current.author_id !== userId &&
-      (
-        policy.priority === "C0"
-          ? authorIsVision
-            ? reviewerIsGuardian || reviewerIsSchoolCustodian
-            : reviewerIsVision || reviewerIsSchoolCustodian
-          : reviewerIsVision || reviewerIsSchoolCustodian || reviewerIsGuardian
-      ),
-  );
+  const canReviewCurrent = Boolean(current && policy && canReviewSchoolControl({
+    critical: policy.priority === "C0",
+    status: current.status,
+    authorId: current.author_id,
+    reviewerId: userId,
+    authorRoleCodes: current.author_role_codes,
+    reviewerRoleCodes: roleCodes,
+  }));
 
   function approvalRoute() {
     if (!policy || !current) return "";
-    if (policy.priority === "C0") {
-      return authorIsVision
-        ? "School Guardian (or School Custodian, if configured)"
-        : "Vision Custodian or School Custodian";
-    }
-    return "Vision Custodian, School Custodian or School Guardian";
+    return schoolControlReviewer(policy.priority === "C0", current.author_role_codes);
   }
 
   useEffect(() => {
@@ -201,7 +188,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
 
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
-    <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the Vision Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the Vision Custodian approves. Approval happens here in the Institutional Library.</p>
+    <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the School Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the School Custodian approves. Approval happens here in the Institutional Library.</p>
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
         <option value="">Select a registered policy</option>

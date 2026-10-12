@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/library"', "school workspace navigation");
-requireText(nav, "Institutional Library", "school workspace navigation");
+requireText(nav, "Policies & Processes", "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/library/page.tsx");
 requireText(page, "InstitutionalLibrary", "library route");

@@ -404,7 +404,7 @@ export function YoungCeoWorkspace({
                 Aggregate strategic view only
               </h2>
               <p className="mt-2 text-sm leading-6 text-brand-900">
-                Vision Custodian sees Young CEO programme health and exceptions,
+                School Custodian sees Young CEO programme health and exceptions,
                 not routine learner-level evidence merely because of executive
                 authority.
               </p>
