@@ -17,7 +17,7 @@ const mutation='select public.khpos_ops_role_position_action_server($1,$2,$3,$4)
 try {
  await db.exec('create schema auth; create schema khpos_private; create role anon; create role authenticated; create role service_role; create table auth.users(id uuid primary key);');
  await db.exec(fs.readFileSync('scripts/fixtures/staff-positions-schema.sql','utf8'));
- await db.exec(fs.readFileSync('supabase/migrations/20261012100923_multiple_staff_positions.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261012104812_multiple_staff_positions.sql','utf8'));
  for(const school of [org,otherOrg]) await q("insert into organisations(id,status,partner_status) values($1,'active','active')",[school]);
  for(const person of [leader,owner,inspector,promoter,guardian]) { await q('insert into auth.users(id) values($1)',[person]); await q("insert into organisation_memberships(organisation_id,user_id,status) values($1,$2,'active')",[org,person]); }
  for(const [c,o] of [[campus,org],[otherCampus,otherOrg]]) await q("insert into khpos_ops_campuses(id,organisation_id,name,status) values($1,$2,'Campus','active')",[c,o]);
