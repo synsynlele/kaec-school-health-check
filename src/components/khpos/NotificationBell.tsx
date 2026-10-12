@@ -11,6 +11,7 @@ import {
   unsubscribe,
 } from "@mmmike/web-push/client";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 
 type Alert = {
   id: string;
@@ -54,6 +55,7 @@ export function NotificationBell({
   const seen = useRef<Set<string>>(new Set());
   const initialized = useRef(false);
   const lastFetch = useRef(0);
+  const latestRequest = useRef(0);
 
   const accessToken = useCallback(async () => {
     const client = createBrowserSupabaseClient();
@@ -83,10 +85,11 @@ export function NotificationBell({
     [accessToken, organisationId],
   );
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     if (!isActiveBell(mobile)) return;
-    if (Date.now() - lastFetch.current < 60_000) return;
+    if (!force && Date.now() - lastFetch.current < 60_000) return;
     lastFetch.current = Date.now();
+    const requestId = ++latestRequest.current;
 
     try {
       const token = await accessToken();
@@ -103,6 +106,8 @@ export function NotificationBell({
         alerts: Alert[];
         total: number;
       };
+      // A slower earlier response must not restore a notification just cleared.
+      if (requestId !== latestRequest.current) return;
       const next = new Set(data.alerts.map((alert) => alert.id));
 
       if (
@@ -136,27 +141,55 @@ export function NotificationBell({
       setTotal(data.total);
       setError(false);
     } catch {
-      lastFetch.current = 0;
-      setError(true);
+      if (requestId === latestRequest.current) {
+        lastFetch.current = 0;
+        setError(true);
+      }
     }
   }, [accessToken, organisationId, mobile]);
 
   useEffect(() => {
+    // A school switch must never show the previous school's action count.
+    setAlerts([]);
+    setTotal(0);
+    setError(false);
+    lastFetch.current = 0;
+    latestRequest.current += 1;
+    initialized.current = false;
+    seen.current.clear();
+
     const initial = window.setTimeout(() => {
-      void refresh();
+      void refresh(true);
     }, 0);
+    // Poll only on the active visible layout; mutations refresh immediately.
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh();
-    }, 900_000);
-    const onFocus = () => void refresh();
+    }, 180_000);
+    const onFocus = () => void refresh(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh(true);
+    };
+    const onActivity = (event: Event) => {
+      if (
+        event instanceof CustomEvent &&
+        event.detail?.organisationId === organisationId
+      ) {
+        void refresh(true);
+      }
+    };
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener(KHPOS_ACTIVITY_CHANGED, onActivity);
 
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(timer);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener(KHPOS_ACTIVITY_CHANGED, onActivity);
+      latestRequest.current += 1;
     };
-  }, [refresh]);
+  }, [refresh, organisationId]);
 
   useEffect(() => {
     if (!isActiveBell(mobile)) return;
@@ -308,7 +341,7 @@ export function NotificationBell({
         aria-expanded={open}
         onClick={() => {
           setOpen(!open);
-          if (!open) void refresh();
+          if (!open) void refresh(true);
         }}
         className="relative rounded-lg border border-white/15 p-2 text-slate-200 hover:bg-white/10"
       >
@@ -396,7 +429,7 @@ export function NotificationBell({
               <button
                 type="button"
                 className="underline"
-                onClick={() => void refresh()}
+                onClick={() => void refresh(true)}
               >
                 Retry
               </button>
