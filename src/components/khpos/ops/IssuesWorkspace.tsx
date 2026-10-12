@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import type {
   KhposOpsIssue,
   KhposOpsIssuesWorkspace,
@@ -143,33 +144,39 @@ export function IssuesWorkspace({
     setBusyId(busyKey);
     setError("");
 
-    const response = await fetch(
-      `/api/khpos/ops/issues/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/issues/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      issues?: KhposOpsIssuesWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        issues?: KhposOpsIssuesWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
+      if (!response.ok || !body.ok || !body.issues) {
+        setError(body.error ?? "Issue operation could not be completed.");
+        return false;
+      }
 
-    if (!response.ok || !body.ok || !body.issues) {
-      setError(body.error ?? "Issue operation could not be completed.");
+      setWorkspace(body.issues);
+      announceKhposActivityChanged(organisationId);
+      return true;
+    } catch {
+      setError("Issue could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+      setBusyId(null);
     }
-
-    setWorkspace(body.issues);
-    return true;
   }
 
   async function createIssue() {
@@ -307,10 +314,10 @@ export function IssuesWorkspace({
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["Open", workspace.summary.open],
-              ["P1 critical", workspace.summary.critical],
-              ["Overdue", workspace.summary.overdue],
-              ["Resolved / verified", workspace.summary.resolvedAwaitingClosure],
+              ["Needs handling", workspace.items.filter((item) => !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Active P1", workspace.items.filter((item) => item.severity === "P1" && !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Overdue action", workspace.items.filter((item) => item.dueAt && Date.parse(item.dueAt) < Date.parse(workspace.generatedAt) && !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Awaiting review / closure", workspace.summary.resolvedAwaitingClosure],
             ].map(([label, value]) => (
               <div
                 key={String(label)}
@@ -462,12 +469,14 @@ export function IssuesWorkspace({
                 issue.status === "resolved" &&
                 (issue.isReporter ||
                   issue.isDirectManager ||
-                  issue.isEscalationRecipient);
+                  issue.isEscalationRecipient ||
+                  issue.isGuardianReviewer);
               const canClose =
                 issue.status === "verified" &&
                 (issue.isReporter ||
                   issue.isDirectManager ||
-                  issue.isEscalationRecipient);
+                  issue.isEscalationRecipient ||
+                  issue.isGuardianReviewer);
               const canEscalate =
                 !["verified", "closed"].includes(issue.status) &&
                 (issue.isOwner ||
@@ -507,6 +516,20 @@ export function IssuesWorkspace({
                       <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
                         {issue.description}
                       </p>
+
+                      {issue.status === "resolved" && issue.isOwner && (
+                        <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium leading-6 text-blue-900">
+                          Your resolution has been submitted. No further action is
+                          required from you unless it is returned. An independent
+                          authorised reviewer must verify it before closure.
+                        </p>
+                      )}
+                      {issue.status === "verified" && (
+                        <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
+                          The resolution is verified. An authorised leader can
+                          close this issue; the record remains in the audit history.
+                        </p>
+                      )}
 
                       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
                         <span className="inline-flex items-center gap-1">

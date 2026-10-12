@@ -306,7 +306,7 @@ export async function getKhposSystemIntegrity(
     severity: "critical",
     category: "governance",
     title: "Independent school governance review is unavailable",
-    detail: "Critical Custodian-authored policies and processes cannot be independently reviewed by the same person wearing another title.",
+    detail: "Custodian-authored policies, processes and resolved Custodian-owned issues need an independent school reviewer. One account holding two titles is not independent.",
     count: independentReviewerPresent ? 0 : 1,
     href: `/khpos/${organisationId}/team`,
     remediation: "Appoint a different authorised school reviewer with active school membership. Keep self-approval prohibited and routine school approvals within the school.",

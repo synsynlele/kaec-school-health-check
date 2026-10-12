@@ -53,6 +53,7 @@ export interface KhposOpsIssue {
   escalatedToTitle: string | null;
   isOwner: boolean;
   isReporter: boolean;
+  isGuardianReviewer: boolean;
   isDirectManager: boolean;
   isEscalationRecipient: boolean;
   history: KhposOpsIssueHistoryEvent[];
