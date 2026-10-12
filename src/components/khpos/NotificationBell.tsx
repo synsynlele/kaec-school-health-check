@@ -143,22 +143,25 @@ export function NotificationBell({
     } catch {
       if (requestId === latestRequest.current) {
         lastFetch.current = 0;
+        setAlerts([]);
+        setTotal(0);
         setError(true);
       }
     }
   }, [accessToken, organisationId, mobile]);
 
   useEffect(() => {
-    // A school switch must never show the previous school's action count.
-    setAlerts([]);
-    setTotal(0);
-    setError(false);
+    // Invalidate the previous school/request immediately; reset React state
+    // from the scheduled callback rather than synchronously in an effect.
     lastFetch.current = 0;
     latestRequest.current += 1;
     initialized.current = false;
     seen.current.clear();
 
     const initial = window.setTimeout(() => {
+      setAlerts([]);
+      setTotal(0);
+      setError(false);
       void refresh(true);
     }, 0);
     // Poll only on the active visible layout; mutations refresh immediately.
