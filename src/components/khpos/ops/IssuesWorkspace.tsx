@@ -316,7 +316,7 @@ export function IssuesWorkspace({
             {[
               ["Needs handling", workspace.items.filter((item) => !["resolved", "verified", "closed"].includes(item.status)).length],
               ["Active P1", workspace.items.filter((item) => item.severity === "P1" && !["resolved", "verified", "closed"].includes(item.status)).length],
-              ["Overdue action", workspace.items.filter((item) => item.dueAt && Date.parse(item.dueAt) < Date.now() && !["resolved", "verified", "closed"].includes(item.status)).length],
+              ["Overdue action", workspace.items.filter((item) => item.dueAt && Date.parse(item.dueAt) < Date.parse(workspace.generatedAt) && !["resolved", "verified", "closed"].includes(item.status)).length],
               ["Awaiting review / closure", workspace.summary.resolvedAwaitingClosure],
             ].map(([label, value]) => (
               <div
