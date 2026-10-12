@@ -1,4 +1,5 @@
 import { khposRecordHref } from "@/lib/khpos/ops/record-links";
+import { needsOwnerWorkAction, issueAttentionAction, decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
 import { getKhposOpsIssues } from "@/lib/khpos/ops/issues";
 import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
@@ -70,7 +71,8 @@ export async function getKhposAttention(
   let waitingApproval = 0;
 
   for (const item of work.items) {
-    if (item.status === "completed") continue;
+    // Submitted work belongs to the verifier queue, not the owner\'s action queue.
+    if (!needsOwnerWorkAction(item.status)) continue;
     const due = dueState(item.dueAt, nowMs);
     const important =
       item.status === "blocked" ||
@@ -125,14 +127,14 @@ export async function getKhposAttention(
   }
 
   for (const issue of issues.items) {
-    if (["verified", "closed"].includes(issue.status)) continue;
-    const due = dueState(issue.dueAt, nowMs);
-    const needsUser =
-      issue.isOwner ||
-      issue.isDirectManager ||
-      issue.isEscalationRecipient ||
-      (issue.isReporter && issue.status === "resolved");
-    if (!needsUser && issue.severity !== "P1") continue;
+    const waitingForIndependentReview =
+      issue.status === "resolved" || issue.status === "verified";
+    const due = dueState(
+      waitingForIndependentReview ? null : issue.dueAt,
+      nowMs,
+    );
+    const nextAction = issueAttentionAction(issue, due.overdue);
+    if (!nextAction) continue;
 
     if (due.overdue) overdue += 1;
     items.push({
@@ -146,27 +148,28 @@ export async function getKhposAttention(
             : "medium",
       title: issue.title,
       detail:
-        due.overdue
-          ? "Issue is overdue."
-          : issue.isEscalationRecipient
-            ? "Issue has been escalated to your authority."
-            : issue.status === "resolved"
-              ? "Resolution needs verification or closure."
-              : "Issue requires action.",
+        nextAction === "verify"
+          ? "This resolution is awaiting your independent verification."
+          : nextAction === "close"
+            ? "This verified issue is ready for closure."
+            : due.overdue
+              ? "Issue is overdue."
+              : issue.isEscalationRecipient
+                ? "Issue has been escalated to your authority."
+                : "Issue requires your action.",
       href: khposRecordHref(organisationId, "issue", issue.id),
-      dueAt: issue.dueAt,
-      actionLabel: "Open issue",
+      dueAt: waitingForIndependentReview ? null : issue.dueAt,
+      actionLabel:
+        nextAction === "verify"
+          ? "Verify resolution"
+          : nextAction === "close"
+            ? "Close issue"
+            : "Open issue",
     });
   }
 
   for (const decision of decisions.items) {
-    const approval =
-      decision.isAuthority &&
-      ["submitted", "under_review"].includes(decision.status);
-    const implementation =
-      decision.isImplementationOwner &&
-      decision.actionRequired &&
-      decision.status === "approved";
+    const { approval, implementation } = decisionAttentionActions(decision);
 
     if (!approval && !implementation) continue;
 
