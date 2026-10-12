@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
+import ts from "typescript";
 
 const root = process.cwd();
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -124,3 +126,31 @@ for (const expected of [
 ]) {
   requireText(accountApi, expected, "account authority discovery");
 }
+
+// Evaluate only the static navigation declarations to verify coverage, rather
+// than asserting that a route merely appears somewhere in the component.
+const declarations = schoolNav.slice(
+  schoolNav.indexOf("const transformLinks"),
+  schoolNav.indexOf("function NavigationGroup("),
+);
+const iconNames = schoolNav.match(/import \{([^}]*?)\} from "lucide-react"/)[1]
+  .split(",").map((name) => name.trim()).filter(Boolean);
+const context = Object.fromEntries(iconNames.map((name) => [name, {}]));
+const navigation = vm.runInNewContext(
+  ts.transpile(declarations + "\n({ workspaceLinks, dailyLinks, navigationGroups });"),
+  context,
+);
+const visibleLinks = [...navigation.dailyLinks, ...navigation.navigationGroups.flatMap((group) => group.links)];
+const destinations = visibleLinks.map((link) => link.suffix);
+if (new Set(destinations).size !== destinations.length) {
+  throw new Error("School navigation contains duplicate destinations.");
+}
+for (const link of navigation.workspaceLinks) {
+  if (!destinations.includes(link.suffix)) throw new Error(`School navigation lost ${link.suffix || "overview"}.`);
+  const page = path.join(root, "src/app/khpos/[organisationId]", link.suffix, "page.tsx");
+  if (!fs.existsSync(page)) throw new Error(`School navigation has no page for ${link.suffix}.`);
+}
+if (navigation.dailyLinks.map((link) => link.suffix).join(",") !== ",/work,/issues,/decisions") {
+  throw new Error("School daily navigation must expose overview, work, issues and approvals.");
+}
+console.log(`School navigation coverage validated: ${destinations.length} unique destinations and visible daily approvals.`);

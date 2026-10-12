@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 
 const transformLinks = [
-  { suffix: "", label: "Command Centre", icon: LayoutDashboard },
+  { suffix: "", label: "School Overview", icon: LayoutDashboard },
   { suffix: "/priorities", label: "Priorities", icon: Target },
   { suffix: "/implementation", label: "Implementation", icon: Workflow },
   { suffix: "/playbooks", label: "Playbooks", icon: BookOpen },
@@ -71,7 +71,7 @@ const leadershipBriefLink = {
 
 const calendarLink = {
   suffix: "/calendar",
-  label: "Institutional Calendar",
+  label: "Calendar",
   icon: CalendarClock,
 } as const;
 
@@ -123,7 +123,7 @@ const operationsLinks = [
   { suffix: "/student-culture", label: "Student Culture", icon: UserRoundCheck },
   { suffix: "/safeguarding", label: "Safeguarding", icon: ShieldCheck },
   { suffix: "/team", label: "Team & Roles", icon: UsersRound },
-  { suffix: "/library", label: "Institutional Library", icon: LibraryBig },
+  { suffix: "/library", label: "Policies & Processes", icon: LibraryBig },
   { suffix: "/parents", label: "Parent Partnership", icon: MessageCircle },
   { suffix: "/campus-readiness", label: "Campus Readiness", icon: Building2 },
   { suffix: "/assets", label: "Assets & Maintenance", icon: Wrench },
@@ -153,20 +153,27 @@ const workspaceLinks = [
   ...intelligenceLinks,
 ] as const;
 
+// Daily actions stay visible on both desktop and mobile. Setup belongs in More.
 const dailyLinks = [
   transformLinks[0],
-  activationLink,
   operationsLinks[0],
   operationsLinks[1],
   operationsLinks[2],
 ] as const;
+
+// Resolve destinations by route, not array position, so regrouping cannot silently
+// move an unrelated workflow into the wrong school area.
+function operation(suffix: (typeof operationsLinks)[number]["suffix"]) {
+  return operationsLinks.find((link) => link.suffix === suffix)!;
+}
 const navigationGroups = [
-  { title: "Leadership", icon: Gauge, links: [activationLink, standardLink, askKhposLink, leadershipBriefLink, calendarLink, executionControlLink, systemIntegrityLink, ...transformLinks.slice(1), operationsLinks[3], operationsLinks[29], intelligenceLinks[0]] },
-  { title: "People & roles", icon: UsersRound, links: [onboardingLink, ...operationsLinks.slice(4, 10), operationsLinks[22]] },
-  { title: "Learning", icon: GraduationCap, links: [...operationsLinks.slice(10, 13), intelligenceLinks[1]] },
-  { title: "Human potential", icon: Sparkles, links: [...operationsLinks.slice(13, 19), intelligenceLinks[2]] },
-  { title: "Culture & care", icon: ShieldCheck, links: [...operationsLinks.slice(19, 22), operationsLinks[24], operationsLinks[28]] },
-  { title: "Institution", icon: LibraryBig, links: [operationsLinks[25], operationsLinks[26], operationsLinks[27], operationsLinks[23], operationsLinks[30]] },
+  { title: "School leadership", icon: Gauge, links: [askKhposLink, leadershipBriefLink, calendarLink, ...transformLinks.slice(1), operation("/performance"), operation("/network-pulse"), intelligenceLinks[0]] },
+  { title: "People & roles", icon: UsersRound, links: [onboardingLink, operation("/people"), operation("/team"), operation("/recruitment"), operation("/availability"), operation("/staff-performance"), operation("/staff-accountability"), operation("/staff-transition")] },
+  { title: "Teaching & learning", icon: GraduationCap, links: [operation("/academic-delivery"), operation("/academic-assurance"), operation("/learner-progress"), intelligenceLinks[1]] },
+  { title: "Builder development", icon: Sparkles, links: [operation("/potential-development"), operation("/skills-development"), operation("/leadership-financial"), operation("/young-ceo"), operation("/builder-projects"), operation("/worldready"), intelligenceLinks[2]] },
+  { title: "Care & parents", icon: ShieldCheck, links: [operation("/builders-council"), operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/parent-journeys")] },
+  { title: "School operations", icon: LibraryBig, links: [operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
+  { title: "Setup & system", icon: Wrench, links: [activationLink, standardLink, executionControlLink, systemIntegrityLink] },
 ] as const;
 
 function NavigationGroup({ group, base, pathname, onNavigate }: {
@@ -287,7 +294,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                 KHP-OS | Schools
               </span>
               <span className="mt-0.5 block truncate text-sm font-extrabold text-white">
-                Transformation Workspace
+                School Workspace
               </span>
             </span>
           </Link>
@@ -317,7 +324,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             </Link>
           </div>
           <p className="mt-3 px-1 text-[10px] leading-4 text-slate-500">
-            KAEC-NG institutional transformation environment.
+            School operations by KAEC-NG.
           </p>
         </div>
       </aside>
@@ -366,7 +373,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   }`}
                 >
                   <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Home", "Activate", "Today", "Issues"][dailyLinks.indexOf(item)]}</span>
+                  <span className="w-full truncate text-center">{["Overview", "Today", "Issues", "Approvals"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
@@ -377,7 +384,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
         <div id="school-more-menu" role="dialog" aria-modal="true" aria-label="All school areas" className="absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><h2 className="font-bold">All school areas</h2><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
-          <nav aria-label="All school areas" className="flex-1 overflow-y-auto p-3"><WorkspaceLink base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} {...dailyLinks[4]} /><div className="my-3 border-t border-white/10" /><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
+          <nav aria-label="All school areas" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
           <div className="flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Access Hub</Link></div>
         </div>
       </div>}

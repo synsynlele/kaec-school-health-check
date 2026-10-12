@@ -86,7 +86,7 @@ for (const expected of [
   'suffix: "/leadership-brief"',
   'suffix: "/calendar"',
   'label: "Leadership Brief"',
-  'label: "Institutional Calendar"',
+  'label: "Calendar"',
 ]) {
   requireText(nav, expected, "workspace navigation");
 }

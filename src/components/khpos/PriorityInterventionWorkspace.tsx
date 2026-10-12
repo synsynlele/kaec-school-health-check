@@ -181,7 +181,7 @@ export function PriorityInterventionWorkspace({
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-end lg:py-14">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-mint-200">
-              Stage 2 — Priority & Intervention
+              Priorities & Interventions
             </div>
             <h1 className="mt-5 max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">
               Turn diagnosis into a focused transformation agenda.
