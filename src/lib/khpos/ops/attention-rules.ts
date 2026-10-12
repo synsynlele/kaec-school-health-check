@@ -11,6 +11,7 @@ export interface IssueAttentionState {
   status: string;
   isOwner: boolean;
   isReporter: boolean;
+  isGuardianReviewer?: boolean;
   isDirectManager: boolean;
   isEscalationRecipient: boolean;
   severity: string;
@@ -24,12 +25,12 @@ export function issueAttentionAction(
   if (issue.status === "closed") return null;
   if (issue.status === "resolved") {
     return !issue.isOwner &&
-      (issue.isReporter || issue.isDirectManager || issue.isEscalationRecipient)
+      (issue.isReporter || issue.isDirectManager || issue.isEscalationRecipient || !!issue.isGuardianReviewer)
       ? "verify"
       : null;
   }
   if (issue.status === "verified") {
-    return issue.isReporter || issue.isDirectManager || issue.isEscalationRecipient
+    return issue.isReporter || issue.isDirectManager || issue.isEscalationRecipient || !!issue.isGuardianReviewer
       ? "close"
       : null;
   }
