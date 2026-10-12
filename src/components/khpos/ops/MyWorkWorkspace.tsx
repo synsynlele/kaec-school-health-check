@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
+import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
+import { needsOwnerWorkAction } from "@/lib/khpos/ops/attention-rules";
 import { focusKhposRecord, khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   AlertTriangle,
@@ -148,6 +150,25 @@ export function MyWorkWorkspace({
     };
   }, [organisationId, supabase]);
 
+  async function reloadAttention() {
+    try {
+      const token = await accessToken();
+      if (!token) return;
+      const response = await fetch(`/api/khpos/ops/attention/${organisationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const body = (await response.json()) as {
+        ok?: boolean;
+        attention?: KhposAttentionSnapshot;
+      };
+      if (body.ok && body.attention) setAttention(body.attention);
+    } catch {
+      // The next page refresh can recover an unavailable attention summary.
+    }
+  }
+
   async function startAvailableProcess(item: KhposOpsAvailableProcess) {
     const token = await accessToken();
     if (!token) {
@@ -192,6 +213,8 @@ export function MyWorkWorkspace({
       }
 
       setWork(body.work);
+      announceKhposActivityChanged(organisationId);
+      void reloadAttention();
       setMessage(
         item.code +
           " has been started and added to your work queue.",
@@ -221,29 +244,35 @@ export function MyWorkWorkspace({
     setError("");
     setMessage("");
 
-    const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ workItemId: item.id, ...payload }),
-    });
+    try {
+      const response = await fetch(`/api/khpos/ops/work/${organisationId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ workItemId: item.id, ...payload }),
+      });
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      work?: KhposOpsMyWork;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        work?: KhposOpsMyWork;
+        error?: string;
+      };
 
-    setBusyId(null);
+      if (!response.ok || !body.ok || !body.work) {
+        setError(body.error ?? "The work action could not be completed.");
+        return;
+      }
 
-    if (!response.ok || !body.ok || !body.work) {
-      setError(body.error ?? "The work action could not be completed.");
-      return;
+      setWork(body.work);
+      announceKhposActivityChanged(organisationId);
+      void reloadAttention();
+    } catch {
+      setError("The action could not be saved. Check your connection and try again.");
+    } finally {
+      setBusyId(null);
     }
-
-    setWork(body.work);
   }
 
   useRecordFocus(!!work);
@@ -283,7 +312,8 @@ export function MyWorkWorkspace({
   const roleTitles = [...new Set([...work.items.map((item) => item.roleTitle), ...work.availableProcesses.map((process) => process.ownerRoleTitle)])].sort();
   const visibleItems = work.items.filter((item) => !roleFilter || item.roleTitle === roleFilter);
   const availableProcesses = work.availableProcesses.filter((process) => !roleFilter || process.ownerRoleTitle === roleFilter);
-  const openItems = visibleItems.filter((item) => item.status !== "completed");
+  const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
+  const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
   const completedItems = visibleItems.filter((item) => item.status === "completed");
   const processByCode = new Map(
     (library?.processes ?? []).map((process) => [process.code, process]),
@@ -315,8 +345,8 @@ export function MyWorkWorkspace({
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {[
-              ["All", work.summary.total],
-              ["Due today", work.summary.dueToday],
+              ["To do", openItems.length],
+              ["Awaiting review", awaitingItems.length],
               ["Overdue", work.summary.overdue],
               ["Blocked", work.summary.blocked],
               ["Completed", work.summary.completed],
@@ -419,7 +449,7 @@ export function MyWorkWorkspace({
             <option value="">All my work</option>{roleTitles.map((title) => <option key={title} value={title}>{title}</option>)}
           </select><span className="mt-2 block font-normal text-slate-600">Reviews for other staff remain visible below.</span>
         </label>}
-        {roleFilter && !openItems.length && !completedItems.length && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
+        {roleFilter && !openItems.length && !awaitingItems.length && !completedItems.length && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
         {availableProcesses.length > 0 && (
           <section className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1037,6 +1067,34 @@ export function MyWorkWorkspace({
                 </article>
               );
             })}
+          </section>
+        )}
+
+        {awaitingItems.length > 0 && (
+          <section className="rounded-[28px] border border-blue-100 bg-blue-50/60 p-5 sm:p-6">
+            <h2 className="text-lg font-black text-slate-900">
+              Submitted — waiting for independent verification
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              These items are no longer in your action queue. Another authorised
+              person must verify them. You will need to act only if a reviewer
+              returns an item for correction.
+            </p>
+            <details className="mt-4 rounded-xl border border-blue-100 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-bold text-brand-800">
+                View {awaitingItems.length} submitted item{awaitingItems.length === 1 ? "" : "s"}
+              </summary>
+              <ul className="mt-3 space-y-2">
+                {awaitingItems.map((item) => (
+                  <li key={item.id} className="rounded-lg border border-slate-100 p-3">
+                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {item.roleTitle} · Awaiting review
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </section>
         )}
 
