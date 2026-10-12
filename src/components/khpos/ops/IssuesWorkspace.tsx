@@ -515,6 +515,20 @@ export function IssuesWorkspace({
                         {issue.description}
                       </p>
 
+                      {issue.status === "resolved" && issue.isOwner && (
+                        <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium leading-6 text-blue-900">
+                          Your resolution has been submitted. No further action is
+                          required from you unless it is returned. An independent
+                          authorised reviewer must verify it before closure.
+                        </p>
+                      )}
+                      {issue.status === "verified" && (
+                        <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
+                          The resolution is verified. An authorised leader can
+                          close this issue; the record remains in the audit history.
+                        </p>
+                      )}
+
                       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
                         <span className="inline-flex items-center gap-1">
                           <Clock3 className="size-3.5" />
