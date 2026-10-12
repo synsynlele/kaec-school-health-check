@@ -97,6 +97,7 @@ const custAssignment=id(30), guardAssignment=id(31), outsideAssignment=id(32);
 const issueId=id(40);
 await db.exec(`
   create schema khpos_private;
+  create schema auth;
   create role anon; create role authenticated; create role service_role;
   create table public.organisation_memberships (
     organisation_id uuid, user_id uuid, status text
@@ -119,6 +120,12 @@ await db.exec(`
   $q$;
 `);
 await db.exec(helperSQL);
+// Compile both complete replaced RPCs; catch missing SQL terminators before production.
+const serverFunctions = [
+  ...migration.matchAll(/CREATE OR REPLACE FUNCTION public\\.khpos_ops_(?:get_issues_server|issue_action_server)[\\s\\S]*?\\$function\\$;/g),
+].map((match) => match[0]);
+assert.equal(serverFunctions.length, 2, "both issue RPCs must end with valid SQL terminators");
+for (const definition of serverFunctions) await db.exec(definition);
 const query=async (actor)=> (await db.query(
   "select khpos_private.ops_issue_can_independent_guardian($1,$2,$3) allowed",
   [actor,org,issueId],
