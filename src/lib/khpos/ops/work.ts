@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { retryFutureIssuedJwtRead } from "@/lib/khpos/ops/retry-transient-auth";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -678,10 +679,10 @@ export async function getKhposOpsMyWork(
 ): Promise<KhposOpsMyWork> {
   // The database read function materialises due recurring work atomically
   // before returning the queue, so one RPC is sufficient here.
-  const { data, error } = await admin().rpc("khpos_ops_get_my_work_server", {
+  const { data, error } = await retryFutureIssuedJwtRead(() => admin().rpc("khpos_ops_get_my_work_server", {
     p_actor_user_id: userId,
     p_organisation_id: organisationId,
-  });
+  }));
 
   if (error || !isObject(data)) {
     throw new KhposOpsWorkError(
