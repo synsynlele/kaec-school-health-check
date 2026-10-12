@@ -2,6 +2,18 @@
 -- standard issues. No data update, no automatic approval or self-verification.
 -- Guardian fall-back only for standard issues belonging to the School Custodian.
 -- Holding two titles never permits reviewing one's own issue.
+-- Stop rather than overwrite any production function changed since inspection.
+do $preflight$
+begin
+  if md5(pg_get_functiondef('public.khpos_ops_get_issues_server(uuid,uuid)'::regprocedure)) <> 'b2c8d43ce14aca320d4738f9136f4ef3' then
+    raise exception 'Issue read function drifted; inspect before deployment.';
+  end if;
+  if md5(pg_get_functiondef('public.khpos_ops_issue_action_server(uuid,uuid,uuid,text,text)'::regprocedure)) <> '109732e6a594569b4823420e16ebd8e2' then
+    raise exception 'Issue action function drifted; inspect before deployment.';
+  end if;
+end;
+$preflight$;
+
 create or replace function khpos_private.ops_issue_can_independent_guardian(
   p_actor uuid, p_org uuid, p_issue uuid
 ) returns boolean language sql stable security definer set search_path='' as $check$
