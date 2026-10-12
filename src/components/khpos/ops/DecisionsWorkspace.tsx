@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import type {
   KhposOpsDecision,
   KhposOpsDecisionsWorkspace,
@@ -266,33 +267,39 @@ export function DecisionsWorkspace({
     setBusyId(busyKey);
     setError("");
 
-    const response = await fetch(
-      `/api/khpos/ops/decisions/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/decisions/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      decisions?: KhposOpsDecisionsWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        decisions?: KhposOpsDecisionsWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
+      if (!response.ok || !body.ok || !body.decisions) {
+        setError(body.error ?? "Decision operation could not be completed.");
+        return false;
+      }
 
-    if (!response.ok || !body.ok || !body.decisions) {
-      setError(body.error ?? "Decision operation could not be completed.");
+      setWorkspace(body.decisions);
+      announceKhposActivityChanged(organisationId);
+      return true;
+    } catch {
+      setError("Decision could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+      setBusyId(null);
     }
-
-    setWorkspace(body.decisions);
-    return true;
   }
 
   async function createDecision() {
