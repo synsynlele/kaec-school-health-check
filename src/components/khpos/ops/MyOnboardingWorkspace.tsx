@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { StaffPositionsPanel } from "./StaffPositionsPanel";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -39,6 +40,7 @@ export function MyOnboardingWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [selectedRoleId, setSelectedRoleId] = useState("");
   const [data, setData] = useState<KhposMyOnboarding | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -56,11 +58,11 @@ export function MyOnboardingWorkspace({
     return session.session.access_token;
   }, [supabase]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     const token = await accessToken();
     const response = await fetch(
-      `/api/khpos/ops/onboarding/${organisationId}`,
-      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
+      `/api/khpos/ops/onboarding/${organisationId}${selectedRoleId ? `?roleId=${selectedRoleId}` : ""}`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal },
     );
     const body = (await response.json()) as {
       ok?: boolean;
@@ -70,13 +72,14 @@ export function MyOnboardingWorkspace({
     if (!response.ok || !body.ok || !body.onboarding) {
       throw new Error(body.error ?? "My Onboarding could not be loaded.");
     }
-    setData(body.onboarding);
-  }, [accessToken, organisationId]);
+    if (!signal?.aborted) setData(body.onboarding);
+  }, [accessToken, organisationId, selectedRoleId]);
 
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    void Promise.resolve().then(load).catch((cause) => {
+    const controller = new AbortController();
+    void Promise.resolve().then(() => load(controller.signal)).catch((cause) => {
       if (active) {
         setError(
           cause instanceof Error
@@ -87,6 +90,7 @@ export function MyOnboardingWorkspace({
     });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [load, supabase]);
 
@@ -115,6 +119,7 @@ export function MyOnboardingWorkspace({
         throw new Error(body.error ?? "Onboarding action could not be saved.");
       }
       setData(body.onboarding);
+      if (selectedRoleId) await load();
       return true;
     } catch (cause) {
       setError(
@@ -254,6 +259,12 @@ export function MyOnboardingWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6">
+        <StaffPositionsPanel organisationId={organisationId} />
+        {data.roleChoices.length > 1 && <label className="block rounded-2xl border bg-white p-4 text-sm font-semibold">View responsibilities for
+          <select className="mt-2 block w-full rounded-xl border p-3" disabled={!!busy} value={selectedRoleId || data.role?.id || ""} onChange={(event) => { setSelectedRoleId(event.target.value); setData(null); setError(""); }}>
+            {data.roleChoices.map((role) => <option key={role.id} value={role.id}>{role.title}{role.primary ? " · Primary" : ""}</option>)}
+          </select><span className="mt-2 block font-normal text-slate-600">The primary appointment checklist and Core practice are shared. Duties and policies below belong to the selected position.</span>
+        </label>}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
             {error}

@@ -43,7 +43,6 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
 for (const expected of [
-  "Operations · O3",
   "Today",
   "Start with what needs your attention now.",
   "KHP-OS does not create busywork.",

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { StaffPositionsPanel } from "./StaffPositionsPanel";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -431,6 +432,7 @@ export function PeopleWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6 sm:py-10">
+        {workspace.canManagePeople && <StaffPositionsPanel organisationId={organisationId} people={workspace} />}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
