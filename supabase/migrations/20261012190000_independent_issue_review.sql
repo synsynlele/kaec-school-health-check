@@ -269,8 +269,7 @@ begin
     'items',v_items
   );
 end;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.khpos_ops_issue_action_server(p_actor_user_id uuid, p_organisation_id uuid, p_issue_id uuid, p_action text, p_note text DEFAULT NULL::text)
  RETURNS void
@@ -534,8 +533,7 @@ begin
     raise exception 'Unsupported issue action.';
   end if;
 end;
-$function$
-
+$function$;
 
 -- Preserve the existing service-only boundary on the two public RPCs.
 revoke all on function public.khpos_ops_get_issues_server(uuid,uuid)
