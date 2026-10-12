@@ -133,6 +133,11 @@ await db.query("insert into public.khpos_ops_issues values($1,$2,$3,'standard','
   [issueId,org,custAssignment,campus]);
 assert.equal(await query(independent), true, "same school/campus active independent Guardian");
 assert.equal(await query(custodian), false, "Custodian cannot verify own resolution");
+await db.query(
+  "insert into public.khpos_ops_role_assignments values($1,$2,$3,'active',null,null)",
+  [id(33),guardianRole,custodian],
+);
+assert.equal(await query(custodian), false, "same person with Guardian and Custodian titles cannot verify own issue");
 assert.equal(await query(outside), false, "other school cannot verify");
 await db.query("update public.khpos_ops_issues set campus_id=$1 where id=$2",[otherCampus,issueId]);
 assert.equal(await query(independent), false, "campus-restricted Guardian cannot review other campus");
