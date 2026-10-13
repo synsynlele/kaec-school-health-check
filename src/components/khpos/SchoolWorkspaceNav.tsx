@@ -111,6 +111,7 @@ const operationsLinks = [
   { suffix: "/staff-accountability", label: "Recognition & Accountability", icon: Gavel },
   { suffix: "/staff-transition", label: "Progression & Exit", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Academic Delivery", icon: GraduationCap },
+  { suffix: "/teaching-presence", label: "School Attendance & HQLS", icon: BookOpen },
   { suffix: "/academic-assurance", label: "Assessment & Exams", icon: ShieldCheck },
   { suffix: "/learner-progress", label: "Learner Progress", icon: UserRoundSearch },
   { suffix: "/potential-development", label: "Potential Development", icon: Sparkles },
@@ -169,7 +170,7 @@ function operation(suffix: (typeof operationsLinks)[number]["suffix"]) {
 const navigationGroups = [
   { title: "School leadership", icon: Gauge, links: [askKhposLink, leadershipBriefLink, calendarLink, ...transformLinks.slice(1), operation("/performance"), operation("/network-pulse"), intelligenceLinks[0]] },
   { title: "People & roles", icon: UsersRound, links: [onboardingLink, operation("/people"), operation("/team"), operation("/recruitment"), operation("/availability"), operation("/staff-performance"), operation("/staff-accountability"), operation("/staff-transition")] },
-  { title: "Teaching & learning", icon: GraduationCap, links: [operation("/academic-delivery"), operation("/academic-assurance"), operation("/learner-progress"), intelligenceLinks[1]] },
+  { title: "Teaching & learning", icon: GraduationCap, links: [operation("/teaching-presence"), operation("/academic-delivery"), operation("/academic-assurance"), operation("/learner-progress"), intelligenceLinks[1]] },
   { title: "Builder development", icon: Sparkles, links: [operation("/potential-development"), operation("/skills-development"), operation("/leadership-financial"), operation("/young-ceo"), operation("/builder-projects"), operation("/worldready"), intelligenceLinks[2]] },
   { title: "Care & parents", icon: ShieldCheck, links: [operation("/builders-council"), operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/parent-journeys")] },
   { title: "School operations", icon: LibraryBig, links: [operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
