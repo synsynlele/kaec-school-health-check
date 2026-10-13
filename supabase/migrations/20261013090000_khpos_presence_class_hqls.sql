@@ -146,14 +146,14 @@ begin
         where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active'
           and (a.campus_id=c.id or a.campus_id is null)
       ))),'[]'::jsonb),
-    'todayPresence',(select jsonb_build_object('id',d.id,'campusId',d.campus_id,'in',d.checked_in_at,'out',d.checked_out_at)
+    'todayPresence',(select jsonb_build_object('id',d.id,'campusId',d.campus_id,'in',d.checked_in_at,'out',d.checked_out_at,'administrativelyClosed',d.closed_by is not null)
       from public.khpos_ops_staff_day_presence d where d.organisation_id=p_org and d.staff_id=v_staff.id and d.local_day=v_day),
     'periods',coalesce((select jsonb_agg(jsonb_build_object(
        'id',p.id,'streamId',s.id,'weekday',p.weekday,'start',to_char(p.starts_at,'HH24:MI'),'end',to_char(p.ends_at,'HH24:MI'),
        'room',p.room_label,'campusId',s.campus_id,'class',s.class_label,'subject',s.subject_label,
        'teacher',coalesce(st.display_name,'Assigned teacher'),'teacherUserId',a.user_id,
        'termActive',t.status='active' and s.status='active',
-       'session', (select jsonb_build_object('id',ses.id,'in',ses.checked_in_at,'out',ses.checked_out_at,'outcome',ses.outcome,'topic',ses.topic_taught)
+       'session', (select jsonb_build_object('id',ses.id,'in',ses.checked_in_at,'out',ses.checked_out_at,'outcome',ses.outcome,'topic',ses.topic_taught,'administrativelyClosed',ses.closed_by is not null)
           from public.khpos_ops_class_sessions ses where ses.period_id=p.id and ses.local_day=v_day)
       ) order by p.weekday,p.starts_at,s.class_label)
       from public.khpos_ops_class_periods p
@@ -183,7 +183,7 @@ begin
     from public.khpos_ops_class_sessions x
     join public.khpos_ops_academic_delivery_streams s on s.id=x.stream_id and s.organisation_id=p_org
     left join public.khpos_ops_staff st on st.user_id=x.teacher_user_id and st.organisation_id=p_org
-    where x.organisation_id=p_org and x.checked_out_at is null and x.local_day >= v_day-14
+    where x.organisation_id=p_org and x.checked_out_at is null
       and khpos_private.ops_presence_leader(p_actor,p_org,s.campus_id,s.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])
     ),'[]'::jsonb),
     'openSchoolAttendance',coalesce((select jsonb_agg(jsonb_build_object(
@@ -194,7 +194,7 @@ begin
       and khpos_private.ops_presence_leader(p_actor,p_org,d.campus_id,null,array['SCHOOL_GUARDIAN'])
     ),'[]'::jsonb),
     'teamPresence',coalesce((select jsonb_agg(jsonb_build_object(
-       'name',st.display_name,'campusId',d.campus_id,'in',d.checked_in_at,'out',d.checked_out_at
+       'name',st.display_name,'campusId',d.campus_id,'in',d.checked_in_at,'out',d.checked_out_at,'administrativelyClosed',d.closed_by is not null
      ) order by d.checked_in_at desc)
      from public.khpos_ops_staff_day_presence d
      join public.khpos_ops_staff st on st.id=d.staff_id and st.organisation_id=p_org
@@ -273,6 +273,8 @@ begin
     select * into v_stream from public.khpos_ops_academic_delivery_streams s where s.id=v_period.stream_id;
     if not khpos_private.ops_presence_leader(p_actor,p_org,v_stream.campus_id,v_stream.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])
     then raise exception 'Not permitted to alter this timetable.'; end if;
+    if exists(select 1 from public.khpos_ops_class_sessions x where x.period_id=v_id and x.checked_out_at is null)
+    then raise exception 'Reconcile the open class session before disabling this period.'; end if;
     update public.khpos_ops_class_periods set is_active=false where id=v_id;
   elsif p_mode in ('class_in','class_out') then
     v_id:=(p_input->>'periodId')::uuid;
