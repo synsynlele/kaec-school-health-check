@@ -119,7 +119,8 @@ begin
   return jsonb_build_object(
     'localDay',v_day,
     'staff',case when v_staff.id is null then null else jsonb_build_object('id',v_staff.id,'name',v_staff.display_name,'campusId',v_staff.campus_id) end,
-    'canManage',khpos_private.ops_presence_leader(p_actor,p_org,null,null,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']),
+    'canManage',exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active' and r.code=any(array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])),
+    'userId',p_actor,
     'campuses',coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'name',c.name) order by c.name)
       from public.khpos_ops_campuses c where c.organisation_id=p_org and c.status='active'
       and (c.id=v_staff.campus_id or exists(
@@ -204,7 +205,7 @@ begin
     values(p_org,v_campus,v_staff.id,v_day,v_now);
   elsif p_mode='school_out' then
     if v_staff.id is null then raise exception 'An active staff identity is required.'; end if;
-    if exists(select 1 from public.khpos_ops_class_sessions x where x.teacher_user_id=p_actor and x.checked_out_at is null)
+    if exists(select 1 from public.khpos_ops_class_sessions x where x.teacher_user_id=p_actor and x.checked_out_at is null and x.local_day=v_day)
     then raise exception 'Finish the active class before leaving school.'; end if;
     update public.khpos_ops_staff_day_presence d set checked_out_at=v_now
     where d.organisation_id=p_org and d.staff_id=v_staff.id and d.local_day=v_day and d.checked_out_at is null;
@@ -223,7 +224,7 @@ begin
       join public.khpos_ops_academic_delivery_streams s on s.id=p.stream_id
       where p.organisation_id=p_org and p.is_active
         and p.weekday=(p_input->>'weekday')::int
-        and s.teacher_assignment_id=v_stream.teacher_assignment_id
+        and exists(select 1 from public.khpos_ops_role_assignments aa join public.khpos_ops_role_assignments ab on ab.id=v_stream.teacher_assignment_id where aa.id=s.teacher_assignment_id and aa.user_id=ab.user_id)
         and p.starts_at < (p_input->>'end')::time and p.ends_at > v_school_time
     ) then raise exception 'This teacher already has an overlapping scheduled class.'; end if;
     insert into public.khpos_ops_class_periods(organisation_id,stream_id,weekday,starts_at,ends_at,room_label,created_by)
@@ -301,7 +302,7 @@ begin
         v_failure:=true;
       end if;
     end loop;
-    if v_mode='full' and (v_count<>8 or v_seen @> v_codes=false)
+    if v_mode='full' and (v_count<>8 or not (v_seen @> v_codes))
     then raise exception 'Full fidelity scoring requires evidence for all eight HQLS domains.'; end if;
     if length(trim(coalesce(p_input->>'strengths','')))<8 then raise exception 'Record the observed instructional strengths.'; end if;
     if v_mode='full' then
