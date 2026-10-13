@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, ShieldCheck, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -62,6 +62,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [lessonOutcome,setLessonOutcome]=useState<Record<string,string>>({});
   const [lessonNotes,setLessonNotes]=useState<Record<string,string>>({});
   const [responses,setResponses]=useState<Record<string,string>>({});
+  const [reconcileReason,setReconcileReason]=useState("");
+  const requestKey=useRef<string|null>(null);
 
   const authToken=useCallback(async()=>{
     if(!supabase) throw new Error("KHP-OS sign-in is not configured.");
@@ -103,8 +105,10 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       if(!response.ok||!body.ok)throw new Error(body.error??"The request could not be completed.");
       if(body.workspace)setData(body.workspace);
       setNotice(label);
+      return true;
     }catch(e){setError(e instanceof Error?e.message:"Unable to complete action.");}
     finally{setBusy("");}
+    return false;
   }
 
   async function saveRubric(){
@@ -117,11 +121,16 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     if(domains.length===0){setError("Score at least one observed domain.");return;}
     if(domains.some(d=>d.evidence.length<12)){setError("Write specific observed evidence for every scored domain (at least 12 characters).");return;}
     if(strengths.trim().length<8){setError("Record the instructional strengths observed.");return;}
-    await act("hqls_create",{
-      streamId:hqlsStream,observationMode:hqlsMode,domains,strengths:strengths.trim(),
+    if(!requestKey.current) requestKey.current=crypto.randomUUID();
+    const saved=await act("hqls_create",{
+      streamId:hqlsStream,observationMode:hqlsMode,requestKey:requestKey.current,domains,strengths:strengths.trim(),
       improvement:improvement.trim(),coachingAction:coachingAction.trim(),coachingDue
     },"HQLS observation saved. Coaching work is assigned in Today when required.");
-    // The form stays populated so evidence isn't lost after an API error.
+    if(saved){
+      requestKey.current=null;
+      setRatings({});setStrengths("");setImprovement("");setCoachingAction("");setCoachingDue("");
+    }
+    // Failed submissions retain the draft and idempotency key.
   }
 
   const canManage=Boolean(data?.canManage);
