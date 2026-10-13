@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
 import type { KhposHqlsDomain } from "@/lib/khpos/ops/presence";
@@ -52,6 +52,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [room,setRoom]=useState("");
   const [scheduleStream,setScheduleStream]=useState("");
   const [hqlsStream,setHqlsStream]=useState("");
+  const [hqlsSession,setHqlsSession]=useState("");
   const [hqlsMode,setHqlsMode]=useState<"full"|"walk">("full");
   const [ratings,setRatings]=useState<Record<string,{score:string;evidence:string;automaticFailure:boolean}>>({});
   const [strengths,setStrengths]=useState("");
@@ -123,7 +124,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     if(strengths.trim().length<8){setError("Record the instructional strengths observed.");return;}
     if(!requestKey.current) requestKey.current=crypto.randomUUID();
     const saved=await act("hqls_create",{
-      streamId:hqlsStream,observationMode:hqlsMode,requestKey:requestKey.current,domains,strengths:strengths.trim(),
+      streamId:hqlsStream,classSessionId:hqlsSession||null,observationMode:hqlsMode,requestKey:requestKey.current,domains,strengths:strengths.trim(),
       improvement:improvement.trim(),coachingAction:coachingAction.trim(),coachingDue
     },"HQLS observation saved. Coaching work is assigned in Today when required.");
     if(saved){
@@ -268,7 +269,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             {!canObserve || !data.hqlsEnabled?<p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm">Only authorised instructional leaders can submit observations. Teachers can review and acknowledge their recorded observations below.</p>:<>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div><label className="text-sm font-bold">Class and teacher</label>
-                  <select className={field} value={hqlsStream} onChange={e=>setHqlsStream(e.target.value)}>
+                  <select className={field} value={hqlsStream} onChange={e=>{setHqlsStream(e.target.value);setHqlsSession("");}}>
                     <option value="">Select a subject stream</option>
                     {roleStreams.filter(s=>!s.isTeacher).map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
                   </select></div>
@@ -277,6 +278,13 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                     <option value="full">Full observation (all 8 stages)</option>
                     <option value="walk">Quick learning walk (only seen stages)</option>
                   </select></div>
+              </div>
+              <div className="mt-3"><label className="text-sm font-bold">Scheduled class session (optional)</label>
+                <select className={field} value={hqlsSession} onChange={e=>setHqlsSession(e.target.value)}>
+                  <option value="">Observe by approved class stream only</option>
+                  {data.periods.filter(p=>p.streamId===hqlsStream&&p.session).map(p=><option key={p.session!.id} value={p.session!.id}>{p.subject} · {p.class} · {p.start}–{p.end}</option>)}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">Where available, select the actual checked-in lesson to link the observation to its class session.</p>
               </div>
               <p className="mt-2 text-xs text-slate-500">A quick learning walk does not produce a total score or model/developing/violation rating.</p>
               <div className="mt-5 space-y-4">
