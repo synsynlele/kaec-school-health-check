@@ -66,6 +66,18 @@ alter table public.khpos_ops_class_sessions enable row level security;
 revoke all on public.khpos_ops_class_sessions from public,anon,authenticated;
 grant select,insert,update on public.khpos_ops_class_sessions to service_role;
 
+-- A school-level opt-in isolates real-school testing from partner schools.
+-- Absence of a row is disabled; no existing school has the pilot enabled by default.
+create table public.khpos_ops_teaching_pilot_settings (
+  organisation_id uuid primary key references public.organisations(id) on delete cascade,
+  enabled boolean not null default false,
+  updated_by uuid not null references auth.users(id),
+  updated_at timestamptz not null default clock_timestamp()
+);
+alter table public.khpos_ops_teaching_pilot_settings enable row level security;
+revoke all on public.khpos_ops_teaching_pilot_settings from public,anon,authenticated;
+grant select,insert,update on public.khpos_ops_teaching_pilot_settings to service_role;
+
 create table public.khpos_ops_hqls_school_settings (
   organisation_id uuid primary key references public.organisations(id) on delete cascade,
   enabled boolean not null default false,
@@ -137,6 +149,11 @@ begin
     'staff',case when v_staff.id is null then null else jsonb_build_object('id',v_staff.id,'name',v_staff.display_name,'campusId',v_staff.campus_id) end,
     'canManage',exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active' and r.code=any(array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])),
     'userId',p_actor,
+    'pilotEnabled',coalesce((select enabled from public.khpos_ops_teaching_pilot_settings where organisation_id=p_org),false),
+    'canEnablePilot',exists(select 1 from public.khpos_ops_role_assignments a
+      join public.khpos_ops_roles r on r.id=a.role_id
+      where a.user_id=p_actor and a.status='active' and r.status='active'
+      and r.organisation_id=p_org and r.code='SCHOOL_CUSTODIAN' and a.campus_id is null),
     'hqlsEnabled',coalesce((select enabled from public.khpos_ops_hqls_school_settings where organisation_id=p_org),false),
     'canEnableHqls',exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active' and r.code=any(array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN'])),
     'campuses',coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'name',c.name) order by c.name)
@@ -223,6 +240,23 @@ begin
     raise exception 'Active school membership and KHP-OS partnership are required.';
   end if;
   select * into v_staff from public.khpos_ops_staff st where st.organisation_id=p_org and st.user_id=p_actor and st.status='active' limit 1;
+
+  -- Production pilot must be deliberately enabled by the school's custodian.
+  if p_mode='pilot_enable' then
+    if not exists(select 1 from public.khpos_ops_role_assignments a
+      join public.khpos_ops_roles r on r.id=a.role_id
+      where a.user_id=p_actor and a.status='active' and r.status='active'
+        and r.organisation_id=p_org and r.code='SCHOOL_CUSTODIAN' and a.campus_id is null)
+    then raise exception 'Only the school-level Custodian may activate this pilot.'; end if;
+    if jsonb_typeof(p_input->'enabled')<>'boolean' then raise exception 'Pilot activation requires explicit confirmation.'; end if;
+    insert into public.khpos_ops_teaching_pilot_settings(organisation_id,enabled,updated_by)
+      values(p_org,(p_input->>'enabled')::boolean,p_actor)
+    on conflict(organisation_id) do update
+      set enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=clock_timestamp();
+    return jsonb_build_object('ok',true);
+  end if;
+  if not coalesce((select enabled from public.khpos_ops_teaching_pilot_settings where organisation_id=p_org),false)
+  then raise exception 'School Attendance pilot is disabled. Your School Custodian must activate it.'; end if;
 
   if p_mode='school_in' then
     if v_staff.id is null then raise exception 'An active staff identity is required.'; end if;
