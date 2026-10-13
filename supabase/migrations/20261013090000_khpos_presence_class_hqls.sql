@@ -292,8 +292,8 @@ begin
     if v_presence.id is null or v_presence.campus_id is distinct from v_stream.campus_id then
       raise exception 'Check into the correct school campus before teaching.'; end if;
     if p_mode='class_in' then
-      if (v_now at time zone 'Africa/Lagos')::time < v_period.starts_at-interval '30 minutes'
-        or (v_now at time zone 'Africa/Lagos')::time > v_period.ends_at+interval '30 minutes'
+      if v_now < ((v_day+v_period.starts_at) at time zone 'Africa/Lagos')-interval '30 minutes'
+        or v_now > ((v_day+v_period.ends_at) at time zone 'Africa/Lagos')+interval '30 minutes'
       then raise exception 'Class check-in opens 30 minutes before its start and closes 30 minutes after its end.'; end if;
       insert into public.khpos_ops_class_sessions(organisation_id,period_id,stream_id,teacher_user_id,local_day,checked_in_at)
         values(p_org,v_period.id,v_stream.id,p_actor,v_day,v_now);
