@@ -21,7 +21,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const endpoint = `/api/khpos/ops/positions/${organisationId}`;
   const staff = people?.items.filter((item) => item.status === "active" && item.accountLinked) ?? [];
-  const roles = people?.roles.filter((role) => ["SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER", "TEACHER", "SKILLS_FACILITATOR"].includes(role.code) && (role.code !== "SCHOOL_GUARDIAN" || positions?.canAppointGuardian)) ?? [];
+  const roles = people?.roles.filter((role) => ["SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "FINANCE_ADMIN_OFFICER", "SCHOOL_CARE_OPERATIONS_OFFICER", "SECTIONAL_PROMOTER", "TEACHER", "SKILLS_FACILITATOR"].includes(role.code) && (role.code !== "SCHOOL_GUARDIAN" || positions?.canAppointGuardian)) ?? [];
 
   useEffect(() => {
     let active = true;
