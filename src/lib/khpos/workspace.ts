@@ -1,3 +1,5 @@
+import { canViewKshcLinkedSchoolReport } from "@/lib/kshc-access";
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -54,6 +56,7 @@ export interface KhposWorkspaceSnapshot {
     partnerStatus: "active";
   };
   membership: { role: string };
+  canViewHealthReport: boolean;
   baseline: {
     assessmentId: string;
     completedAt: string | null;
@@ -115,7 +118,11 @@ export async function getKhposWorkspaceSnapshot(
     );
   }
 
-  const assessments = await serviceFetch<
+  // Health scores, gaps and the full diagnostic are leadership-only.
+  // Enforce this on the server: removing a UI link is not an access control.
+  const canViewHealthReport = await canViewKshcLinkedSchoolReport(organisationId, userId);
+
+  const assessments = canViewHealthReport ? await serviceFetch<
     Array<{
       id: string;
       completed_at: string | null;
@@ -126,7 +133,7 @@ export async function getKhposWorkspaceSnapshot(
     }>
   >(
     `assessments?organisation_id=eq.${encodeURIComponent(organisationId)}&status=eq.completed&select=id,completed_at,overall_score,health_rating,priority_area,framework_version&order=completed_at.desc&limit=1`,
-  );
+  ) : [];
 
   const latest = assessments[0] ?? null;
   let report: ReportSnapshot = {};
@@ -158,6 +165,7 @@ export async function getKhposWorkspaceSnapshot(
       partnerStatus: "active",
     },
     membership: { role: membership[0].role },
+    canViewHealthReport,
     baseline: latest
       ? {
           assessmentId: latest.id,

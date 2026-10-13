@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -22,7 +22,8 @@
     "test:positions": "node scripts/test-staff-positions.mjs && node scripts/test-staff-role-onboarding.mjs",
     "test:attention": "node scripts/test-attention-lifecycle.mjs",
     "test:transient-auth": "node scripts/test-transient-auth.mjs",
-    "test:teaching-presence": "node scripts/test-teaching-presence.mjs"
+    "test:teaching-presence": "node scripts/test-teaching-presence.mjs",
+    "test:kshc-report-leadership": "node scripts/test-kshc-report-leadership.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
