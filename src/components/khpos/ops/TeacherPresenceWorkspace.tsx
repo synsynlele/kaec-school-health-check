@@ -129,8 +129,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const roleStreams=(academic?.streams??[]).filter(s=>["approved","active"].includes(s.status));
   const todays=(data?.periods??[]).filter(p=>possibleToday(data?.localDay??"",p.weekday));
   const observed=(data?.observations??[]);
-  const own=(data?.periods??[]).filter(p=>!p.teacherUserId||true);
-  const pendingHqls=observed.filter(o=>o.teacherUserId!==undefined&&!o.acknowledgedAt);
+  const own=data?.periods??[];
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     <div className="mx-auto max-w-6xl space-y-5">
       <Link href={"/khpos/"+organisationId} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
