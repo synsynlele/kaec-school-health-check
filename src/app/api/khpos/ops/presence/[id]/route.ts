@@ -5,6 +5,21 @@ import { actOnPresence, getPresenceWorkspace, KhposPresenceError } from "@/lib/k
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Preview must be bound to an isolated Supabase branch before this feature is usable.
+function verifyPreviewIsolation() {
+  if (process.env.VERCEL_ENV !== "preview") return;
+  const ref = process.env.KHPOS_TEACHING_PREVIEW_DB_REF?.trim();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!ref || !/^[a-z0-9]{20}$/.test(ref) || !url) {
+    throw new KhposPresenceError("Teaching preview requires an isolated Supabase branch.", 503);
+  }
+  let hostname = "";
+  try { hostname = new URL(url).hostname.toLowerCase(); }
+  catch { throw new KhposPresenceError("Invalid preview Supabase URL.", 503); }
+  if (ref === "rlpciatblisxnuuiekkf" || hostname !== ref + ".supabase.co") {
+    throw new KhposPresenceError("Teaching preview cannot use the live KHP-OS database.", 503);
+  }
+}
 const MODES = new Set(["school_in","school_out","period_add","period_disable","class_in","class_out","hqls_create","hqls_acknowledge","hqls_enable","school_reconcile","class_reconcile"]);
 function responseError(cause: unknown) {
   if (cause instanceof KhposAuthError || cause instanceof KhposPresenceError) {
@@ -23,6 +38,7 @@ function validId(id: string) {
 }
 export async function GET(request: Request, context: { params: Promise<{ id:string }> }) {
   try {
+    verifyPreviewIsolation();
     const { id } = await context.params;validId(id);
     const user = await actor(request);
     return NextResponse.json({ok:true,workspace:await getPresenceWorkspace(id,user.id)},
@@ -31,6 +47,7 @@ export async function GET(request: Request, context: { params: Promise<{ id:stri
 }
 export async function POST(request: Request, context: { params: Promise<{ id:string }> }) {
   try {
+    verifyPreviewIsolation();
     const { id } = await context.params;validId(id);
     const user = await actor(request);
     let payload: unknown;
