@@ -92,7 +92,11 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       setError("");
     } catch(e){setError(e instanceof Error?e.message:"Unable to load attendance.");}
   },[authToken,organisationId]);
-  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{
+    let active=true;
+    void Promise.resolve().then(()=>{if(active)void load();});
+    return ()=>{active=false;};
+  },[load]);
 
   async function act(mode:string,payload:Record<string,unknown>={},label="Action saved") {
     setBusy(mode);setError("");setNotice("");
@@ -157,7 +161,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       {data&&<>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Teaching attendance sections">
           {([["day","School attendance",School],["lessons","Class lessons",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
-          .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage)
+          .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage || data.canEnableHqls)
           .map(([id,title,Icon])=><button key={id} type="button" role="tab" aria-selected={tab===id}
             onClick={()=>{setTab(id);setError("");setNotice("");}}
             className={"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold "+(tab===id?"bg-slate-900 text-white":"border border-slate-200 bg-white text-slate-700")}>
@@ -185,7 +189,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             </div>}
           </section>
           <section className={box}>
-            <h2 className="mb-2 text-xl font-black text-slate-900">Today's classes</h2>
+            <h2 className="mb-2 text-xl font-black text-slate-900">Today&apos;s classes</h2>
             <p className="mb-3 text-sm text-slate-600">Scheduled periods visible to your teaching role or authorised leadership position.</p>
             {todays.length===0?<p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No scheduled class records for today. Leaders can set up periods under Class lessons after activating an Academic Delivery stream.</p>
               :<div className="space-y-2">{todays.map(p=><div key={p.id} className="rounded-xl border border-slate-200 p-3 text-sm">
@@ -333,7 +337,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                 <details className="mt-2 text-sm"><summary className="cursor-pointer font-bold text-brand-700">View eight-domain evidence</summary>
                   <ul className="mt-2 space-y-2">{o.domains.map(d=><li key={d.code} className="rounded-lg bg-slate-50 p-2"><b>{HQLS.find(x=>x.code===d.code)?.name??d.code}:</b> {ratingText(d.score)} {d.automaticFailure?"· Automatic failure":""}<p>{d.evidence}</p></li>)}</ul>
                 </details>
-                {o.acknowledgedAt?<p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><b>Teacher's reflection:</b> {o.teacherResponse}</p>:o.teacherUserId===data.userId?<><label className="mt-3 block text-xs font-bold">Teacher response</label>
+                {o.acknowledgedAt?<p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><b>Teacher&apos;s reflection:</b> {o.teacherResponse}</p>:o.teacherUserId===data.userId?<><label className="mt-3 block text-xs font-bold">Teacher response</label>
                   <textarea className={field} rows={2} maxLength={1500} value={responses[o.id]||""} onChange={e=>setResponses(old=>({...old,[o.id]:e.target.value}))} placeholder="Which stage tempted you to step in, and why?"/>
                   <button className="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white" disabled={Boolean(busy)||!responses[o.id]?.trim()}
                     onClick={()=>void act("hqls_acknowledge",{observationId:o.id,teacherResponse:responses[o.id]},"Teacher reflection saved.")}>Submit teacher reflection</button>
@@ -344,7 +348,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         </div>}
         {tab==="leaders"&&<div className={box}>
           <h2 className="text-xl font-black text-slate-900">School presence oversight</h2>
-          <p className="my-2 text-sm text-slate-600">Today's recorded check-ins within your authorised school leadership scope. No record does not automatically establish absence. A full attendance register requires configured expectations and correction handling.</p>
+          <p className="my-2 text-sm text-slate-600">Today&apos;s recorded check-ins within your authorised school leadership scope. No record does not automatically establish absence. A full attendance register requires configured expectations and correction handling.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed class sessions (last 14 days)</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></div>
             <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></div>
