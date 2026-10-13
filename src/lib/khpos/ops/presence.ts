@@ -21,7 +21,7 @@ export interface KhposHqlsObservation {
   teacherResponse: string | null; acknowledgedAt: string | null; observedAt: string;
 }
 export interface KhposPresenceWorkspace {
-  localDay: string; userId: string; canManage: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
+  localDay: string; userId: string; canManage: boolean; canEnablePilot: boolean; pilotEnabled: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
   todayPresence: null | { id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
   periods: KhposPresencePeriod[]; observations: KhposHqlsObservation[];
