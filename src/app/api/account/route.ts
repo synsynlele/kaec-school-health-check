@@ -10,7 +10,7 @@ import {
 } from "@/lib/khpos/partnership";
 import { getKhposPlatformAccess } from "@/lib/khpos/platform-admin";
 import { listAssessmentsForEmail } from "@/lib/storage";
-import { listKshcLeadershipReports } from "@/lib/kshc-access";
+import { filterKshcOwnedAssessments, listKshcLeadershipReports } from "@/lib/kshc-access";
 
 export async function GET(request: Request) {
   try {
@@ -22,10 +22,11 @@ export async function GET(request: Request) {
       getKhposPlatformAccess(user.id),
       listAssessmentsForEmail(user.email),
     ]);
+    const visibleAssessments = await filterKshcOwnedAssessments(user.id, partnerships, assessments);
     const sharedReports = (await listKshcLeadershipReports(user.id, partnerships))
-      .filter((report) => !assessments.some((assessment) => assessment.id === report.id));
+      .filter((report) => !visibleAssessments.some((assessment) => assessment.id === report.id));
     return NextResponse.json(
-      { ok: true, account: { email: user.email }, partnerships, platformAdmin, assessments, sharedReports },
+      { ok: true, account: { email: user.email }, partnerships, platformAdmin, assessments: visibleAssessments, sharedReports },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {
