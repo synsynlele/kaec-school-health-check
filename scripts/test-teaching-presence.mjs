@@ -64,24 +64,25 @@ try {
  await fail("select public.khpos_ops_presence_action_server($1,$2,'school_out',$3)",[teacher,org,{}],/Finish the active class/i);
  await act(teacher,"class_out",{periodId,outcome:"completed",topic:"Fractions"});checks++;
  await act(teacher,"school_out",{});checks++;
+ await act(guardian,"hqls_enable",{enabled:true});checks++;
  const strong=[
   "awakening","exploration","micro_illumination","first_trial",
   "full_illumination","second_trial","integration","teacher_role_fidelity"
- ].map((code)=>({code,score:3,evidence:"Students attempted the problem and explained their own thinking in groups.",automaticFailure:code==="awakening"}));
+ ].map((code)=>({code,score:code==="awakening"?2:3,evidence:"Students attempted the problem and explained their own thinking in groups.",automaticFailure:code==="awakening"}));
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_create',$3)",
-   [teacher,org,{streamId:stream,observationMode:"full",domains:strong,strengths:"Students considered different ideas."}],/authorised/i);
+   [teacher,org,{streamId:stream,observationMode:"full",requestKey:id(100),domains:strong,strengths:"Students considered different ideas."}],/authorised/i);
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_create',$3)",
-   [observer,org,{streamId:stream,observationMode:"full",domains:strong.slice(1),strengths:"Students considered different ideas."}],/all eight/i);
+   [observer,org,{streamId:stream,observationMode:"full",requestKey:id(101),domains:strong.slice(1),strengths:"Students considered different ideas."}],/all eight/i);
  await act(observer,"hqls_create",{streamId:stream,observationMode:"full",domains:strong,strengths:"Students considered different ideas."});checks++;
  const h=await read(teacher);assert.equal(h.observations.length,1);checks++;
- assert.equal(h.observations[0].total,24);assert.equal(h.observations[0].band,"model");assert.equal(h.observations[0].automaticFailure,true);
+ assert.equal(h.observations[0].total,23);assert.equal(h.observations[0].band,"model");assert.equal(h.observations[0].automaticFailure,true);
  assert.ok(h.observations[0].coachingWorkId);checks++;
  assert.equal((await q("select count(*)::int as n from khpos_ops_work_items where owner_assignment_id=$1",[teacherAssignment]))[0].n,1);checks++;
  const observationId=h.observations[0].id;
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_acknowledge',$3)",[observer,org,{observationId,teacherResponse:"I stepped in too early during exploration."}],/only the observed teacher/i);
  await act(teacher,"hqls_acknowledge",{observationId,teacherResponse:"At Exploration I wanted to correct ideas too quickly."});checks++;
  assert.ok((await read(teacher)).observations[0].acknowledgedAt);checks++;
- await act(observer,"hqls_create",{streamId:stream,observationMode:"walk",domains:[{code:"second_trial",score:2,evidence:"Students revised their original solution in pairs.",automaticFailure:false}],strengths:"Second trial enabled progress."});checks++;
+ await act(observer,"hqls_create",{streamId:stream,observationMode:"walk",requestKey:id(102),domains:[{code:"second_trial",score:2,evidence:"Students revised their original solution in pairs.",automaticFailure:false}],strengths:"Second trial enabled progress."});checks++;
  const observations=(await read(teacher)).observations;
  assert.equal(observations[0].total,null);assert.equal(observations[0].band,null);checks++;
  const observerWorkspace=await read(observer);assert.ok(observerWorkspace.observations.length>=2);checks++;
