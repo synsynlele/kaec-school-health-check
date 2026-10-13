@@ -8,7 +8,7 @@ export interface KhposPresencePeriod {
   id: string; streamId: string; weekday: number; start: string; end: string; room: string | null;
   campusId: string; class: string; subject: string; teacher: string;
   teacherUserId: string; termActive: boolean;
-  session: null | { id: string; in: string; out: string | null; outcome: string | null; topic: string | null };
+  session: null | { id: string; in: string; out: string | null; outcome: string | null; topic: string | null; administrativelyClosed: boolean };
 }
 export interface KhposHqlsDomain {
   code: string; score: number; evidence: string; automaticFailure: boolean;
@@ -23,9 +23,9 @@ export interface KhposHqlsObservation {
 export interface KhposPresenceWorkspace {
   localDay: string; userId: string; canManage: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
-  todayPresence: null | { id: string; campusId: string; in: string; out: string | null };
+  todayPresence: null | { id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
   periods: KhposPresencePeriod[]; observations: KhposHqlsObservation[];
-  teamPresence: Array<{ name: string; campusId: string; in: string; out: string | null }>;
+  teamPresence: Array<{ name: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean }>;
   openClassSessions: Array<{ id: string; date: string; class: string; subject: string; teacher: string; in: string }>;
   openSchoolAttendance: Array<{ id: string; date: string; teacher: string; campusId: string; in: string }>;
 }
