@@ -256,7 +256,16 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <h2 className="text-xl font-black text-slate-900">KAEC HQLS classroom observation</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">Original KAEC HQLS fidelity standard. Evidence must describe what learners and the teacher actually did, not opinions or planned activities. This measures HQLS fidelity, not teacher charisma. Observers must be independently authorised.</p>
             <p className="mt-2 rounded-xl bg-brand-50 p-3 text-sm font-semibold text-brand-900">Strong = 3 · Partial = 2 · Weak = 1. Full observation: 22–24 Model; 17–21 Coaching; below 17 Retraining. Any automatic failure requires coaching regardless of total score.</p>
-            {!canObserve?<p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm">Only authorised instructional leaders can submit observations. Teachers can review and acknowledge their recorded observations below.</p>:<>
+            {data.canEnableHqls&&<div className="mt-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
+              <p className="text-sm font-bold text-brand-900">School HQLS adoption: {data.hqlsEnabled?"Enabled":"Not yet enabled"}</p>
+              <p className="mt-1 text-xs text-brand-800">Enable the official KAEC HQLS rubric only when this school has adopted HQLS. Generic classroom observations remain separate.</p>
+              <button disabled={Boolean(busy)} className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white"
+                onClick={()=>{if(window.confirm(data.hqlsEnabled?"Disable new HQLS observations for this school? Existing records remain.":"Confirm this school formally implements HQLS?"))void act("hqls_enable",{enabled:!data.hqlsEnabled},data.hqlsEnabled?"New HQLS observations disabled.":"HQLS rubric enabled.");}}>
+                {data.hqlsEnabled?"Disable new observations":"Enable HQLS rubric for this school"}
+              </button>
+            </div>}
+            {!data.hqlsEnabled&&<p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">New HQLS observations require the School Custodian or Guardian to enable this standard. Historical records remain visible.</p>}
+            {!canObserve || !data.hqlsEnabled?<p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm">Only authorised instructional leaders can submit observations. Teachers can review and acknowledge their recorded observations below.</p>:<>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div><label className="text-sm font-bold">Class and teacher</label>
                   <select className={field} value={hqlsStream} onChange={e=>setHqlsStream(e.target.value)}>
@@ -316,12 +325,11 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                 <details className="mt-2 text-sm"><summary className="cursor-pointer font-bold text-brand-700">View eight-domain evidence</summary>
                   <ul className="mt-2 space-y-2">{o.domains.map(d=><li key={d.code} className="rounded-lg bg-slate-50 p-2"><b>{HQLS.find(x=>x.code===d.code)?.name??d.code}:</b> {ratingText(d.score)} {d.automaticFailure?"· Automatic failure":""}<p>{d.evidence}</p></li>)}</ul>
                 </details>
-                {o.acknowledgedAt?<p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><b>Teacher's reflection:</b> {o.teacherResponse}</p>:<>
-                  <label className="mt-3 block text-xs font-bold">Teacher response (observed teacher only)</label>
+                {o.acknowledgedAt?<p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><b>Teacher's reflection:</b> {o.teacherResponse}</p>:o.teacherUserId===data.userId?<><label className="mt-3 block text-xs font-bold">Teacher response</label>
                   <textarea className={field} rows={2} maxLength={1500} value={responses[o.id]||""} onChange={e=>setResponses(old=>({...old,[o.id]:e.target.value}))} placeholder="Which stage tempted you to step in, and why?"/>
                   <button className="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white" disabled={Boolean(busy)||!responses[o.id]?.trim()}
                     onClick={()=>void act("hqls_acknowledge",{observationId:o.id,teacherResponse:responses[o.id]},"Teacher reflection saved.")}>Submit teacher reflection</button>
-                </>}
+                </>:<p className="mt-2 text-xs text-slate-500">Awaiting the observed teacher’s reflection.</p>}}
               </div>)}
             </div>}
           </section>
