@@ -73,7 +73,7 @@ try {
    [teacher,org,{streamId:stream,observationMode:"full",requestKey:id(100),domains:strong,strengths:"Students considered different ideas."}],/authorised/i);
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_create',$3)",
    [observer,org,{streamId:stream,observationMode:"full",requestKey:id(101),domains:strong.slice(1),strengths:"Students considered different ideas."}],/all eight/i);
- await act(observer,"hqls_create",{streamId:stream,observationMode:"full",domains:strong,strengths:"Students considered different ideas."});checks++;
+ await act(observer,"hqls_create",{streamId:stream,observationMode:"full",requestKey:id(100),domains:strong,strengths:"Students considered different ideas."});checks++;
  const h=await read(teacher);assert.equal(h.observations.length,1);checks++;
  assert.equal(h.observations[0].total,23);assert.equal(h.observations[0].band,"model");assert.equal(h.observations[0].automaticFailure,true);
  assert.ok(h.observations[0].coachingWorkId);checks++;
