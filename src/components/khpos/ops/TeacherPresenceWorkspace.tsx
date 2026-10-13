@@ -176,7 +176,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
               <p className="text-sm"><b>School day:</b> {data.localDay}</p>
               {data.todayPresence?<>
-                <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>Checked in:</b> {timeString(data.todayPresence.in)}<br/><b>Checked out:</b> {timeString(data.todayPresence.out)}</p>
+                <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>Checked in:</b> {timeString(data.todayPresence.in)}<br/><b>Checked out:</b> {timeString(data.todayPresence.out)}{data.todayPresence.administrativelyClosed?" (administratively closed)":""}</p>
                 {!data.todayPresence.out&&<button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Check Out of School</button>}
               </>:<>
                 <label className="block text-sm font-bold text-slate-800" htmlFor="schoolCampus">Campus</label>
@@ -231,7 +231,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                     <button disabled={Boolean(busy)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                       onClick={()=>void act("class_out",{periodId:p.id,outcome:lessonOutcome[p.id]||"completed",topic:lessonTopics[p.id]||"",followUp:lessonNotes[p.id]||""},"Lesson checkout saved.")}>Check Out of Class</button>
                   </div>}
-                  {p.session?.out&&<p className="mt-2 text-sm text-emerald-800"><CheckCircle2 className="mr-1 inline size-4"/> {p.session.outcome} · {p.session.topic||"No topic recorded"} · finished {timeString(p.session.out)}</p>}
+                  {p.session?.out&&<p className="mt-2 text-sm text-emerald-800"><CheckCircle2 className="mr-1 inline size-4"/> {p.session.outcome} · {p.session.topic||"No topic recorded"} · finished {timeString(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}</p>}
                   {!mine&&canManage&&<button className="mt-3 text-xs font-bold text-rose-700 underline" disabled={Boolean(busy)}
                     onClick={()=>{if(window.confirm("Disable this scheduled period? Historical class records will be retained."))void act("period_disable",{periodId:p.id},"Period disabled.");}}>Disable future periods</button>}
                 </div>;
@@ -369,7 +369,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           </div>}
           {data.teamPresence.length===0?<p className="text-sm text-slate-500">No visible staff check-in records for today.</p>:
             <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">In</th><th className="p-2">Out</th></tr></thead>
-              <tbody>{data.teamPresence.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{timeString(d.in)}</td><td className="p-2">{timeString(d.out)}</td></tr>)}</tbody></table></div>}
+              <tbody>{data.teamPresence.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{timeString(d.in)}</td><td className="p-2">{timeString(d.out)}{d.administrativelyClosed?" (admin)":""}</td></tr>)}</tbody></table></div>}
         </div>}
       </>}
     </div>
