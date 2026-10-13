@@ -174,7 +174,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">Baseline activated</span>
+            {workspace.canViewHealthReport && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">Baseline activated</span>}
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
@@ -279,7 +279,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         )}
 
         <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          {workspace.canViewHealthReport && <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Gauge className="size-6 text-brand-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">KSHC baseline</p>
             <div className="mt-1 flex items-end gap-2">
@@ -301,7 +301,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               </Link>
             )}
             {reportError && <p role="alert" className="mt-2 text-sm text-red-700">{reportError}</p>}
-          </div>
+          </div>}
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Target className="size-6 text-amber-600" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">Approved transformation focus</p>
@@ -315,8 +315,8 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-mint-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">Institutional record</p>
-            <p className="mt-2 text-xl font-black text-slate-900">Baseline preserved</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">KSHC framework v{baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.</p>
+            <p className="mt-2 text-xl font-black text-slate-900">{workspace.canViewHealthReport ? "Baseline preserved" : "School workspace active"}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{workspace.canViewHealthReport ? `KSHC framework v${baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.` : "Use your assigned school duties and activities. School Health Reports are reserved for appointed leaders."}</p>
           </div>
         </section>
 
@@ -366,7 +366,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        {workspace.canViewHealthReport && <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -412,9 +412,9 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               <ArrowRight className="size-4" />
             </Link>
           </div>
-        </section>
+        </section>}
 
-        {!!workspace.departmentScores.length && (
+        {workspace.canViewHealthReport && !!workspace.departmentScores.length && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Baseline detail</p>
             <h2 className="mt-2 text-2xl font-black">The 11 KSHC areas preserved as your starting point</h2>
