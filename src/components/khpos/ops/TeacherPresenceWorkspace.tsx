@@ -159,6 +159,22 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       {notice&&<div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">{notice}</div>}
       {!data&&<div className={box}><Loader2 className="mr-2 inline size-5 animate-spin"/> Loading school attendance…</div>}
       {data&&<>
+        {!data.pilotEnabled&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <h2 className="text-xl font-black text-amber-950">School attendance and teaching — ready to activate</h2>
+          <p className="mt-2 text-sm leading-6 text-amber-900">The new tools are available to every KHP-OS school. School attendance, lesson check-ins and HQLS observations stay inactive at this school until its School Custodian enables them. Existing school records are not changed.</p>
+          {data.canEnablePilot?<button type="button" disabled={Boolean(busy)}
+            className="mt-4 rounded-xl bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
+            onClick={()=>{if(window.confirm("Enable school attendance, scheduled lesson check-ins and HQLS observation tools for this school? Existing records will remain unchanged."))void act("pilot_enable",{enabled:true},"School attendance and teaching pilot activated.");}}>
+            Enable for this school</button>
+            :<p className="mt-3 text-sm font-semibold text-amber-900">Ask your School Custodian to activate these tools for your school.</p>}
+        </section>}
+        {data.pilotEnabled&&data.canEnablePilot&&<div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <span className="text-sm font-semibold text-emerald-900">School attendance and teaching are enabled.</span>
+          <button type="button" disabled={Boolean(busy)}
+            className="text-xs font-bold text-emerald-900 underline disabled:opacity-50"
+            onClick={()=>{if(window.confirm("Pause new school attendance, class check-ins and HQLS observations for your school? Existing records stay saved."))void act("pilot_enable",{enabled:false},"New attendance and teaching activity paused.");}}>Pause pilot</button>
+        </div>}
+        {data.pilotEnabled&&<>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Teaching attendance sections">
           {([["day","School attendance",School],["lessons","Class lessons",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
           .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage || data.canEnableHqls)
@@ -371,6 +387,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">In</th><th className="p-2">Out</th></tr></thead>
               <tbody>{data.teamPresence.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{timeString(d.in)}</td><td className="p-2">{timeString(d.out)}{d.administrativelyClosed?" (admin)":""}</td></tr>)}</tbody></table></div>}
         </div>}
+        </>}
       </>}
     </div>
   </div>;
