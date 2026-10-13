@@ -5,7 +5,7 @@ import { actOnPresence, getPresenceWorkspace, KhposPresenceError } from "@/lib/k
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const MODES = new Set(["school_in","school_out","period_add","period_disable","class_in","class_out","hqls_create","hqls_acknowledge"]);
+const MODES = new Set(["school_in","school_out","period_add","period_disable","class_in","class_out","hqls_create","hqls_acknowledge","hqls_enable","school_reconcile","class_reconcile"]);
 function responseError(cause: unknown) {
   if (cause instanceof KhposAuthError || cause instanceof KhposPresenceError) {
     return NextResponse.json({ ok:false, error:cause.message }, { status:cause.status, headers:{ "Cache-Control":"private, no-store" } });
@@ -38,12 +38,13 @@ export async function POST(request: Request, context: { params: Promise<{ id:str
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new KhposPresenceError("Invalid request.");
     const body=payload as Record<string,unknown>;
     if (typeof body.mode !== "string" || !MODES.has(body.mode)) throw new KhposPresenceError("Unsupported attendance action.");
-    for (const field of ["campusId","streamId","periodId","classSessionId","observationId"]) {
+    for (const field of ["campusId","streamId","periodId","classSessionId","observationId","presenceId"]) {
       if (body[field]!=null && body[field]!=="" && (typeof body[field]!=="string" || !UUID_RE.test(body[field] as string))) {
         throw new KhposPresenceError("Invalid record reference.");
       }
     }
     if (body.mode==="hqls_create") {
+      if (typeof body.requestKey!=="string" || !UUID_RE.test(body.requestKey)) throw new KhposPresenceError("Observation request reference is invalid.");
       const data=body.domains;
       if (!Array.isArray(data) || data.length>8 || data.length===0) throw new KhposPresenceError("Select the observed HQLS stages.");
       if (JSON.stringify(body).length>12000) throw new KhposPresenceError("Observation notes are too long.");
