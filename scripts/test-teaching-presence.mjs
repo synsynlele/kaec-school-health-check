@@ -64,6 +64,7 @@ try {
  await fail("select public.khpos_ops_presence_action_server($1,$2,'school_out',$3)",[teacher,org,{}],/Finish the active class/i);
  await fail("select public.khpos_ops_presence_action_server($1,$2,'period_disable',$3)",[guardian,org,{periodId}],/Reconcile the open class/i);
  await act(teacher,"class_out",{periodId,outcome:"completed",topic:"Fractions"});checks++;
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'school_reconcile',$3)",[teacher,org,{presenceId:ws.todayPresence.id,reason:"A detailed and verified explanation"}],/Guardian/i);
  await act(teacher,"school_out",{});checks++;
  await act(guardian,"hqls_enable",{enabled:true});checks++;
  const strong=[
@@ -81,7 +82,6 @@ try {
  assert.ok(h.observations[0].coachingWorkId);checks++;
  assert.equal((await q("select count(*)::int as n from khpos_ops_work_items where owner_assignment_id=$1",[teacherAssignment]))[0].n,1);checks++;
  const observationId=h.observations[0].id;
- await fail("select public.khpos_ops_presence_action_server($1,$2,'school_reconcile',$3)",[teacher,org,{presenceId:ws.todayPresence.id,reason:"A detailed and verified explanation"}],/Guardian/i);
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_acknowledge',$3)",[observer,org,{observationId,teacherResponse:"I stepped in too early during exploration."}],/only the observed teacher/i);
  await act(teacher,"hqls_acknowledge",{observationId,teacherResponse:"At Exploration I wanted to correct ideas too quickly."});checks++;
  assert.ok((await read(teacher)).observations[0].acknowledgedAt);checks++;
