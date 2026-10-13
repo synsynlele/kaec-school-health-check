@@ -6,7 +6,7 @@ const db = new PGlite();
 const id = (n) => "00000000-0000-0000-0000-" + String(n).padStart(12,"0");
 const org=id(1), campus=id(2),otherOrg=id(3),otherCampus=id(4),unit=id(5);
 const teacher=id(10), guardian=id(11),observer=id(12), other=id(13);
-const teacherRole=id(20),guardianRole=id(21),inspectorRole=id(22);
+const teacherRole=id(20),guardianRole=id(21),inspectorRole=id(22),custodianRole=id(23),otherCustodianRole=id(24);
 const teacherAssignment=id(30),guardianAssignment=id(31),observerAssignment=id(32);
 const staffId=id(40),term=id(50),stream=id(51);
 let checks=0;
@@ -40,16 +40,27 @@ try {
  for(const [c,o] of [[campus,org],[otherCampus,otherOrg]])
    await q("insert into khpos_ops_campuses(id,organisation_id,name,status) values($1,$2,'Campus','active')",[c,o]);
  await q("insert into khpos_ops_units(id,organisation_id,campus_id,name) values($1,$2,$3,'JSS')",[unit,org,campus]);
- for(const [r,code] of [[teacherRole,"TEACHER"],[guardianRole,"SCHOOL_GUARDIAN"],[inspectorRole,"ACADEMIC_INSPECTOR"]])
+ for(const [r,code] of [[teacherRole,"TEACHER"],[guardianRole,"SCHOOL_GUARDIAN"],[inspectorRole,"ACADEMIC_INSPECTOR"],[custodianRole,"SCHOOL_CUSTODIAN"]])
    await q("insert into khpos_ops_roles(id,organisation_id,code,title,status) values($1,$2,$3,$3,'active')",[r,org,code]);
  for(const [a,r,u] of [[teacherAssignment,teacherRole,teacher],[guardianAssignment,guardianRole,guardian],[observerAssignment,inspectorRole,observer]])
    await q("insert into khpos_ops_role_assignments(id,role_id,user_id,campus_id,unit_id,status) values($1,$2,$3,$4,$5,'active')",[a,r,u,campus,null]);
+ await q("insert into khpos_ops_roles(id,organisation_id,code,title,status) values($1,$2,'SCHOOL_CUSTODIAN','Custodian','active')",[otherCustodianRole,otherOrg]);
+ await q("insert into khpos_ops_role_assignments(id,role_id,user_id,campus_id,unit_id,status) values($1,$2,$3,null,null,'active')",[id(33),custodianRole,guardian]);
+ await q("insert into khpos_ops_role_assignments(id,role_id,user_id,campus_id,unit_id,status) values($1,$2,$3,null,null,'active')",[id(34),otherCustodianRole,other]);
  await q("insert into khpos_ops_staff(id,organisation_id,user_id,display_name,campus_id,status) values($1,$2,$3,'Mathematics Teacher',$4,'active')",[staffId,org,teacher,campus]);
  await q("insert into khpos_ops_staff(id,organisation_id,user_id,display_name,campus_id,status) values($1,$2,$3,'Guardian',$4,'active')",[id(41),org,guardian,campus]);
  await q("insert into khpos_ops_staff(id,organisation_id,user_id,display_name,campus_id,status) values($1,$2,$3,'Inspector',$4,'active')",[id(42),org,observer,campus]);
  await q("insert into khpos_ops_academic_terms(id,organisation_id,campus_id,start_date,end_date,status) values($1,$2,$3,current_date-30,current_date+30,'active')",[term,org,campus]);
  await q("insert into khpos_ops_academic_delivery_streams(id,organisation_id,term_id,campus_id,unit_id,class_label,subject_label,teacher_assignment_id,status) values($1,$2,$3,$4,$5,'JSS1','Mathematics',$6,'active')",[stream,org,term,campus,unit,teacherAssignment]);
  await fail("select public.khpos_ops_presence_workspace_server($1,$2)",[teacher,otherOrg],/membership/i);
+ const before=await read(guardian);
+ assert.equal(before.pilotEnabled,false);checks++;
+ assert.equal((await read(other,otherOrg)).pilotEnabled,false);checks++;
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'pilot_enable',$3)",[teacher,org,{enabled:true}],/Custodian/i);
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'school_in',$3)",[teacher,org,{campusId:campus}],/pilot is disabled/i);
+ await act(guardian,"pilot_enable",{enabled:true});checks++;
+ assert.equal((await read(guardian)).pilotEnabled,true);checks++;
+ assert.equal((await read(other,otherOrg)).pilotEnabled,false);checks++;
  await fail("select public.khpos_ops_presence_action_server($1,$2,'school_in',$3)",[teacher,org,{campusId:otherCampus}],/authorised/i);
  await act(teacher,"school_in",{campusId:campus});checks++;
  await fail("select public.khpos_ops_presence_action_server($1,$2,'school_in',$3)",[teacher,org,{campusId:campus}],/already recorded/i);
@@ -89,5 +100,11 @@ try {
  const observations=(await read(teacher)).observations;
  assert.equal(observations[0].total,null);assert.equal(observations[0].band,null);checks++;
  const observerWorkspace=await read(observer);assert.ok(observerWorkspace.observations.length>=2);checks++;
- console.log("Teaching presence/HQLS integration: "+checks+" checks passed.");
+ await act(other,"pilot_enable",{enabled:true},otherOrg);checks++;
+ assert.equal((await read(other,otherOrg)).pilotEnabled,true);checks++;
+ assert.equal((await read(guardian)).pilotEnabled,true);checks++;
+ await act(guardian,"pilot_enable",{enabled:false});checks++;
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_create',$3)",[observer,org,{streamId:stream,observationMode:"walk",requestKey:id(103),domains:strong.slice(0,1),strengths:"Observed limited evidence."}],/pilot is disabled/i);
+ assert.equal((await read(other,otherOrg)).pilotEnabled,true);checks++;
+ console.log("Teaching presence/HQLS multi-school integration: "+checks+" checks passed.");
 } finally {await db.close();}
