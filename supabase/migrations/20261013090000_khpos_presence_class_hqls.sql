@@ -8,6 +8,8 @@ create table public.khpos_ops_staff_day_presence (
   local_day date not null,
   checked_in_at timestamptz not null default clock_timestamp(),
   checked_out_at timestamptz,
+  closed_by uuid references auth.users(id),
+  close_reason text,
   created_at timestamptz not null default clock_timestamp(),
   constraint khpos_presence_day_unique unique(organisation_id,staff_id,local_day),
   constraint khpos_presence_clock_order check(checked_out_at is null or checked_out_at>=checked_in_at)
@@ -50,6 +52,8 @@ create table public.khpos_ops_class_sessions (
   outcome text check(outcome in ('completed','partial','not_held')),
   topic_taught text,
   follow_up text,
+  closed_by uuid references auth.users(id),
+  close_reason text,
   created_at timestamptz not null default clock_timestamp(),
   constraint khpos_class_session_once unique(period_id,local_day),
   constraint khpos_class_clock_order check(checked_out_at is null or checked_out_at>=checked_in_at),
@@ -62,6 +66,16 @@ alter table public.khpos_ops_class_sessions enable row level security;
 revoke all on public.khpos_ops_class_sessions from public,anon,authenticated;
 grant select,insert,update on public.khpos_ops_class_sessions to service_role;
 
+create table public.khpos_ops_hqls_school_settings (
+  organisation_id uuid primary key references public.organisations(id) on delete cascade,
+  enabled boolean not null default false,
+  updated_by uuid not null references auth.users(id),
+  updated_at timestamptz not null default clock_timestamp()
+);
+alter table public.khpos_ops_hqls_school_settings enable row level security;
+revoke all on public.khpos_ops_hqls_school_settings from public,anon,authenticated;
+grant select,insert,update on public.khpos_ops_hqls_school_settings to service_role;
+
 create table public.khpos_ops_hqls_fidelity_observations (
   id uuid primary key default gen_random_uuid(),
   organisation_id uuid not null references public.organisations(id) on delete cascade,
@@ -71,6 +85,8 @@ create table public.khpos_ops_hqls_fidelity_observations (
   teacher_user_id uuid not null references auth.users(id),
   observation_mode text not null check(observation_mode in ('full','walk')),
   rubric_version text not null default 'KAEC-HQLS-CLASSROOM-v1',
+  request_key uuid not null,
+  constraint khpos_hqls_request_once unique(organisation_id,request_key),
   domains jsonb not null,
   total_score integer check(total_score between 8 and 24),
   fidelity_band text check(fidelity_band in ('model','developing','violation')),
@@ -121,6 +137,8 @@ begin
     'staff',case when v_staff.id is null then null else jsonb_build_object('id',v_staff.id,'name',v_staff.display_name,'campusId',v_staff.campus_id) end,
     'canManage',exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active' and r.code=any(array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])),
     'userId',p_actor,
+    'hqlsEnabled',coalesce((select enabled from public.khpos_ops_hqls_school_settings where organisation_id=p_org),false),
+    'canEnableHqls',exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active' and r.code=any(array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN'])),
     'campuses',coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'name',c.name) order by c.name)
       from public.khpos_ops_campuses c where c.organisation_id=p_org and c.status='active'
       and (c.id=v_staff.campus_id or exists(
@@ -143,7 +161,7 @@ begin
       join public.khpos_ops_academic_terms t on t.id=s.term_id
       join public.khpos_ops_role_assignments a on a.id=s.teacher_assignment_id
       left join public.khpos_ops_staff st on st.organisation_id=p_org and st.user_id=a.user_id and st.status='active'
-      where p.organisation_id=p_org and p.is_active and t.start_date<=v_day and t.end_date>=v_day
+      where p.organisation_id=p_org and p.is_active and t.end_date>=v_day and t.status<>'cancelled'
       and (a.user_id=p_actor or khpos_private.ops_presence_leader(p_actor,p_org,s.campus_id,s.unit_id,v_role_codes))
     ),'[]'::jsonb),
     'observations',coalesce((select jsonb_agg(jsonb_build_object(
@@ -158,6 +176,23 @@ begin
          or exists(select 1 from public.khpos_ops_academic_delivery_streams s where s.id=x.stream_id
            and khpos_private.ops_presence_leader(p_actor,p_org,s.campus_id,s.unit_id,v_role_codes)))
        order by x.observed_at desc limit 35) o),'[]'::jsonb),
+    'openClassSessions',coalesce((select jsonb_agg(jsonb_build_object(
+      'id',x.id,'date',x.local_day,'class',s.class_label,'subject',s.subject_label,'teacher',coalesce(st.display_name,'Teacher'),
+      'in',x.checked_in_at
+    ) order by x.local_day desc,x.checked_in_at desc)
+    from public.khpos_ops_class_sessions x
+    join public.khpos_ops_academic_delivery_streams s on s.id=x.stream_id and s.organisation_id=p_org
+    left join public.khpos_ops_staff st on st.user_id=x.teacher_user_id and st.organisation_id=p_org
+    where x.organisation_id=p_org and x.checked_out_at is null and x.local_day >= v_day-14
+      and khpos_private.ops_presence_leader(p_actor,p_org,s.campus_id,s.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])
+    ),'[]'::jsonb),
+    'openSchoolAttendance',coalesce((select jsonb_agg(jsonb_build_object(
+      'id',d.id,'date',d.local_day,'teacher',st.display_name,'in',d.checked_in_at,'campusId',d.campus_id
+    ) order by d.local_day desc,d.checked_in_at desc)
+    from public.khpos_ops_staff_day_presence d join public.khpos_ops_staff st on st.id=d.staff_id
+    where d.organisation_id=p_org and d.checked_out_at is null and d.local_day>=v_day-14
+      and khpos_private.ops_presence_leader(p_actor,p_org,d.campus_id,null,array['SCHOOL_GUARDIAN'])
+    ),'[]'::jsonb),
     'teamPresence',coalesce((select jsonb_agg(jsonb_build_object(
        'name',st.display_name,'campusId',d.campus_id,'in',d.checked_in_at,'out',d.checked_out_at
      ) order by d.checked_in_at desc)
@@ -274,10 +309,23 @@ begin
         follow_up=nullif(left(trim(coalesce(p_input->>'followUp','')),1000),'')
       where id=v_session.id;
     end if;
+  elsif p_mode='hqls_enable' then
+    if not khpos_private.ops_presence_leader(p_actor,p_org,null,null,array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN'])
+      and not exists(select 1 from public.khpos_ops_role_assignments a join public.khpos_ops_roles r on r.id=a.role_id
+       where a.user_id=p_actor and a.status='active' and r.organisation_id=p_org and r.status='active'
+       and r.code=any(array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN']))
+    then raise exception 'Only the School Custodian or Guardian may activate HQLS fidelity observations.'; end if;
+    if jsonb_typeof(p_input->'enabled')<>'boolean' then raise exception 'HQLS activation must be explicit.'; end if;
+    insert into public.khpos_ops_hqls_school_settings(organisation_id,enabled,updated_by)
+      values(p_org,(p_input->>'enabled')::boolean,p_actor)
+    on conflict(organisation_id) do update
+      set enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=clock_timestamp();
   elsif p_mode='hqls_create' then
+    if not coalesce((select enabled from public.khpos_ops_hqls_school_settings where organisation_id=p_org),false)
+    then raise exception 'HQLS fidelity observations have not been activated for this school.'; end if;
     v_id:=(p_input->>'streamId')::uuid;
     select * into v_stream from public.khpos_ops_academic_delivery_streams s where s.id=v_id and s.organisation_id=p_org;
-    if v_stream.id is null then raise exception 'Academic Delivery stream not found.'; end if;
+    if v_stream.id is null or v_stream.status<>'active' then raise exception 'An active Academic Delivery stream is required for observation.'; end if;
     if not khpos_private.ops_presence_leader(p_actor,p_org,v_stream.campus_id,v_stream.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR','SKILL_INSPECTOR','SECTIONAL_PROMOTER'])
       then raise exception 'Only an authorised instructional leader may observe this class.'; end if;
     select a.user_id,a.id into v_teacher,v_assignment from public.khpos_ops_role_assignments a where a.id=v_stream.teacher_assignment_id and a.status='active';
@@ -289,14 +337,15 @@ begin
     then raise exception 'Provide valid HQLS stage evidence.'; end if;
     for v_domain in select value from jsonb_array_elements(v_domains) loop
       v_code:=v_domain->>'code';
-      if not v_code=any(v_codes) or v_code=any(v_seen) then raise exception 'Invalid or repeated HQLS domain.'; end if;
+      if v_code is null or not (v_code=any(v_codes)) or (v_code=any(v_seen)) then raise exception 'Invalid or repeated HQLS domain.'; end if;
       v_seen:=array_append(v_seen,v_code);
-      if jsonb_typeof(v_domain->'score')<>'number' or (v_domain->>'score')::integer not between 1 and 3
+      if jsonb_typeof(v_domain->'score')<>'number' or v_domain->>'score' not in ('1','2','3')
         then raise exception 'Each observed domain needs a Strong (3), Partial (2), or Weak (1) score.'; end if;
       if length(trim(coalesce(v_domain->>'evidence','')))<12 then raise exception 'Each scored domain requires specific observed evidence (at least 12 characters).'; end if;
       v_score:=(v_domain->>'score')::integer;
       v_total:=v_total+v_score; v_count:=v_count+1;
       if coalesce((v_domain->>'automaticFailure')::boolean,false) then
+        if v_score=3 then raise exception 'Strong (3) conflicts with an automatic failure in the same domain.'; end if;
         if not v_code=any(array['awakening','exploration','micro_illumination','first_trial','full_illumination','integration'])
         then raise exception 'The original rubric defines no automatic failure for this stage.'; end if;
         v_failure:=true;
@@ -319,10 +368,10 @@ begin
     end if;
     insert into public.khpos_ops_hqls_fidelity_observations(
       organisation_id,stream_id,class_session_id,observer_user_id,teacher_user_id,
-      observation_mode,domains,total_score,fidelity_band,automatic_failure,
+      observation_mode,request_key,domains,total_score,fidelity_band,automatic_failure,
       strengths,improvement_area,coaching_action,coaching_due_date
     ) values(p_org,v_stream.id,nullif(p_input->>'classSessionId','')::uuid,p_actor,v_teacher,
-      v_mode,v_domains,v_total,v_band,v_failure,left(trim(p_input->>'strengths'),1000),
+      v_mode,(p_input->>'requestKey')::uuid,v_domains,v_total,v_band,v_failure,left(trim(p_input->>'strengths'),1000),
       nullif(left(trim(coalesce(p_input->>'improvement','')),1000),''),
       v_action,coalesce(nullif(p_input->>'coachingDue','')::date, case when v_action is not null then v_day+7 else null end))
     returning id into v_observation;
@@ -337,6 +386,28 @@ begin
       returning id into v_id;
       update public.khpos_ops_hqls_fidelity_observations set coaching_work_id=v_id where id=v_observation;
     end if;
+  elsif p_mode='school_reconcile' then
+    v_id:=(p_input->>'presenceId')::uuid;
+    if length(trim(coalesce(p_input->>'reason','')))<15 then raise exception 'Record the reason and evidence for administrative school closure.'; end if;
+    select * into v_presence from public.khpos_ops_staff_day_presence d where d.id=v_id and d.organisation_id=p_org and d.checked_out_at is null;
+    if v_presence.id is null then raise exception 'Open school attendance not found.'; end if;
+    if not khpos_private.ops_presence_leader(p_actor,p_org,v_presence.campus_id,null,array['SCHOOL_GUARDIAN'])
+    then raise exception 'Only the authorised School Guardian may reconcile school check-outs.'; end if;
+    update public.khpos_ops_staff_day_presence
+      set checked_out_at=v_now,closed_by=p_actor,close_reason=left(trim(p_input->>'reason'),1000)
+      where id=v_id;
+  elsif p_mode='class_reconcile' then
+    v_id:=(p_input->>'classSessionId')::uuid;
+    if length(trim(coalesce(p_input->>'reason','')))<15 then raise exception 'Record the reason and evidence for administrative lesson closure.'; end if;
+    select * into v_session from public.khpos_ops_class_sessions x where x.id=v_id and x.organisation_id=p_org and x.checked_out_at is null;
+    if v_session.id is null then raise exception 'Open class session not found.'; end if;
+    select * into v_stream from public.khpos_ops_academic_delivery_streams s where s.id=v_session.stream_id and s.organisation_id=p_org;
+    if not khpos_private.ops_presence_leader(p_actor,p_org,v_stream.campus_id,v_stream.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])
+    then raise exception 'Only an authorised Guardian or Academic Inspector may reconcile a class session.'; end if;
+    update public.khpos_ops_class_sessions set checked_out_at=v_now,outcome='not_held',
+      follow_up='Administratively closed. Actual teaching outcome requires separate verification.',
+      closed_by=p_actor,close_reason=left(trim(p_input->>'reason'),1000)
+      where id=v_id;
   elsif p_mode='hqls_acknowledge' then
     v_id:=(p_input->>'observationId')::uuid;
     if length(trim(coalesce(p_input->>'teacherResponse','')))<5 then raise exception 'Please record your professional reflection.'; end if;
