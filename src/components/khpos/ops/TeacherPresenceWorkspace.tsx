@@ -337,7 +337,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   <textarea className={field} rows={2} maxLength={1500} value={responses[o.id]||""} onChange={e=>setResponses(old=>({...old,[o.id]:e.target.value}))} placeholder="Which stage tempted you to step in, and why?"/>
                   <button className="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white" disabled={Boolean(busy)||!responses[o.id]?.trim()}
                     onClick={()=>void act("hqls_acknowledge",{observationId:o.id,teacherResponse:responses[o.id]},"Teacher reflection saved.")}>Submit teacher reflection</button>
-                </>:<p className="mt-2 text-xs text-slate-500">Awaiting the observed teacher’s reflection.</p>}}
+                </>:<p className="mt-2 text-xs text-slate-500">Awaiting the observed teacher’s reflection.</p>}
               </div>)}
             </div>}
           </section>
