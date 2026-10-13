@@ -1,3 +1,5 @@
+> **Historical note (October 13, 2026):** The earlier protected-preview approach below was superseded by the owner's request for no paid testing environment. O74 is being released through the existing live KHP-OS installation, using one independent opt-in switch per school. No additional Supabase project, paid branch, or copied live records are required. All schools may adopt the feature separately. Only a School Custodian can enable it for their own school. Academic Delivery terms and streams must be configured before class check-ins or full HQLS observations can be used. Existing data remains untouched.
+
 # Release #74 — Protected Preview Test Plan
 
 **Status:** development branch only. Do not merge PR #74 or apply its migration to production before approval.
