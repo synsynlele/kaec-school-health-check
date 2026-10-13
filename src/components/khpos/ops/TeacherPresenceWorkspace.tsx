@@ -337,6 +337,24 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         {tab==="leaders"&&<div className={box}>
           <h2 className="text-xl font-black text-slate-900">School presence oversight</h2>
           <p className="my-2 text-sm text-slate-600">Today's recorded check-ins within your authorised school leadership scope. No record does not automatically establish absence. A full attendance register requires configured expectations and correction handling.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed class sessions (last 14 days)</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></div>
+            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></div>
+          </div>
+          {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <h3 className="font-black text-amber-900">Administrative correction — evidence required</h3>
+            <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
+            <label className="block text-xs font-bold">Correction reason and supporting reference (at least 15 characters)</label>
+            <textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/>
+            {data.openClassSessions.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+              <span><b>{x.teacher}</b> · {x.class} · {x.subject} · {x.date}</span>
+              <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("class_reconcile",{classSessionId:x.id,reason:reconcileReason},"Class administratively closed as unverified.")}>Close as unverified</button>
+            </div>)}
+            {data.openSchoolAttendance.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+              <span><b>{x.teacher}</b> · School check-in on {x.date}</span>
+              <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("school_reconcile",{presenceId:x.id,reason:reconcileReason},"School attendance administratively closed.")}>Record admin closure</button>
+            </div>)}
+          </div>}
           {data.teamPresence.length===0?<p className="text-sm text-slate-500">No visible staff check-in records for today.</p>:
             <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">In</th><th className="p-2">Out</th></tr></thead>
               <tbody>{data.teamPresence.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{timeString(d.in)}</td><td className="p-2">{timeString(d.out)}</td></tr>)}</tbody></table></div>}
