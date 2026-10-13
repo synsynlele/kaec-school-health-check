@@ -21,11 +21,13 @@ export interface KhposHqlsObservation {
   teacherResponse: string | null; acknowledgedAt: string | null; observedAt: string;
 }
 export interface KhposPresenceWorkspace {
-  localDay: string; canManage: boolean; staff: null | { id: string; name: string; campusId: string | null };
+  localDay: string; userId: string; canManage: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
   todayPresence: null | { id: string; campusId: string; in: string; out: string | null };
   periods: KhposPresencePeriod[]; observations: KhposHqlsObservation[];
   teamPresence: Array<{ name: string; campusId: string; in: string; out: string | null }>;
+  openClassSessions: Array<{ id: string; date: string; class: string; subject: string; teacher: string; in: string }>;
+  openSchoolAttendance: Array<{ id: string; date: string; teacher: string; campusId: string; in: string }>;
 }
 export class KhposPresenceError extends Error {
   constructor(message: string, public readonly status = 400) { super(message); }
