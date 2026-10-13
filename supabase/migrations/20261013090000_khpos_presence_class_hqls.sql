@@ -332,6 +332,10 @@ begin
     if v_teacher is null or v_teacher=p_actor then raise exception 'Observations require an active teacher and independent observer.'; end if;
     v_mode:=p_input->>'observationMode';
     if v_mode not in ('full','walk') then raise exception 'Choose full observation or quick learning walk.'; end if;
+    if exists(select 1 from public.khpos_ops_hqls_fidelity_observations x
+      where x.organisation_id=p_org and x.request_key=(p_input->>'requestKey')::uuid
+        and x.observer_user_id=p_actor and x.stream_id=v_stream.id)
+    then return jsonb_build_object('ok',true,'duplicate',true); end if;
     v_domains:=p_input->'domains';
     if jsonb_typeof(v_domains)<>'array' or jsonb_array_length(v_domains)<1 or jsonb_array_length(v_domains)>8
     then raise exception 'Provide valid HQLS stage evidence.'; end if;
@@ -393,6 +397,10 @@ begin
     if v_presence.id is null then raise exception 'Open school attendance not found.'; end if;
     if not khpos_private.ops_presence_leader(p_actor,p_org,v_presence.campus_id,null,array['SCHOOL_GUARDIAN'])
     then raise exception 'Only the authorised School Guardian may reconcile school check-outs.'; end if;
+    if exists(select 1 from public.khpos_ops_class_sessions x
+      join public.khpos_ops_staff st on st.user_id=x.teacher_user_id and st.organisation_id=p_org
+      where st.id=v_presence.staff_id and x.local_day=v_presence.local_day and x.checked_out_at is null)
+    then raise exception 'Reconcile the open subject lesson before closing school attendance.'; end if;
     update public.khpos_ops_staff_day_presence
       set checked_out_at=v_now,closed_by=p_actor,close_reason=left(trim(p_input->>'reason'),1000)
       where id=v_id;
