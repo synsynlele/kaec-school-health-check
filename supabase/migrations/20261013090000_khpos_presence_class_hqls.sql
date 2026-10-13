@@ -49,7 +49,7 @@ create table public.khpos_ops_class_sessions (
   local_day date not null,
   checked_in_at timestamptz not null default clock_timestamp(),
   checked_out_at timestamptz,
-  outcome text check(outcome in ('completed','partial','not_held')),
+  outcome text check(outcome in ('completed','partial','not_held','unverified')),
   topic_taught text,
   follow_up text,
   closed_by uuid references auth.users(id),
@@ -404,7 +404,7 @@ begin
     select * into v_stream from public.khpos_ops_academic_delivery_streams s where s.id=v_session.stream_id and s.organisation_id=p_org;
     if not khpos_private.ops_presence_leader(p_actor,p_org,v_stream.campus_id,v_stream.unit_id,array['SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR'])
     then raise exception 'Only an authorised Guardian or Academic Inspector may reconcile a class session.'; end if;
-    update public.khpos_ops_class_sessions set checked_out_at=v_now,outcome='not_held',
+    update public.khpos_ops_class_sessions set checked_out_at=v_now,outcome='unverified',
       follow_up='Administratively closed. Actual teaching outcome requires separate verification.',
       closed_by=p_actor,close_reason=left(trim(p_input->>'reason'),1000)
       where id=v_id;
