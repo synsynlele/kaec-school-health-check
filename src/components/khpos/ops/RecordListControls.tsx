@@ -121,3 +121,21 @@ export function RecordListControls({
     </div>
   );
 }
+
+/** Compact sorting control for registers that already provide their own search. */
+export function RecordSortSelect({
+  value, onChange, options, label = "Sort by",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly { value: string; label: string }[];
+  label?: string;
+}) {
+  return <label className="block min-w-44 text-sm font-semibold text-slate-700">
+    {label}
+    <select value={value} onChange={(event) => onChange(event.target.value)}
+      className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20">
+      {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+    </select>
+  </label>;
+}
