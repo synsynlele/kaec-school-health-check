@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -114,6 +115,8 @@ export function LearnerProgressWorkspace({
   const [references, setReferences] = useState<Record<string, string>>({});
   const [selects, setSelects] = useState<Record<string, string>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
+  const signalQueue = useRecordQueue(workspace?.signals ?? [], (item) => ["resolved", "dismissed"].includes(item.status));
+  const learnerCaseQueue = useRecordQueue(workspace?.cases ?? [], (item) => item.status === "closed");
 
   async function token() {
     if (!supabase) return null;
@@ -681,11 +684,12 @@ export function LearnerProgressWorkspace({
               <h2 className="mt-2 text-2xl font-black">
                 Early concerns waiting for response
               </h2>
-              {workspace.signals.length === 0 ? (
+              <RecordQueueTabs view={signalQueue.view} setView={signalQueue.setView} activeCount={signalQueue.activeCount} historyCount={signalQueue.historyCount} />
+              {signalQueue.visibleItems.length === 0 ? (
                 <Empty text="No learner-risk signals are visible." />
               ) : (
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  {workspace.signals.map((signal) => (
+                  {signalQueue.visibleItems.map((signal) => (
                     <RiskSignalCard
                       key={signal.id}
                       signal={signal}
@@ -713,11 +717,12 @@ export function LearnerProgressWorkspace({
               <h2 className="mt-2 text-2xl font-black">
                 Diagnose → intervene → reassess → recover or redirect
               </h2>
-              {workspace.cases.length === 0 ? (
+              <RecordQueueTabs view={learnerCaseQueue.view} setView={learnerCaseQueue.setView} activeCount={learnerCaseQueue.activeCount} historyCount={learnerCaseQueue.historyCount} />
+              {learnerCaseQueue.visibleItems.length === 0 ? (
                 <Empty text="No structured learner-support cases are visible." />
               ) : (
                 <div className="mt-4 space-y-5">
-                  {workspace.cases.map((supportCase) => (
+                  {learnerCaseQueue.visibleItems.map((supportCase) => (
                     <SupportCaseCard
                       key={supportCase.id}
                       supportCase={supportCase}
