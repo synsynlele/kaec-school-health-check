@@ -102,7 +102,7 @@ export function AcademicAssuranceWorkspace({
       }
 
       setWorkspace(body.academicAssurance);
-      setMyUserId(data.session.user.id);
+      setMyUserId(data.session?.user.id ?? "");
       setError("");
     });
 
