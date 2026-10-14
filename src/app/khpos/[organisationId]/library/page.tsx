@@ -21,6 +21,7 @@ export default async function KhposOperationsLibraryPage({
     tab?: string | string[];
     q?: string | string[];
     critical?: string | string[];
+    edit?: string | string[];
   }>;
 }) {
   const { organisationId } = await params;
@@ -41,6 +42,7 @@ export default async function KhposOperationsLibraryPage({
       initialTab={initialTab}
       initialQuery={initialQuery}
       initialCriticalOnly={initialCriticalOnly}
+      initialEditId={first(query.edit) ?? ""}
     />
   );
 }
