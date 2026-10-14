@@ -137,7 +137,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
       }
     }).catch(() => { if (alive) setError("Policy revisions could not be loaded."); });
     return () => { alive = false; };
-  }, [organisationId, supabase, initialEditId, policies]);
+  }, [organisationId, supabase, initialEditId]);
 
   function choose(id: string, availableVersions = versions, availableBaselines = baselines) {
     setSelected(id); setError(""); setMessage("");
