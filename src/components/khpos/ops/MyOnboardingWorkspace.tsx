@@ -562,13 +562,14 @@ export function MyOnboardingWorkspace({
                   <span>
                     <span className="block text-xs font-black text-brand-700">{policy.code}</span>
                     <span className="mt-1 block text-sm font-bold">{policy.name}</span>
+                    <span className="mt-2 block text-xs font-medium text-slate-600">{policy.acknowledged ? "Read current policy" : policy.published ? "Read and acknowledge in the library" : "School leadership must publish this policy first"}</span>
                   </span>
                   <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
                     policy.acknowledged
                       ? "bg-emerald-50 text-emerald-800"
                       : "bg-amber-50 text-amber-900"
                   }`}>
-                    {policy.acknowledged ? "Acknowledged" : "Open"}
+                    {policy.acknowledged ? "Acknowledged" : policy.published ? "Acknowledgement needed" : "Awaiting publication"}
                   </span>
                 </Link>
               ))}
