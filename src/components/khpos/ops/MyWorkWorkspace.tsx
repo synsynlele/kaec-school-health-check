@@ -67,11 +67,13 @@ export function MyWorkWorkspace({
     (item) => ({ critical: 1, high: 2, standard: 3, planned: 4 })[item.priority],
   );
 
+  const setWorkQuery = workSearch.setQuery;
+
   useEffect(() => {
-    const showAll = () => { setRoleFilter(""); workSearch.setQuery(""); };
+    const showAll = () => { setRoleFilter(""); setWorkQuery(""); };
     window.addEventListener("hashchange", showAll);
     return () => window.removeEventListener("hashchange", showAll);
-  }, [workSearch.setQuery]);
+  }, [setWorkQuery]);
 
   useEffect(() => {
     if (!roleFilter) focusKhposRecord(window.location.hash, document);
