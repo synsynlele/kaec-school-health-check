@@ -332,7 +332,8 @@ export function OperationalRecordsWorkspace({
     ? compareRecordText(a.workTitle, b.workTitle)
     : sortOrder === "campus"
       ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
-      : compareRecordDate(a.submittedAt, b.submittedAt, sortOrder === "oldest" ? "asc" : "desc"));  const checklists = workspace.checklists.filter((item) =>
+      : compareRecordDate(a.submittedAt, b.submittedAt, sortOrder === "oldest" ? "asc" : "desc"));
+  const checklists = workspace.checklists.filter((item) =>
     !needle ||
     `${item.workTitle} ${item.processCode ?? ""} ${item.checklistCode} ${item.checklistName} ${item.roleTitle} ${item.campusName ?? ""}`
       .toLowerCase()
@@ -341,7 +342,8 @@ export function OperationalRecordsWorkspace({
     ? compareRecordText(a.workTitle, b.workTitle)
     : sortOrder === "campus"
       ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
-      : compareRecordDate(a.completedAt, b.completedAt, sortOrder === "oldest" ? "asc" : "desc"));  const evidence = workspace.evidence.filter((item) =>
+      : compareRecordDate(a.completedAt, b.completedAt, sortOrder === "oldest" ? "asc" : "desc"));
+  const evidence = workspace.evidence.filter((item) =>
     !needle ||
     `${item.workTitle} ${item.processCode ?? ""} ${item.evidenceType} ${item.roleTitle} ${item.campusName ?? ""} ${item.note ?? ""}`
       .toLowerCase()
@@ -351,6 +353,7 @@ export function OperationalRecordsWorkspace({
     : sortOrder === "campus"
       ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
       : compareRecordDate(a.submittedAt, b.submittedAt, sortOrder === "oldest" ? "asc" : "desc"));
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -425,7 +428,7 @@ export function OperationalRecordsWorkspace({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-end lg:justify-end">
-          <label className="relative block min-w-0 sm:flex-1 lg:max-w-96">
+            <label className="relative block min-w-0 sm:flex-1 lg:max-w-96">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
@@ -435,8 +438,8 @@ export function OperationalRecordsWorkspace({
               placeholder="Search process, record, role or campus"
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400"
             />
-          </label>
-          <RecordSortSelect value={sortOrder} onChange={setSortOrder}
+            </label>
+            <RecordSortSelect value={sortOrder} onChange={setSortOrder}
             options={[{ value: "recent", label: "Newest first" }, { value: "oldest", label: "Oldest first" }, { value: "title", label: "Work title A–Z" }, { value: "campus", label: "Campus A–Z" }]} />
           </div>
         </section>
