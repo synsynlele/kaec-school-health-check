@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { AcademicRecordHistory } from "@/lib/khpos/ops/academic-delivery";
 
-type LifecycleAction = "archive" | "restore" | "delete";
+type LifecycleAction = "archive" | "restore" | "remove";
 
 export function AcademicRecordManagement({
-  kind, status, revisionNumber, archivedAt, archiveReason,
+  kind, status, revisionNumber, archivedAt, archiveReason, removedAt,
   history = [], busy, onManage,
 }: {
   kind: "term" | "stream";
@@ -14,15 +14,16 @@ export function AcademicRecordManagement({
   revisionNumber?: number;
   archivedAt?: string | null;
   archiveReason?: string | null;
+  removedAt?: string | null;
   history?: AcademicRecordHistory[];
   busy: boolean;
   onManage: (action: LifecycleAction, reason: string) => Promise<boolean>;
 }) {
   const [reason, setReason] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [removeConfirm, setRemoveConfirm] = useState("");
   const [feedback, setFeedback] = useState("");
-  const archived = status === "archived";
-  const mayRequestDelete = !["active", "closed"].includes(status);
+  const archived = status === "archived" || status === "removed";
+  const mayRemove = ["draft", "approved", "cancelled"].includes(status);
   const enabled = !busy && reason.trim().length >= 10;
 
   async function run(action: LifecycleAction) {
@@ -30,8 +31,9 @@ export function AcademicRecordManagement({
     const ok = await onManage(action, reason.trim());
     if (ok) {
       setReason("");
-      setDeleteConfirm("");
-      setFeedback(action === "restore" ? "Record restored." : action === "archive" ? "Record archived." : "Record deleted.");
+      setRemoveConfirm("");
+      setFeedback(action === "restore" ? "Record restored." : action === "archive"
+        ? "Record archived with its history retained." : "Unused record removed from normal use. It remains recoverable.");
     }
   }
 
@@ -42,12 +44,12 @@ export function AcademicRecordManagement({
       </summary>
       <div className="mt-3 space-y-3">
         <p className="text-xs leading-5 text-slate-600">
-          Edits retain their history. Archiving hides an item from routine planning without deleting school evidence.
-          Permanent deletion is restricted to records with no linked school work.
+          Edits preserve the change history. Archiving or removing a record hides it from routine planning,
+          without erasing school evidence. Removal is reversible, not permanent deletion.
         </p>
         {archived && (
           <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
-            Archived {archivedAt ? new Date(archivedAt).toLocaleString() : ""}
+            {removedAt ? "Removed" : "Archived"} {archivedAt ? new Date(archivedAt).toLocaleString() : ""}
             {archiveReason ? " · " + archiveReason : ""}
           </p>
         )}
@@ -69,23 +71,24 @@ export function AcademicRecordManagement({
             className="rounded-full border border-brand-300 bg-white px-3 py-2 text-xs font-bold text-brand-800 disabled:opacity-40"
           >{archived ? "Restore record" : "Archive record"}</button>
         </div>
-        {mayRequestDelete && (
+        {mayRemove && (
           <div className="space-y-2 rounded-xl border border-rose-200 bg-white p-3">
-            <p className="text-xs font-bold text-rose-800">Permanent deletion cannot be undone.</p>
+            <p className="text-xs font-bold text-rose-800">Remove an unused record</p>
             <p className="text-xs text-slate-600">
-              Deletion will be refused if any teaching targets, assessment, learner progress or other linked school records exist.
-              A separate audit entry is retained.
+              Only unused drafts or cancelled records without linked teaching or assessment work can be removed.
+              This hides the item from ordinary lists; it does NOT erase the record or its audit history.
+              You can restore it by selecting Show archived and removed records.
             </p>
             <label className="block text-xs font-bold text-slate-700">
-              Type DELETE to confirm
-              <input value={deleteConfirm} onChange={(event) => setDeleteConfirm(event.target.value)}
-                placeholder="DELETE" autoComplete="off"
+              Type REMOVE to confirm
+              <input value={removeConfirm} onChange={(event) => setRemoveConfirm(event.target.value)}
+                placeholder="REMOVE" autoComplete="off"
                 className="mt-1 w-full rounded-lg border border-rose-200 p-2 text-xs font-normal" />
             </label>
-            <button type="button" disabled={!enabled || deleteConfirm !== "DELETE"}
-              onClick={() => void run("delete")}
+            <button type="button" disabled={!enabled || removeConfirm !== "REMOVE"}
+              onClick={() => void run("remove")}
               className="rounded-full border border-rose-500 px-3 py-2 text-xs font-bold text-rose-800 disabled:opacity-40">
-              Delete permanently
+              Remove unused record
             </button>
           </div>
         )}
