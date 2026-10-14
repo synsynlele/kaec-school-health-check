@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import { decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
@@ -136,6 +137,13 @@ export function DecisionsWorkspace({
       const next = decisionAttentionActions(decision);
       return !next.approval && !next.implementation;
     },
+  );
+  const decisionSearch = useRecordSearch(
+    decisionQueue.visibleItems,
+    (decision) => [decision.reference, decision.title, decision.context, decision.priority, decision.category, decision.status, decision.requester.displayName ?? "", decision.authority.roleTitle].join(" "),
+    (decision) => decision.title,
+    (decision) => decision.decisionDueAt ?? decision.createdAt,
+    (decision) => Number(decision.priority.slice(1)),
   );
 
   async function token() {
@@ -937,8 +945,9 @@ export function DecisionsWorkspace({
         )}
 
         <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
+        <RecordQueueSearchControls query={decisionSearch.query} setQuery={decisionSearch.setQuery} sort={decisionSearch.sort} setSort={decisionSearch.setSort} shown={decisionSearch.visibleItems.length} total={decisionQueue.visibleItems.length} placeholder="Search decision, reference, role or status" hasPriority />
 
-        {decisionQueue.visibleItems.length === 0 ? (
+        {decisionSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <ShieldCheck className="mx-auto size-10 text-mint-700" />
             <h2 className="mt-4 text-2xl font-black">{decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
@@ -950,7 +959,7 @@ export function DecisionsWorkspace({
           </section>
         ) : (
           <section className="space-y-4">
-            {decisionQueue.visibleItems.map((decision) => {
+            {decisionSearch.visibleItems.map((decision) => {
               const note = notes[decision.id] ?? "";
               const busy = busyId === decision.id;
               const actionRequired = approveAction[decision.id] ?? false;
