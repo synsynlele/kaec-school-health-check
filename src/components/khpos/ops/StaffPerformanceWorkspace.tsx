@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -84,6 +85,7 @@ export function StaffPerformanceWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const reviewQueue = useRecordQueue(workspace?.reviews ?? [], (review) => ["completed", "cancelled"].includes(review.status));
 
   const [staffId, setStaffId] = useState("");
   const [reviewType, setReviewType] =
@@ -705,7 +707,8 @@ export function StaffPerformanceWorkspace({
               </section>
             )}
 
-            {workspace.reviews.length === 0 ? (
+            <RecordQueueTabs view={reviewQueue.view} setView={reviewQueue.setView} activeCount={reviewQueue.activeCount} historyCount={reviewQueue.historyCount} activeLabel="Needs attention" />
+            {reviewQueue.visibleItems.length === 0 ? (
               <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
                 <BookOpenCheck className="mx-auto size-10 text-brand-700" />
                 <h2 className="mt-4 text-2xl font-black">
@@ -719,7 +722,7 @@ export function StaffPerformanceWorkspace({
               </section>
             ) : (
               <section className="space-y-5">
-                {workspace.reviews.map((review) => {
+                {reviewQueue.visibleItems.map((review) => {
                   const developmentRequired = [
                     "support_required",
                     "improvement_required",
