@@ -60,6 +60,7 @@ export function AcademicAssuranceWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, boolean>>({});
 
@@ -101,6 +102,7 @@ export function AcademicAssuranceWorkspace({
       }
 
       setWorkspace(body.academicAssurance);
+      setMyUserId(data.session?.user.id ?? "");
       setError("");
     });
 
@@ -389,6 +391,7 @@ export function AcademicAssuranceWorkspace({
                   <CloseoutCard
                     key={item.id}
                     item={item}
+                    canEdit={item.status === "draft" && item.preparedBy === myUserId}
                     values={values}
                     busyId={busyId}
                     setValue={setValue}
@@ -784,6 +787,7 @@ function CycleCard({
             <PackageRow
               key={pkg.id}
               pkg={pkg}
+              canEdit={["draft", "changes_required"].includes(pkg.moderationState) && (cycle.canManage || cycleStreams.some((stream) => stream.id === pkg.streamId && stream.isTeacher))}
               busyId={busyId}
               values={values}
               setValue={setValue}
@@ -925,18 +929,25 @@ function CycleCard({
 
 function PackageRow({
   pkg,
+  canEdit,
   busyId,
   values,
   setValue,
   submit,
 }: {
   pkg: KhposOpsAssessmentPackage;
+  canEdit: boolean;
   busyId: string | null;
   values: Record<string, string>;
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
   const noteKey = `pkg-note-${pkg.id}`;
+  const [editing, setEditing] = useState(false);
+  const [source, setSource] = useState(pkg.assessmentSource);
+  const [reference, setReference] = useState(pkg.sourceReference);
+  const [blueprint, setBlueprint] = useState(pkg.blueprintReference);
+  const [declared, setDeclared] = useState(pkg.integrityDeclaration);
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -957,6 +968,37 @@ function PackageRow({
           {readable(pkg.moderationState)}
         </span>
       </div>
+      {canEdit && <button type="button" disabled={busyId !== null} onClick={() => {
+        setSource(pkg.assessmentSource); setReference(pkg.sourceReference);
+        setBlueprint(pkg.blueprintReference); setDeclared(pkg.integrityDeclaration);
+        setEditing((open) => !open);
+      }} className="mt-3 rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
+        {editing ? "Cancel editing" : "Edit assessment package"}
+      </button>}
+      {editing && canEdit && <div className="mt-3 space-y-2 rounded-xl border border-brand-200 bg-white p-3">
+        <p className="text-xs font-black">Edit saved package before moderation</p>
+        <label className="block text-xs">Assessment source
+          <select value={source} onChange={(event) => setSource(event.target.value)} className="mt-1 w-full rounded-lg border p-2">
+            {["KSI","SIS","CBT","external","manual"].map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs">Source reference
+          <input value={reference} onChange={(event) => setReference(event.target.value)} className="mt-1 w-full rounded-lg border p-2" />
+        </label>
+        <label className="block text-xs">Blueprint / specification reference
+          <input value={blueprint} onChange={(event) => setBlueprint(event.target.value)} className="mt-1 w-full rounded-lg border p-2" />
+        </label>
+        <label className="flex gap-2 text-xs">
+          <input type="checkbox" checked={declared} onChange={(event) => setDeclared(event.target.checked)} />
+          I confirm the assessment-integrity requirements
+        </label>
+        <button type="button" disabled={busyId !== null || !reference.trim() || !blueprint.trim()} onClick={() => void (async () => {
+          const saved = await submit({ mode: "update_package", packageId: pkg.id,
+            assessmentSource: source, sourceReference: reference,
+            blueprintReference: blueprint, integrityDeclaration: declared }, `pkg-edit-${pkg.id}`);
+          if (saved) setEditing(false);
+        })()} className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white disabled:opacity-50">Save package changes</button>
+      </div>}
       <textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
@@ -1854,18 +1896,47 @@ function CloseoutCreatePanel({
 
 function CloseoutCard({
   item,
+  canEdit,
   values,
   busyId,
   setValue,
   submit,
 }: {
   item: KhposOpsAcademicCloseout;
+  canEdit: boolean;
   values: Record<string, string>;
   busyId: string | null;
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
   const noteKey = `closeout-note-${item.id}`;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    curriculumSummary: item.curriculumSummary,
+    assessmentSummary: item.assessmentSummary,
+    learnerSupportSummary: item.learnerSupportSummary,
+    integritySummary: item.integritySummary,
+    externalExamSummary: item.externalExamSummary ?? "",
+    lessonsSummary: item.lessonsSummary,
+    carryoverReference: item.carryoverReference ?? "",
+    evidenceReference: item.evidenceReference ?? "",
+  });
+  function change(field: keyof typeof draft, next: string) {
+    setDraft((current) => ({ ...current, [field]: next }));
+  }
+  function openEditor() {
+    setDraft({
+      curriculumSummary: item.curriculumSummary,
+      assessmentSummary: item.assessmentSummary,
+      learnerSupportSummary: item.learnerSupportSummary,
+      integritySummary: item.integritySummary,
+      externalExamSummary: item.externalExamSummary ?? "",
+      lessonsSummary: item.lessonsSummary,
+      carryoverReference: item.carryoverReference ?? "",
+      evidenceReference: item.evidenceReference ?? "",
+    });
+    setEditing(true);
+  }
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1887,6 +1958,46 @@ function CloseoutCard({
         </span>
       </div>
 
+      {canEdit && <div className="mt-4">
+        <button type="button" disabled={busyId !== null} onClick={() => editing ? setEditing(false) : openEditor()}
+          className="rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
+          {editing ? "Cancel editing" : "Edit academic close-out draft"}
+        </button>
+        {editing && <div className="mt-3 space-y-3 rounded-xl border border-brand-200 bg-white p-3">
+          <p className="text-xs text-slate-600">Update your saved draft. The submitted or approved record stays protected.</p>
+          {([
+            ["curriculumSummary", "Curriculum delivery summary"],
+            ["assessmentSummary", "Assessment/exam summary"],
+            ["learnerSupportSummary", "Learner-support summary"],
+            ["integritySummary", "Integrity/correction summary"],
+            ["lessonsSummary", "Institutional learning / lessons"],
+            ["externalExamSummary", "External-exam summary (optional)"],
+          ] as const).map(([key, label]) => (
+            <label className="block text-xs font-bold" key={key}>{label}
+              <textarea value={draft[key]} onChange={(event) => change(key, event.target.value)}
+                rows={3} className="mt-1 w-full rounded-lg border border-slate-200 p-2" />
+            </label>
+          ))}
+          {([
+            ["carryoverReference", "Carry-over / escalation reference"],
+            ["evidenceReference", "Close-out evidence reference"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="block text-xs font-bold">{label}
+              <input value={draft[key]} onChange={(event) => change(key, event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 p-2" />
+            </label>
+          ))}
+          <button type="button" disabled={busyId !== null ||
+            !draft.curriculumSummary.trim() || !draft.assessmentSummary.trim() ||
+            !draft.learnerSupportSummary.trim() || !draft.integritySummary.trim() || !draft.lessonsSummary.trim()}
+            onClick={() => void (async () => {
+              const ok = await submit({ mode: "update_closeout", closeoutId: item.id, ...draft }, `edit-closeout-${item.id}`);
+              if (ok) setEditing(false);
+            })()} className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
+            Save close-out changes
+          </button>
+        </div>}
+      </div>}
       <textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}

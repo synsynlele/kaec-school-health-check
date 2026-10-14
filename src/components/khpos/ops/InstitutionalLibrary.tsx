@@ -245,11 +245,13 @@ export function InstitutionalLibrary({
   initialTab = "policies",
   initialQuery = "",
   initialCriticalOnly = false,
+  initialEditId = "",
 }: {
   organisationId: string;
   initialTab?: Tab;
   initialQuery?: string;
   initialCriticalOnly?: boolean;
+  initialEditId?: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
@@ -374,6 +376,7 @@ export function InstitutionalLibrary({
 
   if (!library) return null;
 
+  const canEditDocuments = library.operatingRoleCodes.some((code) => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code));
   const needle = query.trim().toLowerCase();
   const policies = library.policies.filter(
     (item) =>
@@ -527,17 +530,25 @@ export function InstitutionalLibrary({
             </div>
 
             {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
-              <PolicyGovernance organisationId={organisationId} policies={policies} onPublished={setLibrary} />
+              <PolicyGovernance organisationId={organisationId} policies={policies} onPublished={setLibrary} initialEditId={initialEditId} />
             )}
 
             {policies.map((policy) => (
-              <PolicyDocument
-                key={policy.id}
-                policy={policy}
-                busyVersionId={busyVersionId}
-                onAcknowledge={acknowledge}
-                initiallyOpen={initialQuery.trim().toLowerCase() === policy.code.toLowerCase()}
-              />
+              <div key={policy.id} className="space-y-2">
+                {canEditDocuments && (
+                  <div className="flex justify-end">
+                    <Link href={`/khpos/${organisationId}/library?tab=policies&q=${encodeURIComponent(policy.code)}&edit=${policy.id}`} className="rounded-full border border-brand-300 bg-brand-50 px-4 py-2 text-xs font-black text-brand-800">
+                      {policy.activeVersion ? "Edit / create approved revision" : "Edit / complete draft"}
+                    </Link>
+                  </div>
+                )}
+                <PolicyDocument
+                  policy={policy}
+                  busyVersionId={busyVersionId}
+                  onAcknowledge={acknowledge}
+                  initiallyOpen={initialQuery.trim().toLowerCase() === policy.code.toLowerCase()}
+                />
+              </div>
             ))}
           </section>
         )}
@@ -554,18 +565,21 @@ export function InstitutionalLibrary({
 
             {library.operatingRoleCodes.some((code) => ["VISION_CUSTODIAN", "SCHOOL_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"].includes(code)) && (
               <div className="mt-6">
-                <ProcessGovernance organisationId={organisationId} processes={processes} onPublished={setLibrary} />
+                <ProcessGovernance organisationId={organisationId} processes={processes} onPublished={setLibrary} initialEditId={initialEditId} />
               </div>
             )}
 
             <div className="mt-6 space-y-4">
               {processes.length ? (
                 processes.map((process) => (
-                  <ProcessDocument
-                    key={process.id}
-                    process={process}
-                    organisationId={organisationId}
-                  />
+                  <div key={process.id} className="space-y-2">
+                    {canEditDocuments && <div className="flex justify-end">
+                      <Link href={`/khpos/${organisationId}/library?tab=processes&q=${encodeURIComponent(process.code)}&edit=${process.id}`} className="rounded-full border border-brand-300 bg-brand-50 px-4 py-2 text-xs font-black text-brand-800">
+                        {process.activeVersion ? "Edit / create approved revision" : "Edit / complete draft"}
+                      </Link>
+                    </div>}
+                    <ProcessDocument process={process} organisationId={organisationId} />
+                  </div>
                 ))
               ) : (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm leading-6 text-slate-600">

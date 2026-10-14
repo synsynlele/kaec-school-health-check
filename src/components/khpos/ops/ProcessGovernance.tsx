@@ -56,10 +56,12 @@ export function ProcessGovernance({
   organisationId,
   processes,
   onPublished,
+  initialEditId = "",
 }: {
   organisationId: string;
   processes: KhposOpsProcess[];
   onPublished: (library: KhposOpsLibrary) => void;
+  initialEditId?: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [versions, setVersions] = useState<Revision[]>([]);
@@ -165,6 +167,9 @@ export function ProcessGovernance({
         setBaselines(body.baselines ?? {});
         setRoleCodes(body.library?.operatingRoleCodes ?? []);
         setUserId(data.session.user.id);
+        if (initialEditId && processes.some((item) => item.id === initialEditId)) {
+          choose(initialEditId, body.versions ?? [], body.baselines ?? {});
+        }
       } else {
         setError(body.error ?? "Process revisions could not be loaded.");
       }
@@ -175,18 +180,22 @@ export function ProcessGovernance({
     return () => {
       alive = false;
     };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, initialEditId]);
 
-  function choose(id: string) {
+  function choose(
+    id: string,
+    availableVersions = versions,
+    availableBaselines = baselines,
+  ) {
     setSelected(id);
     setError("");
     setMessage("");
 
-    const revision = versions.find(
+    const revision = availableVersions.find(
       (item) => item.process_id === id && ["draft", "in_review"].includes(item.status),
     );
     const active = processes.find((item) => item.id === id)?.activeVersion;
-    const baseline = baselines[id];
+    const baseline = availableBaselines[id];
     const source = revision ?? active;
     const useBaseline = !source && Boolean(baseline);
 
@@ -281,6 +290,7 @@ export function ProcessGovernance({
   return (
     <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
       <h3 className="text-xl font-black">Process drafting and approval</h3>
+      <p className="mt-2 text-sm text-slate-600">Edit your existing draft here. A published process is never overwritten: choose it to prepare a new controlled revision for independent approval.</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">
         Leaders turn registered processes into school-owned operating procedures. A different authorised leader
         must review the draft. If the School Custodian authors a P0 process, the School Guardian becomes the
@@ -319,7 +329,7 @@ export function ProcessGovernance({
           <p className="text-sm font-semibold">
             {current
               ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}`
-              : "Start a new school revision"}
+              : process.activeVersion ? "Published document: prepare a new revision (the existing approved version remains live)" : "Start a new school draft"}
           </p>
 
           {baselineLoaded && (

@@ -20,6 +20,8 @@ import {
   KhposOpsAcademicDeliveryError,
   reassignKhposOpsAcademicDebt,
   updateKhposOpsAcademicStreamAssignment,
+  updateKhposOpsAcademicDraftTerm,
+  updateKhposOpsAcademicDraftStream,
   verifyKhposOpsAcademicTarget,
 } from "@/lib/khpos/ops/academic-delivery";
 
@@ -118,10 +120,11 @@ export async function POST(
     const user = await authenticatedUser(request);
     const mode = clean(payload.mode);
 
-    if (mode === "create_term") {
+    if (mode === "create_term" || mode === "update_term") {
       const campusId = optionalUuid(payload.campusId);
       if (
         campusId === undefined ||
+        (mode === "update_term" && !validUuid(payload.termId)) ||
         !clean(payload.sessionLabel) ||
         !clean(payload.termCode) ||
         !clean(payload.termName) ||
@@ -138,14 +141,17 @@ export async function POST(
         );
       }
 
-      const academic = await createKhposOpsAcademicTerm(id, user.id, {
+      const input = {
         campusId,
         sessionLabel: clean(payload.sessionLabel),
         termCode: clean(payload.termCode),
         termName: clean(payload.termName),
         startDate: dateString(payload.startDate),
         endDate: dateString(payload.endDate),
-      });
+      };
+      const academic = mode === "update_term" && validUuid(payload.termId)
+        ? await updateKhposOpsAcademicDraftTerm(id, user.id, payload.termId, input)
+        : await createKhposOpsAcademicTerm(id, user.id, input);
       return NextResponse.json({ ok: true, academic });
     }
 
@@ -173,13 +179,14 @@ export async function POST(
       return NextResponse.json({ ok: true, academic });
     }
 
-    if (mode === "create_stream") {
+    if (mode === "create_stream" || mode === "update_stream") {
       const campusId = optionalUuid(payload.campusId);
       const unitId = optionalUuid(payload.unitId);
       if (
         campusId === undefined ||
         unitId === undefined ||
         !validUuid(payload.termId) ||
+        (mode === "update_stream" && !validUuid(payload.streamId)) ||
         !validUuid(payload.teacherAssignmentId) ||
         !clean(payload.classLabel) ||
         !clean(payload.subjectLabel) ||
@@ -199,7 +206,7 @@ export async function POST(
         );
       }
 
-      const academic = await createKhposOpsAcademicStream(id, user.id, {
+      const input = {
         termId: payload.termId,
         campusId,
         unitId,
@@ -214,10 +221,16 @@ export async function POST(
           | "external"
           | "manual",
         schemeReference: clean(payload.schemeReference),
-        schemeVersion: clean(payload.schemeVersion) || null,
         timetableReference: clean(payload.timetableReference),
         expectedWeeks: payload.expectedWeeks,
-      });
+      };
+      const academic = mode === "update_stream" && validUuid(payload.streamId)
+        ? await updateKhposOpsAcademicDraftStream(id, user.id, payload.streamId, input)
+        : await createKhposOpsAcademicStream(id, user.id, {
+            ...input,
+            subjectCode: clean(payload.subjectCode) || null,
+            schemeVersion: clean(payload.schemeVersion) || null,
+          });
       return NextResponse.json({ ok: true, academic });
     }
 
