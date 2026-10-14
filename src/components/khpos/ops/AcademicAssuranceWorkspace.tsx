@@ -1896,18 +1896,47 @@ function CloseoutCreatePanel({
 
 function CloseoutCard({
   item,
+  canEdit,
   values,
   busyId,
   setValue,
   submit,
 }: {
   item: KhposOpsAcademicCloseout;
+  canEdit: boolean;
   values: Record<string, string>;
   busyId: string | null;
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
   const noteKey = `closeout-note-${item.id}`;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    curriculumSummary: item.curriculumSummary,
+    assessmentSummary: item.assessmentSummary,
+    learnerSupportSummary: item.learnerSupportSummary,
+    integritySummary: item.integritySummary,
+    externalExamSummary: item.externalExamSummary ?? "",
+    lessonsSummary: item.lessonsSummary,
+    carryoverReference: item.carryoverReference ?? "",
+    evidenceReference: item.evidenceReference ?? "",
+  });
+  function change(field: keyof typeof draft, next: string) {
+    setDraft((current) => ({ ...current, [field]: next }));
+  }
+  function openEditor() {
+    setDraft({
+      curriculumSummary: item.curriculumSummary,
+      assessmentSummary: item.assessmentSummary,
+      learnerSupportSummary: item.learnerSupportSummary,
+      integritySummary: item.integritySummary,
+      externalExamSummary: item.externalExamSummary ?? "",
+      lessonsSummary: item.lessonsSummary,
+      carryoverReference: item.carryoverReference ?? "",
+      evidenceReference: item.evidenceReference ?? "",
+    });
+    setEditing(true);
+  }
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1929,6 +1958,46 @@ function CloseoutCard({
         </span>
       </div>
 
+      {canEdit && <div className="mt-4">
+        <button type="button" disabled={busyId !== null} onClick={() => editing ? setEditing(false) : openEditor()}
+          className="rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
+          {editing ? "Cancel editing" : "Edit academic close-out draft"}
+        </button>
+        {editing && <div className="mt-3 space-y-3 rounded-xl border border-brand-200 bg-white p-3">
+          <p className="text-xs text-slate-600">Update your saved draft. The submitted or approved record stays protected.</p>
+          {([
+            ["curriculumSummary", "Curriculum delivery summary"],
+            ["assessmentSummary", "Assessment/exam summary"],
+            ["learnerSupportSummary", "Learner-support summary"],
+            ["integritySummary", "Integrity/correction summary"],
+            ["lessonsSummary", "Institutional learning / lessons"],
+            ["externalExamSummary", "External-exam summary (optional)"],
+          ] as const).map(([key, label]) => (
+            <label className="block text-xs font-bold" key={key}>{label}
+              <textarea value={draft[key]} onChange={(event) => change(key, event.target.value)}
+                rows={3} className="mt-1 w-full rounded-lg border border-slate-200 p-2" />
+            </label>
+          ))}
+          {([
+            ["carryoverReference", "Carry-over / escalation reference"],
+            ["evidenceReference", "Close-out evidence reference"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="block text-xs font-bold">{label}
+              <input value={draft[key]} onChange={(event) => change(key, event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 p-2" />
+            </label>
+          ))}
+          <button type="button" disabled={busyId !== null ||
+            !draft.curriculumSummary.trim() || !draft.assessmentSummary.trim() ||
+            !draft.learnerSupportSummary.trim() || !draft.integritySummary.trim() || !draft.lessonsSummary.trim()}
+            onClick={() => void (async () => {
+              const ok = await submit({ mode: "update_closeout", closeoutId: item.id, ...draft }, `edit-closeout-${item.id}`);
+              if (ok) setEditing(false);
+            })()} className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
+            Save close-out changes
+          </button>
+        </div>}
+      </div>}
       <textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
