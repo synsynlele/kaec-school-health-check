@@ -34,8 +34,9 @@ const fields: { key: Field; label: string; api: string }[] = [
   { key: "records_evidence", label: "Records and evidence", api: "recordsEvidence" },
 ];
 
-export function PolicyGovernance({ organisationId, policies, onPublished }: {
+export function PolicyGovernance({ organisationId, policies, onPublished, initialEditId = "" }: {
   organisationId: string; policies: KhposOpsPolicy[]; onPublished: (library: KhposOpsLibrary) => void;
+  initialEditId?: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [versions, setVersions] = useState<Revision[]>([]);
@@ -128,18 +129,21 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
           setBaselines(body.baselines ?? {});
           setRoleCodes(body.library?.operatingRoleCodes ?? []);
           setUserId(data.session.user.id);
+          if (initialEditId && policies.some((item) => item.id === initialEditId)) {
+            choose(initialEditId, body.versions ?? [], body.baselines ?? {});
+          }
         }
         else setError(body.error ?? "Policy revisions could not be loaded.");
       }
     }).catch(() => { if (alive) setError("Policy revisions could not be loaded."); });
     return () => { alive = false; };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, initialEditId, policies]);
 
-  function choose(id: string) {
+  function choose(id: string, availableVersions = versions, availableBaselines = baselines) {
     setSelected(id); setError(""); setMessage("");
-    const revision = versions.find((item) => item.policy_id === id && ["draft", "in_review"].includes(item.status));
+    const revision = availableVersions.find((item) => item.policy_id === id && ["draft", "in_review"].includes(item.status));
     const active = policies.find((item) => item.id === id)?.activeVersion;
-    const baseline = baselines[id];
+    const baseline = availableBaselines[id];
     const source = revision ?? active;
     const useBaseline = !source && Boolean(baseline);
     setBaselineLoaded(useBaseline);
@@ -188,6 +192,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
 
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
+    <p className="mt-2 text-sm text-slate-600">Edit your own saved draft here, or start a new version of an approved policy. Published policy text is preserved until a different authorised leader approves the revision.</p>
     <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the School Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the School Custodian approves. Approval happens here in the Institutional Library.</p>
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
@@ -200,7 +205,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished }: {
       </select>
     </label>
     {policy && <div className="mt-5 space-y-4">
-      <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : "Start a new school revision"}</p>
+      <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : policy.activeVersion ? "Approved policy: create a new revision without overwriting the published version" : "Start a new school draft"}</p>
       {baselineLoaded && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-brand-900">KAEC baseline loaded</p>
         <p className="mt-1">This registered policy did not yet have a school-owned version. Review and customise this baseline for your school before saving; it does not become policy until a different authorised leader approves it.</p>
