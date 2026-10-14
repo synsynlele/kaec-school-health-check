@@ -381,3 +381,40 @@ revoke all on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uu
 revoke all on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
 grant execute on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
+
+
+-- Preserve records and block *new work* under an archived or removed
+-- curriculum stream. This is additive: no existing triggers are dropped.
+create or replace function khpos_private.ops_reject_inactive_academic_stream()
+returns trigger language plpgsql security definer
+set search_path=public,auth,khpos_private,pg_temp as $$
+begin
+  if new.stream_id is not null and exists (
+    select 1 from public.khpos_ops_academic_delivery_streams s
+    where s.id=new.stream_id and s.archived_at is not null
+  ) then
+    raise exception 'Restore this archived or removed curriculum stream before recording new academic work.';
+  end if;
+  return new;
+end;
+$$;
+create trigger khpos_record_lifecycle_target_guard
+before insert or update on public.khpos_ops_academic_weekly_targets
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+create trigger khpos_record_lifecycle_debt_guard
+before insert or update on public.khpos_ops_academic_debt
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+create trigger khpos_record_lifecycle_observation_guard
+before insert or update on public.khpos_ops_academic_observations
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+create trigger khpos_record_lifecycle_assessment_guard
+before insert or update on public.khpos_ops_assessment_packages
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+create trigger khpos_record_lifecycle_class_session_guard
+before insert or update on public.khpos_ops_class_sessions
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+create trigger khpos_record_lifecycle_class_period_guard
+before insert or update on public.khpos_ops_class_periods
+for each row execute function khpos_private.ops_reject_inactive_academic_stream();
+revoke all on function khpos_private.ops_reject_inactive_academic_stream()
+from public,anon,authenticated;
