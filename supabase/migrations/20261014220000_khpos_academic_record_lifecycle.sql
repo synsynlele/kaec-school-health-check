@@ -297,14 +297,17 @@ begin
     if v_identity_change and v_progressed then
       raise exception 'Recorded teaching activity prevents changing class, campus, subject or teacher identity here. Use controlled redeployment/correction.';
     end if;
-    if v_identity_change then
-      v_dep := khpos_private.ops_academic_record_dependencies(
-        'public.khpos_ops_academic_delivery_streams'::regclass,p_stream_id,
-        array['khpos_ops_academic_events','khpos_ops_academic_weekly_targets']
-      );
-      if cardinality(v_dep)>0 then
-        raise exception 'Changing stream identity would affect linked records (%). Use controlled correction.',array_to_string(v_dep,', ');
-      end if;
+    if v_identity_change and (
+      exists (select 1 from public.khpos_ops_assessment_packages where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_academic_integrity_cases where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_class_sessions where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_class_periods where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_hqls_fidelity_observations where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_academic_observations where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_academic_debt where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_result_corrections where stream_id=p_stream_id)
+    ) then
+      raise exception 'Linked academic records prevent changing stream identity. Use controlled correction or redeployment.';
     end if;
     update public.khpos_ops_academic_delivery_streams
       set campus_id=v_campus,unit_id=v_unit,class_label=left(v_class,120),
