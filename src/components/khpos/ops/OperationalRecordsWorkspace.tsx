@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { RecordSortSelect, compareRecordDate, compareRecordText } from "./RecordListControls";
 import type {
   KhposOperationalRecordsWorkspace,
   OperationalChecklistRun,
@@ -244,6 +245,7 @@ export function OperationalRecordsWorkspace({
     useState<KhposOperationalRecordsWorkspace | null>(null);
   const [tab, setTab] = useState<Tab>("records");
   const [query, setQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("recent");
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -326,20 +328,29 @@ export function OperationalRecordsWorkspace({
     `${item.workTitle} ${item.processCode ?? ""} ${item.requirementLabel} ${item.toolCode} ${item.roleTitle} ${item.campusName ?? ""}`
       .toLowerCase()
       .includes(needle),
-  );
-  const checklists = workspace.checklists.filter((item) =>
+  ).sort((a, b) => sortOrder === "title"
+    ? compareRecordText(a.workTitle, b.workTitle)
+    : sortOrder === "campus"
+      ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
+      : compareRecordDate(a.submittedAt, b.submittedAt, sortOrder === "oldest" ? "asc" : "desc"));  const checklists = workspace.checklists.filter((item) =>
     !needle ||
     `${item.workTitle} ${item.processCode ?? ""} ${item.checklistCode} ${item.checklistName} ${item.roleTitle} ${item.campusName ?? ""}`
       .toLowerCase()
       .includes(needle),
-  );
-  const evidence = workspace.evidence.filter((item) =>
+  ).sort((a, b) => sortOrder === "title"
+    ? compareRecordText(a.workTitle, b.workTitle)
+    : sortOrder === "campus"
+      ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
+      : compareRecordDate(a.completedAt, b.completedAt, sortOrder === "oldest" ? "asc" : "desc"));  const evidence = workspace.evidence.filter((item) =>
     !needle ||
     `${item.workTitle} ${item.processCode ?? ""} ${item.evidenceType} ${item.roleTitle} ${item.campusName ?? ""} ${item.note ?? ""}`
       .toLowerCase()
       .includes(needle),
-  );
-
+  ).sort((a, b) => sortOrder === "title"
+    ? compareRecordText(a.workTitle, b.workTitle)
+    : sortOrder === "campus"
+      ? compareRecordText(a.campusName, b.campusName) || compareRecordText(a.workTitle, b.workTitle)
+      : compareRecordDate(a.submittedAt, b.submittedAt, sortOrder === "oldest" ? "asc" : "desc"));
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -413,15 +424,21 @@ export function OperationalRecordsWorkspace({
             ))}
           </div>
 
-          <label className="relative block min-w-0 lg:w-96">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-end lg:justify-end">
+          <label className="relative block min-w-0 sm:flex-1 lg:max-w-96">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <input
+              type="search"
+              aria-label="Search institutional records"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search process, record, role or campus"
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400"
             />
           </label>
+          <RecordSortSelect value={sortOrder} onChange={setSortOrder}
+            options={[{ value: "recent", label: "Newest first" }, { value: "oldest", label: "Oldest first" }, { value: "title", label: "Work title A–Z" }, { value: "campus", label: "Campus A–Z" }]} />
+          </div>
         </section>
 
         {tab === "records" && (
