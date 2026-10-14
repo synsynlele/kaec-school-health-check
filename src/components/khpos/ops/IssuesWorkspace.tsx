@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { issueAttentionAction } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
@@ -88,7 +89,11 @@ export function IssuesWorkspace({
   const [category, setCategory] = useState("operational");
   const [severity, setSeverity] = useState<KhposOpsIssueSeverity>("P3");
   const [dueAt, setDueAt] = useState("");
-  const issueQueue = useRecordQueue(workspace?.items ?? [], (issue) => issue.status === "closed");
+  const issueQueue = useRecordQueue(
+    workspace?.items ?? [],
+    (issue) => issue.status === "closed",
+    (issue) => issueAttentionAction(issue, Boolean(issue.dueAt && Date.parse(issue.dueAt) < Date.parse(workspace?.generatedAt ?? ""))) === null,
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -453,7 +458,7 @@ export function IssuesWorkspace({
           </section>
         )}
 
-        <RecordQueueTabs view={issueQueue.view} setView={issueQueue.setView} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} />
+        <RecordQueueTabs view={issueQueue.view} setView={issueQueue.setView} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} waitingCount={issueQueue.waitingCount} />
 
         {issueQueue.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
