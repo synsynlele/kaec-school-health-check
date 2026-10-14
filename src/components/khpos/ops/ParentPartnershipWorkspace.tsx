@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { ParentCase, ParentWorkspace } from "@/lib/khpos/ops/parents";
 
@@ -56,6 +57,12 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
   const channelOptions = channels.map((value) => ({ value, title: label(value) }));
   const cases = data?.cases || [];
   const caseQueue = useRecordQueue(cases, (item) => item.status === "closed");
+  const caseSearch = useRecordSearch(
+    caseQueue.visibleItems,
+    (item) => [item.parentReference, item.category, item.summary, item.status, item.dueDate, data?.campuses.find((campus) => campus.id === item.campusId)?.name ?? ""].join(" "),
+    (item) => item.parentReference,
+    (item) => item.dueDate,
+  );
   const openCount = cases.filter((item) => item.status !== "closed").length;
   const overdueCount = cases.filter((item) => item.status !== "closed" && item.dueDate < new Date().toISOString().slice(0, 10)).length;
 
@@ -90,8 +97,9 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
         <div className="md:col-span-2">{notes("summary", "Concern summary")}</div>
       </div>{button("Record concern", () => void act("record", { campusId: fields.campus, category: fields.category, channel: fields.channel, parentReference: fields.parentReference, learnerId: fields.learner || null, ownerAssignmentId: fields.owner, dueDate: fields.due, summary: fields.summary }), !fields.campus || !fields.category || !fields.channel || !fields.parentReference?.trim() || !fields.owner || !fields.due || !fields.summary?.trim())}</section>
       <RecordQueueTabs view={caseQueue.view} setView={caseQueue.setView} activeCount={caseQueue.activeCount} historyCount={caseQueue.historyCount} />
-      {caseQueue.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No parent concerns recorded for your campuses yet.</p>}
-      {caseQueue.visibleItems.map((item) => <section key={item.id} className="space-y-3 rounded-xl border border-slate-200 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-lg font-bold">{item.parentReference} · {label(item.category)}</h2><span className={`rounded-lg px-2 py-1 text-sm font-bold ${item.status !== "closed" && item.dueDate < new Date().toISOString().slice(0, 10) ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{label(item.status)} · Due {item.dueDate}</span></div>
+        <RecordQueueSearchControls query={caseSearch.query} setQuery={caseSearch.setQuery} sort={caseSearch.sort} setSort={caseSearch.setSort} shown={caseSearch.visibleItems.length} total={caseQueue.visibleItems.length} placeholder="Search parent reference, category or concern" />
+      {caseSearch.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No parent concerns recorded for your campuses yet.</p>}
+      {caseSearch.visibleItems.map((item) => <section key={item.id} className="space-y-3 rounded-xl border border-slate-200 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-lg font-bold">{item.parentReference} · {label(item.category)}</h2><span className={`rounded-lg px-2 py-1 text-sm font-bold ${item.status !== "closed" && item.dueDate < new Date().toISOString().slice(0, 10) ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{label(item.status)} · Due {item.dueDate}</span></div>
         <p>{item.summary}</p><p className="text-sm text-slate-600">{data.campuses.find((campus) => campus.id === item.campusId)?.name} · {data.learners.find((learner) => learner.id === item.learnerId)?.name || "No learner linked"} · Owner: {data.assignments.find((assignment) => assignment.id === item.ownerAssignmentId)?.title || "Assigned leader"}</p>
         {item.escalationReason && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Escalated: {item.escalationReason}</p>}
         {item.responseSummary && <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-900">Response: {item.responseSummary} · Evidence: {item.responseEvidence}</p>}
