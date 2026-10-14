@@ -327,7 +327,8 @@ export function MyWorkWorkspace({
       if (workSearch.sort === "name_asc") return a.title.localeCompare(b.title);
       if (workSearch.sort === "name_desc") return b.title.localeCompare(a.title);
       if (workSearch.sort === "priority") {
-        const score = (priority: string | undefined) => ({ P0: 0, P1: 1, P2: 2, critical: 0, high: 1, standard: 2, planned: 3 })[priority ?? ""] ?? 99;
+        const scores: Record<string, number> = { P0: 0, P1: 1, P2: 2, critical: 0, high: 1, standard: 2, planned: 3 };
+        const score = (priority: string | undefined) => scores[priority ?? ""] ?? 99;
         return score(a.priority) - score(b.priority);
       }
       const left = Date.parse(a.dueAt ?? "");
