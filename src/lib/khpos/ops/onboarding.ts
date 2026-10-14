@@ -42,7 +42,7 @@ export interface KhposMyOnboarding {
     onboardingDueDate: string | null;
     mandatoryOutstanding: number;
   } | null;
-  roleChoices: Array<{ id: string; title: string; primary: boolean }>;
+  roleChoices: Array<{ id: string; title: string; primary: boolean; pending: boolean }>;
   role: {
     id: string;
     code: string;
@@ -169,8 +169,17 @@ export async function getKhposMyOnboarding(
 
   if (assignmentsError) throw new KhposOnboardingError(assignmentsError.message, 500);
 
+  // A pending additional position belongs in onboarding BEFORE it becomes an active assignment.
+  // Scope it to the signed-in staff identity and school; never expose colleagues' proposals.
+  const { data: pendingPositions, error: pendingError } = staff
+    ? await client.from("khpos_ops_staff_role_positions").select("role_id")
+      .eq("organisation_id", organisationId).eq("staff_id", staff.id).eq("status", "pending")
+    : { data: [], error: null };
+  if (pendingError) throw new KhposOnboardingError(pendingError.message, 500);
+
   const ownRoleIds = [...new Set([
     ...(assignments ?? []).map((item) => item.role_id),
+    ...(pendingPositions ?? []).map((item) => item.role_id),
     ...(staff?.desired_role_id ? [staff.desired_role_id] : []),
   ])];
   const { data: schoolRoles, error: schoolRolesError } = ownRoleIds.length
@@ -181,6 +190,8 @@ export async function getKhposMyOnboarding(
   const roleChoices = (schoolRoles ?? []).map((role) => ({
     id: role.id, title: role.title,
     primary: role.id === staff?.desired_role_id || (assignments ?? []).some((item) => item.role_id === role.id && item.primary_assignment),
+    pending: (pendingPositions ?? []).some((item) => item.role_id === role.id)
+      && !(assignments ?? []).some((item) => item.role_id === role.id),
   }));
   if (selectedRoleId && !roleChoices.some((role) => role.id === selectedRoleId)) {
     throw new KhposOnboardingError("Choose one of your positions in this school.", 403);
