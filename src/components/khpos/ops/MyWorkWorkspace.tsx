@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
+import { RecordQueueSearchControls, useRecordSearch } from "@/components/khpos/ops/RecordQueueSearch";
 import { WorkRecordRequirementCard } from "@/components/khpos/ops/WorkRecordRequirementCard";
 import type { KhposOpsLibrary } from "@/lib/khpos/ops/library";
 import type { KhposAttentionSnapshot } from "@/lib/khpos/ops/attention";
@@ -58,12 +59,19 @@ export function MyWorkWorkspace({
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
   const [attention, setAttention] = useState<KhposAttentionSnapshot | null>(null);
+  const workSearch = useRecordSearch(
+    work?.items ?? [],
+    (item) => [item.title, item.description ?? "", item.roleTitle, item.campusName ?? "", item.unitName ?? "", item.processCode ?? "", item.status, item.priority].join(" "),
+    (item) => item.title,
+    (item) => item.dueAt,
+    (item) => ({ critical: 1, high: 2, standard: 3, planned: 4 })[item.priority],
+  );
 
   useEffect(() => {
-    const showAll = () => setRoleFilter("");
+    const showAll = () => { setRoleFilter(""); workSearch.setQuery(""); };
     window.addEventListener("hashchange", showAll);
     return () => window.removeEventListener("hashchange", showAll);
-  }, []);
+  }, [workSearch.setQuery]);
 
   useEffect(() => {
     if (!roleFilter) focusKhposRecord(window.location.hash, document);
@@ -310,8 +318,31 @@ export function MyWorkWorkspace({
   }
 
   const roleTitles = [...new Set([...work.items.map((item) => item.roleTitle), ...work.availableProcesses.map((process) => process.ownerRoleTitle)])].sort();
-  const visibleItems = work.items.filter((item) => !roleFilter || item.roleTitle === roleFilter);
-  const availableProcesses = work.availableProcesses.filter((process) => !roleFilter || process.ownerRoleTitle === roleFilter);
+  const searchTerms = workSearch.query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+  const matchesSearch = (content: string) => searchTerms.every((term) => content.toLocaleLowerCase().includes(term));
+  const visibleItems = workSearch.visibleItems.filter((item) => !roleFilter || item.roleTitle === roleFilter);
+  const sortBySelection = <T extends { title: string; priority?: string; dueAt?: string | null }>(items: T[]): T[] => {
+    if (workSearch.sort === "original") return items;
+    return items.sort((a, b) => {
+      if (workSearch.sort === "name_asc") return a.title.localeCompare(b.title);
+      if (workSearch.sort === "name_desc") return b.title.localeCompare(a.title);
+      if (workSearch.sort === "priority") {
+        const score = (priority: string | undefined) => ({ P0: 0, P1: 1, P2: 2, critical: 0, high: 1, standard: 2, planned: 3 })[priority ?? ""] ?? 99;
+        return score(a.priority) - score(b.priority);
+      }
+      const left = Date.parse(a.dueAt ?? "");
+      const right = Date.parse(b.dueAt ?? "");
+      if (!Number.isFinite(left)) return Number.isFinite(right) ? 1 : 0;
+      if (!Number.isFinite(right)) return -1;
+      return (left - right) * (workSearch.sort === "date_asc" ? 1 : -1);
+    });
+  };
+  const availableProcesses = sortBySelection(work.availableProcesses
+    .filter((process) => (!roleFilter || process.ownerRoleTitle === roleFilter) &&
+      matchesSearch([process.title, process.code, process.ownerRoleTitle, process.campusName ?? "", process.unitName ?? "", process.criticality].join(" ")))
+    .map((process) => ({ ...process, priority: process.criticality })));
+  const verificationItems = sortBySelection(work.verificationQueue
+    .filter((item) => matchesSearch([item.title, item.roleTitle, item.processCode ?? "", item.campusName ?? "", item.status].join(" "))));
   const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
   const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
   const completedItems = visibleItems.filter((item) => item.status === "completed");
@@ -444,12 +475,23 @@ export function MyWorkWorkspace({
         )}
 
 
+        <RecordQueueSearchControls
+          query={workSearch.query}
+          setQuery={workSearch.setQuery}
+          sort={workSearch.sort}
+          setSort={workSearch.setSort}
+          shown={visibleItems.length + availableProcesses.length + verificationItems.length}
+          total={work.items.length + work.availableProcesses.length + work.verificationQueue.length}
+          placeholder="Search work, process, role, campus or status"
+          hasPriority
+        />
         {roleTitles.length > 1 && <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold">My work by position
           <select className="mt-2 block w-full rounded-xl border p-3" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
             <option value="">All my work</option>{roleTitles.map((title) => <option key={title} value={title}>{title}</option>)}
           </select><span className="mt-2 block font-normal text-slate-600">Reviews for other staff remain visible below.</span>
         </label>}
-        {roleFilter && !openItems.length && !awaitingItems.length && !completedItems.length && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
+        {roleFilter && !openItems.length && !awaitingItems.length && !completedItems.length && !workSearch.query.trim() && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
+        {workSearch.query.trim() && !visibleItems.length && !availableProcesses.length && !verificationItems.length && <p role="status" className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No items match your search. Clear the search or change position.</p>}
         {availableProcesses.length > 0 && (
           <section className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -545,7 +587,7 @@ export function MyWorkWorkspace({
           </section>
         )}
 
-        {work.verificationQueue.length > 0 && (
+        {verificationItems.length > 0 && (
           <section className="space-y-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
@@ -560,7 +602,7 @@ export function MyWorkWorkspace({
               </p>
             </div>
 
-            {work.verificationQueue.map((item) => {
+            {verificationItems.map((item) => {
               const reviewNote = reviewNotes[item.id] ?? "";
               const isBusy = busyId === item.id;
 
@@ -732,7 +774,7 @@ export function MyWorkWorkspace({
           </section>
         )}
 
-        {openItems.length === 0 && work.verificationQueue.length === 0 ? (
+        {openItems.length === 0 && verificationItems.length === 0 && !workSearch.query.trim() ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
             <h2 className="mt-4 text-2xl font-black">Nothing needs your action right now.</h2>
