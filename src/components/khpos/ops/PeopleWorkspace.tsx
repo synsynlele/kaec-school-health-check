@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordListControls, useRecordListControls, compareRecordDate, compareRecordPriority, compareRecordText } from "./RecordListControls";
 import Link from "next/link";
 import { StaffPositionsPanel } from "./StaffPositionsPanel";
 import { useRouter } from "next/navigation";
@@ -88,6 +89,19 @@ export function PeopleWorkspace({
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [itemEvidence, setItemEvidence] = useState<Record<string, string>>({});
   const staffQueue = useRecordQueue(workspace?.items ?? [], (staff) => staff.status === "ended");
+
+  const staffList = useRecordListControls(
+    staffQueue.visibleItems,
+    (staff) => [staff.displayName, staff.reference, staff.accountEmail, staff.role.title, staff.campus?.name, staff.unit?.name, staff.status, staff.employmentType].filter(Boolean).join(" "),
+    [
+      { value: "name", label: "Staff name A–Z", compare: (a, b) => compareRecordText(a.displayName, b.displayName) },
+      { value: "start", label: "Most recent start", compare: (a, b) => compareRecordDate(a.startDate, b.startDate, "desc") },
+      { value: "role", label: "Role A–Z", compare: (a, b) => compareRecordText(a.role.title, b.role.title) || compareRecordText(a.displayName, b.displayName) },
+      { value: "onboarding", label: "Onboarding due soon", compare: (a, b) => compareRecordDate(a.onboardingDueDate, b.onboardingDueDate) },
+    ],
+    "name",
+  );
+
 
   async function token() {
     if (!supabase) return null;
@@ -662,7 +676,8 @@ export function PeopleWorkspace({
         )}
 
         <RecordQueueTabs view={staffQueue.view} setView={staffQueue.setView} activeCount={staffQueue.activeCount} historyCount={staffQueue.historyCount} activeLabel="Current staff" />
-            {staffQueue.visibleItems.length === 0 ? (
+        <RecordListControls controls={staffList} placeholder="Search staff name, email, role or campus" />
+            {staffList.visibleItems.length === 0 ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <UsersRound className="mx-auto size-10 text-brand-700" />
             <h2 className="mt-4 text-2xl font-black">
@@ -675,7 +690,7 @@ export function PeopleWorkspace({
           </section>
         ) : (
           <section className="space-y-5">
-            {staffQueue.visibleItems.map((staff) => {
+            {staffList.visibleItems.map((staff) => {
               const blockers = [
                 !staff.accountLinked ? "KHP-OS account not linked" : null,
                 staff.accountLinked && !staff.accessMembershipActive
