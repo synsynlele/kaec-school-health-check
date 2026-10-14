@@ -257,6 +257,29 @@ export async function createKhposOpsAcademicTerm(
   return refresh(organisationId, userId);
 }
 
+export async function updateKhposOpsAcademicDraftTerm(
+  organisationId: string,
+  userId: string,
+  termId: string,
+  input: {
+    campusId?: string | null;
+    sessionLabel: string;
+    termCode: string;
+    termName: string;
+    startDate: string;
+    endDate: string;
+  },
+) {
+  const { error } = await admin().rpc("khpos_ops_update_academic_draft_term_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+    p_term_id: termId,
+    p_input: input,
+  });
+  if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
+  return refresh(organisationId, userId);
+}
+
 export async function actOnKhposOpsAcademicTerm(
   organisationId: string,
   userId: string,
@@ -314,6 +337,33 @@ export async function createKhposOpsAcademicStream(
       p_expected_weeks: input.expectedWeeks,
     },
   );
+  if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
+  return refresh(organisationId, userId);
+}
+
+export async function updateKhposOpsAcademicDraftStream(
+  organisationId: string,
+  userId: string,
+  streamId: string,
+  input: {
+    campusId?: string | null;
+    unitId?: string | null;
+    classLabel: string;
+    sectionLabel?: string | null;
+    subjectLabel: string;
+    teacherAssignmentId: string;
+    schemeSource: "KSI" | "SIS" | "external" | "manual";
+    schemeReference: string;
+    timetableReference: string;
+    expectedWeeks: number;
+  },
+) {
+  const { error } = await admin().rpc("khpos_ops_update_academic_draft_stream_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+    p_stream_id: streamId,
+    p_input: input,
+  });
   if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
   return refresh(organisationId, userId);
 }
