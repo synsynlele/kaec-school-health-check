@@ -104,6 +104,29 @@ jobs:
                 --signingKeyAlias=khpos-lite
             '
 
+      - name: Verify Android target SDK for initial Google Play listing
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "${PWD}/android-lite/generated-production:/workspace" \
+            --entrypoint bash \
+            ghcr.io/googlechromelabs/bubblewrap:1.25.0 \
+            -lc '
+              set -euo pipefail
+              SDK_ROOT=/root/.bubblewrap/android_sdk
+              AAPT="$(find "$SDK_ROOT/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+              test -n "$AAPT" || { echo "Android aapt not found; cannot certify Play target SDK."; exit 1; }
+              INFO="$("$AAPT" dump badging /workspace/app-release-signed.apk)"
+              TARGET="$(printf "%s\\n" "$INFO" | sed -n "s/.*targetSdkVersion:\x27\\([0-9][0-9]*\\)\x27.*/\\1/p" | head -n 1)"
+              test -n "$TARGET" || { echo "No target SDK found in signed APK."; exit 1; }
+              echo "Signed APK targetSdkVersion=$TARGET"
+              if [ "$TARGET" -lt 36 ]; then
+                echo "Google Play first listing requires target SDK 36 or higher. Refusing to publish."
+                exit 1
+              fi
+            '
+
       - name: Package release artifacts
         shell: bash
         run: |
