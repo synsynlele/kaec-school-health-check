@@ -8,17 +8,20 @@ import { focusKhposRecord } from "@/lib/khpos/ops/record-links";
  * Keep all records returned by the scoped server API; show only unfinished work
  * by default, with a separate History view for completed/closed records.
  */
-export type RecordQueueView = "active" | "history";
+export type RecordQueueView = "active" | "waiting" | "history";
 
 export function useRecordQueue<T extends { id: string }>(
   records: readonly T[],
   isHistory: (record: T) => boolean,
+  isWaiting?: (record: T) => boolean,
 ) {
   const [view, setView] = useState<RecordQueueView>("active");
-  const activeItems = records.filter((record) => !isHistory(record));
   const historyItems = records.filter(isHistory);
+  const waitingItems = records.filter((record) => !isHistory(record) && Boolean(isWaiting?.(record)));
+  const activeItems = records.filter((record) => !isHistory(record) && !isWaiting?.(record));
   // A notification/deep link to an archived record must never become a dead link.
   const historicalIds = historyItems.map((record) => record.id).join("|");
+  const waitingIds = waitingItems.map((record) => record.id).join("|");
 
   useEffect(() => {
     const revealLinkedRecord = () => {
@@ -26,26 +29,29 @@ export function useRecordQueue<T extends { id: string }>(
       if (!hash) return;
       if (historicalIds.split("|").some((id) => id && (hash === id || hash.endsWith(`-${id}`)))) {
         setView("history");
+      } else if (waitingIds.split("|").some((id) => id && (hash === id || hash.endsWith(`-${id}`)))) {
+        setView("waiting");
       }
     };
     revealLinkedRecord();
     window.addEventListener("hashchange", revealLinkedRecord);
     return () => window.removeEventListener("hashchange", revealLinkedRecord);
-  }, [historicalIds]);
+  }, [historicalIds, waitingIds]);
 
   useEffect(() => {
-    if (view !== "history" || !window.location.hash) return;
+    if (view === "active" || !window.location.hash) return;
     const frame = window.requestAnimationFrame(() =>
       focusKhposRecord(window.location.hash, document),
     );
     return () => window.cancelAnimationFrame(frame);
-  }, [view, historicalIds]);
+  }, [view, historicalIds, waitingIds]);
 
   return {
     view,
     setView,
-    visibleItems: view === "active" ? activeItems : historyItems,
+    visibleItems: view === "active" ? activeItems : view === "waiting" ? waitingItems : historyItems,
     activeCount: activeItems.length,
+    waitingCount: waitingItems.length,
     historyCount: historyItems.length,
   };
 }
@@ -55,12 +61,14 @@ export function RecordQueueTabs({
   setView,
   activeCount,
   historyCount,
+  waitingCount = 0,
   activeLabel = "Needs attention",
 }: {
   view: RecordQueueView;
   setView: (view: RecordQueueView) => void;
   activeCount: number;
   historyCount: number;
+  waitingCount?: number;
   activeLabel?: string;
 }) {
   return (
@@ -68,6 +76,7 @@ export function RecordQueueTabs({
       <div className="flex flex-wrap gap-2" role="group" aria-label="Choose record status">
         {([
           ["active", activeLabel, activeCount],
+          ...(waitingCount > 0 || view === "waiting" ? [["waiting", "Waiting on others", waitingCount] as const] : []),
           ["history", "History", historyCount],
         ] as const).map(([mode, title, count]) => (
           <button key={mode} type="button" aria-pressed={view === mode}
