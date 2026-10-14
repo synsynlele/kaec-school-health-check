@@ -262,8 +262,8 @@ export function MyOnboardingWorkspace({
         <StaffPositionsPanel organisationId={organisationId} />
         {data.roleChoices.length > 1 && <label className="block rounded-2xl border bg-white p-4 text-sm font-semibold">View responsibilities for
           <select className="mt-2 block w-full rounded-xl border p-3" disabled={!!busy} value={selectedRoleId || data.role?.id || ""} onChange={(event) => { setSelectedRoleId(event.target.value); setData(null); setError(""); }}>
-            {data.roleChoices.map((role) => <option key={role.id} value={role.id}>{role.title}{role.primary ? " · Primary" : ""}</option>)}
-          </select><span className="mt-2 block font-normal text-slate-600">The primary appointment checklist and Core practice are shared. Duties and policies below belong to the selected position.</span>
+            {data.roleChoices.map((role) => <option key={role.id} value={role.id}>{role.title}{role.primary ? " · Primary" : role.pending ? " · Awaiting activation" : ""}</option>)}
+          </select><span className="mt-2 block font-normal text-slate-600">Core practice and the primary appointment checklist are shared. Select a pending additional position to review its duties and policies before it is activated.</span>
         </label>}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
@@ -277,7 +277,7 @@ export function MyOnboardingWorkspace({
               <UsersRound className="size-6 text-brand-700" />
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
-                  Active Role Charter
+                  {data.roleChoices.some((choice) => choice.id === data.role?.id && choice.pending) ? "Pending position charter" : "Active role charter"}
                 </p>
                 <h2 className="mt-1 text-2xl font-black">
                   {data.role?.title}
