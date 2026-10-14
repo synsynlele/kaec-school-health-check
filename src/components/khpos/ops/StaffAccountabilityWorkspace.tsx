@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -87,6 +88,7 @@ export function StaffAccountabilityWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const accountabilityQueue = useRecordQueue(workspace?.cases ?? [], (item) => ["closed", "cancelled", "withdrawn"].includes(item.status));
 
   const [recognitionStaffId, setRecognitionStaffId] = useState("");
   const [recognitionCategory, setRecognitionCategory] = useState("initiative");
@@ -865,7 +867,8 @@ export function StaffAccountabilityWorkspace({
             until a formal response is requested.
           </p>
 
-          {workspace.cases.length === 0 ? (
+          <RecordQueueTabs view={accountabilityQueue.view} setView={accountabilityQueue.setView} activeCount={accountabilityQueue.activeCount} historyCount={accountabilityQueue.historyCount} activeLabel="Needs attention" />
+            {accountabilityQueue.visibleItems.length === 0 ? (
             <div className="mt-4 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
               <UsersRound className="mx-auto size-9 text-brand-700" />
               <p className="mt-3 text-sm text-slate-500">
@@ -874,7 +877,7 @@ export function StaffAccountabilityWorkspace({
             </div>
           ) : (
             <div className="mt-5 space-y-5">
-              {workspace.cases.map((review) => {
+              {accountabilityQueue.visibleItems.map((review) => {
                 const responseComplete = ["submitted", "no_response_recorded"].includes(
                   review.responseState,
                 );
