@@ -44,7 +44,7 @@ function statusClass(status: string) {
   ) {
     return "border-amber-200 bg-amber-50 text-amber-900";
   }
-  if (status === "cancelled") {
+  if (status === "cancelled" || status === "archived") {
     return "border-slate-200 bg-slate-100 text-slate-600";
   }
   return "border-violet-200 bg-violet-50 text-violet-800";
@@ -144,7 +144,7 @@ export function AcademicDeliveryWorkspace({
       setStreamTermId(
         (current) =>
           current ||
-          next.terms.find((term) => !["closed", "cancelled"].includes(term.status))
+          next.terms.find((term) => !["closed", "cancelled", "archived"].includes(term.status))
             ?.id ||
           "",
       );
