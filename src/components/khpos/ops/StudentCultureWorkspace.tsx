@@ -13,8 +13,8 @@ const clean = (value: string) => value.replaceAll("_", " ");
 
 export function StudentCultureWorkspace({ organisationId }: { organisationId: string }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const cultureQueue = useRecordQueue(data?.cases ?? [], (item) => ["closed", "verified"].includes(item.status));
   const [data, setData] = useState<CultureWorkspace | null>(null);
+  const cultureQueue = useRecordQueue(data?.cases ?? [], (item) => ["closed", "verified"].includes(item.status));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
