@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -70,6 +71,9 @@ export function RecruitmentWorkspace({
   const [values, setValues] = useState<Record<string, string>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
   const [selects, setSelects] = useState<Record<string, string>>({});
+  const workforceQueue = useRecordQueue(workspace?.workforceRequests ?? [], (item) => ["declined", "filled", "cancelled"].includes(item.status));
+  const vacancyQueue = useRecordQueue(workspace?.vacancies ?? [], (item) => ["closed", "filled", "cancelled"].includes(item.status));
+  const applicationsQueue = useRecordQueue(workspace?.applications ?? [], (item) => ["appointed", "declined", "withdrawn"].includes(item.stage));
 
   async function token() {
     if (!supabase) return null;
@@ -426,10 +430,11 @@ export function RecruitmentWorkspace({
                     Need must be approved before recruitment opens
                   </h2>
                 </div>
-                {workspace.workforceRequests.length === 0 ? (
+                <RecordQueueTabs view={workforceQueue.view} setView={workforceQueue.setView} activeCount={workforceQueue.activeCount} historyCount={workforceQueue.historyCount} />
+                {workforceQueue.visibleItems.length === 0 ? (
                   <Empty text="No workforce request has been created." />
                 ) : (
-                  workspace.workforceRequests.map((request) => (
+                  workforceQueue.visibleItems.map((request) => (
                     <WorkforceCard
                       key={request.id}
                       request={request}
@@ -453,10 +458,11 @@ export function RecruitmentWorkspace({
                     Role Charter + complete brief before publication
                   </h2>
                 </div>
-                {workspace.vacancies.length === 0 ? (
+                <RecordQueueTabs view={vacancyQueue.view} setView={vacancyQueue.setView} activeCount={vacancyQueue.activeCount} historyCount={vacancyQueue.historyCount} />
+                {vacancyQueue.visibleItems.length === 0 ? (
                   <Empty text="No vacancy has been created from an approved need." />
                 ) : (
-                  workspace.vacancies.map((vacancy) => (
+                  vacancyQueue.visibleItems.map((vacancy) => (
                     <VacancyCard
                       key={vacancy.id}
                       vacancy={vacancy}
@@ -490,10 +496,11 @@ export function RecruitmentWorkspace({
                 Evidence → conditional selection → clearance → appointment
               </h2>
             </div>
-            {workspace.applications.length === 0 ? (
+            <RecordQueueTabs view={applicationsQueue.view} setView={applicationsQueue.setView} activeCount={applicationsQueue.activeCount} historyCount={applicationsQueue.historyCount} />
+            {applicationsQueue.visibleItems.length === 0 ? (
               <Empty text="No candidate application is visible in your scope." />
             ) : (
-              workspace.applications.map((application) => (
+              applicationsQueue.visibleItems.map((application) => (
                 <ApplicationCard
                   key={application.id}
                   application={application}

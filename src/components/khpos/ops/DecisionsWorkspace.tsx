@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
@@ -123,6 +125,18 @@ export function DecisionsWorkspace({
     >
   >({});
   const [outcomeNote, setOutcomeNote] = useState<Record<string, string>>({});
+  const decisionQueue = useRecordQueue(
+    workspace?.items ?? [],
+    (decision) =>
+      ["closed", "rejected", "withdrawn"].includes(decision.status) ||
+      (decision.status === "approved" && !decision.actionRequired),
+    (decision) => {
+      if (decision.status === "implemented") return !(decision.isRequester || decision.isAuthority);
+      if (decision.status === "returned") return !decision.isRequester;
+      const next = decisionAttentionActions(decision);
+      return !next.approval && !next.implementation;
+    },
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -922,19 +936,21 @@ export function DecisionsWorkspace({
           </section>
         )}
 
-        {workspace.items.length === 0 ? (
+        <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
+
+        {decisionQueue.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <ShieldCheck className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">No decisions to show.</h2>
+            <h2 className="mt-4 text-2xl font-black">{decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              This is deliberate. KHP-OS does not manufacture an approval queue.
+              Finished decisions move to History. Approved implementation work is tracked in Today.
               Material decisions appear here when a real role requests or records
               one.
             </p>
           </section>
         ) : (
           <section className="space-y-4">
-            {workspace.items.map((decision) => {
+            {decisionQueue.visibleItems.map((decision) => {
               const note = notes[decision.id] ?? "";
               const busy = busyId === decision.id;
               const actionRequired = approveAction[decision.id] ?? false;

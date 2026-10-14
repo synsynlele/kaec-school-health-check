@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Terms of Service",
+  title: "Terms of Service | KSHC & KHP-OS",
   description: "The terms that govern use of the KAEC School Health Check platform.",
 };
 
@@ -14,8 +14,8 @@ const SECTIONS = [
   {
     title: "The service",
     body: [
-      "KAEC School Health Check is a free, AI-powered self-assessment for schools. You answer a structured questionnaire; the platform generates an indicative health report with scores, analysis and a suggested improvement plan.",
-      "The service is provided as-is, free of charge, with a free account and no required subscription.",
+      "KAEC School Health Check (KSHC) provides a school self-assessment and indicative report. KHP-OS provides governed school operating workflows to approved partner schools and their authorised staff.",
+      "KSHC diagnostics are free. KHP-OS requires school partnership approval and may be governed by separate school subscription or commercial agreements.",
     ],
   },
   {
@@ -26,10 +26,18 @@ const SECTIONS = [
     ],
   },
   {
+    title: "KHP-OS school obligations and records",
+    body: [
+      "Partner schools remain responsible for accurate, lawful, role-scoped learner, staff, parent and safeguarding records. Users must follow institutional permissions, preserve confidentiality and never attempt to bypass school restrictions.",
+      "Completed workflow items stay in a school audit trail, subject to retention and approved deletion policies. Account and personal-data deletion can be requested through the public deletion-request page.",
+      "Child-protection and medical emergencies require direct human action and the designated emergency or safeguarding route. KHP-OS is not an emergency dispatch system.",
+    ],
+  },
+  {
     title: "Acceptable use",
     body: [
       "You agree to provide truthful information, to use the service for lawful purposes, and not to attempt to disrupt, scrape at abusive volume, or reverse-engineer the platform. We may rate-limit or block usage that degrades the service for others.",
-      "Reports and downloads require the verified assessment-contact account. Share a downloaded report only with people you trust.",
+      "Reports require a verified authorised account. Share school reports and operating records only with people entitled to view them.",
     ],
   },
   {
