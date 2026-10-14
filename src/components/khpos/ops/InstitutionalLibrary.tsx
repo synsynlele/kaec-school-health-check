@@ -119,15 +119,18 @@ function PolicyDocument({
   policy,
   busyVersionId,
   onAcknowledge,
+  initiallyOpen,
 }: {
   policy: KhposOpsPolicy;
   busyVersionId: string | null;
   onAcknowledge: (policy: KhposOpsPolicy) => void;
+  initiallyOpen: boolean;
 }) {
+  const [expanded, setExpanded] = useState(initiallyOpen);
   const version = policy.activeVersion;
 
   return (
-    <details className="group rounded-[28px] border border-slate-200 bg-white shadow-sm open:shadow-md">
+    <details open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)} className="group rounded-[28px] border border-slate-200 bg-white shadow-sm open:shadow-md">
       <summary className="cursor-pointer list-none p-6 sm:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
@@ -533,6 +536,7 @@ export function InstitutionalLibrary({
                 policy={policy}
                 busyVersionId={busyVersionId}
                 onAcknowledge={acknowledge}
+                initiallyOpen={initialQuery.trim().toLowerCase() === policy.code.toLowerCase()}
               />
             ))}
           </section>
