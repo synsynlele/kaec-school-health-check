@@ -30,7 +30,7 @@ for (const [page, queue, list] of recordPages) {
   assert.ok(s.includes(list + ".visibleItems"), page + " must render filtered results");
   if (queue) {
     assert.ok(s.includes("useRecordQueue("), page + " must retain active/history grouping");
-    assert.ok(s.indexOf(queue + ".visibleItems") < s.indexOf("useRecordListControls("), page + " must search after queue scoping");
+    assert.ok(s.includes("useRecordListControls(\n    " + queue + ".visibleItems"), page + " must filter the selected queue only");
   }
 }
 for (const page of ["InstitutionalLibrary", "OperationalRecordsWorkspace"]) {
