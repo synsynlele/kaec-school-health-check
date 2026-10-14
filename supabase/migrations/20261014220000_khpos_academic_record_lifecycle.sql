@@ -1,12 +1,14 @@
--- KHP-OS controlled academic-record lifecycle.
--- Never cascade-delete school work: delete is restricted to records with zero
--- referencing business records. The independent audit log survives deletion.
+-- KHP-OS safe, non-destructive academic record lifecycle.
+-- Only ADD columns and CREATE functions. No dropping constraints, no row deletion.
+-- "Remove" hides an UNUSED record but leaves it restorable and fully audited.
+-- Existing O12 status CHECK constraints remain unchanged.
 
 alter table public.khpos_ops_academic_terms
   add column if not exists archived_at timestamptz,
   add column if not exists archived_by uuid references auth.users(id) on delete set null,
   add column if not exists archive_reason text,
   add column if not exists status_before_archive text,
+  add column if not exists removed_at timestamptz,
   add column if not exists revision_number integer not null default 1;
 
 alter table public.khpos_ops_academic_delivery_streams
@@ -14,19 +16,8 @@ alter table public.khpos_ops_academic_delivery_streams
   add column if not exists archived_by uuid references auth.users(id) on delete set null,
   add column if not exists archive_reason text,
   add column if not exists status_before_archive text,
+  add column if not exists removed_at timestamptz,
   add column if not exists revision_number integer not null default 1;
-
-alter table public.khpos_ops_academic_terms
-  drop constraint if exists khpos_ops_academic_terms_status_check;
-alter table public.khpos_ops_academic_terms
-  add constraint khpos_ops_academic_terms_status_check
-  check (status in ('draft','active','closed','cancelled','archived'));
-
-alter table public.khpos_ops_academic_delivery_streams
-  drop constraint if exists khpos_ops_academic_delivery_streams_status_check;
-alter table public.khpos_ops_academic_delivery_streams
-  add constraint khpos_ops_academic_delivery_streams_status_check
-  check (status in ('draft','approved','active','closed','cancelled','archived'));
 
 create table if not exists public.khpos_ops_academic_record_audit (
   id uuid primary key default gen_random_uuid(),
@@ -34,7 +25,7 @@ create table if not exists public.khpos_ops_academic_record_audit (
   record_kind text not null check (record_kind in ('term','stream')),
   record_id uuid not null,
   actor_user_id uuid references auth.users(id) on delete set null,
-  action text not null check (action in ('edit','archive','restore','delete')),
+  action text not null check (action in ('edit','archive','restore','remove')),
   reason text not null,
   before_state jsonb,
   after_state jsonb,
@@ -45,41 +36,6 @@ create index if not exists idx_khpos_academic_record_audit_record
 alter table public.khpos_ops_academic_record_audit enable row level security;
 revoke all on public.khpos_ops_academic_record_audit from public,anon,authenticated;
 grant select,insert on public.khpos_ops_academic_record_audit to service_role;
-
--- Inspect the ACTUAL FK graph, rather than hardcoding one subset of
--- academic dependents. This protects skills, assessments, portfolios etc.
-create or replace function khpos_private.ops_academic_record_dependencies(
-  p_parent regclass, p_record_id uuid, p_skip_tables text[] default '{}'::text[]
-) returns text[] language plpgsql security definer
-set search_path=pg_catalog,public,khpos_private,pg_temp as $$
-declare
-  v_fk record;
-  v_found boolean;
-  v_blocking text[] := '{}'::text[];
-begin
-  for v_fk in
-    select ns.nspname as schema_name, cls.relname as table_name,
-      att.attname as column_name, cardinality(fk.conkey) as key_size
-    from pg_catalog.pg_constraint fk
-    join pg_catalog.pg_class cls on cls.oid=fk.conrelid
-    join pg_catalog.pg_namespace ns on ns.oid=cls.relnamespace
-    left join pg_catalog.pg_attribute att
-      on att.attrelid=cls.oid and att.attnum=fk.conkey[1]
-    where fk.contype='f' and fk.confrelid=p_parent
-      and ns.nspname='public'
-  loop
-    if v_fk.key_size<>1 or v_fk.column_name is null then
-      raise exception 'A compound relationship prevents safe deletion. Contact system administration.';
-    end if;
-    if v_fk.table_name=any(p_skip_tables) then continue; end if;
-    execute format('select exists (select 1 from %I.%I where %I=$1)',
-      v_fk.schema_name,v_fk.table_name,v_fk.column_name)
-      into v_found using p_record_id;
-    if v_found then v_blocking := array_append(v_blocking,v_fk.table_name); end if;
-  end loop;
-  return v_blocking;
-end;
-$$;
 
 create or replace function khpos_private.ops_academic_manage_authority(
   p_actor_user_id uuid,p_organisation_id uuid
@@ -94,6 +50,19 @@ set search_path=public,auth,khpos_private,pg_temp as $$
     );
 $$;
 
+-- Include school-level custodian in academic leadership permission without
+-- granting cross-school authority.
+create or replace function khpos_private.ops_academic_can_plan(
+  p_actor_user_id uuid,p_organisation_id uuid
+) returns boolean language sql stable security definer
+set search_path=public,auth,khpos_private,pg_temp as $$
+  select khpos_private.ops_academic_member_role(p_actor_user_id,p_organisation_id)='executive'
+    or khpos_private.ops_academic_actor_has_role(
+      p_actor_user_id,p_organisation_id,
+      array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']
+    );
+$$;
+
 create or replace function public.khpos_ops_manage_academic_term_server(
   p_actor_user_id uuid,p_organisation_id uuid,p_term_id uuid,
   p_action text,p_reason text,p_input jsonb default '{}'::jsonb
@@ -104,7 +73,6 @@ declare
   v_before jsonb;
   v_after jsonb;
   v_reason text := left(btrim(coalesce(p_reason,'')),2000);
-  v_dep text[];
   v_campus uuid;
   v_session text;
   v_code text;
@@ -114,19 +82,21 @@ declare
   v_undo_status text;
 begin
   if not khpos_private.ops_academic_manage_authority(p_actor_user_id,p_organisation_id) then
-    raise exception 'Only authorised academic leadership or the School Custodian can manage academic records.';
+    raise exception 'Only authorised school academic leadership can manage academic records.';
   end if;
-  if p_action not in ('edit','archive','restore','delete') then
+  if p_action not in ('edit','archive','restore','remove') then
     raise exception 'Unsupported academic term management action.';
   end if;
   select * into v_term from public.khpos_ops_academic_terms
     where id=p_term_id and organisation_id=p_organisation_id for update;
   if v_term.id is null then raise exception 'Academic term not found in this school.'; end if;
-  if p_action='edit' and v_term.status='draft' and v_reason='' then v_reason := 'Routine draft correction'; end if;
-  if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters for the audit record.'; end if;
+  if p_action='edit' and v_term.status='draft' and v_reason='' then
+    v_reason := 'Routine academic term draft correction';
+  end if;
+  if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters.'; end if;
   v_before := to_jsonb(v_term);
   if p_action='edit' then
-    if v_term.status in ('archived','closed','cancelled') then
+    if v_term.status in ('closed','cancelled') or v_term.archived_at is not null then
       raise exception 'This term is archived or finalised. Restore an archived term, or create a controlled new term.';
     end if;
     v_campus := nullif(p_input->>'campusId','')::uuid;
@@ -169,78 +139,60 @@ begin
       where id=p_term_id;
 
   elsif p_action='archive' then
-    if v_term.status='archived' then raise exception 'Academic term is already archived.'; end if;
+    if v_term.archived_at is not null then raise exception 'Term is already archived.'; end if;
     if exists (
       select 1 from public.khpos_ops_academic_delivery_streams
-      where term_id=p_term_id and status not in ('archived','cancelled','closed')
-    ) then
-      raise exception 'Archive or complete the linked curriculum streams before archiving this term.';
-    end if;
+      where term_id=p_term_id and status in ('draft','approved','active')
+        and archived_at is null and removed_at is null
+    ) then raise exception 'Archive, remove or complete its active curriculum streams first.'; end if;
     if exists (
-      select 1 from public.khpos_ops_assessment_cycles ac
-      where ac.term_id=p_term_id and ac.status not in ('closed','cancelled')
-    ) then
-      raise exception 'Finish or cancel linked assessment cycles before archiving this term.';
-    end if;
-    -- Completed terms retain historical evidence when archived.
-    -- For draft/active terms, protect any other live-linked workflows.
-    if v_term.status in ('draft','active') then
-      v_dep := khpos_private.ops_academic_record_dependencies(
-        'public.khpos_ops_academic_terms'::regclass,p_term_id,
-        array['khpos_ops_academic_events','khpos_ops_academic_delivery_streams']
-      );
-      if cardinality(v_dep)>0 then
-        raise exception 'This term has linked school work (%). Complete those workflows or use formal academic close-out before archiving.',array_to_string(v_dep,', ');
-      end if;
-    end if;
+      select 1 from public.khpos_ops_assessment_cycles
+      where term_id=p_term_id and status not in ('closed','cancelled')
+    ) then raise exception 'Finish outstanding assessment cycles before archiving this term.'; end if;
+    if v_term.status='active' and exists (
+      select 1 from public.khpos_ops_project_cycles where term_id=p_term_id
+    ) then raise exception 'An active project cycle belongs to this term. Complete it before archiving.'; end if;
     update public.khpos_ops_academic_terms
-      set status_before_archive=v_term.status,status='archived',
+      set status_before_archive=v_term.status,status='cancelled',
         archived_at=now(),archived_by=p_actor_user_id,
         archive_reason=v_reason,updated_at=now() where id=p_term_id;
 
   elsif p_action='restore' then
-    if v_term.status<>'archived' then raise exception 'Only archived terms can be restored.'; end if;
+    if v_term.archived_at is null then raise exception 'Only archived or removed terms can be restored.'; end if;
     v_undo_status := v_term.status_before_archive;
-    if v_undo_status is null or v_undo_status='archived' then
-      raise exception 'This term has no safe restoration status.';
-    end if;
+    if v_undo_status not in ('draft','active','closed','cancelled') then
+      raise exception 'Original term state is not available for restoration.'; end if;
     if v_undo_status='active' and exists (
-      select 1 from public.khpos_ops_academic_terms t
-      where t.organisation_id=p_organisation_id and t.id<>p_term_id
-        and t.status='active' and t.campus_id is not distinct from v_term.campus_id
-    ) then raise exception 'Another academic term is already active for this school campus. Close it before restoring this term.'; end if;
+      select 1 from public.khpos_ops_academic_terms
+      where organisation_id=p_organisation_id and id<>p_term_id and status='active'
+        and campus_id is not distinct from v_term.campus_id
+    ) then raise exception 'Another term is already active for this campus.'; end if;
     update public.khpos_ops_academic_terms
-      set status=v_undo_status,archived_at=null,archived_by=null,
+      set status=v_undo_status,archived_at=null,archived_by=null,removed_at=null,
         archive_reason=null,status_before_archive=null,updated_at=now()
       where id=p_term_id;
 
-  elsif p_action='delete' then
-    -- No delete through indirect cascades, including fully archived children.
-    v_dep := khpos_private.ops_academic_record_dependencies(
-      'public.khpos_ops_academic_terms'::regclass,p_term_id,
-      array['khpos_ops_academic_events']
-    );
-    if cardinality(v_dep)>0 then
-      raise exception 'Cannot delete: linked records exist (%). Archive instead.',array_to_string(v_dep,', ');
+  elsif p_action='remove' then
+    if v_term.status not in ('draft','cancelled') or v_term.archived_at is not null then
+      raise exception 'Only unused drafts or cancelled terms can be removed. Archive completed terms.';
     end if;
-    if v_term.status in ('active','closed') or
-       (v_term.status='archived' and v_term.status_before_archive in ('active','closed')) then
-      raise exception 'Active or historically completed terms cannot be permanently deleted. Archive instead.';
-    end if;
-    delete from public.khpos_ops_academic_terms where id=p_term_id;
+    if exists (select 1 from public.khpos_ops_academic_delivery_streams where term_id=p_term_id)
+      or exists (select 1 from public.khpos_ops_assessment_cycles where term_id=p_term_id)
+      or exists (select 1 from public.khpos_ops_project_cycles where term_id=p_term_id)
+      or exists (select 1 from public.khpos_ops_skill_offerings where term_id=p_term_id)
+      or exists (select 1 from public.khpos_ops_learner_term_reviews where term_id=p_term_id)
+    then raise exception 'Linked school work exists. Archive the term instead of removing it.'; end if;
+    update public.khpos_ops_academic_terms
+      set status_before_archive=v_term.status,status='cancelled',
+        archived_at=now(),removed_at=now(),archived_by=p_actor_user_id,
+        archive_reason=v_reason,updated_at=now() where id=p_term_id;
   end if;
 
-  if p_action='delete' then
-    v_after := null;
-  else
-    select to_jsonb(t) into v_after
-      from public.khpos_ops_academic_terms t where t.id=p_term_id;
-  end if;
+  select to_jsonb(t) into v_after
+    from public.khpos_ops_academic_terms t where t.id=p_term_id;
   insert into public.khpos_ops_academic_record_audit (
     organisation_id,record_kind,record_id,actor_user_id,action,reason,before_state,after_state
-  ) values (
-    p_organisation_id,'term',p_term_id,p_actor_user_id,p_action,v_reason,v_before,v_after
-  );
+  ) values (p_organisation_id,'term',p_term_id,p_actor_user_id,p_action,v_reason,v_before,v_after);
 end;
 $$;
 
@@ -254,7 +206,6 @@ declare
   v_before jsonb;
   v_after jsonb;
   v_reason text := left(btrim(coalesce(p_reason,'')),2000);
-  v_dep text[];
   v_campus uuid;
   v_unit uuid;
   v_teacher uuid;
@@ -271,24 +222,26 @@ declare
   v_term_status text;
 begin
   if not khpos_private.ops_academic_manage_authority(p_actor_user_id,p_organisation_id) then
-    raise exception 'Only authorised academic leadership or the School Custodian can manage teaching streams.';
+    raise exception 'Only authorised school academic leadership can manage curriculum records.';
   end if;
-  if p_action not in ('edit','archive','restore','delete') then
-    raise exception 'Unsupported teaching stream management action.';
+  if p_action not in ('edit','archive','restore','remove') then
+    raise exception 'Unsupported curriculum management action.';
   end if;
   select * into v_stream from public.khpos_ops_academic_delivery_streams
     where id=p_stream_id and organisation_id=p_organisation_id for update;
   if v_stream.id is null then raise exception 'Teaching stream not found in this school.'; end if;
-  if p_action='edit' and v_stream.status='draft' and v_reason='' then v_reason := 'Routine draft correction'; end if;
-  if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters for the audit record.'; end if;
+  if p_action='edit' and v_stream.status='draft' and v_reason='' then
+    v_reason := 'Routine teaching stream draft correction';
+  end if;
+  if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters.'; end if;
   v_before := to_jsonb(v_stream);
   select status into v_term_status from public.khpos_ops_academic_terms
     where id=v_stream.term_id and organisation_id=p_organisation_id;
   if p_action='edit' then
-    if v_stream.status in ('archived','closed','cancelled') then
+    if v_stream.status in ('closed','cancelled') or v_stream.archived_at is not null then
       raise exception 'Closed, cancelled or archived curriculum streams cannot be edited. Restore an archived stream first.';
     end if;
-    if v_term_status='archived' then raise exception 'Restore the academic term before editing its curriculum stream.'; end if;
+    if exists (select 1 from public.khpos_ops_academic_terms t where t.id=v_stream.term_id and t.archived_at is not null) then raise exception 'Restore the academic term before editing its curriculum stream.'; end if;
     v_campus := nullif(p_input->>'campusId','')::uuid;
     v_unit := nullif(p_input->>'unitId','')::uuid;
     v_teacher := nullif(p_input->>'teacherAssignmentId','')::uuid;
@@ -362,139 +315,69 @@ begin
       where id=p_stream_id;
 
   elsif p_action='archive' then
-    if v_stream.status='archived' then raise exception 'Teaching stream is already archived.'; end if;
-    if v_stream.status in ('draft','approved','active') then
-      if exists (
-        select 1 from public.khpos_ops_academic_weekly_targets wt
-        where wt.stream_id=p_stream_id and (
-          wt.state not in ('planned','closed')
-          or (wt.state='planned' and (
-            wt.readiness_note is not null or wt.delivery_note is not null
-            or wt.delivered_at is not null or wt.verification_state<>'unverified'
-          ))
-        )
-      ) or exists (
-        select 1 from public.khpos_ops_academic_debt d
-        where d.stream_id=p_stream_id and d.status<>'closed'
-      ) or exists (
-        select 1 from public.khpos_ops_academic_observations o
-        where o.stream_id=p_stream_id and o.follow_up_status in ('open','evidence_submitted')
-      ) then raise exception 'The stream has unfinished teaching, verification or recovery. Complete it before archiving.'; end if;
-      v_dep := khpos_private.ops_academic_record_dependencies(
-        'public.khpos_ops_academic_delivery_streams'::regclass,p_stream_id,
-        array['khpos_ops_academic_events','khpos_ops_academic_weekly_targets','khpos_ops_academic_debt','khpos_ops_academic_observations']
-      );
-      if cardinality(v_dep)>0 then
-        raise exception 'Other linked operational records require formal completion first (%).',array_to_string(v_dep,', ');
-      end if;
-    end if;
-    -- Closed/cancelled streams may be archived with all their evidence intact.
+    if v_stream.archived_at is not null then raise exception 'Curriculum stream is already archived.'; end if;
+    if v_stream.status in ('draft','approved','active') and exists (
+      select 1 from public.khpos_ops_academic_weekly_targets
+      where stream_id=p_stream_id and (
+        state not in ('planned','closed')
+        or (state='planned' and (delivery_note is not null or delivered_at is not null
+          or verification_state<>'unverified'))
+      )
+    ) then raise exception 'Complete delivery, verification and recovery before archiving.'; end if;
+    if exists (select 1 from public.khpos_ops_academic_debt
+      where stream_id=p_stream_id and status<>'closed')
+    then raise exception 'An unresolved recovery debt must be closed first.'; end if;
+    if exists (select 1 from public.khpos_ops_academic_observations
+      where stream_id=p_stream_id and follow_up_status in ('open','evidence_submitted'))
+    then raise exception 'A teaching observation follow-up is still open.'; end if;
     update public.khpos_ops_academic_delivery_streams
-      set status_before_archive=v_stream.status,status='archived',
+      set status_before_archive=v_stream.status,status='cancelled',
         archived_at=now(),archived_by=p_actor_user_id,
         archive_reason=v_reason,updated_at=now() where id=p_stream_id;
 
   elsif p_action='restore' then
-    if v_stream.status<>'archived' then raise exception 'Only archived teaching streams can be restored.'; end if;
-    if v_term_status='archived' then raise exception 'Restore the academic term first.'; end if;
+    if v_stream.archived_at is null then raise exception 'Only archived or removed streams can be restored.'; end if;
     v_undo_status := v_stream.status_before_archive;
     if v_undo_status not in ('draft','approved','active','closed','cancelled') then
-      raise exception 'This stream has no valid restoration state.';
-    end if;
-    if v_undo_status in ('draft','approved','active') and v_term_status not in ('draft','active') then
-      raise exception 'Restore an active or draft academic term before restoring this curriculum stream.';
-    end if;
-    if v_undo_status='approved' and v_term_status='active' then v_undo_status:='active'; end if;
+      raise exception 'Original curriculum status cannot be restored.'; end if;
     if v_undo_status='active' and v_term_status<>'active' then
-      raise exception 'An active teaching stream needs an active academic term before restoration.';
+      raise exception 'Restore the active academic term before restoring this stream.';
+    end if;
+    if v_undo_status in ('draft','approved') and v_term_status not in ('draft','active') then
+      raise exception 'Restore the parent academic term before the curriculum stream.';
     end if;
     update public.khpos_ops_academic_delivery_streams
-      set status=v_undo_status,archived_at=null,archived_by=null,
+      set status=v_undo_status,archived_at=null,archived_by=null,removed_at=null,
         archive_reason=null,status_before_archive=null,updated_at=now()
       where id=p_stream_id;
 
-  elsif p_action='delete' then
-    v_dep := khpos_private.ops_academic_record_dependencies(
-      'public.khpos_ops_academic_delivery_streams'::regclass,p_stream_id,
-      array['khpos_ops_academic_events']
-    );
-    if cardinality(v_dep)>0 then
-      raise exception 'Cannot permanently delete: linked records exist (%). Archive instead.',array_to_string(v_dep,', ');
+  elsif p_action='remove' then
+    if v_stream.status not in ('draft','approved','cancelled') or v_stream.archived_at is not null then
+      raise exception 'Only unused draft, approved or cancelled streams can be removed. Archive the rest.';
     end if;
-    if v_stream.status in ('active','closed') or
-       (v_stream.status='archived' and v_stream.status_before_archive in ('active','closed')) then
-      raise exception 'Activated or completed curriculum streams cannot be permanently deleted. Archive instead.';
-    end if;
-    delete from public.khpos_ops_academic_delivery_streams where id=p_stream_id;
+    if exists (select 1 from public.khpos_ops_academic_weekly_targets where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_assessment_packages where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_academic_observations where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_academic_debt where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_class_sessions where stream_id=p_stream_id)
+      or exists (select 1 from public.khpos_ops_class_periods where stream_id=p_stream_id)
+    then raise exception 'Linked academic work exists. Archive this stream instead.'; end if;
+    update public.khpos_ops_academic_delivery_streams
+      set status_before_archive=v_stream.status,status='cancelled',
+        archived_at=now(),removed_at=now(),archived_by=p_actor_user_id,
+        archive_reason=v_reason,updated_at=now() where id=p_stream_id;
   end if;
 
-  if p_action='delete' then
-    v_after := null;
-  else
-    select to_jsonb(s) into v_after
-      from public.khpos_ops_academic_delivery_streams s where s.id=p_stream_id;
-  end if;
+  select to_jsonb(s) into v_after
+    from public.khpos_ops_academic_delivery_streams s where s.id=p_stream_id;
   insert into public.khpos_ops_academic_record_audit (
     organisation_id,record_kind,record_id,actor_user_id,action,reason,before_state,after_state
-  ) values (
-    p_organisation_id,'stream',p_stream_id,p_actor_user_id,p_action,v_reason,v_before,v_after
-  );
+  ) values (p_organisation_id,'stream',p_stream_id,p_actor_user_id,p_action,v_reason,v_before,v_after);
 end;
 $$;
 
-revoke all on function khpos_private.ops_academic_record_dependencies(regclass,uuid,text[]) from public,anon,authenticated;
 revoke all on function khpos_private.ops_academic_manage_authority(uuid,uuid) from public,anon,authenticated;
 revoke all on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uuid,text,text,jsonb) from public,anon,authenticated;
 revoke all on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
 grant execute on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
-
-
--- School Custodian is the accountable school-level authority above the Guardian.
--- Restore its planning visibility in legacy O12 academic delivery without
--- removing existing Guardian or Academic Inspector access.
-create or replace function khpos_private.ops_academic_can_plan(
-  p_actor_user_id uuid,p_organisation_id uuid
-) returns boolean language sql stable security definer
-set search_path=public,auth,khpos_private,pg_temp as $$
-  select khpos_private.ops_academic_member_role(p_actor_user_id,p_organisation_id)='executive'
-    or khpos_private.ops_academic_actor_has_role(
-      p_actor_user_id,p_organisation_id,
-      array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']
-    );
-$$;
-
-
--- Stop new evidence or delivery operations against archived streams.
--- The existing record and its historical children remain untouched.
-create or replace function khpos_private.ops_academic_reject_archived_stream_work()
-returns trigger language plpgsql security definer
-set search_path=public,auth,khpos_private,pg_temp as $$
-begin
-  if exists (
-    select 1 from public.khpos_ops_academic_delivery_streams s
-    where s.id=NEW.stream_id and s.status='archived'
-  ) then
-    raise exception 'This curriculum stream is archived. Restore it before creating or changing teaching work.';
-  end if;
-  return NEW;
-end;
-$$;
-drop trigger if exists trg_khpos_archived_target_guard on public.khpos_ops_academic_weekly_targets;
-create trigger trg_khpos_archived_target_guard
-before insert or update on public.khpos_ops_academic_weekly_targets
-for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
-drop trigger if exists trg_khpos_archived_debt_guard on public.khpos_ops_academic_debt;
-create trigger trg_khpos_archived_debt_guard
-before insert or update on public.khpos_ops_academic_debt
-for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
-drop trigger if exists trg_khpos_archived_observation_guard on public.khpos_ops_academic_observations;
-create trigger trg_khpos_archived_observation_guard
-before insert or update on public.khpos_ops_academic_observations
-for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
-drop trigger if exists trg_khpos_archived_assessment_package_guard on public.khpos_ops_assessment_packages;
-create trigger trg_khpos_archived_assessment_package_guard
-before insert or update on public.khpos_ops_assessment_packages
-for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
-
-revoke all on function khpos_private.ops_academic_reject_archived_stream_work() from public,anon,authenticated;
