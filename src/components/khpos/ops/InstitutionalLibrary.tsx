@@ -252,6 +252,7 @@ export function InstitutionalLibrary({
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState(initialQuery);
+  const [sortOrder, setSortOrder] = useState<"default" | "name_asc" | "name_desc">("default");
   const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
   const [error, setError] = useState(
@@ -394,6 +395,13 @@ export function InstitutionalLibrary({
       .includes(needle),
   );
 
+  if (sortOrder !== "default") {
+    const direction = sortOrder === "name_asc" ? 1 : -1;
+    policies.sort((a, b) => direction * a.name.localeCompare(b.name));
+    processes.sort((a, b) => direction * a.title.localeCompare(b.title));
+    tools.sort((a, b) => direction * a.name.localeCompare(b.name));
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -493,6 +501,14 @@ export function InstitutionalLibrary({
                 placeholder="Search code, title, system or owner"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               />
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Sort library
+              <select aria-label="Sort library" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-950">
+                <option value="default">Default order</option>
+                <option value="name_asc">Name A–Z</option>
+                <option value="name_desc">Name Z–A</option>
+              </select>
             </label>
           </div>
         </section>
