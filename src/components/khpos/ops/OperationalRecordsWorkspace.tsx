@@ -244,6 +244,7 @@ export function OperationalRecordsWorkspace({
     useState<KhposOperationalRecordsWorkspace | null>(null);
   const [tab, setTab] = useState<Tab>("records");
   const [query, setQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"default" | "name_asc" | "name_desc" | "date_asc" | "date_desc">("default");
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -340,6 +341,27 @@ export function OperationalRecordsWorkspace({
       .includes(needle),
   );
 
+  if (sortOrder !== "default") {
+    const nameDirection = sortOrder === "name_desc" ? -1 : 1;
+    const dateDirection = sortOrder === "date_asc" ? 1 : -1;
+    const byDate = (firstDate: string | null, secondDate: string | null) => {
+      const first = Date.parse(firstDate ?? "");
+      const second = Date.parse(secondDate ?? "");
+      if (!Number.isFinite(first)) return Number.isFinite(second) ? 1 : 0;
+      if (!Number.isFinite(second)) return -1;
+      return (first - second) * dateDirection;
+    };
+    if (sortOrder === "name_asc" || sortOrder === "name_desc") {
+      records.sort((a, b) => nameDirection * a.workTitle.localeCompare(b.workTitle));
+      checklists.sort((a, b) => nameDirection * a.workTitle.localeCompare(b.workTitle));
+      evidence.sort((a, b) => nameDirection * a.workTitle.localeCompare(b.workTitle));
+    } else {
+      records.sort((a, b) => byDate(a.submittedAt, b.submittedAt));
+      checklists.sort((a, b) => byDate(a.completedAt, b.completedAt));
+      evidence.sort((a, b) => byDate(a.submittedAt, b.submittedAt));
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -421,6 +443,16 @@ export function OperationalRecordsWorkspace({
               placeholder="Search process, record, role or campus"
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400"
             />
+          </label>
+          <label className="text-xs font-semibold text-slate-700">
+            Sort records
+            <select aria-label="Sort records" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-950">
+              <option value="default">Default order</option>
+              <option value="name_asc">Title A–Z</option>
+              <option value="name_desc">Title Z–A</option>
+              <option value="date_asc">Earliest date first</option>
+              <option value="date_desc">Latest date first</option>
+            </select>
           </label>
         </section>
 

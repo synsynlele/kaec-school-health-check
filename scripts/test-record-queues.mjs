@@ -39,6 +39,33 @@ for(const [file,id,condition] of modules){
  assert.ok(s.includes(id+".visibleItems"),file+" still shows all records");
  count+=4;
 }
+const findSort=read(base+"RecordQueueSearch.tsx");
+assert.ok(findSort.includes("terms.every")&&findSort.includes("items.filter"));
+assert.ok(findSort.includes('sort !== "original"')&&findSort.includes('role="search"'));
+assert.ok(findSort.includes('aria-live="polite"'));
+count+=3;
+for(const [page, queue, filtered] of [
+  ["IssuesWorkspace","issueQueue","issueSearch"],
+  ["DecisionsWorkspace","decisionQueue","decisionSearch"],
+  ["PeopleWorkspace","staffQueue","staffSearch"],
+  ["ParentPartnershipWorkspace","caseQueue","caseSearch"],
+  ["AssetsMaintenanceWorkspace","assetQueue","assetSearch"],
+]){
+  const source=read(base+page+".tsx");
+  assert.ok(source.includes("const "+filtered+" = useRecordSearch("),page+" missing hook");
+  assert.ok(source.includes("useRecordSearch(\n    "+queue+".visibleItems"),page+" must preserve queue lifecycle filter");
+  assert.ok(source.includes("<RecordQueueSearchControls query={"+filtered+".query}"),page+" missing toolbar");
+  assert.ok(source.includes(filtered+".visibleItems.map("),page+" still renders unsorted/unfiltered items");
+  assert.ok(source.includes("No "+(page==="PeopleWorkspace"?"staff":page==="AssetsMaintenanceWorkspace"?"assets":"")),page+" missing empty state");
+  count+=5;
+}
+for(const page of ["InstitutionalLibrary","OperationalRecordsWorkspace"]){
+  const source=read(base+page+".tsx");
+  assert.ok(source.includes("setSortOrder"),page+" missing sort control");
+  assert.ok(source.includes("sortOrder !== \"default\""),page+" missing sort comparator");
+  count+=2;
+}
+
 const today=read(base+"MyWorkWorkspace.tsx");
 assert.ok(today.includes("<details className=")&&today.includes("History · {completedItems.length}"));
 assert.ok(!today.includes("completedItems.slice(0, 10)"));

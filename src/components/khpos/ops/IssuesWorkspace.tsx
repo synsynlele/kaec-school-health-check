@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import { issueAttentionAction } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
@@ -93,6 +94,13 @@ export function IssuesWorkspace({
     workspace?.items ?? [],
     (issue) => issue.status === "closed",
     (issue) => issueAttentionAction(issue, Boolean(issue.dueAt && Date.parse(issue.dueAt) < Date.parse(workspace?.generatedAt ?? ""))) === null,
+  );
+  const issueSearch = useRecordSearch(
+    issueQueue.visibleItems,
+    (issue) => [issue.reference, issue.title, issue.description, issue.category, issue.severity, issue.status, issue.dueAt ?? ""].join(" "),
+    (issue) => issue.title,
+    (issue) => issue.dueAt,
+    (issue) => Number(issue.severity.slice(1)),
   );
 
   async function token() {
@@ -459,18 +467,19 @@ export function IssuesWorkspace({
         )}
 
         <RecordQueueTabs view={issueQueue.view} setView={issueQueue.setView} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} waitingCount={issueQueue.waitingCount} />
+        <RecordQueueSearchControls query={issueSearch.query} setQuery={issueSearch.setQuery} sort={issueSearch.sort} setSort={issueSearch.setSort} shown={issueSearch.visibleItems.length} total={issueQueue.visibleItems.length} placeholder="Search issue, reference, severity or status" hasPriority />
 
-        {issueQueue.visibleItems.length === 0 ? (
+        {issueSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">{issueQueue.view === "history" ? "No closed issues in History." : "No issues need attention."}</h2>
+            <h2 className="mt-4 text-2xl font-black">{issueSearch.query.trim() ? "No issues match this search." : issueQueue.view === "history" ? "No closed issues in History." : "No issues need attention."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Closed cases are kept in History. New or unresolved issues will appear here for follow-up.
             </p>
           </section>
         ) : (
           <section className="space-y-4">
-            {issueQueue.visibleItems.map((issue) => {
+            {issueSearch.visibleItems.map((issue) => {
               const note = notes[issue.id] ?? "";
               const busy = busyId === issue.id;
               const canVerify =
