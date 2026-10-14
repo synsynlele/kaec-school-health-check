@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -108,6 +109,7 @@ export function AvailabilityWorkspace({
   const [coverageNotes, setCoverageNotes] = useState<Record<string, string>>(
     {},
   );
+  const availabilityQueue = useRecordQueue(workspace?.cases ?? [], (entry) => ["closed", "cancelled", "declined"].includes(entry.status));
 
   async function token() {
     if (!supabase) return null;
@@ -701,7 +703,8 @@ export function AvailabilityWorkspace({
               </section>
             )}
 
-            {workspace.cases.length === 0 ? (
+            <RecordQueueTabs view={availabilityQueue.view} setView={availabilityQueue.setView} activeCount={availabilityQueue.activeCount} historyCount={availabilityQueue.historyCount} />
+            {availabilityQueue.visibleItems.length === 0 ? (
               <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
                 <CheckCircle2 className="mx-auto size-10 text-mint-700" />
                 <h2 className="mt-4 text-2xl font-black">
@@ -715,7 +718,7 @@ export function AvailabilityWorkspace({
               </section>
             ) : (
               <section className="space-y-5">
-                {workspace.cases.map((availabilityCase) => {
+                {availabilityQueue.visibleItems.map((availabilityCase) => {
                   const acceptedCoverage =
                     availabilityCase.coverage.filter((coverage) =>
                       ["accepted", "completed"].includes(coverage.status),
