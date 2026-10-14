@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { AcademicRecordManagement } from "@/components/khpos/ops/AcademicRecordManagement";
 import type {
   KhposOpsAcademicDeliveryWorkspace,
   KhposOpsAcademicStream,
@@ -43,7 +44,7 @@ function statusClass(status: string) {
   ) {
     return "border-amber-200 bg-amber-50 text-amber-900";
   }
-  if (status === "cancelled") {
+  if (status === "cancelled" || status === "archived" || status === "removed") {
     return "border-slate-200 bg-slate-100 text-slate-600";
   }
   return "border-violet-200 bg-violet-50 text-violet-800";
@@ -63,6 +64,10 @@ export function AcademicDeliveryWorkspace({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingTermId, setEditingTermId] = useState<string | null>(null);
   const [editingStreamId, setEditingStreamId] = useState<string | null>(null);
+  const [termEditReason, setTermEditReason] = useState("");
+  const [streamEditReason, setStreamEditReason] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [success, setSuccess] = useState("");
 
   const [sessionLabel, setSessionLabel] = useState("");
   const [termCode, setTermCode] = useState("");
@@ -139,7 +144,7 @@ export function AcademicDeliveryWorkspace({
       setStreamTermId(
         (current) =>
           current ||
-          next.terms.find((term) => !["closed", "cancelled"].includes(term.status))
+          next.terms.find((term) => !["closed", "cancelled", "archived", "removed"].includes(term.status))
             ?.id ||
           "",
       );
@@ -160,6 +165,7 @@ export function AcademicDeliveryWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setSuccess("");
 
     const response = await fetch(
       "/api/khpos/ops/academic-delivery/" + organisationId,
@@ -186,6 +192,7 @@ export function AcademicDeliveryWorkspace({
     }
 
     setWorkspace(body.academic);
+    setSuccess(busyKey.startsWith("manage-") ? "Academic record management action completed." : busyKey.startsWith("edit-") ? "Changes saved to the existing record." : "Academic record updated.");
     return true;
   }
 
@@ -211,12 +218,14 @@ export function AcademicDeliveryWorkspace({
         termName: termName.trim(),
         startDate: termStartDate,
         endDate: termEndDate,
+        reason: termEditReason.trim(),
       },
       editingTermId ? "edit-term-" + editingTermId : "create-term",
     );
 
     if (ok) {
       setEditingTermId(null);
+      setTermEditReason("");
       setTermCode("");
       setTermName("");
       setTermStartDate("");
@@ -262,12 +271,14 @@ export function AcademicDeliveryWorkspace({
         schemeVersion: null,
         timetableReference: timetableReference.trim(),
         expectedWeeks: weeks,
+        reason: streamEditReason.trim(),
       },
       editingStreamId ? "edit-stream-" + editingStreamId : "create-stream",
     );
 
     if (ok) {
       setEditingStreamId(null);
+      setStreamEditReason("");
       setClassLabel("");
       setSectionLabel("");
       setSubjectLabel("");
@@ -278,6 +289,7 @@ export function AcademicDeliveryWorkspace({
 
   function editTerm(term: KhposOpsAcademicDeliveryWorkspace["terms"][number]) {
     setEditingTermId(term.id);
+    setTermEditReason("");
     setTermCampusId(term.campusId ?? "");
     setSessionLabel(term.sessionLabel);
     setTermCode(term.termCode);
@@ -290,6 +302,7 @@ export function AcademicDeliveryWorkspace({
 
   function editStream(stream: KhposOpsAcademicStream) {
     setEditingStreamId(stream.id);
+    setStreamEditReason("");
     setStreamTermId(stream.termId);
     setStreamCampusId(stream.campusId ?? "");
     setStreamUnitId(stream.unitId ?? "");
@@ -303,6 +316,22 @@ export function AcademicDeliveryWorkspace({
     setExpectedWeeks(String(stream.expectedWeeks));
     setError("");
     document.getElementById("academic-stream-editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function manageTerm(
+    termId: string, action: "archive" | "restore" | "remove", reason: string,
+  ) {
+    const ok = await submit({ mode: "manage_term", termId, action, reason }, "manage-term-" + termId);
+    if (ok && editingTermId === termId) setEditingTermId(null);
+    return ok;
+  }
+
+  async function manageStream(
+    streamId: string, action: "archive" | "restore" | "remove", reason: string,
+  ) {
+    const ok = await submit({ mode: "manage_stream", streamId, action, reason }, "manage-stream-" + streamId);
+    if (ok && editingStreamId === streamId) setEditingStreamId(null);
+    return ok;
   }
 
   if (!workspace && !error) {
@@ -331,6 +360,9 @@ export function AcademicDeliveryWorkspace({
       </main>
     );
   }
+
+  const visibleTerms = workspace.terms.filter((term) => showArchived || !["archived", "removed"].includes(term.status));
+  const visibleStreams = workspace.streams.filter((stream) => showArchived || !["archived", "removed"].includes(stream.status));
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -391,10 +423,11 @@ export function AcademicDeliveryWorkspace({
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
           </div>
         )}
+        {success && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">{success}</p>}
 
         <section className="grid gap-4 lg:grid-cols-2">
           <InfoCard
@@ -415,8 +448,8 @@ export function AcademicDeliveryWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
                 Academic term
               </p>
-              <h2 className="mt-2 text-xl font-black">{editingTermId ? "Edit academic term draft" : "Open the term baseline"}</h2>
-              {editingTermId && <p className="mt-2 text-sm text-amber-800">You are editing the saved draft, not creating a duplicate. Changes are recorded in academic history.</p>}
+              <h2 className="mt-2 text-xl font-black">{editingTermId ? "Edit saved academic term" : "Open the term baseline"}</h2>
+              {editingTermId && <p className="mt-2 text-sm text-amber-800">Changes will update this record, not create another. Approved or active terms require a documented reason and preserve revision history.</p>}
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <select
                   value={termCampusId}
@@ -461,10 +494,15 @@ export function AcademicDeliveryWorkspace({
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                 />
               </div>
+              {editingTermId && <label className="mt-3 block text-xs font-bold text-slate-700">Reason for correcting this academic term
+                <textarea value={termEditReason} onChange={(event) => setTermEditReason(event.target.value)}
+                  rows={2} maxLength={2000} placeholder="Describe the change and why it is necessary"
+                  className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm" />
+              </label>}
               <button
                 type="button"
                 onClick={() => void createTerm()}
-                disabled={busyId !== null}
+                disabled={busyId !== null || Boolean(editingTermId && workspace.terms.find((term) => term.id === editingTermId)?.status !== "draft" && termEditReason.trim().length < 10)}
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
               >
                 {busyId !== null ? (
@@ -482,9 +520,9 @@ export function AcademicDeliveryWorkspace({
                 Curriculum delivery stream
               </p>
               <h2 className="mt-2 text-xl font-black">
-                {editingStreamId ? "Edit teaching stream draft" : "Reference the approved scheme & timetable"}
+                {editingStreamId ? "Edit curriculum execution record" : "Reference the approved scheme & timetable"}
               </h2>
-              {editingStreamId && <p className="mt-2 text-sm text-amber-800">Update this existing draft before approval. Approved streams require controlled changes.</p>}
+              {editingStreamId && <p className="mt-2 text-sm text-amber-800">Update the existing curriculum record. Approved or active changes are logged and checked against related academic evidence.</p>}
               {workspace.teacherAssignments.length === 0 ? (
                 <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
                   No active Teacher role assignment exists yet. Activate real
@@ -501,7 +539,7 @@ export function AcademicDeliveryWorkspace({
                     >
                       <option value="">Choose term</option>
                       {workspace.terms
-                        .filter((term) => !["closed", "cancelled"].includes(term.status))
+                        .filter((term) => !["closed", "cancelled", "archived", "removed"].includes(term.status))
                         .map((term) => (
                           <option key={term.id} value={term.id}>
                             {term.sessionLabel} · {term.termName}
@@ -581,13 +619,18 @@ export function AcademicDeliveryWorkspace({
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     />
                   </div>
+                  {editingStreamId && <label className="mt-3 block text-xs font-bold text-slate-700">Reason for correcting curriculum execution
+                    <textarea value={streamEditReason} onChange={(event) => setStreamEditReason(event.target.value)}
+                      rows={2} maxLength={2000} placeholder="Explain the correction and its impact"
+                      className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm" />
+                  </label>}
                   <button
                     type="button"
                     onClick={() => void createStream()}
-                    disabled={busyId !== null}
+                    disabled={busyId !== null || Boolean(editingStreamId && workspace.streams.find((stream) => stream.id === editingStreamId)?.status !== "draft" && streamEditReason.trim().length < 10)}
                     className="mt-4 rounded-full bg-violet-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
                   >
-                    {editingStreamId ? "Save teaching stream changes" : "Create delivery stream"}
+                    {editingStreamId ? "Save curriculum changes" : "Create delivery stream"}
                   </button>
                   {editingStreamId && <button type="button" disabled={busyId !== null} onClick={() => setEditingStreamId(null)} className="ml-3 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700">Cancel editing</button>}
                 </>
@@ -596,16 +639,27 @@ export function AcademicDeliveryWorkspace({
           </section>
         )}
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <div>
+            <p className="text-sm font-black text-slate-900">School record management</p>
+            <p className="text-xs text-slate-600">Approved records can be corrected with reasons and audit history. Archived records remain available for restoration.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-bold text-brand-800">
+            <input type="checkbox" checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />
+            Show archived and removed ({workspace.terms.filter((term) => ["archived", "removed"].includes(term.status)).length + workspace.streams.filter((stream) => ["archived", "removed"].includes(stream.status)).length})
+          </label>
+        </div>
+
         <section>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
             Academic terms
           </p>
           <h2 className="mt-2 text-2xl font-black">Execution baseline</h2>
-          {workspace.terms.length === 0 ? (
-            <Empty text="No academic term has been created yet." />
+          {visibleTerms.length === 0 ? (
+            <Empty text={showArchived ? "No academic term records exist." : "No visible academic terms. Select Show archived and removed to see previous records."} />
           ) : (
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {workspace.terms.map((term) => (
+              {visibleTerms.map((term) => (
                 <article
                   key={term.id}
                   className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -621,10 +675,12 @@ export function AcademicDeliveryWorkspace({
                     </div>
                     <Badge status={term.status} />
                   </div>
-                  {workspace.canPlan && term.status === "draft" && (
+                  {workspace.canPlan && ["draft", "active"].includes(term.status) && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button type="button" disabled={busyId !== null} onClick={() => editTerm(term)} className="rounded-full border border-brand-500 px-3 py-2 text-xs font-black text-brand-700">Edit draft</button>
-                      <button
+                      <button type="button" disabled={busyId !== null} onClick={() => editTerm(term)} className="rounded-full border border-brand-500 px-3 py-2 text-xs font-black text-brand-700">
+                        {term.status === "draft" ? "Edit draft" : "Edit approved term"}
+                      </button>
+                      {term.status === "draft" && <button
                         type="button"
                         onClick={() =>
                           void submit(
@@ -640,8 +696,8 @@ export function AcademicDeliveryWorkspace({
                         className="rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
                       >
                         Activate
-                      </button>
-                      <button
+                      </button>}
+                      {term.status === "draft" && <button
                         type="button"
                         onClick={() =>
                           void submit(
@@ -657,9 +713,14 @@ export function AcademicDeliveryWorkspace({
                         className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600"
                       >
                         Cancel
-                      </button>
+                      </button>}
                     </div>
                   )}
+                  {workspace.canPlan && <AcademicRecordManagement
+                    kind="term" status={term.status} revisionNumber={term.revisionNumber}
+                    archivedAt={term.archivedAt} archiveReason={term.archiveReason} removedAt={term.removedAt} history={term.history}
+                    busy={busyId !== null} onManage={(action, reason) => manageTerm(term.id, action, reason)}
+                  />}
                 </article>
               ))}
             </div>
@@ -673,11 +734,11 @@ export function AcademicDeliveryWorkspace({
           <h2 className="mt-2 text-2xl font-black">
             Streams, targets, verification & debt
           </h2>
-          {workspace.streams.length === 0 ? (
-            <Empty text="No academic delivery stream is visible yet." />
+          {visibleStreams.length === 0 ? (
+            <Empty text={showArchived ? "No curriculum execution records exist." : "No visible curriculum streams. Select Show archived and removed to inspect previous records."} />
           ) : (
             <div className="mt-5 space-y-5">
-              {workspace.streams.map((stream) => (
+              {visibleStreams.map((stream) => (
                 <StreamCard
                   key={stream.id}
                   stream={stream}
@@ -705,6 +766,7 @@ export function AcademicDeliveryWorkspace({
                   }
                   submit={submit}
                   onEditDraft={() => editStream(stream)}
+                  onManage={(action, reason) => manageStream(stream.id, action, reason)}
                 />
               ))}
             </div>
@@ -947,6 +1009,7 @@ function StreamCard({
   setNumber,
   submit,
   onEditDraft,
+  onManage,
 }: {
   stream: KhposOpsAcademicStream;
   workspace: KhposOpsAcademicDeliveryWorkspace;
@@ -963,6 +1026,7 @@ function StreamCard({
   setNumber: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
   onEditDraft: () => void;
+  onManage: (action: "archive" | "restore" | "remove", reason: string) => Promise<boolean>;
 }) {
   const weekKey = "week-" + stream.id;
   const targetKey = "target-" + stream.id;
@@ -1006,10 +1070,18 @@ function StreamCard({
         </div>
       </div>
 
-      {stream.canPlan && stream.status === "draft" && <button type="button" disabled={busyId !== null} onClick={onEditDraft} className="mt-4 rounded-full border border-brand-500 px-4 py-2 text-xs font-black text-brand-700">Edit teaching stream draft</button>}
-      {stream.canPlan && ["approved", "active"].includes(stream.status) && <p className="mt-3 text-xs text-slate-500">Approved content is controlled. Use Change deployment below to record teacher or timetable amendments.</p>}
+      {stream.canPlan && ["draft", "approved", "active"].includes(stream.status) && (
+        <button type="button" disabled={busyId !== null} onClick={onEditDraft} className="mt-4 rounded-full border border-brand-500 px-4 py-2 text-xs font-black text-brand-700">
+          {stream.status === "draft" ? "Edit teaching stream draft" : "Edit approved curriculum execution"}
+        </button>
+      )}
+      {stream.canPlan && <AcademicRecordManagement
+        kind="stream" status={stream.status} revisionNumber={stream.revisionNumber}
+        archivedAt={stream.archivedAt} archiveReason={stream.archiveReason} removedAt={stream.removedAt} history={stream.history}
+        busy={busyId !== null} onManage={onManage}
+      />}
       {(stream.canPlan || stream.canMonitor) &&
-        !["closed", "cancelled"].includes(stream.status) && (
+        !["closed", "cancelled", "archived", "removed"].includes(stream.status) && (
           <details className="mt-4 rounded-2xl border border-slate-200 p-4">
             <summary className="cursor-pointer text-sm font-black">
               Planning controls
@@ -1164,7 +1236,11 @@ function StreamCard({
             No weekly target loaded.
           </p>
         ) : (
-          stream.targets.map((target) => (
+          ["archived", "removed"].includes(stream.status) ? (
+            <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+              {stream.targets.length} historical weekly target(s) retained in the archive. Restore the record to resume planning.
+            </div>
+          ) : stream.targets.map((target) => (
             <TargetCard
               key={target.id}
               target={target}
@@ -1184,7 +1260,7 @@ function StreamCard({
         )}
       </div>
 
-      {stream.canMonitor && !["closed", "cancelled"].includes(stream.status) && (
+      {stream.canMonitor && !["closed", "cancelled", "archived", "removed"].includes(stream.status) && (
         <details className="mt-4 rounded-2xl border border-slate-200 p-4">
           <summary className="cursor-pointer text-sm font-black">
             Record teaching observation

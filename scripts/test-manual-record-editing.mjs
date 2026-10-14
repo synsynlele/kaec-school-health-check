@@ -34,8 +34,10 @@ assert.match(sql, /from public,anon,authenticated/, "Only the server role may in
 assert.match(academic, /mode: editingTermId \? "update_term" : "create_term"/);
 assert.match(academic, /mode: editingStreamId \? "update_stream" : "create_stream"/);
 assert.match(academic, /Save term changes/);
-assert.match(academic, /Save teaching stream changes/);
+assert.match(academic, /Save curriculum changes/);
 assert.match(academic, /Edit teaching stream draft/);
+assert.match(academic, /Edit approved curriculum execution/);
+assert.match(academic, /Edit approved term/);
 assert.match(academic, /term\.status === "draft"/);
 assert.match(academic, /stream\.status === "draft"/);
 
@@ -57,4 +59,4 @@ assert.match(assurance, /mode: "update_closeout"/);
 assert.match(assurance, /item\.status === "draft" && item\.preparedBy === myUserId/);
 assert.match(assuranceApi, /mode === "update_package"/);
 assert.match(assuranceApi, /mode === "update_closeout"/);
-console.log("Manual editing: school isolation, draft-only mutations, audit trail, direct edit entry and published revision safeguards passed.");
+console.log("Manual editing: school isolation, guarded edits, audit trail, direct actions and published revision safeguards passed.");

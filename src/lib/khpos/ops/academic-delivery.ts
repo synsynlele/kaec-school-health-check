@@ -5,6 +5,13 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 let adminClient: SupabaseClient | null = null;
 
+export interface AcademicRecordHistory {
+  id: string;
+  action: "edit" | "archive" | "restore" | "remove";
+  reason: string;
+  createdAt: string;
+}
+
 export interface KhposOpsAcademicCampus {
   id: string;
   code: string;
@@ -35,7 +42,12 @@ export interface KhposOpsAcademicTerm {
   termName: string;
   startDate: string;
   endDate: string;
-  status: "draft" | "active" | "closed" | "cancelled";
+  status: "draft" | "active" | "closed" | "cancelled" | "archived" | "removed";
+  revisionNumber?: number;
+  archivedAt?: string | null;
+  archiveReason?: string | null;
+  removedAt?: string | null;
+  history?: AcademicRecordHistory[];
 }
 
 export interface KhposOpsAcademicDebt {
@@ -111,7 +123,12 @@ export interface KhposOpsAcademicStream {
   schemeVersion: string | null;
   timetableReference: string;
   expectedWeeks: number;
-  status: "draft" | "approved" | "active" | "closed" | "cancelled";
+  status: "draft" | "approved" | "active" | "closed" | "cancelled" | "archived" | "removed";
+  revisionNumber?: number;
+  archivedAt?: string | null;
+  archiveReason?: string | null;
+  removedAt?: string | null;
+  history?: AcademicRecordHistory[];
   isTeacher: boolean;
   canPlan: boolean;
   canMonitor: boolean;
@@ -228,7 +245,54 @@ export async function getKhposOpsAcademicDelivery(
     );
   }
 
-  return data as unknown as KhposOpsAcademicDeliveryWorkspace;
+  const workspace = data as unknown as KhposOpsAcademicDeliveryWorkspace;
+  // The existing O12 RPC provides authoritative access checks and school-scoped
+  // records. Decorate ONLY those visible records with the new lifecycle metadata.
+  const [{ data: termRecords, error: termError }, { data: streamRecords, error: streamError },
+    { data: historyRecords, error: historyError }] = await Promise.all([
+    admin().from("khpos_ops_academic_terms")
+      .select("id,revision_number,archived_at,archive_reason,removed_at")
+      .eq("organisation_id", organisationId),
+    admin().from("khpos_ops_academic_delivery_streams")
+      .select("id,revision_number,archived_at,archive_reason,removed_at")
+      .eq("organisation_id", organisationId),
+    admin().from("khpos_ops_academic_record_audit")
+      .select("id,record_kind,record_id,action,reason,created_at")
+      .eq("organisation_id", organisationId).order("created_at", { ascending: false }).limit(250),
+  ]);
+  if (termError || streamError || historyError) {
+    throw new KhposOpsAcademicDeliveryError(
+      termError?.message ?? streamError?.message ?? historyError?.message ?? "Academic record history is unavailable.",
+      503,
+    );
+  }
+  const termMeta = new Map((termRecords ?? []).map((item) => [item.id, item]));
+  const streamMeta = new Map((streamRecords ?? []).map((item) => [item.id, item]));
+  const histories = new Map<string, AcademicRecordHistory[]>();
+  for (const record of historyRecords ?? []) {
+    const key = record.record_kind + ":" + record.record_id;
+    const entries = histories.get(key) ?? [];
+    entries.push({ id: record.id, action: record.action as AcademicRecordHistory["action"],
+      reason: record.reason, createdAt: record.created_at });
+    histories.set(key, entries);
+  }
+  workspace.terms = workspace.terms.map((term) => {
+    const meta = termMeta.get(term.id);
+    return { ...term, status: meta?.removed_at ? "removed" as const : meta?.archived_at ? "archived" as const : term.status,
+      revisionNumber: meta?.revision_number ?? 1,
+      archivedAt: meta?.archived_at ?? null, archiveReason: meta?.archive_reason ?? null,
+      removedAt: meta?.removed_at ?? null,
+      history: histories.get("term:" + term.id) ?? [] };
+  });
+  workspace.streams = workspace.streams.map((stream) => {
+    const meta = streamMeta.get(stream.id);
+    return { ...stream, status: meta?.removed_at ? "removed" as const : meta?.archived_at ? "archived" as const : stream.status,
+      revisionNumber: meta?.revision_number ?? 1,
+      archivedAt: meta?.archived_at ?? null, archiveReason: meta?.archive_reason ?? null,
+      removedAt: meta?.removed_at ?? null,
+      history: histories.get("stream:" + stream.id) ?? [] };
+  });
+  return workspace;
 }
 
 export async function createKhposOpsAcademicTerm(
@@ -268,13 +332,32 @@ export async function updateKhposOpsAcademicDraftTerm(
     termName: string;
     startDate: string;
     endDate: string;
+    reason?: string;
   },
 ) {
-  const { error } = await admin().rpc("khpos_ops_update_academic_draft_term_server", {
+  const { error } = await admin().rpc("khpos_ops_manage_academic_term_server", {
     p_actor_user_id: userId,
     p_organisation_id: organisationId,
     p_term_id: termId,
+    p_action: "edit",
+    p_reason: input.reason ?? "",
     p_input: input,
+  });
+  if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
+  return refresh(organisationId, userId);
+}
+
+export async function manageKhposOpsAcademicTerm(
+  organisationId: string,userId: string,termId: string,
+  action: "archive" | "restore" | "remove", reason: string,
+) {
+  const { error } = await admin().rpc("khpos_ops_manage_academic_term_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+    p_term_id: termId,
+    p_action: action,
+    p_reason: reason,
+    p_input: {},
   });
   if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
   return refresh(organisationId, userId);
@@ -356,13 +439,32 @@ export async function updateKhposOpsAcademicDraftStream(
     schemeReference: string;
     timetableReference: string;
     expectedWeeks: number;
+    reason?: string;
   },
 ) {
-  const { error } = await admin().rpc("khpos_ops_update_academic_draft_stream_server", {
+  const { error } = await admin().rpc("khpos_ops_manage_academic_stream_server", {
     p_actor_user_id: userId,
     p_organisation_id: organisationId,
     p_stream_id: streamId,
+    p_action: "edit",
+    p_reason: input.reason ?? "",
     p_input: input,
+  });
+  if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
+  return refresh(organisationId, userId);
+}
+
+export async function manageKhposOpsAcademicStream(
+  organisationId: string,userId: string,streamId: string,
+  action: "archive" | "restore" | "remove", reason: string,
+) {
+  const { error } = await admin().rpc("khpos_ops_manage_academic_stream_server", {
+    p_actor_user_id: userId,
+    p_organisation_id: organisationId,
+    p_stream_id: streamId,
+    p_action: action,
+    p_reason: reason,
+    p_input: {},
   });
   if (error) throw new KhposOpsAcademicDeliveryError(error.message, statusFor(error.message));
   return refresh(organisationId, userId);
