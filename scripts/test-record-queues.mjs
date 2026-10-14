@@ -22,6 +22,8 @@ const modules=[
  ["StaffTransitionWorkspace","successionQueue","\"archived\""],
  ["StaffTransitionWorkspace","promotionQueue","\"executed\""],
  ["StaffTransitionWorkspace","exitQueue","\"closed\""],
+ ["LearnerProgressWorkspace","signalQueue","\"resolved\""],
+ ["LearnerProgressWorkspace","learnerCaseQueue","\"closed\""],
 ];
 let count=0;
 const queue=read(base+"RecordQueue.tsx");
