@@ -380,19 +380,22 @@ export function InstitutionalLibrary({
         `${item.code} ${item.name} ${item.operatingSystem} ${item.ownerLabel}`
           .toLowerCase()
           .includes(needle)),
-  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.priority, b.priority) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.name, b.name) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));  const processes = library.processes.filter(
+  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.priority, b.priority) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.name, b.name) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));
+  const processes = library.processes.filter(
     (item) =>
       (!criticalOnly || (item.criticality === "P0" && !item.activeVersion)) &&
       (!needle ||
         `${item.code} ${item.title} ${item.operatingSystem} ${item.ownerLabel}`
           .toLowerCase()
           .includes(needle)),
-  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.criticality, b.criticality) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.title, b.title) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));  const tools = library.tools.filter((item) =>
+  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.criticality, b.criticality) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.title, b.title) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));
+  const tools = library.tools.filter((item) =>
     !needle ||
     `${item.code} ${item.name} ${item.toolType} ${item.purpose}`
       .toLowerCase()
       .includes(needle),
   ).sort((a, b) => sortOrder === "name" ? compareRecordText(a.name, b.name) : compareRecordText(a.code, b.code));
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
