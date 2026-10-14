@@ -15,6 +15,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { RecordSortSelect, compareRecordText } from "./RecordListControls";
 import { PolicyGovernance } from "@/components/khpos/ops/PolicyGovernance";
 import { ProcessGovernance } from "@/components/khpos/ops/ProcessGovernance";
 import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
@@ -252,6 +253,7 @@ export function InstitutionalLibrary({
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState(initialQuery);
+  const [sortOrder, setSortOrder] = useState("code");
   const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
   const [error, setError] = useState(
@@ -378,22 +380,19 @@ export function InstitutionalLibrary({
         `${item.code} ${item.name} ${item.operatingSystem} ${item.ownerLabel}`
           .toLowerCase()
           .includes(needle)),
-  );
-  const processes = library.processes.filter(
+  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.priority, b.priority) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.name, b.name) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));  const processes = library.processes.filter(
     (item) =>
       (!criticalOnly || (item.criticality === "P0" && !item.activeVersion)) &&
       (!needle ||
         `${item.code} ${item.title} ${item.operatingSystem} ${item.ownerLabel}`
           .toLowerCase()
           .includes(needle)),
-  );
-  const tools = library.tools.filter((item) =>
+  ).sort((a, b) => sortOrder === "priority" ? compareRecordText(a.criticality, b.criticality) || compareRecordText(a.code, b.code) : sortOrder === "name" ? compareRecordText(a.title, b.title) : sortOrder === "owner" ? compareRecordText(a.ownerLabel, b.ownerLabel) || compareRecordText(a.code, b.code) : compareRecordText(a.code, b.code));  const tools = library.tools.filter((item) =>
     !needle ||
     `${item.code} ${item.name} ${item.toolType} ${item.purpose}`
       .toLowerCase()
       .includes(needle),
-  );
-
+  ).sort((a, b) => sortOrder === "name" ? compareRecordText(a.name, b.name) : compareRecordText(a.code, b.code));
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -488,12 +487,16 @@ export function InstitutionalLibrary({
             <label className="relative block min-w-0 sm:w-80 lg:w-96">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <input
+                type="search"
+                aria-label="Search institutional library"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search code, title, system or owner"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               />
             </label>
+            <RecordSortSelect value={sortOrder} onChange={setSortOrder}
+              options={[{ value: "code", label: "Code A–Z" }, { value: "name", label: "Title A–Z" }, { value: "priority", label: "Criticality first" }, { value: "owner", label: "Owner A–Z" }]} />
           </div>
         </section>
 
