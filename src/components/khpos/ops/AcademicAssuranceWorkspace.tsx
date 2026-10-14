@@ -60,6 +60,7 @@ export function AcademicAssuranceWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, boolean>>({});
 
@@ -101,6 +102,7 @@ export function AcademicAssuranceWorkspace({
       }
 
       setWorkspace(body.academicAssurance);
+      setMyUserId(data.session.user.id);
       setError("");
     });
 
@@ -389,6 +391,7 @@ export function AcademicAssuranceWorkspace({
                   <CloseoutCard
                     key={item.id}
                     item={item}
+                    canEdit={item.status === "draft" && item.preparedBy === myUserId}
                     values={values}
                     busyId={busyId}
                     setValue={setValue}
@@ -784,6 +787,7 @@ function CycleCard({
             <PackageRow
               key={pkg.id}
               pkg={pkg}
+              canEdit={["draft", "changes_required"].includes(pkg.moderationState) && (cycle.canManage || cycleStreams.some((stream) => stream.id === pkg.streamId && stream.isTeacher))}
               busyId={busyId}
               values={values}
               setValue={setValue}
