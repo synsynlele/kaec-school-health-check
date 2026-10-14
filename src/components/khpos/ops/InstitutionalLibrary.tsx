@@ -173,7 +173,7 @@ function PolicyDocument({
       <div className="border-t border-slate-100 px-6 pb-8 pt-6 sm:px-7">
         {!version ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-            This policy is already controlled in the Master Policy Register, but no approved document version is active yet. It must not be treated as adopted institutional policy until an approved version is published here.
+            This policy is registered but has no approved active document version. There is nothing you can acknowledge yet. Your school leadership must approve and publish the policy first.
           </div>
         ) : (
           <article className="space-y-7">
@@ -209,11 +209,11 @@ function PolicyDocument({
             <SectionList title="Escalation & non-compliance" items={version.escalation} />
             <SectionList title="Records & evidence" items={version.recordsEvidence} />
 
-            {policy.acknowledgementRequired && !policy.acknowledgedAt && (
+            {!policy.acknowledgedAt && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                <p className="font-black text-amber-950">Acknowledgement required</p>
+                <p className="font-black text-amber-950">{policy.acknowledgementRequired ? "Acknowledgement required" : "Policy acknowledgement available"}</p>
                 <p className="mt-2 text-sm leading-6 text-amber-900">
-                  Confirm that you have read and understood this active policy version. A future material revision will require a fresh acknowledgement.
+                  After reading this approved policy, confirm that you understand it. You can acknowledge the current version even if your additional staff position is still pending. A future material revision will require a fresh acknowledgement.
                 </p>
                 <button
                   type="button"
@@ -519,7 +519,7 @@ export function InstitutionalLibrary({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Policy Register</p>
               <h2 className="mt-2 text-2xl font-black">What your school requires</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Only an approved active version is authoritative. Registered policies without an active version remain visible so nobody mistakes “not yet written” for “does not exist.”
+                Only an approved active version is authoritative. Open an active policy, read it and select “Acknowledge policy” at the bottom. Teachers can acknowledge published policies while an additional position is pending. Unpublished policies must first be approved by school leadership.
               </p>
             </div>
 
