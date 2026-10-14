@@ -71,7 +71,7 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
       </div>{button("Register asset", () => void act("create", { campusId: fields.campus, code: fields.code, label: fields.label, category: fields.category, location: fields.location, intervalDays: fields.interval, nextServiceDate: fields.due }), !fields.campus || !fields.code?.trim() || !fields.label?.trim() || !fields.category || !fields.location?.trim() || !fields.interval || !fields.due)}</section>}
       <RecordQueueTabs view={assetQueue.view} setView={assetQueue.setView} activeCount={assetQueue.activeCount} historyCount={assetQueue.historyCount} activeLabel="Active assets" />
         <RecordQueueSearchControls query={assetSearch.query} setQuery={assetSearch.setQuery} sort={assetSearch.sort} setSort={assetSearch.setSort} shown={assetSearch.visibleItems.length} total={assetQueue.visibleItems.length} placeholder="Search asset, code, campus or location" />
-      {assetSearch.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No assets recorded on your campuses yet.</p>}
+      {assetSearch.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">{assetSearch.query.trim() ? "No assets match this search." : "No assets recorded on your campuses yet."}</p>}
       {assetSearch.visibleItems.map((asset) => {
         const campus = data.campuses.find((item) => item.id === asset.campusId);
         const issue = activeIssue(asset);
