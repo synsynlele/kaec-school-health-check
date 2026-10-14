@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordListControls, useRecordListControls, compareRecordDate, compareRecordPriority, compareRecordText } from "./RecordListControls";
 import { issueAttentionAction } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
@@ -94,6 +95,19 @@ export function IssuesWorkspace({
     (issue) => issue.status === "closed",
     (issue) => issueAttentionAction(issue, Boolean(issue.dueAt && Date.parse(issue.dueAt) < Date.parse(workspace?.generatedAt ?? ""))) === null,
   );
+
+  const issueList = useRecordListControls(
+    issueQueue.visibleItems,
+    (issue) => [issue.reference, issue.title, issue.description, issue.category, issue.status, issue.severity, issue.owner?.displayName, issue.owner?.roleTitle, issue.process?.code].filter(Boolean).join(" "),
+    [
+      { value: "urgent", label: "Urgent first", compare: (a, b) => compareRecordPriority(a.severity, b.severity) || compareRecordDate(a.dueAt, b.dueAt) || compareRecordDate(a.createdAt, b.createdAt, "desc") },
+      { value: "due", label: "Deadline: soonest", compare: (a, b) => compareRecordDate(a.dueAt, b.dueAt) },
+      { value: "newest", label: "Newest first", compare: (a, b) => compareRecordDate(a.createdAt, b.createdAt, "desc") },
+      { value: "title", label: "Title A–Z", compare: (a, b) => compareRecordText(a.title, b.title) },
+    ],
+    "urgent",
+  );
+
 
   async function token() {
     if (!supabase) return null;
@@ -459,8 +473,9 @@ export function IssuesWorkspace({
         )}
 
         <RecordQueueTabs view={issueQueue.view} setView={issueQueue.setView} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} waitingCount={issueQueue.waitingCount} />
+        <RecordListControls controls={issueList} placeholder="Search issue, reference, owner or category" />
 
-        {issueQueue.visibleItems.length === 0 ? (
+        {issueList.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
             <h2 className="mt-4 text-2xl font-black">{issueQueue.view === "history" ? "No closed issues in History." : "No issues need attention."}</h2>
@@ -470,7 +485,7 @@ export function IssuesWorkspace({
           </section>
         ) : (
           <section className="space-y-4">
-            {issueQueue.visibleItems.map((issue) => {
+            {issueList.visibleItems.map((issue) => {
               const note = notes[issue.id] ?? "";
               const busy = busyId === issue.id;
               const canVerify =
