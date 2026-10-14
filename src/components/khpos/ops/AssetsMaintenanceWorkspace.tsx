@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordListControls, useRecordListControls, compareRecordDate, compareRecordText } from "./RecordListControls";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { AssetsWorkspace, CampusAsset } from "@/lib/khpos/ops/assets";
 
@@ -51,6 +52,19 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
   const dueCount = data?.assets.filter((asset) => asset.status === "active" && asset.nextServiceDate <= data.today).length || 0;
   const faultCount = data?.assets.filter((asset) => asset.status === "active" && activeIssue(asset)).length || 0;
   const assetQueue = useRecordQueue(data?.assets ?? [], (asset) => asset.status === "retired");
+  const assetList = useRecordListControls(
+    assetQueue.visibleItems,
+    (asset) => [asset.label, asset.code, asset.category, asset.location, asset.ownerRoleTitle,
+      data?.campuses.find((campus) => campus.id === asset.campusId)?.name,
+    ].filter(Boolean).join(" "),
+    [
+      { value: "due", label: "Service due soon", compare: (a, b) => compareRecordDate(a.nextServiceDate, b.nextServiceDate) },
+      { value: "name", label: "Asset name A–Z", compare: (a, b) => compareRecordText(a.label, b.label) },
+      { value: "category", label: "Category A–Z", compare: (a, b) => compareRecordText(a.category, b.category) },
+      { value: "campus", label: "Campus A–Z", compare: (a, b) => compareRecordText(data?.campuses.find((campus) => campus.id === a.campusId)?.name, data?.campuses.find((campus) => campus.id === b.campusId)?.name) },
+    ],
+    "due",
+  );
 
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900"><header><h1 className="text-3xl font-bold">Assets & Maintenance</h1><p className="mt-2 text-slate-600">Keep an asset register, see service due dates, and verify maintenance evidence. Faults go to the shared <Link href={`/khpos/${organisationId}/issues`} className="underline">Issues queue</Link> for ownership and closure.</p><p className="mt-2 text-sm font-semibold text-rose-800">For a child safety concern, use the protected <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">Safeguarding pathway</Link>. Keep disclosures out of asset notes.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
@@ -63,8 +77,9 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
         {input("location", "Location")}{input("interval", "Service interval (days)", "number")}{input("due", "First service due", "date")}
       </div>{button("Register asset", () => void act("create", { campusId: fields.campus, code: fields.code, label: fields.label, category: fields.category, location: fields.location, intervalDays: fields.interval, nextServiceDate: fields.due }), !fields.campus || !fields.code?.trim() || !fields.label?.trim() || !fields.category || !fields.location?.trim() || !fields.interval || !fields.due)}</section>}
       <RecordQueueTabs view={assetQueue.view} setView={assetQueue.setView} activeCount={assetQueue.activeCount} historyCount={assetQueue.historyCount} activeLabel="Active assets" />
-      {assetQueue.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No assets recorded on your campuses yet.</p>}
-      {assetQueue.visibleItems.map((asset) => {
+      <RecordListControls controls={assetList} placeholder="Search asset name, code, location or campus" />
+      {assetList.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No assets recorded on your campuses yet.</p>}
+      {assetList.visibleItems.map((asset) => {
         const campus = data.campuses.find((item) => item.id === asset.campusId);
         const issue = activeIssue(asset);
         const pending = asset.services.find((service) => ["submitted", "returned"].includes(service.status));
