@@ -26,7 +26,10 @@ const tables={
   {id:'other-person',organisation_id:'school',title:'Colleague position',code:'ACADEMIC_INSPECTOR',status:'active'},
   {id:'ended',organisation_id:'school',title:'Ended position',code:'SKILLS_FACILITATOR',status:'active'},
  ],
- khpos_ops_role_charters:[{role_id:'teacher',mission:'Teach assigned learners',status:'active'},{role_id:'promoter',mission:'Support the section',status:'active'},{role_id:'skills',mission:'Facilitate skills practice',status:'active'}],
+ khpos_ops_policies:[{id:'policy-safe',organisation_id:'school',code:'SAFE',name:'Safeguarding'},{id:'policy-draft',organisation_id:'school',code:'DRAFT',name:'Policy awaiting publication'}],
+ khpos_ops_policy_versions:[{id:'version-safe',policy_id:'policy-safe',status:'active'}],
+ khpos_ops_policy_acknowledgements:[],
+ khpos_ops_role_charters:[{role_id:'teacher',mission:'Teach assigned learners',status:'active'},{role_id:'promoter',mission:'Support the section',status:'active'},{role_id:'skills',mission:'Facilitate skills practice',required_policy_codes:['SAFE','DRAFT'],status:'active'}],
 };
 const client={from(table){let rows=tables[table] ?? [];const query={
  select(){return query;},eq(field,value){rows=rows.filter(row=>row[field]===value);return query;},
@@ -52,6 +55,13 @@ assert.equal(result.role.activeAssignment,true);
 result=await getKhposMyOnboarding('school','person','skills');
 assert.equal(result.charter.mission,'Facilitate skills practice');
 assert.equal(result.role.activeAssignment,false,'Pending positions must not grant active authority');
+assert.deepEqual(result.requiredPolicies.map(policy=>({code:policy.code,published:policy.published,acknowledged:policy.acknowledged})),[
+ {code:'SAFE',published:true,acknowledged:false},
+ {code:'DRAFT',published:false,acknowledged:false},
+],'Pending role onboarding must distinguish unread active policies from unpublished policies');
+const libraryUi=fs.readFileSync('src/components/khpos/ops/InstitutionalLibrary.tsx','utf8');
+assert.match(libraryUi,/\{!policy\.acknowledgedAt && \(/,'The library must offer self acknowledgement for active policies regardless of pending role status');
+assert.doesNotMatch(libraryUi,/\{policy\.acknowledgementRequired && !policy\.acknowledgedAt && \(/,'A pending additional role must not hide acknowledgement');
 for(const role of ['foreign','other-person','ended','unknown']) await assert.rejects(getKhposMyOnboarding('school','person',role),error=>error.status===403);
 await assert.rejects(getKhposMyOnboarding('school','colleague'),error=>error.status===403);
-console.log('Staff role onboarding: own active positions, school boundaries, default selection and selected duties passed.');
+console.log('Staff role onboarding: pending roles, publication statuses and accessible active policy acknowledgement passed.');
