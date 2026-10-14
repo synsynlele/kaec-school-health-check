@@ -929,18 +929,25 @@ function CycleCard({
 
 function PackageRow({
   pkg,
+  canEdit,
   busyId,
   values,
   setValue,
   submit,
 }: {
   pkg: KhposOpsAssessmentPackage;
+  canEdit: boolean;
   busyId: string | null;
   values: Record<string, string>;
   setValue: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
 }) {
   const noteKey = `pkg-note-${pkg.id}`;
+  const [editing, setEditing] = useState(false);
+  const [source, setSource] = useState(pkg.assessmentSource);
+  const [reference, setReference] = useState(pkg.sourceReference);
+  const [blueprint, setBlueprint] = useState(pkg.blueprintReference);
+  const [declared, setDeclared] = useState(pkg.integrityDeclaration);
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -961,6 +968,37 @@ function PackageRow({
           {readable(pkg.moderationState)}
         </span>
       </div>
+      {canEdit && <button type="button" disabled={busyId !== null} onClick={() => {
+        setSource(pkg.assessmentSource); setReference(pkg.sourceReference);
+        setBlueprint(pkg.blueprintReference); setDeclared(pkg.integrityDeclaration);
+        setEditing((open) => !open);
+      }} className="mt-3 rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
+        {editing ? "Cancel editing" : "Edit assessment package"}
+      </button>}
+      {editing && canEdit && <div className="mt-3 space-y-2 rounded-xl border border-brand-200 bg-white p-3">
+        <p className="text-xs font-black">Edit saved package before moderation</p>
+        <label className="block text-xs">Assessment source
+          <select value={source} onChange={(event) => setSource(event.target.value)} className="mt-1 w-full rounded-lg border p-2">
+            {["KSI","SIS","CBT","external","manual"].map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs">Source reference
+          <input value={reference} onChange={(event) => setReference(event.target.value)} className="mt-1 w-full rounded-lg border p-2" />
+        </label>
+        <label className="block text-xs">Blueprint / specification reference
+          <input value={blueprint} onChange={(event) => setBlueprint(event.target.value)} className="mt-1 w-full rounded-lg border p-2" />
+        </label>
+        <label className="flex gap-2 text-xs">
+          <input type="checkbox" checked={declared} onChange={(event) => setDeclared(event.target.checked)} />
+          I confirm the assessment-integrity requirements
+        </label>
+        <button type="button" disabled={busyId !== null || !reference.trim() || !blueprint.trim()} onClick={() => void (async () => {
+          const saved = await submit({ mode: "update_package", packageId: pkg.id,
+            assessmentSource: source, sourceReference: reference,
+            blueprintReference: blueprint, integrityDeclaration: declared }, `pkg-edit-${pkg.id}`);
+          if (saved) setEditing(false);
+        })()} className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white disabled:opacity-50">Save package changes</button>
+      </div>}
       <textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
