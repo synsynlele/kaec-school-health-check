@@ -1099,12 +1099,12 @@ export function MyWorkWorkspace({
         )}
 
         {completedItems.length > 0 && (
-          <section>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-              Recent completion
-            </p>
+          <details className="rounded-2xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-black text-slate-700">
+              History · {completedItems.length} completed item{completedItems.length === 1 ? "" : "s"}
+            </summary>
             <div className="mt-3 space-y-2">
-              {completedItems.slice(0, 10).map((item) => (
+              {completedItems.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
@@ -1124,7 +1124,7 @@ export function MyWorkWorkspace({
                 </div>
               ))}
             </div>
-          </section>
+          </details>
         )}
       </div>
     </main>
