@@ -176,12 +176,22 @@ begin
     ) then
       raise exception 'Archive or complete the linked curriculum streams before archiving this term.';
     end if;
-    v_dep := khpos_private.ops_academic_record_dependencies(
-      'public.khpos_ops_academic_terms'::regclass,p_term_id,
-      array['khpos_ops_academic_events','khpos_ops_academic_delivery_streams']
-    );
-    if cardinality(v_dep)>0 then
-      raise exception 'This term has linked school records (%). Keep it active until those workflows are completed and retained.',array_to_string(v_dep,', ');
+    if exists (
+      select 1 from public.khpos_ops_assessment_cycles ac
+      where ac.term_id=p_term_id and ac.status not in ('closed','cancelled')
+    ) then
+      raise exception 'Finish or cancel linked assessment cycles before archiving this term.';
+    end if;
+    -- Completed terms retain historical evidence when archived.
+    -- For draft/active terms, protect any other live-linked workflows.
+    if v_term.status in ('draft','active') then
+      v_dep := khpos_private.ops_academic_record_dependencies(
+        'public.khpos_ops_academic_terms'::regclass,p_term_id,
+        array['khpos_ops_academic_events','khpos_ops_academic_delivery_streams']
+      );
+      if cardinality(v_dep)>0 then
+        raise exception 'This term has linked school work (%). Complete those workflows or use formal academic close-out before archiving.',array_to_string(v_dep,', ');
+      end if;
     end if;
     update public.khpos_ops_academic_terms
       set status_before_archive=v_term.status,status='archived',
@@ -353,21 +363,32 @@ begin
 
   elsif p_action='archive' then
     if v_stream.status='archived' then raise exception 'Teaching stream is already archived.'; end if;
-    if exists (
-      select 1 from public.khpos_ops_academic_weekly_targets wt
-      where wt.stream_id=p_stream_id and (
-        wt.state<>'planned' or wt.readiness_note is not null or
-        wt.delivery_note is not null or wt.delivered_at is not null or
-        wt.verification_state<>'unverified'
-      )
-    ) then raise exception 'This stream has teaching or verification activity. Complete the operational close-out before archiving.'; end if;
-    v_dep := khpos_private.ops_academic_record_dependencies(
-      'public.khpos_ops_academic_delivery_streams'::regclass,p_stream_id,
-      array['khpos_ops_academic_events','khpos_ops_academic_weekly_targets']
-    );
-    if cardinality(v_dep)>0 then
-      raise exception 'Cannot archive while linked operational records exist (%). Complete those workflows first.',array_to_string(v_dep,', ');
+    if v_stream.status in ('draft','approved','active') then
+      if exists (
+        select 1 from public.khpos_ops_academic_weekly_targets wt
+        where wt.stream_id=p_stream_id and (
+          wt.state not in ('planned','closed')
+          or (wt.state='planned' and (
+            wt.readiness_note is not null or wt.delivery_note is not null
+            or wt.delivered_at is not null or wt.verification_state<>'unverified'
+          ))
+        )
+      ) or exists (
+        select 1 from public.khpos_ops_academic_debt d
+        where d.stream_id=p_stream_id and d.status<>'closed'
+      ) or exists (
+        select 1 from public.khpos_ops_academic_observations o
+        where o.stream_id=p_stream_id and o.follow_up_status in ('open','evidence_submitted')
+      ) then raise exception 'The stream has unfinished teaching, verification or recovery. Complete it before archiving.'; end if;
+      v_dep := khpos_private.ops_academic_record_dependencies(
+        'public.khpos_ops_academic_delivery_streams'::regclass,p_stream_id,
+        array['khpos_ops_academic_events','khpos_ops_academic_weekly_targets','khpos_ops_academic_debt','khpos_ops_academic_observations']
+      );
+      if cardinality(v_dep)>0 then
+        raise exception 'Other linked operational records require formal completion first (%).',array_to_string(v_dep,', ');
+      end if;
     end if;
+    -- Closed/cancelled streams may be archived with all their evidence intact.
     update public.khpos_ops_academic_delivery_streams
       set status_before_archive=v_stream.status,status='archived',
         archived_at=now(),archived_by=p_actor_user_id,
