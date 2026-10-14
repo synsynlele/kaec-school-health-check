@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -82,6 +83,9 @@ export function StaffTransitionWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const successionQueue = useRecordQueue(workspace?.successionPlans ?? [], (item) => ["achieved", "withdrawn", "archived"].includes(item.status));
+  const promotionQueue = useRecordQueue(workspace?.promotionCases ?? [], (item) => ["executed", "declined", "cancelled"].includes(item.status));
+  const exitQueue = useRecordQueue(workspace?.exitCases ?? [], (item) => ["closed", "cancelled"].includes(item.status));
 
   const [successionStaffId, setSuccessionStaffId] = useState("");
   const [successionTargetRoleId, setSuccessionTargetRoleId] = useState("");
@@ -839,10 +843,11 @@ export function StaffTransitionWorkspace({
                 Who is being developed for greater responsibility?
               </h2>
             </div>
-            {workspace.successionPlans.length === 0 ? (
+            <RecordQueueTabs view={successionQueue.view} setView={successionQueue.setView} activeCount={successionQueue.activeCount} historyCount={successionQueue.historyCount} activeLabel="Needs attention" />
+            {successionQueue.visibleItems.length === 0 ? (
               <Empty text="No succession plan has been opened." />
             ) : (
-              workspace.successionPlans.map((plan) => (
+              successionQueue.visibleItems.map((plan) => (
                 <SuccessionCard
                   key={plan.id}
                   plan={plan}
@@ -874,10 +879,11 @@ export function StaffTransitionWorkspace({
                 Evidence → acceptance → authority → handover → role change
               </h2>
             </div>
-            {workspace.promotionCases.length === 0 ? (
+            <RecordQueueTabs view={promotionQueue.view} setView={promotionQueue.setView} activeCount={promotionQueue.activeCount} historyCount={promotionQueue.historyCount} activeLabel="Needs attention" />
+            {promotionQueue.visibleItems.length === 0 ? (
               <Empty text="No promotion transition has been opened." />
             ) : (
-              workspace.promotionCases.map((promotion) => (
+              promotionQueue.visibleItems.map((promotion) => (
                 <PromotionCard
                   key={promotion.id}
                   promotion={promotion}
@@ -910,10 +916,11 @@ export function StaffTransitionWorkspace({
                 No departure without continuity, clearance and access closure
               </h2>
             </div>
-            {workspace.exitCases.length === 0 ? (
+            <RecordQueueTabs view={exitQueue.view} setView={exitQueue.setView} activeCount={exitQueue.activeCount} historyCount={exitQueue.historyCount} activeLabel="Needs attention" />
+            {exitQueue.visibleItems.length === 0 ? (
               <Empty text="No exit case has been opened." />
             ) : (
-              workspace.exitCases.map((exitCase) => (
+              exitQueue.visibleItems.map((exitCase) => (
                 <ExitCard
                   key={exitCase.id}
                   exitCase={exitCase}
