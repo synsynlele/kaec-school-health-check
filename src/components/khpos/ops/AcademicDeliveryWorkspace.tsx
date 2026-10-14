@@ -361,6 +361,9 @@ export function AcademicDeliveryWorkspace({
     );
   }
 
+  const visibleTerms = workspace.terms.filter((term) => showArchived || term.status !== "archived");
+  const visibleStreams = workspace.streams.filter((stream) => showArchived || stream.status !== "archived");
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -636,16 +639,27 @@ export function AcademicDeliveryWorkspace({
           </section>
         )}
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <div>
+            <p className="text-sm font-black text-slate-900">School record management</p>
+            <p className="text-xs text-slate-600">Approved records can be corrected with reasons and audit history. Archived records remain available for restoration.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-bold text-brand-800">
+            <input type="checkbox" checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />
+            Show archived ({workspace.terms.filter((term) => term.status === "archived").length + workspace.streams.filter((stream) => stream.status === "archived").length})
+          </label>
+        </div>
+
         <section>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
             Academic terms
           </p>
           <h2 className="mt-2 text-2xl font-black">Execution baseline</h2>
-          {workspace.terms.length === 0 ? (
-            <Empty text="No academic term has been created yet." />
+          {visibleTerms.length === 0 ? (
+            <Empty text={showArchived ? "No academic term records exist." : "No visible academic terms. Select Show archived to see previous records."} />
           ) : (
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {workspace.terms.map((term) => (
+              {visibleTerms.map((term) => (
                 <article
                   key={term.id}
                   className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -661,10 +675,12 @@ export function AcademicDeliveryWorkspace({
                     </div>
                     <Badge status={term.status} />
                   </div>
-                  {workspace.canPlan && term.status === "draft" && (
+                  {workspace.canPlan && ["draft", "active"].includes(term.status) && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button type="button" disabled={busyId !== null} onClick={() => editTerm(term)} className="rounded-full border border-brand-500 px-3 py-2 text-xs font-black text-brand-700">Edit draft</button>
-                      <button
+                      <button type="button" disabled={busyId !== null} onClick={() => editTerm(term)} className="rounded-full border border-brand-500 px-3 py-2 text-xs font-black text-brand-700">
+                        {term.status === "draft" ? "Edit draft" : "Edit approved term"}
+                      </button>
+                      {term.status === "draft" && <button
                         type="button"
                         onClick={() =>
                           void submit(
@@ -680,8 +696,8 @@ export function AcademicDeliveryWorkspace({
                         className="rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
                       >
                         Activate
-                      </button>
-                      <button
+                      </button>}
+                      {term.status === "draft" && <button
                         type="button"
                         onClick={() =>
                           void submit(
@@ -697,9 +713,14 @@ export function AcademicDeliveryWorkspace({
                         className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600"
                       >
                         Cancel
-                      </button>
+                      </button>}
                     </div>
                   )}
+                  {workspace.canPlan && <AcademicRecordManagement
+                    kind="term" status={term.status} revisionNumber={term.revisionNumber}
+                    archivedAt={term.archivedAt} archiveReason={term.archiveReason} history={term.history}
+                    busy={busyId !== null} onManage={(action, reason) => manageTerm(term.id, action, reason)}
+                  />}
                 </article>
               ))}
             </div>
@@ -713,11 +734,11 @@ export function AcademicDeliveryWorkspace({
           <h2 className="mt-2 text-2xl font-black">
             Streams, targets, verification & debt
           </h2>
-          {workspace.streams.length === 0 ? (
-            <Empty text="No academic delivery stream is visible yet." />
+          {visibleStreams.length === 0 ? (
+            <Empty text={showArchived ? "No curriculum execution records exist." : "No visible curriculum streams. Select Show archived to inspect previous records."} />
           ) : (
             <div className="mt-5 space-y-5">
-              {workspace.streams.map((stream) => (
+              {visibleStreams.map((stream) => (
                 <StreamCard
                   key={stream.id}
                   stream={stream}
@@ -745,6 +766,7 @@ export function AcademicDeliveryWorkspace({
                   }
                   submit={submit}
                   onEditDraft={() => editStream(stream)}
+                  onManage={(action, reason) => manageStream(stream.id, action, reason)}
                 />
               ))}
             </div>
@@ -987,6 +1009,7 @@ function StreamCard({
   setNumber,
   submit,
   onEditDraft,
+  onManage,
 }: {
   stream: KhposOpsAcademicStream;
   workspace: KhposOpsAcademicDeliveryWorkspace;
@@ -1003,6 +1026,7 @@ function StreamCard({
   setNumber: (key: string, value: string) => void;
   submit: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
   onEditDraft: () => void;
+  onManage: (action: "archive" | "restore" | "delete", reason: string) => Promise<boolean>;
 }) {
   const weekKey = "week-" + stream.id;
   const targetKey = "target-" + stream.id;
@@ -1046,10 +1070,18 @@ function StreamCard({
         </div>
       </div>
 
-      {stream.canPlan && stream.status === "draft" && <button type="button" disabled={busyId !== null} onClick={onEditDraft} className="mt-4 rounded-full border border-brand-500 px-4 py-2 text-xs font-black text-brand-700">Edit teaching stream draft</button>}
-      {stream.canPlan && ["approved", "active"].includes(stream.status) && <p className="mt-3 text-xs text-slate-500">Approved content is controlled. Use Change deployment below to record teacher or timetable amendments.</p>}
+      {stream.canPlan && ["draft", "approved", "active"].includes(stream.status) && (
+        <button type="button" disabled={busyId !== null} onClick={onEditDraft} className="mt-4 rounded-full border border-brand-500 px-4 py-2 text-xs font-black text-brand-700">
+          {stream.status === "draft" ? "Edit teaching stream draft" : "Edit approved curriculum execution"}
+        </button>
+      )}
+      {stream.canPlan && <AcademicRecordManagement
+        kind="stream" status={stream.status} revisionNumber={stream.revisionNumber}
+        archivedAt={stream.archivedAt} archiveReason={stream.archiveReason} history={stream.history}
+        busy={busyId !== null} onManage={onManage}
+      />}
       {(stream.canPlan || stream.canMonitor) &&
-        !["closed", "cancelled"].includes(stream.status) && (
+        !["closed", "cancelled", "archived"].includes(stream.status) && (
           <details className="mt-4 rounded-2xl border border-slate-200 p-4">
             <summary className="cursor-pointer text-sm font-black">
               Planning controls
@@ -1204,7 +1236,11 @@ function StreamCard({
             No weekly target loaded.
           </p>
         ) : (
-          stream.targets.map((target) => (
+          stream.status === "archived" ? (
+            <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+              {stream.targets.length} historical weekly target(s) retained in the archive. Restore this record to resume planning.
+            </div>
+          ) : stream.targets.map((target) => (
             <TargetCard
               key={target.id}
               target={target}
@@ -1224,7 +1260,7 @@ function StreamCard({
         )}
       </div>
 
-      {stream.canMonitor && !["closed", "cancelled"].includes(stream.status) && (
+      {stream.canMonitor && !["closed", "cancelled", "archived"].includes(stream.status) && (
         <details className="mt-4 rounded-2xl border border-slate-200 p-4">
           <summary className="cursor-pointer text-sm font-black">
             Record teaching observation
