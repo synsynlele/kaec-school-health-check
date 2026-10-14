@@ -78,7 +78,7 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
       </div>{button("Register asset", () => void act("create", { campusId: fields.campus, code: fields.code, label: fields.label, category: fields.category, location: fields.location, intervalDays: fields.interval, nextServiceDate: fields.due }), !fields.campus || !fields.code?.trim() || !fields.label?.trim() || !fields.category || !fields.location?.trim() || !fields.interval || !fields.due)}</section>}
       <RecordQueueTabs view={assetQueue.view} setView={assetQueue.setView} activeCount={assetQueue.activeCount} historyCount={assetQueue.historyCount} activeLabel="Active assets" />
       <RecordListControls controls={assetList} placeholder="Search asset name, code, location or campus" />
-      {assetList.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">No assets recorded on your campuses yet.</p>}
+      {assetList.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">{assetList.query ? "No assets match this search." : "No assets recorded on your campuses yet."}</p>}
       {assetList.visibleItems.map((asset) => {
         const campus = data.campuses.find((item) => item.id === asset.campusId);
         const issue = activeIssue(asset);

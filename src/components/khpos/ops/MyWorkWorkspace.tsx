@@ -753,7 +753,7 @@ export function MyWorkWorkspace({
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
             <h2 className="mt-4 text-2xl font-black">{workList.query ? "No assigned work matches your search." : "Nothing needs your action right now."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              KHP-OS does not create busywork. New responsibilities will appear here when your operating role, an active recurring rule, or a future issue/decision assigns work to you.
+              {workList.query ? "Clear the search to return to your full task list." : "KHP-OS does not create busywork. New responsibilities will appear here when your operating role, an active recurring rule, or a future issue/decision assigns work to you."}
             </p>
             <Link
               href={`/khpos/${organisationId}/team`}

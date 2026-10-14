@@ -681,7 +681,7 @@ export function PeopleWorkspace({
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <UsersRound className="mx-auto size-10 text-brand-700" />
             <h2 className="mt-4 text-2xl font-black">
-              No staff lifecycle records yet.
+              {staffList.query ? "No staff match this search." : "No staff lifecycle records yet."}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Appoint a staff member to begin their account access and
