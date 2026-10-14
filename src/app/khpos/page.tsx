@@ -33,7 +33,7 @@ export default function KhposAccessPage() {
             <span className="mt-4 inline-flex items-center gap-2 text-sm font-black">Start KSHC <ArrowRight className="size-4" /></span>
           </Link>
         </div>
-        <p className="mt-7 max-w-2xl text-sm leading-6 text-slate-400">Creating a free account does not automatically give access to KHP-OS. KAEC-NG must first approve the school partnership, and your school must authorise your position.</p>
+        <p className="mt-7 max-w-2xl text-sm leading-6 text-slate-400">Account access and KHP-OS access are intentionally different. Creating a free account does not automatically give access to KHP-OS. KAEC-NG must first approve the school partnership, and your school must authorise your position.</p>
 
         <details className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
           <summary className="cursor-pointer font-bold text-white">KAEC-NG platform administration</summary>
