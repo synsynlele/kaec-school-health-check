@@ -160,7 +160,7 @@ export async function POST(
 
     if (mode === "manage_term") {
       if (!validUuid(payload.termId) ||
-          !["archive", "restore", "delete"].includes(clean(payload.action)) ||
+          !["archive", "restore", "remove"].includes(clean(payload.action)) ||
           clean(payload.reason).length < 10) {
         return NextResponse.json({ ok: false,
           error: "Choose a valid term and action, and explain the reason (at least 10 characters)." },
@@ -168,7 +168,7 @@ export async function POST(
       }
       const academic = await manageKhposOpsAcademicTerm(
         id, user.id, payload.termId,
-        clean(payload.action) as "archive" | "restore" | "delete", clean(payload.reason),
+        clean(payload.action) as "archive" | "restore" | "remove", clean(payload.reason),
       );
       return NextResponse.json({ ok: true, academic });
     }
@@ -255,7 +255,7 @@ export async function POST(
 
     if (mode === "manage_stream") {
       if (!validUuid(payload.streamId) ||
-          !["archive", "restore", "delete"].includes(clean(payload.action)) ||
+          !["archive", "restore", "remove"].includes(clean(payload.action)) ||
           clean(payload.reason).length < 10) {
         return NextResponse.json({ ok: false,
           error: "Choose a valid teaching stream and action, and explain the reason (at least 10 characters)." },
@@ -263,7 +263,7 @@ export async function POST(
       }
       const academic = await manageKhposOpsAcademicStream(
         id, user.id, payload.streamId,
-        clean(payload.action) as "archive" | "restore" | "delete", clean(payload.reason),
+        clean(payload.action) as "archive" | "restore" | "remove", clean(payload.reason),
       );
       return NextResponse.json({ ok: true, academic });
     }
