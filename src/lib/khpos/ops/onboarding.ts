@@ -75,6 +75,7 @@ export interface KhposMyOnboarding {
     id: string;
     code: string;
     name: string;
+    published: boolean;
     acknowledged: boolean;
   }>;
   relevantProcesses: Array<{
@@ -386,6 +387,7 @@ export async function getKhposMyOnboarding(
         id: policy.id,
         code: policy.code,
         name: policy.name,
+        published: Boolean(versionId),
         acknowledged: versionId ? acknowledgedVersionIds.has(versionId) : false,
       };
     }),
