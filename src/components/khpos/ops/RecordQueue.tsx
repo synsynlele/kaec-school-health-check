@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { focusKhposRecord } from "@/lib/khpos/ops/record-links";
 
 /**
  * Workflow queues are a presentation rule, not a deletion or permission rule.
@@ -31,6 +32,14 @@ export function useRecordQueue<T extends { id: string }>(
     window.addEventListener("hashchange", revealLinkedRecord);
     return () => window.removeEventListener("hashchange", revealLinkedRecord);
   }, [historicalIds]);
+
+  useEffect(() => {
+    if (view !== "history" || !window.location.hash) return;
+    const frame = window.requestAnimationFrame(() =>
+      focusKhposRecord(window.location.hash, document),
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [view, historicalIds]);
 
   return {
     view,
