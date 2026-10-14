@@ -180,7 +180,7 @@ export function ProcessGovernance({
     return () => {
       alive = false;
     };
-  }, [organisationId, supabase, initialEditId, processes]);
+  }, [organisationId, supabase, initialEditId]);
 
   function choose(
     id: string,
