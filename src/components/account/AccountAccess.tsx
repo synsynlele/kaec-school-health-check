@@ -189,6 +189,10 @@ export function AccountAccess() {
           <Link href="/" className="rounded-[26px] border border-slate-200 bg-white p-6"><UserPlus className="size-7 text-slate-700" /><h2 className="mt-4 text-xl font-black text-slate-950">Explore KAEC-NG</h2><p className="mt-2 text-sm leading-6 text-slate-500">Return to the diagnostic platform and Human Potential Development resources.</p></Link>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+          Manage your personal data: <Link href="/delete-account" className="font-bold text-brand-700 underline">Request account and associated data deletion</Link>.
+        </div>
+
         <section className="mt-10">
           <div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">School Health Check</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your assessments</h2></div>
           {assessments.length === 0 ? <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">No assessments created under {accountEmail} yet. School reports shared with your leadership role appear below.</p> : (
