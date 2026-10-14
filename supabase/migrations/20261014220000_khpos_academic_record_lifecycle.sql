@@ -417,3 +417,18 @@ revoke all on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uu
 revoke all on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.khpos_ops_manage_academic_term_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
 grant execute on function public.khpos_ops_manage_academic_stream_server(uuid,uuid,uuid,text,text,jsonb) to service_role;
+
+
+-- School Custodian is the accountable school-level authority above the Guardian.
+-- Restore its planning visibility in legacy O12 academic delivery without
+-- removing existing Guardian or Academic Inspector access.
+create or replace function khpos_private.ops_academic_can_plan(
+  p_actor_user_id uuid,p_organisation_id uuid
+) returns boolean language sql stable security definer
+set search_path=public,auth,khpos_private,pg_temp as $$
+  select khpos_private.ops_academic_member_role(p_actor_user_id,p_organisation_id)='executive'
+    or khpos_private.ops_academic_actor_has_role(
+      p_actor_user_id,p_organisation_id,
+      array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']
+    );
+$$;
