@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
@@ -124,7 +125,18 @@ export function DecisionsWorkspace({
     >
   >({});
   const [outcomeNote, setOutcomeNote] = useState<Record<string, string>>({});
-  const decisionQueue = useRecordQueue(workspace?.items ?? [], (decision) => decision.status === "closed" || decision.status === "rejected" || decision.status === "withdrawn" || (decision.status === "approved" && decision.actionRequired && Boolean(decision.work)));
+  const decisionQueue = useRecordQueue(
+    workspace?.items ?? [],
+    (decision) =>
+      ["closed", "rejected", "withdrawn"].includes(decision.status) ||
+      (decision.status === "approved" && !decision.actionRequired),
+    (decision) => {
+      if (decision.status === "implemented") return !(decision.isRequester || decision.isAuthority);
+      if (decision.status === "returned") return !decision.isRequester;
+      const next = decisionAttentionActions(decision);
+      return !next.approval && !next.implementation;
+    },
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -924,7 +936,7 @@ export function DecisionsWorkspace({
           </section>
         )}
 
-        <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} />
+        <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
 
         {decisionQueue.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
