@@ -122,6 +122,7 @@ begin
   select * into v_term from public.khpos_ops_academic_terms
     where id=p_term_id and organisation_id=p_organisation_id for update;
   if v_term.id is null then raise exception 'Academic term not found in this school.'; end if;
+  if p_action='edit' and v_term.status='draft' and v_reason='' then v_reason := 'Routine draft correction'; end if;
   if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters for the audit record.'; end if;
   v_before := to_jsonb(v_term);
   if p_action='edit' then
@@ -193,6 +194,11 @@ begin
     if v_undo_status is null or v_undo_status='archived' then
       raise exception 'This term has no safe restoration status.';
     end if;
+    if v_undo_status='active' and exists (
+      select 1 from public.khpos_ops_academic_terms t
+      where t.organisation_id=p_organisation_id and t.id<>p_term_id
+        and t.status='active' and t.campus_id is not distinct from v_term.campus_id
+    ) then raise exception 'Another academic term is already active for this school campus. Close it before restoring this term.'; end if;
     update public.khpos_ops_academic_terms
       set status=v_undo_status,archived_at=null,archived_by=null,
         archive_reason=null,status_before_archive=null,updated_at=now()
@@ -263,6 +269,7 @@ begin
   select * into v_stream from public.khpos_ops_academic_delivery_streams
     where id=p_stream_id and organisation_id=p_organisation_id for update;
   if v_stream.id is null then raise exception 'Teaching stream not found in this school.'; end if;
+  if p_action='edit' and v_stream.status='draft' and v_reason='' then v_reason := 'Routine draft correction'; end if;
   if length(v_reason)<10 then raise exception 'Explain the change in at least 10 characters for the audit record.'; end if;
   v_before := to_jsonb(v_stream);
   select status into v_term_status from public.khpos_ops_academic_terms
@@ -373,6 +380,9 @@ begin
     if v_undo_status not in ('draft','approved','active','closed','cancelled') then
       raise exception 'This stream has no valid restoration state.';
     end if;
+    if v_undo_status in ('draft','approved','active') and v_term_status not in ('draft','active') then
+      raise exception 'Restore an active or draft academic term before restoring this curriculum stream.';
+    end if;
     if v_undo_status='approved' and v_term_status='active' then v_undo_status:='active'; end if;
     if v_undo_status='active' and v_term_status<>'active' then
       raise exception 'An active teaching stream needs an active academic term before restoration.';
@@ -432,3 +442,38 @@ set search_path=public,auth,khpos_private,pg_temp as $$
       array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']
     );
 $$;
+
+
+-- Stop new evidence or delivery operations against archived streams.
+-- The existing record and its historical children remain untouched.
+create or replace function khpos_private.ops_academic_reject_archived_stream_work()
+returns trigger language plpgsql security definer
+set search_path=public,auth,khpos_private,pg_temp as $$
+begin
+  if exists (
+    select 1 from public.khpos_ops_academic_delivery_streams s
+    where s.id=NEW.stream_id and s.status='archived'
+  ) then
+    raise exception 'This curriculum stream is archived. Restore it before creating or changing teaching work.';
+  end if;
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_khpos_archived_target_guard on public.khpos_ops_academic_weekly_targets;
+create trigger trg_khpos_archived_target_guard
+before insert or update on public.khpos_ops_academic_weekly_targets
+for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
+drop trigger if exists trg_khpos_archived_debt_guard on public.khpos_ops_academic_debt;
+create trigger trg_khpos_archived_debt_guard
+before insert or update on public.khpos_ops_academic_debt
+for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
+drop trigger if exists trg_khpos_archived_observation_guard on public.khpos_ops_academic_observations;
+create trigger trg_khpos_archived_observation_guard
+before insert or update on public.khpos_ops_academic_observations
+for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
+drop trigger if exists trg_khpos_archived_assessment_package_guard on public.khpos_ops_assessment_packages;
+create trigger trg_khpos_archived_assessment_package_guard
+before insert or update on public.khpos_ops_assessment_packages
+for each row execute function khpos_private.ops_academic_reject_archived_stream_work();
+
+revoke all on function khpos_private.ops_academic_reject_archived_stream_work() from public,anon,authenticated;
