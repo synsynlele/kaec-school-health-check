@@ -472,7 +472,7 @@ export function IssuesWorkspace({
         {issueSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">{issueQueue.view === "history" ? "No closed issues in History." : "No issues need attention."}</h2>
+            <h2 className="mt-4 text-2xl font-black">{issueSearch.query.trim() ? "No issues match this search." : issueQueue.view === "history" ? "No closed issues in History." : "No issues need attention."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Closed cases are kept in History. New or unresolved issues will appear here for follow-up.
             </p>
