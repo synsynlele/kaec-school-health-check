@@ -7,7 +7,7 @@ let adminClient: SupabaseClient | null = null;
 
 export interface AcademicRecordHistory {
   id: string;
-  action: "edit" | "archive" | "restore" | "delete";
+  action: "edit" | "archive" | "restore" | "remove";
   reason: string;
   createdAt: string;
 }
@@ -42,10 +42,11 @@ export interface KhposOpsAcademicTerm {
   termName: string;
   startDate: string;
   endDate: string;
-  status: "draft" | "active" | "closed" | "cancelled" | "archived";
+  status: "draft" | "active" | "closed" | "cancelled" | "archived" | "removed";
   revisionNumber?: number;
   archivedAt?: string | null;
   archiveReason?: string | null;
+  removedAt?: string | null;
   history?: AcademicRecordHistory[];
 }
 
@@ -122,10 +123,11 @@ export interface KhposOpsAcademicStream {
   schemeVersion: string | null;
   timetableReference: string;
   expectedWeeks: number;
-  status: "draft" | "approved" | "active" | "closed" | "cancelled" | "archived";
+  status: "draft" | "approved" | "active" | "closed" | "cancelled" | "archived" | "removed";
   revisionNumber?: number;
   archivedAt?: string | null;
   archiveReason?: string | null;
+  removedAt?: string | null;
   history?: AcademicRecordHistory[];
   isTeacher: boolean;
   canPlan: boolean;
@@ -249,10 +251,10 @@ export async function getKhposOpsAcademicDelivery(
   const [{ data: termRecords, error: termError }, { data: streamRecords, error: streamError },
     { data: historyRecords, error: historyError }] = await Promise.all([
     admin().from("khpos_ops_academic_terms")
-      .select("id,revision_number,archived_at,archive_reason")
+      .select("id,revision_number,archived_at,archive_reason,removed_at")
       .eq("organisation_id", organisationId),
     admin().from("khpos_ops_academic_delivery_streams")
-      .select("id,revision_number,archived_at,archive_reason")
+      .select("id,revision_number,archived_at,archive_reason,removed_at")
       .eq("organisation_id", organisationId),
     admin().from("khpos_ops_academic_record_audit")
       .select("id,record_kind,record_id,action,reason,created_at")
@@ -276,14 +278,18 @@ export async function getKhposOpsAcademicDelivery(
   }
   workspace.terms = workspace.terms.map((term) => {
     const meta = termMeta.get(term.id);
-    return { ...term, revisionNumber: meta?.revision_number ?? 1,
+    return { ...term, status: meta?.removed_at ? "removed" as const : meta?.archived_at ? "archived" as const : term.status,
+      revisionNumber: meta?.revision_number ?? 1,
       archivedAt: meta?.archived_at ?? null, archiveReason: meta?.archive_reason ?? null,
+      removedAt: meta?.removed_at ?? null,
       history: histories.get("term:" + term.id) ?? [] };
   });
   workspace.streams = workspace.streams.map((stream) => {
     const meta = streamMeta.get(stream.id);
-    return { ...stream, revisionNumber: meta?.revision_number ?? 1,
+    return { ...stream, status: meta?.removed_at ? "removed" as const : meta?.archived_at ? "archived" as const : stream.status,
+      revisionNumber: meta?.revision_number ?? 1,
       archivedAt: meta?.archived_at ?? null, archiveReason: meta?.archive_reason ?? null,
+      removedAt: meta?.removed_at ?? null,
       history: histories.get("stream:" + stream.id) ?? [] };
   });
   return workspace;
@@ -343,7 +349,7 @@ export async function updateKhposOpsAcademicDraftTerm(
 
 export async function manageKhposOpsAcademicTerm(
   organisationId: string,userId: string,termId: string,
-  action: "archive" | "restore" | "delete", reason: string,
+  action: "archive" | "restore" | "remove", reason: string,
 ) {
   const { error } = await admin().rpc("khpos_ops_manage_academic_term_server", {
     p_actor_user_id: userId,
@@ -450,7 +456,7 @@ export async function updateKhposOpsAcademicDraftStream(
 
 export async function manageKhposOpsAcademicStream(
   organisationId: string,userId: string,streamId: string,
-  action: "archive" | "restore" | "delete", reason: string,
+  action: "archive" | "restore" | "remove", reason: string,
 ) {
   const { error } = await admin().rpc("khpos_ops_manage_academic_stream_server", {
     p_actor_user_id: userId,
