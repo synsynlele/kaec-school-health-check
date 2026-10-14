@@ -52,3 +52,18 @@ A new Android wrapper release is required only when the wrapper itself changesâ€
 The APK asset is always named `KHP-OS-Lite.apk`, allowing the KSHC landing page to use GitHub's stable `releases/latest/download` URL without another web deployment merely to change an APK link.
 
 Production merge/deployment of the KSHC landing-page distribution controls remains a separate explicit founder-authorised action.
+
+## Google Play first-listing gate (October 2026)
+
+The current signed version `1.0.0` / code `1` was originally distributed through GitHub. That **does not** prove the bundle satisfies current Google Play policies or that Play has accepted it.
+
+Before any first public listing:
+1. Verify the Android package name is `ng.name.khpos.lite` and the chosen Play App Signing certificate is correctly linked to `www.kshc.name.ng` in the public `/.well-known/assetlinks.json`. Play App Signing may use a different final device signing certificate from the local upload key.
+2. Set the production wrapper to target **Android API 36 or higher**. The protected Android release workflow now stops if the *signed APK* does not have target SDK 36+. The workflow installing the API 36 SDK is **not itself evidence** of the generated app's target SDK.
+3. Check the App Bundle's manifest, package ID, unique version code, signing credentials and final splash/icon artwork. Increase the version code only when a new signed wrapper version is deliberately needed.
+4. Complete Google Play's App Content declarations: Data safety for actual staff/learner/parent/safeguarding information, privacy policy at `https://www.kshc.name.ng/privacy`, public account deletion request at `https://www.kshc.name.ng/delete-account`, content ratings, target audience, app access and permissions. Provide a **reviewable, authorised school/staff demo account or review instructions** if Play reviewers otherwise cannot access the gated app.
+5. Supply required Play Store images, screenshots, feature graphic, category, contact information, short and full description. Confirm the production app can sign in, navigate, submit and return from forms, log out and display both Needs Attention and History at phone widths.
+6. KAEC-NG must actually handle deletion requests logged by `/api/contact`: confirm receipt, authenticate the requester, apply applicable account and record deletion/retention duties, and communicate the result. The public request page is **not** an automatic deletion API.
+7. Do not trigger `.github/workflows/android-lite-release.yml` until a deliberate new signed Android artifact is needed. Normal web UX releases remain web-first and do not consume an additional Android build.
+
+Google Play Console submission, signing selection, Data Safety approval and final policy compliance remain separate release gatesâ€”not guaranteed by repository CI.
