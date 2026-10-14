@@ -66,7 +66,43 @@ for(const page of ["InstitutionalLibrary","OperationalRecordsWorkspace"]){
   count+=2;
 }
 
+const expandedQueues = {
+  AvailabilityWorkspace: ["availabilitySearch"],
+  LearnerProgressWorkspace: ["signalSearch", "learnerCaseSearch"],
+  RecruitmentWorkspace: ["workforceSearch", "vacancySearch", "applicationsSearch"],
+  StaffAccountabilityWorkspace: ["accountabilitySearch"],
+  StaffPerformanceWorkspace: ["reviewSearch"],
+  StaffTransitionWorkspace: ["successionSearch", "promotionSearch", "exitSearch"],
+  ExtendedWorkspace: ["eventSearch", "journeySearch"],
+  StudentCultureWorkspace: ["cultureSearch"],
+};
+for (const [page, searches] of Object.entries(expandedQueues)) {
+  const source = read(base+page+".tsx");
+  for (const search of searches) {
+    assert.ok(source.includes("const "+search+" = useRecordSearch("),page+" missing "+search);
+    assert.ok(source.includes("<RecordQueueSearchControls query={"+search+".query}"),page+" toolbar missing "+search);
+    assert.ok(source.includes(search+".visibleItems.map("),page+" does not render filtered "+search);
+    count += 3;
+  }
+}
+const calendar = read(base+"InstitutionalCalendarWorkspace.tsx");
+assert.ok(calendar.includes("const calendarSearch = useRecordSearch("));
+assert.ok(calendar.includes("calendarSearch.visibleItems.filter("));
+assert.ok(calendar.includes("<RecordQueueSearchControls query={calendarSearch.query}"));
+count += 3;
+const attendance = read(base+"TeacherPresenceWorkspace.tsx");
+assert.ok(attendance.includes("School check-in and check-out"));
+assert.ok(attendance.includes("Class lesson check-in and check-out"));
+assert.ok(attendance.includes("School check-in recorded")&&attendance.includes("Class check-in recorded"));
+assert.ok(attendance.includes("dateTime(d.in)")&&attendance.includes("dateTime(p.session!.in)"));
+assert.ok(attendance.includes("dateTime(d.out)")&&attendance.includes("dateTime(p.session!.out)"));
+count += 5;
+
 const today=read(base+"MyWorkWorkspace.tsx");
+assert.ok(today.includes("const workSearch = useRecordSearch("));
+assert.ok(today.includes("<RecordQueueSearchControls")&&today.includes("verificationItems.map("));
+assert.ok(today.includes("availableProcesses.map(")&&today.includes("workSearch.visibleItems"));
+count += 3;
 assert.ok(today.includes("<details className=")&&today.includes("History · {completedItems.length}"));
 assert.ok(!today.includes("completedItems.slice(0, 10)"));
 count+=2;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -89,6 +90,13 @@ export function StaffAccountabilityWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const accountabilityQueue = useRecordQueue(workspace?.cases ?? [], (item) => ["closed", "cancelled", "withdrawn"].includes(item.status));
+  const accountabilitySearch = useRecordSearch(
+    accountabilityQueue.visibleItems,
+    (e) => [e.reference, e.title, e.caseType, e.reporterName ?? '', e.subjectName ?? '', e.status].join(" "),
+    (e) => e.title,
+    (e) => e.createdAt,
+    undefined,
+  );
 
   const [recognitionStaffId, setRecognitionStaffId] = useState("");
   const [recognitionCategory, setRecognitionCategory] = useState("initiative");
@@ -868,7 +876,8 @@ export function StaffAccountabilityWorkspace({
           </p>
 
           <RecordQueueTabs view={accountabilityQueue.view} setView={accountabilityQueue.setView} activeCount={accountabilityQueue.activeCount} historyCount={accountabilityQueue.historyCount} activeLabel="Needs attention" />
-            {accountabilityQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={accountabilitySearch.query} setQuery={accountabilitySearch.setQuery} sort={accountabilitySearch.sort} setSort={accountabilitySearch.setSort} shown={accountabilitySearch.visibleItems.length} total={accountabilityQueue.visibleItems.length} placeholder="Search authorised accountability cases"   />
+            {accountabilitySearch.visibleItems.length === 0 ? (
             <div className="mt-4 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
               <UsersRound className="mx-auto size-9 text-brand-700" />
               <p className="mt-3 text-sm text-slate-500">
@@ -877,7 +886,7 @@ export function StaffAccountabilityWorkspace({
             </div>
           ) : (
             <div className="mt-5 space-y-5">
-              {accountabilityQueue.visibleItems.map((review) => {
+              {accountabilitySearch.visibleItems.map((review) => {
                 const responseComplete = ["submitted", "no_response_recorded"].includes(
                   review.responseState,
                 );

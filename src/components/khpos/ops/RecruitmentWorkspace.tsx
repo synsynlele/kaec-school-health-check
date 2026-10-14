@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -72,8 +73,29 @@ export function RecruitmentWorkspace({
   const [dates, setDates] = useState<Record<string, string>>({});
   const [selects, setSelects] = useState<Record<string, string>>({});
   const workforceQueue = useRecordQueue(workspace?.workforceRequests ?? [], (item) => ["declined", "filled", "cancelled"].includes(item.status));
+  const workforceSearch = useRecordSearch(
+    workforceQueue.visibleItems,
+    (e) => [e.reference, e.roleTitle, e.rationale, e.status, e.needType].join(" "),
+    (e) => e.roleTitle,
+    (e) => e.desiredStartDate,
+    undefined,
+  );
   const vacancyQueue = useRecordQueue(workspace?.vacancies ?? [], (item) => ["closed", "filled", "cancelled"].includes(item.status));
+  const vacancySearch = useRecordSearch(
+    vacancyQueue.visibleItems,
+    (e) => [e.reference, e.title, e.roleTitle, e.status, e.roleOutcomes].join(" "),
+    (e) => e.title,
+    (e) => e.openingDate,
+    undefined,
+  );
   const applicationsQueue = useRecordQueue(workspace?.applications ?? [], (item) => ["appointed", "declined", "withdrawn"].includes(item.stage));
+  const applicationsSearch = useRecordSearch(
+    applicationsQueue.visibleItems,
+    (e) => [e.reference, e.candidateName, e.candidateEmail, e.roleTitle, e.stage].join(" "),
+    (e) => e.candidateName,
+    undefined,
+    undefined,
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -431,10 +453,11 @@ export function RecruitmentWorkspace({
                   </h2>
                 </div>
                 <RecordQueueTabs view={workforceQueue.view} setView={workforceQueue.setView} activeCount={workforceQueue.activeCount} historyCount={workforceQueue.historyCount} />
-                {workforceQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={workforceSearch.query} setQuery={workforceSearch.setQuery} sort={workforceSearch.sort} setSort={workforceSearch.setSort} shown={workforceSearch.visibleItems.length} total={workforceQueue.visibleItems.length} placeholder="Search staffing request, role or status"   />
+                {workforceSearch.visibleItems.length === 0 ? (
                   <Empty text="No workforce request has been created." />
                 ) : (
-                  workforceQueue.visibleItems.map((request) => (
+                  workforceSearch.visibleItems.map((request) => (
                     <WorkforceCard
                       key={request.id}
                       request={request}
@@ -459,10 +482,11 @@ export function RecruitmentWorkspace({
                   </h2>
                 </div>
                 <RecordQueueTabs view={vacancyQueue.view} setView={vacancyQueue.setView} activeCount={vacancyQueue.activeCount} historyCount={vacancyQueue.historyCount} />
-                {vacancyQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={vacancySearch.query} setQuery={vacancySearch.setQuery} sort={vacancySearch.sort} setSort={vacancySearch.setSort} shown={vacancySearch.visibleItems.length} total={vacancyQueue.visibleItems.length} placeholder="Search vacancy, title or role"   />
+                {vacancySearch.visibleItems.length === 0 ? (
                   <Empty text="No vacancy has been created from an approved need." />
                 ) : (
-                  vacancyQueue.visibleItems.map((vacancy) => (
+                  vacancySearch.visibleItems.map((vacancy) => (
                     <VacancyCard
                       key={vacancy.id}
                       vacancy={vacancy}
@@ -497,10 +521,11 @@ export function RecruitmentWorkspace({
               </h2>
             </div>
             <RecordQueueTabs view={applicationsQueue.view} setView={applicationsQueue.setView} activeCount={applicationsQueue.activeCount} historyCount={applicationsQueue.historyCount} />
-            {applicationsQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={applicationsSearch.query} setQuery={applicationsSearch.setQuery} sort={applicationsSearch.sort} setSort={applicationsSearch.setSort} shown={applicationsSearch.visibleItems.length} total={applicationsQueue.visibleItems.length} placeholder="Search candidate, vacancy role or stage" hasDate={false}  />
+            {applicationsSearch.visibleItems.length === 0 ? (
               <Empty text="No candidate application is visible in your scope." />
             ) : (
-              applicationsQueue.visibleItems.map((application) => (
+              applicationsSearch.visibleItems.map((application) => (
                 <ApplicationCard
                   key={application.id}
                   application={application}

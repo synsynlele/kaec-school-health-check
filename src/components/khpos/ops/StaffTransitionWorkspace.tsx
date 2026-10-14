@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -84,8 +85,29 @@ export function StaffTransitionWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const successionQueue = useRecordQueue(workspace?.successionPlans ?? [], (item) => ["achieved", "withdrawn", "archived"].includes(item.status));
+  const successionSearch = useRecordSearch(
+    successionQueue.visibleItems,
+    (e) => [e.reference, e.staffName, e.currentRoleTitle, e.targetRoleTitle, e.status].join(" "),
+    (e) => e.staffName,
+    undefined,
+    undefined,
+  );
   const promotionQueue = useRecordQueue(workspace?.promotionCases ?? [], (item) => ["executed", "declined", "cancelled"].includes(item.status));
+  const promotionSearch = useRecordSearch(
+    promotionQueue.visibleItems,
+    (e) => [e.reference, e.staffName, e.fromRoleTitle, e.targetRoleTitle, e.status].join(" "),
+    (e) => e.staffName,
+    (e) => e.proposedEffectiveDate,
+    undefined,
+  );
   const exitQueue = useRecordQueue(workspace?.exitCases ?? [], (item) => ["closed", "cancelled"].includes(item.status));
+  const exitSearch = useRecordSearch(
+    exitQueue.visibleItems,
+    (e) => [e.reference, e.staffName, e.roleTitle, e.exitType, e.status].join(" "),
+    (e) => e.staffName,
+    (e) => e.proposedLastDay,
+    undefined,
+  );
 
   const [successionStaffId, setSuccessionStaffId] = useState("");
   const [successionTargetRoleId, setSuccessionTargetRoleId] = useState("");
@@ -844,10 +866,11 @@ export function StaffTransitionWorkspace({
               </h2>
             </div>
             <RecordQueueTabs view={successionQueue.view} setView={successionQueue.setView} activeCount={successionQueue.activeCount} historyCount={successionQueue.historyCount} activeLabel="Needs attention" />
-            {successionQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={successionSearch.query} setQuery={successionSearch.setQuery} sort={successionSearch.sort} setSort={successionSearch.setSort} shown={successionSearch.visibleItems.length} total={successionQueue.visibleItems.length} placeholder="Search succession, staff or role" hasDate={false}  />
+            {successionSearch.visibleItems.length === 0 ? (
               <Empty text="No succession plan has been opened." />
             ) : (
-              successionQueue.visibleItems.map((plan) => (
+              successionSearch.visibleItems.map((plan) => (
                 <SuccessionCard
                   key={plan.id}
                   plan={plan}
@@ -880,10 +903,11 @@ export function StaffTransitionWorkspace({
               </h2>
             </div>
             <RecordQueueTabs view={promotionQueue.view} setView={promotionQueue.setView} activeCount={promotionQueue.activeCount} historyCount={promotionQueue.historyCount} activeLabel="Needs attention" />
-            {promotionQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={promotionSearch.query} setQuery={promotionSearch.setQuery} sort={promotionSearch.sort} setSort={promotionSearch.setSort} shown={promotionSearch.visibleItems.length} total={promotionQueue.visibleItems.length} placeholder="Search promotion, staff or role"   />
+            {promotionSearch.visibleItems.length === 0 ? (
               <Empty text="No promotion transition has been opened." />
             ) : (
-              promotionQueue.visibleItems.map((promotion) => (
+              promotionSearch.visibleItems.map((promotion) => (
                 <PromotionCard
                   key={promotion.id}
                   promotion={promotion}
@@ -917,10 +941,11 @@ export function StaffTransitionWorkspace({
               </h2>
             </div>
             <RecordQueueTabs view={exitQueue.view} setView={exitQueue.setView} activeCount={exitQueue.activeCount} historyCount={exitQueue.historyCount} activeLabel="Needs attention" />
-            {exitQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={exitSearch.query} setQuery={exitSearch.setQuery} sort={exitSearch.sort} setSort={exitSearch.setSort} shown={exitSearch.visibleItems.length} total={exitQueue.visibleItems.length} placeholder="Search exit, staff or status"   />
+            {exitSearch.visibleItems.length === 0 ? (
               <Empty text="No exit case has been opened." />
             ) : (
-              exitQueue.visibleItems.map((exitCase) => (
+              exitSearch.visibleItems.map((exitCase) => (
                 <ExitCard
                   key={exitCase.id}
                   exitCase={exitCase}

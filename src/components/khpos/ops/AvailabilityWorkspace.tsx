@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -110,6 +111,13 @@ export function AvailabilityWorkspace({
     {},
   );
   const availabilityQueue = useRecordQueue(workspace?.cases ?? [], (entry) => ["closed", "cancelled", "declined"].includes(entry.status));
+  const availabilitySearch = useRecordSearch(
+    availabilityQueue.visibleItems,
+    (e) => [e.reference, e.staffName, e.roleTitle, e.campusName ?? '', e.caseType, e.status, e.reasonCategory ?? ''].join(" "),
+    (e) => e.staffName,
+    (e) => e.startAt,
+    undefined,
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -704,7 +712,8 @@ export function AvailabilityWorkspace({
             )}
 
             <RecordQueueTabs view={availabilityQueue.view} setView={availabilityQueue.setView} activeCount={availabilityQueue.activeCount} historyCount={availabilityQueue.historyCount} />
-            {availabilityQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={availabilitySearch.query} setQuery={availabilitySearch.setQuery} sort={availabilitySearch.sort} setSort={availabilitySearch.setSort} shown={availabilitySearch.visibleItems.length} total={availabilityQueue.visibleItems.length} placeholder="Search staff, leave reference, role or status"   />
+            {availabilitySearch.visibleItems.length === 0 ? (
               <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
                 <CheckCircle2 className="mx-auto size-10 text-mint-700" />
                 <h2 className="mt-4 text-2xl font-black">
@@ -718,7 +727,7 @@ export function AvailabilityWorkspace({
               </section>
             ) : (
               <section className="space-y-5">
-                {availabilityQueue.visibleItems.map((availabilityCase) => {
+                {availabilitySearch.visibleItems.map((availabilityCase) => {
                   const acceptedCoverage =
                     availabilityCase.coverage.filter((coverage) =>
                       ["accepted", "completed"].includes(coverage.status),

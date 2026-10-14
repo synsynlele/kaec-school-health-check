@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -116,7 +117,21 @@ export function LearnerProgressWorkspace({
   const [selects, setSelects] = useState<Record<string, string>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
   const signalQueue = useRecordQueue(workspace?.signals ?? [], (item) => ["resolved", "dismissed"].includes(item.status));
+  const signalSearch = useRecordSearch(
+    signalQueue.visibleItems,
+    (e) => [e.reference, e.learnerName, e.classLabel, e.signalType, e.severity, e.status, e.signalNote].join(" "),
+    (e) => e.learnerName,
+    (e) => e.observedAt,
+    (e) => e.severity === 'critical' ? 0 : e.severity === 'red' ? 1 : 2,
+  );
   const learnerCaseQueue = useRecordQueue(workspace?.cases ?? [], (item) => item.status === "closed");
+  const learnerCaseSearch = useRecordSearch(
+    learnerCaseQueue.visibleItems,
+    (e) => [e.reference, e.learnerName, e.classLabel, e.concernSummary, e.status, e.severity].join(" "),
+    (e) => e.learnerName,
+    (e) => e.reviewDueDate,
+    (e) => e.severity === 'critical' ? 0 : e.severity === 'red' ? 1 : 2,
+  );
 
   async function token() {
     if (!supabase) return null;
@@ -685,11 +700,12 @@ export function LearnerProgressWorkspace({
                 Early concerns waiting for response
               </h2>
               <RecordQueueTabs view={signalQueue.view} setView={signalQueue.setView} activeCount={signalQueue.activeCount} historyCount={signalQueue.historyCount} />
-              {signalQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={signalSearch.query} setQuery={signalSearch.setQuery} sort={signalSearch.sort} setSort={signalSearch.setSort} shown={signalSearch.visibleItems.length} total={signalQueue.visibleItems.length} placeholder="Search learner, signal, class or severity"  hasPriority />
+              {signalSearch.visibleItems.length === 0 ? (
                 <Empty text="No learner-risk signals are visible." />
               ) : (
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  {signalQueue.visibleItems.map((signal) => (
+                  {signalSearch.visibleItems.map((signal) => (
                     <RiskSignalCard
                       key={signal.id}
                       signal={signal}
@@ -718,11 +734,12 @@ export function LearnerProgressWorkspace({
                 Diagnose → intervene → reassess → recover or redirect
               </h2>
               <RecordQueueTabs view={learnerCaseQueue.view} setView={learnerCaseQueue.setView} activeCount={learnerCaseQueue.activeCount} historyCount={learnerCaseQueue.historyCount} />
-              {learnerCaseQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={learnerCaseSearch.query} setQuery={learnerCaseSearch.setQuery} sort={learnerCaseSearch.sort} setSort={learnerCaseSearch.setSort} shown={learnerCaseSearch.visibleItems.length} total={learnerCaseQueue.visibleItems.length} placeholder="Search learner, support case or status"  hasPriority />
+              {learnerCaseSearch.visibleItems.length === 0 ? (
                 <Empty text="No structured learner-support cases are visible." />
               ) : (
                 <div className="mt-4 space-y-5">
-                  {learnerCaseQueue.visibleItems.map((supportCase) => (
+                  {learnerCaseSearch.visibleItems.map((supportCase) => (
                     <SupportCaseCard
                       key={supportCase.id}
                       supportCase={supportCase}

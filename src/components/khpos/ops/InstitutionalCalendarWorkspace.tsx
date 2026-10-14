@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import {
   ArrowLeft,
   CalendarDays,
@@ -50,6 +51,13 @@ export function InstitutionalCalendarWorkspace({
   const [calendar, setCalendar] = useState<KhposCalendarSnapshot | null>(null);
   const [kind, setKind] = useState<KhposCalendarItem["kind"] | "all">("all");
   const [error, setError] = useState("");
+  const calendarSearch = useRecordSearch(
+    calendar?.items ?? [],
+    (item) => [item.title, item.detail, item.kind, item.status, item.priority, item.date, item.time ?? ""].join(" "),
+    (item) => item.title,
+    (item) => item.dueAt ?? item.date,
+    (item) => ({ critical: 0, high: 1, standard: 2, planned: 3 })[item.priority],
+  );
 
   useEffect(() => {
     if (!supabase) return;
@@ -106,10 +114,7 @@ export function InstitutionalCalendarWorkspace({
     );
   }
 
-  const visible =
-    kind === "all"
-      ? calendar.items
-      : calendar.items.filter((item) => item.kind === kind);
+  const visible = calendarSearch.visibleItems.filter((item) => kind === "all" || item.kind === kind);
   const grouped = new Map<string, KhposCalendarItem[]>();
   for (const item of visible) {
     const rows = grouped.get(item.date) ?? [];
@@ -181,6 +186,7 @@ export function InstitutionalCalendarWorkspace({
           )}
         </section>
 
+        <RecordQueueSearchControls query={calendarSearch.query} setQuery={calendarSearch.setQuery} sort={calendarSearch.sort} setSort={calendarSearch.setSort} shown={visible.length} total={calendar.items.length} placeholder="Search event, work, decision or date" hasPriority />
         {Array.from(grouped.entries()).map(([date, items]) => (
           <section
             key={date}
