@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordListControls, useRecordListControls, compareRecordDate, compareRecordPriority, compareRecordText } from "./RecordListControls";
 import { decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import Link from "next/link";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
@@ -137,6 +138,19 @@ export function DecisionsWorkspace({
       return !next.approval && !next.implementation;
     },
   );
+
+  const decisionList = useRecordListControls(
+    decisionQueue.visibleItems,
+    (decision) => [decision.reference, decision.title, decision.context, decision.status, decision.category, decision.priority, decision.authority.displayName, decision.authority.roleTitle, decision.requester.displayName, decision.process?.code].filter(Boolean).join(" "),
+    [
+      { value: "urgent", label: "Priority first", compare: (a, b) => compareRecordPriority(a.priority, b.priority) || compareRecordDate(a.decisionDueAt, b.decisionDueAt) || compareRecordDate(a.createdAt, b.createdAt, "desc") },
+      { value: "due", label: "Deadline: soonest", compare: (a, b) => compareRecordDate(a.decisionDueAt, b.decisionDueAt) },
+      { value: "newest", label: "Newest first", compare: (a, b) => compareRecordDate(a.createdAt, b.createdAt, "desc") },
+      { value: "title", label: "Title A–Z", compare: (a, b) => compareRecordText(a.title, b.title) },
+    ],
+    "urgent",
+  );
+
 
   async function token() {
     if (!supabase) return null;
@@ -937,11 +951,12 @@ export function DecisionsWorkspace({
         )}
 
         <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
+        <RecordListControls controls={decisionList} placeholder="Search decision, reference, authority or category" />
 
-        {decisionQueue.visibleItems.length === 0 ? (
+        {decisionList.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <ShieldCheck className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">{decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
+            <h2 className="mt-4 text-2xl font-black">{decisionList.query ? "No decisions match this search." : decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Finished decisions move to History. Approved implementation work is tracked in Today.
               Material decisions appear here when a real role requests or records
@@ -950,7 +965,7 @@ export function DecisionsWorkspace({
           </section>
         ) : (
           <section className="space-y-4">
-            {decisionQueue.visibleItems.map((decision) => {
+            {decisionList.visibleItems.map((decision) => {
               const note = notes[decision.id] ?? "";
               const busy = busyId === decision.id;
               const actionRequired = approveAction[decision.id] ?? false;

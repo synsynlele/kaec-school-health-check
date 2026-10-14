@@ -19,6 +19,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { RecordListControls, useRecordListControls, compareRecordDate, compareRecordText } from "./RecordListControls";
 import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
 import { WorkRecordRequirementCard } from "@/components/khpos/ops/WorkRecordRequirementCard";
 import type { KhposOpsLibrary } from "@/lib/khpos/ops/library";
@@ -277,6 +278,19 @@ export function MyWorkWorkspace({
 
   useRecordFocus(!!work);
 
+  const workList = useRecordListControls(
+    (work?.items ?? []).filter((item) => !roleFilter || item.roleTitle === roleFilter),
+    (item) => [item.title, item.description, item.processCode, item.processTitle, item.roleTitle, item.campusName, item.unitName, item.status, item.priority].filter(Boolean).join(" "),
+    [
+      { value: "due", label: "Deadline: soonest", compare: (a, b) => compareRecordDate(a.dueAt, b.dueAt) },
+      { value: "priority", label: "Highest priority", compare: (a, b) => (["critical", "high", "standard", "planned"].indexOf(a.priority) - ["critical", "high", "standard", "planned"].indexOf(b.priority)) || compareRecordDate(a.dueAt, b.dueAt) },
+      { value: "title", label: "Task title A–Z", compare: (a, b) => compareRecordText(a.title, b.title) },
+      { value: "started", label: "Recently started", compare: (a, b) => compareRecordDate(a.startedAt, b.startedAt, "desc") },
+    ],
+    "due",
+  );
+
+
   if (!work && !error) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
@@ -310,7 +324,7 @@ export function MyWorkWorkspace({
   }
 
   const roleTitles = [...new Set([...work.items.map((item) => item.roleTitle), ...work.availableProcesses.map((process) => process.ownerRoleTitle)])].sort();
-  const visibleItems = work.items.filter((item) => !roleFilter || item.roleTitle === roleFilter);
+  const visibleItems = workList.visibleItems;
   const availableProcesses = work.availableProcesses.filter((process) => !roleFilter || process.ownerRoleTitle === roleFilter);
   const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
   const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
@@ -732,12 +746,14 @@ export function MyWorkWorkspace({
           </section>
         )}
 
+        <RecordListControls controls={workList} placeholder="Search tasks, process, role or campus" />
+
         {openItems.length === 0 && work.verificationQueue.length === 0 ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">Nothing needs your action right now.</h2>
+            <h2 className="mt-4 text-2xl font-black">{workList.query ? "No assigned work matches your search." : "Nothing needs your action right now."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              KHP-OS does not create busywork. New responsibilities will appear here when your operating role, an active recurring rule, or a future issue/decision assigns work to you.
+              {workList.query ? "Clear the search to return to your full task list." : "KHP-OS does not create busywork. New responsibilities will appear here when your operating role, an active recurring rule, or a future issue/decision assigns work to you."}
             </p>
             <Link
               href={`/khpos/${organisationId}/team`}
