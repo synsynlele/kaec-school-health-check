@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
+import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -86,6 +87,13 @@ export function StaffPerformanceWorkspace({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const reviewQueue = useRecordQueue(workspace?.reviews ?? [], (review) => ["completed", "cancelled"].includes(review.status));
+  const reviewSearch = useRecordSearch(
+    reviewQueue.visibleItems,
+    (e) => [e.reference, e.staffName, e.roleTitle, e.reviewType, e.status, e.campusName ?? ''].join(" "),
+    (e) => e.staffName,
+    (e) => e.periodEnd,
+    undefined,
+  );
 
   const [staffId, setStaffId] = useState("");
   const [reviewType, setReviewType] =
@@ -708,7 +716,8 @@ export function StaffPerformanceWorkspace({
             )}
 
             <RecordQueueTabs view={reviewQueue.view} setView={reviewQueue.setView} activeCount={reviewQueue.activeCount} historyCount={reviewQueue.historyCount} activeLabel="Needs attention" />
-            {reviewQueue.visibleItems.length === 0 ? (
+          <RecordQueueSearchControls query={reviewSearch.query} setQuery={reviewSearch.setQuery} sort={reviewSearch.sort} setSort={reviewSearch.setSort} shown={reviewSearch.visibleItems.length} total={reviewQueue.visibleItems.length} placeholder="Search staff, review, role or status"   />
+            {reviewSearch.visibleItems.length === 0 ? (
               <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
                 <BookOpenCheck className="mx-auto size-10 text-brand-700" />
                 <h2 className="mt-4 text-2xl font-black">
@@ -722,7 +731,7 @@ export function StaffPerformanceWorkspace({
               </section>
             ) : (
               <section className="space-y-5">
-                {reviewQueue.visibleItems.map((review) => {
+                {reviewSearch.visibleItems.map((review) => {
                   const developmentRequired = [
                     "support_required",
                     "improvement_required",
