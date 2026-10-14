@@ -950,7 +950,7 @@ export function DecisionsWorkspace({
         {decisionSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <ShieldCheck className="mx-auto size-10 text-mint-700" />
-            <h2 className="mt-4 text-2xl font-black">{decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
+            <h2 className="mt-4 text-2xl font-black">{decisionSearch.query.trim() ? "No decisions match this search." : decisionQueue.view === "history" ? "No completed decisions in History." : "No approvals need attention."}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Finished decisions move to History. Approved implementation work is tracked in Today.
               Material decisions appear here when a real role requests or records
