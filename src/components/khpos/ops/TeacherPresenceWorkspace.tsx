@@ -7,7 +7,7 @@ import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
 import type { KhposHqlsDomain } from "@/lib/khpos/ops/presence";
-import type { KhposPresenceWorkspace } from "@/lib/khpos/ops/presence";
+import type { KhposPresenceWorkspace, KhposPresenceHistory } from "@/lib/khpos/ops/presence";
 
 type Panel = "day" | "lessons" | "hqls" | "leaders";
 type Domain = { code:string; name:string; test:string; automatic?:string };
@@ -66,6 +66,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [responses,setResponses]=useState<Record<string,string>>({});
   const [reconcileReason,setReconcileReason]=useState("");
   const [presenceQuery,setPresenceQuery]=useState("");
+  const [presenceHistory,setPresenceHistory]=useState<KhposPresenceHistory|null>(null);
+  const [historyFrom,setHistoryFrom]=useState("");
+  const [historyTo,setHistoryTo]=useState("");
+  const [historyPage,setHistoryPage]=useState(0);
+  const [historyBusy,setHistoryBusy]=useState(false);
+  const [historyError,setHistoryError]=useState("");
   const [presenceSort,setPresenceSort]=useState<"newest"|"oldest"|"name">("newest");
   const [lessonQuery,setLessonQuery]=useState("");
   const requestKey=useRef<string|null>(null);
@@ -157,6 +163,29 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     // Failed submissions retain the draft and idempotency key.
   }
 
+  const localDay=data?.localDay??"";
+  const defaultStart=localDay ? (()=>{const date=new Date(localDay+"T12:00:00Z");date.setUTCDate(date.getUTCDate()-29);return date.toISOString().slice(0,10);})() : "";
+  const selectedFrom=historyFrom||defaultStart;
+  const selectedTo=historyTo||localDay;
+  useEffect(()=>{
+    if (tab!=="leaders"||!localDay||!selectedFrom||!selectedTo) return;
+    let cancelled=false;
+    async function loadHistory(){
+      setHistoryBusy(true);setHistoryError("");
+      try{
+        const token=await authToken();
+        const params=new URLSearchParams({history:"1",from:selectedFrom,to:selectedTo,page:String(historyPage)});
+        const response=await fetch("/api/khpos/ops/presence/"+organisationId+"?"+params,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+        const body=await response.json() as {ok?:boolean;history?:KhposPresenceHistory;error?:string};
+        if(!response.ok||!body.ok||!body.history)throw new Error(body.error??"Attendance history is unavailable.");
+        if(!cancelled)setPresenceHistory(body.history);
+      }catch(e){if(!cancelled){setPresenceHistory(null);setHistoryError(e instanceof Error?e.message:"Cannot load attendance history.");}}
+      finally{if(!cancelled)setHistoryBusy(false);}
+    }
+    void loadHistory();
+    return ()=>{cancelled=true;};
+  },[tab,localDay,selectedFrom,selectedTo,historyPage,organisationId,authToken]);
+
   const canManage=Boolean(data?.canManage);
   const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
   const roleStreams=(academic?.streams??[]).filter(s=>["approved","active"].includes(s.status));
@@ -164,8 +193,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const observed=(data?.observations??[]);
   const own=(data?.periods??[]).filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()));
   const presenceMatches=(value:string)=>presenceQuery.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term=>value.toLowerCase().includes(term));
-  const schoolRows=(data?.teamPresence??[]).filter(d=>presenceMatches([d.name,data?.campuses.find(c=>c.id===d.campusId)?.name??"",d.in,d.out??"",data?.localDay??""].join(" "))).sort((a,b)=>presenceSort==="name"?a.name.localeCompare(b.name):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
-  const classRows=todays.filter(p=>p.session && presenceMatches([p.teacher,p.class,p.subject,p.session.topic??"",p.session.outcome??"",data?.localDay??""].join(" "))).sort((a,b)=>presenceSort==="name"?a.teacher.localeCompare(b.teacher):(Date.parse(a.session!.in)-Date.parse(b.session!.in))*(presenceSort==="oldest"?1:-1));
+  const schoolRows=(presenceHistory?.schoolRecords??[]).filter(d=>presenceMatches([d.name,data?.campuses.find(c=>c.id===d.campusId)?.name??"",d.in,d.out??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.name.localeCompare(b.name):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
+  const classRows=(presenceHistory?.classRecords??[]).filter(d=>presenceMatches([d.teacher,d.class,d.subject,d.topic??"",d.outcome??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.teacher.localeCompare(b.teacher):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     <div className="mx-auto max-w-6xl space-y-5">
       <Link href={"/khpos/"+organisationId} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
@@ -391,10 +420,21 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">School Day — leadership overview</h2>
             <p className="mt-2 text-sm text-slate-600">School attendance and class lesson attendance are separate events. Times below show when they were actually recorded in Nigeria (Africa/Lagos); they are not scheduled arrival or departure times.</p>
-            <p className="mt-2 text-sm font-bold text-slate-800">School date: {data.localDay}</p>
+            <p className="mt-2 text-sm font-bold text-slate-800">Today: {data.localDay} · Attendance history is retained by school date.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="text-sm font-semibold text-slate-700">From date
+                <input type="date" className={field} value={selectedFrom} max={selectedTo} onChange={e=>{setHistoryFrom(e.target.value);setHistoryPage(0);}} />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">To date
+                <input type="date" className={field} value={selectedTo} min={selectedFrom} max={localDay} onChange={e=>{setHistoryTo(e.target.value);setHistoryPage(0);}} />
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search) to review historical attendance. 50 school records and 50 class records per page.</p>
+            {historyError&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{historyError}</p>}
+            {historyBusy&&<p role="status" className="mt-2 text-xs font-semibold text-slate-600">Loading attendance history…</p>}
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm font-semibold text-slate-700">Search records
-                <input type="search" className={field} value={presenceQuery} onChange={e=>setPresenceQuery(e.target.value)} placeholder="Staff, class, subject or date"/>
+                <input type="search" className={field} value={presenceQuery} onChange={e=>setPresenceQuery(e.target.value)} placeholder="Search staff, subject or date on this page"/>
               </label>
               <label className="text-sm font-semibold text-slate-700">Sort records
                 <select className={field} value={presenceSort} onChange={e=>setPresenceSort(e.target.value as typeof presenceSort)}>
@@ -411,18 +451,25 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           </section>
           <section className={box} aria-label="School attendance records">
             <h3 className="text-lg font-black text-slate-900">1. School check-in and check-out</h3>
-            <p className="mt-1 text-sm text-slate-600">Staff arrival and departure for the school day. A school check-in does not prove a class was taught.</p>
-            {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No school attendance matches this search.":"No school check-ins recorded today within your leadership scope."}</p>:
+            <p className="mt-1 text-sm text-slate-600">Staff arrival and departure across the selected dates. A school check-in does not prove a class was taught.</p>
+            {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
               <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[650px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">School date</th><th className="p-2">School check-in recorded</th><th className="p-2">School check-out recorded</th></tr></thead>
-                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{data.localDay}</td><td className="p-2">{dateTime(d.in)}</td><td className="p-2">{dateTime(d.out)}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div>}
+                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}</td><td className="p-2">{dateTime(d.out)}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div>}
           </section>
           <section className={box} aria-label="Class attendance records">
             <h3 className="text-lg font-black text-slate-900">2. Class lesson check-in and check-out</h3>
-            <p className="mt-1 text-sm text-slate-600">Recorded attendance for individual subject periods today. Only classes with an actual check-in appear; unscheduled or unchecked classes must not be treated as attended.</p>
-            {classRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No class check-ins match this search.":"No class lesson check-ins have been recorded today within your scope."}</p>:
+            <p className="mt-1 text-sm text-slate-600">Recorded attendance for individual subject lessons across the selected dates. Only actual class check-ins appear; unchecked lessons are not counted as delivered.</p>
+            {classRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No class check-ins match this search.":"No class lesson check-ins have been recorded in the selected dates within your scope."}</p>:
               <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Teacher</th><th className="p-2">Class / subject</th><th className="p-2">School date</th><th className="p-2">Class check-in recorded</th><th className="p-2">Class check-out recorded</th><th className="p-2">Lesson outcome</th></tr></thead>
-                <tbody>{classRows.map(p=><tr key={p.session!.id} className="border-b"><td className="p-2">{p.teacher}</td><td className="p-2">{p.class} · {p.subject}</td><td className="p-2">{data.localDay}</td><td className="p-2">{dateTime(p.session!.in)}</td><td className="p-2">{dateTime(p.session!.out)}{p.session!.administrativelyClosed?" (admin)":""}</td><td className="p-2">{p.session!.outcome||"In progress"}</td></tr>)}</tbody></table></div>}
+                <tbody>{classRows.map(p=><tr key={p.id} className="border-b"><td className="p-2">{p.teacher}</td><td className="p-2">{p.class} · {p.subject}</td><td className="p-2">{p.date}</td><td className="p-2">{dateTime(p.in)}</td><td className="p-2">{dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</td><td className="p-2">{p.outcome||"In progress"}</td></tr>)}</tbody></table></div>}
           </section>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm">
+            <span className="text-slate-600">School records: {presenceHistory?.schoolTotal??0} · Class records: {presenceHistory?.classTotal??0} · Page {historyPage+1}</span>
+            <div className="flex gap-2">
+              <button type="button" disabled={historyBusy||historyPage===0} onClick={()=>setHistoryPage(p=>Math.max(0,p-1))} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Previous</button>
+              <button type="button" disabled={historyBusy||!presenceHistory||Math.max(presenceHistory.schoolTotal,presenceHistory.classTotal)<=(historyPage+1)*presenceHistory.pageSize} onClick={()=>setHistoryPage(p=>p+1)} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
+            </div>
+          </div>
           <section className={box}>
             <h3 className="text-lg font-black text-slate-900">Administrative corrections</h3>
           {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
