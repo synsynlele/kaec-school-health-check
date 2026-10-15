@@ -94,8 +94,8 @@ const attendance = read(base+"TeacherPresenceWorkspace.tsx");
 assert.ok(attendance.includes("School check-in and check-out"));
 assert.ok(attendance.includes("Class lesson check-in and check-out"));
 assert.ok(attendance.includes("School check-in recorded")&&attendance.includes("Class check-in recorded"));
-assert.ok(attendance.includes("dateTime(d.in)")&&attendance.includes("dateTime(p.session!.in)"));
-assert.ok(attendance.includes("dateTime(d.out)")&&attendance.includes("dateTime(p.session!.out)"));
+assert.ok(attendance.includes("dateTime(d.in)")&&attendance.includes("dateTime(p.in)"));
+assert.ok(attendance.includes("dateTime(d.out)")&&attendance.includes("dateTime(p.out)"));
 count += 5;
 
 const today=read(base+"MyWorkWorkspace.tsx");
