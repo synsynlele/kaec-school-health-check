@@ -95,9 +95,9 @@ export function attendanceSteps(
     let inStatus: AttendanceStepStatus;
     if (checkedClassIn) inStatus = "done";
     else if (nowMs > end + HALF_HOUR) inStatus = "missed";
+    else if (nowMs < start - HALF_HOUR) inStatus = "upcoming";
     else if (checkedOut || !checkedIn) inStatus = "blocked";
-    else if (nowMs >= start - HALF_HOUR) inStatus = "due";
-    else inStatus = "upcoming";
+    else inStatus = "due";
     result.push({
       id: `attendance:class-in:${today}:${period.id}`,
       kind: "class_in",
