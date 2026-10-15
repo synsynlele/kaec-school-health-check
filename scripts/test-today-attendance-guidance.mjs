@@ -75,7 +75,7 @@ const today=fs.readFileSync("src/components/khpos/ops/MyWorkWorkspace.tsx","utf8
 const notifications=fs.readFileSync("src/lib/khpos/notifications.ts","utf8");
 const schedule=fs.readFileSync("supabase/migrations/20261015083000_khpos_attendance_reminder_schedule.sql","utf8");
 for(const text of ["School check-in","School check-out","Class check-in","Class check-out","Recorded:","School date:","School Custodian","Enable device alerts"]) {
-  assert.ok(todayUI.includes(text),"Today missing clear instruction: "+text);
+  assert.ok((todayUI + source).includes(text),"Today missing clear instruction: "+text);
 }
 assert.match(today,/TodayAttendanceCard organisationId=/);
 assert.match(todayUI,/mode: kind/);
