@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import { needsOwnerWorkAction } from "@/lib/khpos/ops/attention-rules";
@@ -374,7 +375,7 @@ export function MyWorkWorkspace({
             Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            Start with what needs your attention now. Work, verification, issues and decisions are prioritised around your operating role; the full work queue remains below.
+            Start with your school arrival and scheduled classes. Then check your assigned work, reports and approvals. Each section shows what to do next.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -410,6 +411,8 @@ export function MyWorkWorkspace({
           </div>
         )}
 
+        <TodayAttendanceCard organisationId={organisationId} />
+
         {attention && attention.items.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -421,7 +424,7 @@ export function MyWorkWorkspace({
                   What needs you now
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  KHP-OS combines your urgent work, verifications, issues and decisions so you do not have to search the app.
+                  See the actions waiting for you. Open an item to complete it or send it for review.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 text-xs font-black">
@@ -485,13 +488,13 @@ export function MyWorkWorkspace({
           setSort={workSearch.setSort}
           shown={visibleItems.length + availableProcesses.length + verificationItems.length}
           total={work.items.length + work.availableProcesses.length + work.verificationQueue.length}
-          placeholder="Search work, process, role, campus or status"
+          placeholder="Search tasks, school processes, positions or status"
           hasPriority
         />
-        {roleTitles.length > 1 && <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold">My work by position
+        {roleTitles.length > 1 && <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold">Show work for my position
           <select className="mt-2 block w-full rounded-xl border p-3" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
             <option value="">All my work</option>{roleTitles.map((title) => <option key={title} value={title}>{title}</option>)}
-          </select><span className="mt-2 block font-normal text-slate-600">Reviews for other staff remain visible below.</span>
+          </select><span className="mt-2 block font-normal text-slate-600">You can still see reports waiting for your review below.</span>
         </label>}
         {roleFilter && !openItems.length && !awaitingItems.length && !completedItems.length && !workSearch.query.trim() && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
         {workSearch.query.trim() && !visibleItems.length && !availableProcesses.length && !verificationItems.length && <p role="status" className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No items match your search. Clear the search or change position.</p>}

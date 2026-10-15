@@ -1,4 +1,6 @@
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
+import { getPresenceWorkspace } from "@/lib/khpos/ops/presence";
+import { attendanceSteps, dueAttendanceSteps } from "@/lib/khpos/ops/attendance-guidance";
 
 export type KhposAlert = {
   id: string;
@@ -37,7 +39,24 @@ export async function getKhposAlerts(
   );
   const week = nowMs + 7 * 86_400_000;
 
-  return attention.items
+  // Attendance uses the existing authenticated, school-scoped presence service.
+  // A disabled pilot, missing staff identity, or a completed check-in/out
+  // produces no attendance reminder. Other operational alerts are unaffected.
+  const attendanceAlerts: KhposAlert[] = await retryClockSkew(() =>
+    getPresenceWorkspace(organisationId, userId)
+  ).then((presence) =>
+    dueAttendanceSteps(attendanceSteps(presence, nowMs)).map((step) => ({
+      id: step.id,
+      title: step.title,
+      detail: step.instruction,
+      href: `/khpos/${organisationId}/teaching-presence?tab=${step.periodId ? "lessons&period=" + step.periodId : "day"}`,
+      dueAt: step.dueAt,
+      urgent: step.urgent,
+      level: step.urgent ? "urgent" as const : "action" as const,
+      category: "attendance",
+    }))
+  ).catch(() => [] as KhposAlert[]);
+  const workAlerts: KhposAlert[] = attention.items
     .filter((item) => {
       if (item.severity === "critical" || item.severity === "high") return true;
       if (!item.dueAt) return item.kind === "verification";
@@ -75,6 +94,9 @@ export async function getKhposAlerts(
         (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
+  return [...attendanceAlerts, ...workAlerts].sort((a, b) =>
+    Number(b.urgent) - Number(a.urgent) ||
+    (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
 }
 
 export function pushEligibleAlerts(

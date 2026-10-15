@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
@@ -95,6 +96,20 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       setError("");
     } catch(e){setError(e instanceof Error?e.message:"Unable to load attendance.");}
   },[authToken,organisationId]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const selected = new URLSearchParams(window.location.search).get("tab");
+      if (selected === "day" || selected === "lessons" || selected === "hqls" || selected === "leaders") setTab(selected);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!data || tab !== "lessons") return;
+    const selected = new URLSearchParams(window.location.search).get("period");
+    if (!selected || !/^[0-9a-f-]{36}$/i.test(selected)) return;
+    const timer = window.setTimeout(() => document.getElementById("class-" + selected)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    return () => window.clearTimeout(timer);
+  }, [data, tab]);
   useEffect(()=>{
     let active=true;
     void Promise.resolve().then(()=>{if(active)void load();});
@@ -113,6 +128,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       if(!response.ok||!body.ok)throw new Error(body.error??"The request could not be completed.");
       if(body.workspace)setData(body.workspace);
       setNotice(label);
+      announceKhposActivityChanged(organisationId);
       return true;
     }catch(e){setError(e instanceof Error?e.message:"Unable to complete action.");}
     finally{setBusy("");}
@@ -158,7 +174,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       <div className="rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & TEACHING DELIVERY</div>
         <h1 className="text-2xl font-black sm:text-4xl">My school day</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Check into school once. Check into each scheduled class, record the actual lesson outcome and improve HQLS teaching through evidence-led observations.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Record when you arrive at school, when each class starts and finishes, and when you leave school. Keep class teaching records separate from your school attendance. teaching through evidence-led observations.</p>
         <p className="mt-2 text-xs text-slate-300">Recorded using Nigerian local school time (Africa/Lagos). Staff attendance and subject lesson delivery are separate records.</p>
       </div>
       {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-900">{error}</div>}
@@ -191,22 +207,22 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         </div>
         {tab==="day"&&<div className="grid gap-4 lg:grid-cols-2">
           <section className={box}>
-            <h2 className="mb-2 text-xl font-black text-slate-900">School check-in / check-out</h2>
-            <p className="mb-4 text-sm text-slate-600">Your school attendance is recorded once each day. Being present does not automatically mark lessons as taught.</p>
+            <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
+            <p className="mb-4 text-sm text-slate-600">First record your arrival at school. When you leave, record your departure. Both actions save the date and exact time. Your classes must be recorded separately.</p>
             {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your School Guardian to complete People & Staff onboarding.</p>
             :<div className="space-y-3">
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
               <p className="text-sm"><b>School day:</b> {data.localDay}</p>
               {data.todayPresence?<>
                 <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>School check-in recorded:</b> {dateTime(data.todayPresence.in)}<br/><b>School check-out recorded:</b> {dateTime(data.todayPresence.out)}{data.todayPresence.administrativelyClosed?" (administratively closed)":""}</p>
-                {!data.todayPresence.out&&<button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Check Out of School</button>}
+                {!data.todayPresence.out&&<button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-out</button>}
               </>:<>
                 <label className="block text-sm font-bold text-slate-800" htmlFor="schoolCampus">Campus</label>
                 <select id="schoolCampus" className={field} value={campusId} onChange={e=>setCampusId(e.target.value)}>
                   {data.campuses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <button disabled={!campusId||Boolean(busy)} onClick={()=>void act("school_in",{campusId},"School check-in recorded.")}
-                  className="w-full rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:opacity-50">Check In to School</button>
+                  className="w-full rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-in</button>
               </>}
             </div>}
           </section>
@@ -225,7 +241,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         {tab==="lessons"&&<div className="space-y-4">
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">Scheduled subject lessons</h2>
-            <p className="my-2 text-sm text-slate-600">Check-in is permitted from 30 minutes before to 30 minutes after the scheduled lesson. Only the assigned teacher can record their class. A class must be checked out before school check-out.</p>
+            <p className="my-2 text-sm text-slate-600">A class check-in is available from 30 minutes before the lesson starts until 30 minutes after it finishes. The assigned teacher must record the actual start time. After teaching, record the class check-out and what happened. Finish an open class before checking out of school.</p>
             {own.length===0?<p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">No period has been entered for the current term. An Academic Inspector or School Guardian should add the schedule below. <Link href={"/khpos/"+organisationId+"/academic-delivery"} className="font-bold underline">Open Academic Delivery</Link>.</p>:null}
             <label className="mt-4 block text-sm font-semibold text-slate-700">Find a scheduled class
               <input type="search" className={field} placeholder="Search class, teacher, subject or room" value={lessonQuery} onChange={e=>setLessonQuery(e.target.value)}/>
@@ -233,8 +249,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <div className="mt-3 space-y-3">
               {own.map(p=>{
                 const today=possibleToday(data.localDay,p.weekday);
-                const mine=Boolean(academic?.streams.find(s=>s.id===p.streamId && s.isTeacher));
-                return <div key={p.id} className="rounded-xl border border-slate-200 p-4">
+                const mine=p.teacherUserId===data.userId;
+                return <div key={p.id} id={"class-" + p.id} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><h3 className="font-black text-slate-900">{p.subject} · {p.class}</h3>
                       <p className="text-sm text-slate-600">{WEEKDAYS[p.weekday]} {p.start}–{p.end} · {p.room||"Room not set"}</p>
@@ -243,18 +259,18 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   </div>
                   {today&&mine&&p.termActive&&!p.session&&<button disabled={Boolean(busy)||!data.todayPresence||Boolean(data.todayPresence.out)}
                     className="mt-3 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                    onClick={()=>void act("class_in",{periodId:p.id},"Class check-in recorded.")}>Check In to Class</button>}
+                    onClick={()=>void act("class_in",{periodId:p.id},"Class check-in recorded.")}>Record Class Check-in — Start class</button>}
                   {today&&mine&&p.session&&!p.session.out&&<div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div><label className="text-xs font-bold">Actual lesson outcome</label>
+                    <div><label className="text-xs font-bold">What happened in this class?</label>
                       <select className={field} value={lessonOutcome[p.id]||"completed"} onChange={e=>setLessonOutcome(old=>({...old,[p.id]:e.target.value}))}>
                         <option value="completed">Completed as planned</option><option value="partial">Partially completed</option><option value="not_held">Could not hold</option>
                       </select></div>
-                    <div><label className="text-xs font-bold">Topic actually taught</label>
+                    <div><label className="text-xs font-bold">What topic did you teach?</label>
                       <input className={field} value={lessonTopics[p.id]||""} maxLength={200} onChange={e=>setLessonTopics(old=>({...old,[p.id]:e.target.value}))} placeholder="Topic or learning focus"/></div>
-                    <div className="sm:col-span-2"><label className="text-xs font-bold">Follow-up (optional)</label>
+                    <div className="sm:col-span-2"><label className="text-xs font-bold">Anything still to finish? (optional)</label>
                       <textarea className={field} rows={2} maxLength={1000} value={lessonNotes[p.id]||""} onChange={e=>setLessonNotes(old=>({...old,[p.id]:e.target.value}))} placeholder="What needs attention?"/></div>
                     <button disabled={Boolean(busy)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                      onClick={()=>void act("class_out",{periodId:p.id,outcome:lessonOutcome[p.id]||"completed",topic:lessonTopics[p.id]||"",followUp:lessonNotes[p.id]||""},"Lesson checkout saved.")}>Check Out of Class</button>
+                      onClick={()=>void act("class_out",{periodId:p.id,outcome:lessonOutcome[p.id]||"completed",topic:lessonTopics[p.id]||"",followUp:lessonNotes[p.id]||""},"Lesson checkout saved.")}>Record Class Check-out — Finish class</button>
                   </div>}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
                   {!mine&&canManage&&<button className="mt-3 text-xs font-bold text-rose-700 underline" disabled={Boolean(busy)}

@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle && npm run test:today-attendance-guidance",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -27,7 +27,8 @@
     "test:school-support-roles": "node scripts/test-school-support-roles.mjs",
     "test:record-queues": "node scripts/test-record-queues.mjs",
     "test:manual-record-editing": "node scripts/test-manual-record-editing.mjs",
-    "test:academic-record-lifecycle": "node scripts/test-academic-record-lifecycle.mjs"
+    "test:academic-record-lifecycle": "node scripts/test-academic-record-lifecycle.mjs",
+    "test:today-attendance-guidance": "node scripts/test-today-attendance-guidance.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

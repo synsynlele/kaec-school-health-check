@@ -344,11 +344,11 @@ export async function deliverKhposPushReminders() {
         {
           title:
             candidates.length === 1
-              ? first.detail
+              ? first.title
               : `KHP-OS · ${candidates.length} actions need attention`,
           body:
             candidates.length === 1
-              ? first.title
+              ? first.detail
               : `${first.title} · plus ${candidates.length - 1} more`,
           url: first.href,
           tag: `khpos-${subscription.organisation_id}`,

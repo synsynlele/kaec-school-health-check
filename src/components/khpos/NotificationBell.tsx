@@ -120,8 +120,8 @@ export function NotificationBell({
           .filter((item) => item.urgent && !seen.current.has(item.id))
           .slice(0, 2)) {
           try {
-            const notice = new Notification(alert.detail, {
-              body: alert.title,
+            const notice = new Notification(alert.title, {
+              body: alert.detail,
               tag: `${organisationId}:${alert.id}`,
             });
             notice.onclick = () => {
@@ -359,7 +359,7 @@ export function NotificationBell({
       {open && (
         <div className="absolute right-0 z-[90] mt-2 w-[min(90vw,22rem)] rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold">Action Centre</h2>
+            <h2 className="font-bold">Your reminders and tasks</h2>
             <button
               type="button"
               aria-label="Close notifications"
@@ -370,14 +370,13 @@ export function NotificationBell({
           </div>
 
           <p className="mt-1 text-xs text-slate-400">
-            Urgent and action-required items across work, verification, issues and
-            decisions. Device alerts stay focused on urgent or near-term action.
+            See what needs your attention now, including school arrival, scheduled lessons, reports and approvals. Completed attendance actions stop appearing here.
           </p>
 
           {pushState === "on" && (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-2">
               <span className="text-xs font-bold text-emerald-300">
-                Phone/tablet alerts are on
+                Device reminders are on
               </span>
               <button
                 type="button"
@@ -395,7 +394,7 @@ export function NotificationBell({
               onClick={() => void enablePush()}
               className="mt-3 rounded-lg border border-mint-300 px-3 py-2 text-xs font-bold text-mint-300"
             >
-              Enable phone/tablet alerts
+              Enable device alerts
             </button>
           )}
 
@@ -465,18 +464,19 @@ export function NotificationBell({
                         : "text-mint-300"
                   }`}
                 >
-                  {alert.detail}
+                  {alert.title}
                 </span>
                 <span className="block text-[10px] font-black uppercase tracking-wide text-slate-500">
                   {alert.category.replaceAll("_", " ")} · {alert.level}
                 </span>
-                <span className="block truncate text-sm">{alert.title}</span>
+                <span className="block text-sm leading-5">{alert.detail}</span>
                 {alert.dueAt && (
                   <span className="text-xs text-slate-400">
                     Due{" "}
                     {new Date(alert.dueAt).toLocaleString("en-NG", {
                       timeZone: "Africa/Lagos",
                       dateStyle: "medium",
+                       timeStyle: "short",
                     })}
                   </span>
                 )}
