@@ -29,6 +29,22 @@ export interface KhposPresenceWorkspace {
   openClassSessions: Array<{ id: string; date: string; class: string; subject: string; teacher: string; in: string }>;
   openSchoolAttendance: Array<{ id: string; date: string; teacher: string; campusId: string; in: string }>;
 }
+export interface KhposPresenceHistory {
+  from: string; to: string; page: number; pageSize: number;
+  schoolTotal: number; classTotal: number;
+  schoolRecords: Array<{ id:string; name:string; campusId:string; date:string; in:string; out:string|null; administrativelyClosed:boolean }>;
+  classRecords: Array<{ id:string; date:string; teacher:string; class:string; subject:string; in:string; out:string|null; topic:string|null; outcome:string|null; administrativelyClosed:boolean }>;
+}
+
+export async function getPresenceHistory(org:string, actor:string, from:string, to:string, page:number):Promise<KhposPresenceHistory> {
+  const {data,error}=await service().rpc("khpos_ops_presence_history_server",{
+    p_actor:actor,p_org:org,p_from:from,p_to:to,p_page:page,p_page_size:50
+  });
+  if(error) fail(error.message);
+  if(!data || typeof data!=="object" || Array.isArray(data)) fail("Attendance history could not be loaded.");
+  return data as KhposPresenceHistory;
+}
+
 export class KhposPresenceError extends Error {
   constructor(message: string, public readonly status = 400) { super(message); }
 }
