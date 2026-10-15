@@ -6,12 +6,19 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { SchoolPositions, PendingRoleApproval } from "@/lib/khpos/ops/positions";
 import type { KhposOpsPeopleWorkspace } from "@/lib/khpos/ops/people";
 
-export function StaffPositionsPanel({ organisationId, people }: {
+export function StaffPositionsPanel({ organisationId, people, selectedStaffId, onSelectedStaffIdChange, onPositionsChanged }: {
   organisationId: string; people?: KhposOpsPeopleWorkspace;
+  selectedStaffId?: string; onSelectedStaffIdChange?: (staffId: string) => void;
+  onPositionsChanged?: () => void;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [refresh, setRefresh] = useState(0);
-  const [staffId, setStaffId] = useState("");
+  const [ownStaffId, setOwnStaffId] = useState("");
+  const staffId = people ? (selectedStaffId ?? "") : ownStaffId;
+  const setStaffId = (value: string) => {
+    if (people) onSelectedStaffIdChange?.(value);
+    else setOwnStaffId(value);
+  };
   const [positions, setPositions] = useState<SchoolPositions | null>(null);
   const [approvalQueue, setApprovalQueue] = useState<PendingRoleApproval[]>([]);
   const [approvalQueueError, setApprovalQueueError] = useState("");
@@ -80,7 +87,8 @@ export function StaffPositionsPanel({ organisationId, people }: {
       const body = await response.json();
       if (!response.ok || !body.ok) throw new Error(body.error ?? "The position could not be updated.");
       setPositions(body.positions);
-      if (people && (mode === "activate" || mode === "end")) setRefresh((value) => value + 1);
+      if (people && (mode === "activate" || mode === "end" || mode === "propose")) setRefresh((value) => value + 1);
+      onPositionsChanged?.();
       if (mode === "acknowledge") {
         setEditingAcceptance(null);
         setNotes((current) => ({ ...current, [String(input.positionId)]: "" }));
@@ -98,8 +106,8 @@ export function StaffPositionsPanel({ organisationId, people }: {
 
   const field = "w-full rounded-xl border border-slate-300 bg-white p-3 text-sm";
   return <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5" aria-busy={busy}>
-    <div><h2 className="text-lg font-bold">{people ? "Staff positions" : "My positions"}</h2>
-      <p className="mt-1 text-sm text-slate-600">One account can hold several positions. Each position has its own duties and school area. The staff member must accept a new position and acknowledge its current required policies in their own account; a different authorised leader then reviews readiness and activates it.</p></div>
+    <div><h2 className="text-lg font-bold">{people ? "Staff positions · assignment controls" : "My positions"}</h2>
+      <p className="mt-1 text-sm text-slate-600">One staff profile can hold several positions. Active and pending additional roles appear on that person's People & Staff profile below. Use these controls only to propose, review, activate or end an assignment. The staff member accepts a new position and its policies in their own account; a different authorised leader then activates it.</p></div>
     {people && <div className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50 p-4">
       <h3 className="text-base font-black text-brand-950">Pending Role Approvals ({approvalQueue.length})</h3>
       <p className="text-sm text-brand-900">Choose an appointment below to review it and activate it when all requirements are complete. The staff member cannot activate their own additional role.</p>
@@ -126,7 +134,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">{notice}</p>}
     {positions && <>
-      <ul className="space-y-2">{positions.activePositions.map((position) => <li key={position.assignmentId} className="rounded-xl bg-slate-50 p-3 text-sm"><strong>{position.title}</strong>{position.primary ? " · Primary appointment" : " · Additional position"}<p>{[position.campusName, position.unitName].filter(Boolean).join(" · ") || "School-wide"}</p>{position.reportsTo && <p className="text-slate-600">Reports to {position.reportsTo}</p>}</li>)}</ul>
+      {!people && <ul className="space-y-2">{positions.activePositions.map((position) => <li key={position.assignmentId} className="rounded-xl bg-slate-50 p-3 text-sm"><strong>{position.title}</strong>{position.primary ? " · Primary appointment" : " · Additional position"}<p>{[position.campusName, position.unitName].filter(Boolean).join(" · ") || "School-wide"}</p>{position.reportsTo && <p className="text-slate-600">Reports to {position.reportsTo}</p>}</li>)}</ul>}
       {people && positions.canManage && <form className="space-y-3 border-t pt-4" onSubmit={(event) => { event.preventDefault(); void act("propose", { roleId, campusId, unitId: unitId || null }); }}>
         <h3 className="font-semibold">Add a position</h3>
         <label className="block text-sm">Position<select required className={field} value={roleId} onChange={(event) => setRoleId(event.target.value)}><option value="">Choose a position</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select></label>

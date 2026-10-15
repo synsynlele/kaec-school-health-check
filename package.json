@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle && npm run test:today-attendance-guidance && npm run test:presence-leadership-history && npm run test:safeguarding-policy-ack && npm run test:position-acceptance-clarity && npm run test:role-approval-queue",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle && npm run test:today-attendance-guidance && npm run test:presence-leadership-history && npm run test:safeguarding-policy-ack && npm run test:position-acceptance-clarity && npm run test:role-approval-queue && npm run test:consolidated-staff-positions",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -32,7 +32,8 @@
     "test:today-attendance-guidance": "node scripts/test-today-attendance-guidance.mjs",
     "test:safeguarding-policy-ack": "node scripts/test-safeguarding-policy-acknowledgement.mjs",
     "test:position-acceptance-clarity": "node scripts/test-position-acceptance-clarity.mjs",
-    "test:role-approval-queue": "node scripts/test-role-approval-queue.mjs"
+    "test:role-approval-queue": "node scripts/test-role-approval-queue.mjs",
+    "test:consolidated-staff-positions": "node scripts/test-consolidated-staff-positions.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

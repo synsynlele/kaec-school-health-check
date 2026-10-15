@@ -81,6 +81,16 @@ export interface KhposOpsStaff {
   canReview: boolean;
   canManage: boolean;
   history: KhposOpsStaffEvent[];
+  positions?: {
+    activeAdditional: Array<{
+      assignmentId: string; roleId: string; roleCode: string; title: string;
+      campusName: string | null; unitName: string | null;
+    }>;
+    pendingAdditional: Array<{
+      positionId: string; roleId: string; roleCode: string; title: string;
+      campusName: string | null; unitName: string | null; accepted: boolean;
+    }>;
+  };
 }
 
 export interface KhposOpsPeopleWorkspace {
@@ -178,7 +188,78 @@ export async function getKhposOpsPeople(
     );
   }
 
-  return data as unknown as KhposOpsPeopleWorkspace;
+  const workspace = data as unknown as KhposOpsPeopleWorkspace;
+  if (!workspace.items.length) return workspace;
+
+  // Enrich only the staff records already authorised by the People RPC. Never
+  // make additional role assignments appear as separate staff records.
+  const staffIds = [...new Set(workspace.items.map((item) => item.id))];
+  const { data: identities, error: staffError } = await admin()
+    .from("khpos_ops_staff")
+    .select("id,user_id")
+    .eq("organisation_id", organisationId)
+    .in("id", staffIds);
+  if (staffError) {
+    throw new KhposOpsPeopleError("Staff role profiles could not be loaded.", 503);
+  }
+
+  const userByStaffId = new Map((identities ?? []).map((row) => [row.id as string, row.user_id as string | null]));
+  const users = [...new Set((identities ?? []).map((row) => row.user_id as string | null).filter((id): id is string => !!id))];
+  const allowedRoleIds = workspace.roles.map((role) => role.id);
+  const [activeResult, pendingResult] = await Promise.all([
+    users.length && allowedRoleIds.length
+      ? admin().from("khpos_ops_role_assignments")
+        .select("id,user_id,role_id,campus_id,unit_id")
+        .eq("status", "active")
+        .in("user_id", users)
+        .in("role_id", allowedRoleIds)
+      : Promise.resolve({data: [], error: null}),
+    admin().from("khpos_ops_staff_role_positions")
+      .select("id,staff_id,role_id,campus_id,unit_id,acknowledged_at")
+      .eq("organisation_id", organisationId)
+      .eq("status", "pending")
+      .in("staff_id", staffIds),
+  ]);
+  if (activeResult.error || pendingResult.error) {
+    throw new KhposOpsPeopleError("Additional staff roles could not be loaded.", 503);
+  }
+
+  const roles = new Map(workspace.roles.map((role) => [role.id, role]));
+  const campuses = new Map(workspace.campuses.map((campus) => [campus.id, campus.name]));
+  const units = new Map(workspace.units.map((unit) => [unit.id, unit.name]));
+
+  for (const staff of workspace.items) {
+    const subject = userByStaffId.get(staff.id);
+    // A primary role remains on the existing staff profile. Only other active
+    // assignments and pending proposals are listed as additional positions.
+    const activeAdditional = (activeResult.data ?? [])
+      .filter((row) => subject && row.user_id === subject && row.id !== staff.roleAssignmentId)
+      .flatMap((row) => {
+        const role = roles.get(row.role_id as string);
+        if (!role) return [];
+        return [{
+          assignmentId: row.id as string, roleId: role.id,
+          roleCode: role.code, title: role.title,
+          campusName: campuses.get(row.campus_id as string) ?? null,
+          unitName: units.get(row.unit_id as string) ?? null,
+        }];
+      });
+    const pendingAdditional = (pendingResult.data ?? [])
+      .filter((row) => row.staff_id === staff.id)
+      .flatMap((row) => {
+        const role = roles.get(row.role_id as string);
+        if (!role) return [];
+        return [{
+          positionId: row.id as string, roleId: role.id,
+          roleCode: role.code, title: role.title,
+          campusName: campuses.get(row.campus_id as string) ?? null,
+          unitName: units.get(row.unit_id as string) ?? null,
+          accepted: row.acknowledged_at != null,
+        }];
+      });
+    staff.positions = {activeAdditional, pendingAdditional};
+  }
+  return workspace;
 }
 
 export async function createKhposOpsStaff(

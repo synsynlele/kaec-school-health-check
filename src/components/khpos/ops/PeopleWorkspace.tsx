@@ -73,6 +73,7 @@ export function PeopleWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedPositionStaffId, setSelectedPositionStaffId] = useState("");
   const [joinLinks, setJoinLinks] = useState<Record<string, string>>({});
 
   const [displayName, setDisplayName] = useState("");
@@ -91,7 +92,7 @@ export function PeopleWorkspace({
   const staffQueue = useRecordQueue(workspace?.items ?? [], (staff) => staff.status === "ended");
   const staffSearch = useRecordSearch(
     staffQueue.visibleItems,
-    (staff) => [staff.reference, staff.displayName, staff.accountEmail, staff.role.title, staff.campus?.name ?? "", staff.unit?.name ?? "", staff.status].join(" "),
+    (staff) => [staff.reference, staff.displayName, staff.accountEmail, staff.role.title, staff.campus?.name ?? "", staff.unit?.name ?? "", staff.status, ...(staff.positions?.activeAdditional.map((position) => position.title) ?? []), ...(staff.positions?.pendingAdditional.map((position) => position.title) ?? [])].join(" "),
     (staff) => staff.displayName,
     (staff) => staff.startDate,
   );
@@ -174,6 +175,21 @@ export function PeopleWorkspace({
       (unit) => !unit.campusId || unit.campusId === campusId,
     );
   }, [workspace, campusId]);
+
+  async function refreshStaffProfiles() {
+    const accessToken = await token();
+    if (!accessToken) return;
+    try {
+      const response = await fetch(`/api/khpos/ops/people/${organisationId}`, {
+        headers: {Authorization: `Bearer ${accessToken}`}, cache: "no-store",
+      });
+      const body = await response.json() as {ok?:boolean;people?:KhposOpsPeopleWorkspace;error?:string};
+      if (!response.ok || !body.ok || !body.people) throw new Error(body.error ?? "Staff roles could not be refreshed.");
+      setWorkspace(body.people);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Staff roles could not be refreshed.");
+    }
+  }
 
   async function submit(payload: Record<string, unknown>, busyKey: string) {
     if (workspace?.organisation.id !== organisationId) return false;
@@ -441,7 +457,12 @@ export function PeopleWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6 sm:py-10">
-        {workspace.canManagePeople && <StaffPositionsPanel organisationId={organisationId} people={workspace} />}
+        {workspace.canManagePeople && <div id="staff-positions-management" className="scroll-mt-6">
+          <StaffPositionsPanel organisationId={organisationId} people={workspace}
+            selectedStaffId={selectedPositionStaffId}
+            onSelectedStaffIdChange={setSelectedPositionStaffId}
+            onPositionsChanged={() => { void refreshStaffProfiles(); }} />
+        </div>}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
@@ -728,6 +749,7 @@ export function PeopleWorkspace({
                         {staff.displayName}
                       </h2>
                       <p className="mt-1 text-sm font-bold text-brand-700">
+                        <span className="font-medium text-slate-600">Primary position: </span>
                         {staff.role.title}
                         {staff.campus?.name ? ` · ${staff.campus.name}` : ""}
                         {staff.unit?.name ? ` · ${staff.unit.name}` : ""}
@@ -762,6 +784,56 @@ export function PeopleWorkspace({
                     </div>
                   </div>
 
+                  <section className="mt-5 rounded-2xl border border-brand-200 bg-brand-50/40 p-4" aria-label={`Roles held by ${staff.displayName}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-950">Positions held by this staff member</h3>
+                        <p className="mt-1 text-xs text-slate-600">One staff profile, one account, multiple authorised roles. The primary appointment stays unchanged.</p>
+                      </div>
+                      {workspace.canManagePeople && staff.canManage && (
+                        <button type="button"
+                          onClick={() => {
+                            setSelectedPositionStaffId(staff.id);
+                            document.getElementById("staff-positions-management")?.scrollIntoView({behavior:"smooth",block:"start"});
+                          }}
+                          className="rounded-xl border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-800">
+                          Manage additional positions
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <div className="rounded-xl bg-white p-3 text-sm">
+                        <strong className="text-slate-900">Primary</strong>
+                        <span className="ml-2 text-slate-700">{staff.role.title}</span>
+                        {staff.status === "active" && <span className="ml-2 text-xs font-bold text-emerald-800">Active</span>}
+                      </div>
+                      {(staff.positions?.activeAdditional ?? []).map((position) => (
+                        <div key={position.assignmentId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white p-3 text-sm">
+                          <div>
+                            <strong className="text-slate-900">{position.title}</strong>
+                            <span className="ml-2 text-xs font-bold text-emerald-800">Additional · Active</span>
+                            {(position.campusName || position.unitName) && (
+                              <p className="mt-1 text-xs text-slate-600">{[position.campusName,position.unitName].filter(Boolean).join(" · ")}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {(staff.positions?.pendingAdditional ?? []).map((position) => (
+                        <div key={position.positionId} className="rounded-xl border border-amber-100 bg-white p-3 text-sm">
+                          <strong className="text-slate-900">{position.title}</strong>
+                          <span className="ml-2 text-xs font-bold text-amber-800">
+                            {position.accepted ? "Additional · Accepted, pending activation" : "Additional · Awaiting acceptance"}
+                          </span>
+                          {(position.campusName || position.unitName) && (
+                            <p className="mt-1 text-xs text-slate-600">{[position.campusName,position.unitName].filter(Boolean).join(" · ")}</p>
+                          )}
+                        </div>
+                      ))}
+                      {!staff.positions?.activeAdditional.length && !staff.positions?.pendingAdditional.length && (
+                        <p className="text-xs text-slate-600">No additional positions assigned.</p>
+                      )}
+                    </div>
+                  </section>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {[
                       [
