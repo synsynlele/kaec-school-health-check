@@ -82,6 +82,8 @@ export interface KhposOpsStaff {
   canManage: boolean;
   history: KhposOpsStaffEvent[];
   positions?: {
+    primaryStatus?: string;
+    disabledAdditional?: Array<{assignmentId: string; title: string; campusName: string | null; unitName: string | null}>;
     activeAdditional: Array<{
       assignmentId: string; roleId: string; roleCode: string; title: string;
       campusName: string | null; unitName: string | null;
@@ -209,8 +211,8 @@ export async function getKhposOpsPeople(
   const [activeResult, pendingResult] = await Promise.all([
     users.length && allowedRoleIds.length
       ? admin().from("khpos_ops_role_assignments")
-        .select("id,user_id,role_id,campus_id,unit_id")
-        .eq("status", "active")
+        .select("id,user_id,role_id,campus_id,unit_id,status")
+        .in("status", ["active", "inactive", "ended"])
         .in("user_id", users)
         .in("role_id", allowedRoleIds)
       : Promise.resolve({data: [], error: null}),
@@ -233,7 +235,7 @@ export async function getKhposOpsPeople(
     // A primary role remains on the existing staff profile. Only other active
     // assignments and pending proposals are listed as additional positions.
     const activeAdditional = (activeResult.data ?? [])
-      .filter((row) => subject && row.user_id === subject && row.id !== staff.roleAssignmentId)
+      .filter((row) => row.status === "active" && subject && row.user_id === subject && row.id !== staff.roleAssignmentId)
       .flatMap((row) => {
         const role = roles.get(row.role_id as string);
         if (!role) return [];
@@ -257,7 +259,9 @@ export async function getKhposOpsPeople(
           accepted: row.acknowledged_at != null,
         }];
       });
-    staff.positions = {activeAdditional, pendingAdditional};
+    const disabledAdditional = (activeResult.data ?? []).filter(row => row.status === "inactive" && row.user_id === subject && row.id !== staff.roleAssignmentId).map(row => ({assignmentId: row.id as string, title: roles.get(row.role_id as string)?.title ?? "Position", campusName: campuses.get(row.campus_id as string) ?? null, unitName: units.get(row.unit_id as string) ?? null}));
+    const primaryStatus = activeResult.data?.find(row => row.id === staff.roleAssignmentId)?.status as string | undefined;
+    staff.positions = {activeAdditional, pendingAdditional, disabledAdditional, primaryStatus};
   }
   return workspace;
 }

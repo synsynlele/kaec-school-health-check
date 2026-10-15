@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { PositionLifecycleControls } from "./PositionLifecycleControls";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { SchoolPositions, PendingRoleApproval } from "@/lib/khpos/ops/positions";
 import type { KhposOpsPeopleWorkspace } from "@/lib/khpos/ops/people";
@@ -90,7 +91,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
       const body = await response.json();
       if (!response.ok || !body.ok) throw new Error(body.error ?? "The position could not be updated.");
       setPositions(body.positions);
-      if (people && (mode === "activate" || mode === "end" || mode === "propose")) setRefresh((value) => value + 1);
+      if (people && (mode.startsWith("assignment_") || mode === "activate" || mode === "end" || mode === "propose")) setRefresh((value) => value + 1);
       onPositionsChanged?.();
       if (positionId) setActionFeedback(current => ({...current, [positionId]: {error: false, message: mode === "activate" ? "Additional position activated." : mode === "end" ? "Additional position ended." : "Changes saved."}}));
       if (mode === "acknowledge") {
@@ -104,10 +105,12 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
       } else {
         setNotice("Position details updated.");
       }
+      return null;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "The position could not be updated.";
       setError(message);
       if (positionId) setActionFeedback(current => ({...current, [positionId]: {error: true, message}}));
+      return message;
     }
     finally { setBusy(false); }
   }
@@ -162,6 +165,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">{notice}</p>}
     {positions && <>
+      {positions.assignments && <PositionLifecycleControls key={staffId || positions.staffId} assignments={positions.assignments} staffId={positions.staffId} busy={busy} onAction={act} />}
       {!people && <ul className="space-y-2">{positions.activePositions.map((position) => <li key={position.assignmentId} className="rounded-xl bg-slate-50 p-3 text-sm"><strong>{position.title}</strong>{position.primary ? " · Primary appointment" : " · Additional position"}<p>{[position.campusName, position.unitName].filter(Boolean).join(" · ") || "School-wide"}</p>{position.reportsTo && <p className="text-slate-600">Reports to {position.reportsTo}</p>}</li>)}</ul>}
       {people && positions.canManage && <form className="space-y-3 border-t pt-4" onSubmit={(event) => { event.preventDefault(); void act("propose", { roleId, campusId, unitId: unitId || null }); }}>
         <h3 className="font-semibold">Add a position</h3>
@@ -171,7 +175,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
         <button disabled={busy} className="rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white">Propose additional position</button>
       </form>}
       <div id="role-position-approval-detail" className="scroll-mt-8">
-      {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} id={"position-approval-" + position.id} className="scroll-mt-40 xl:scroll-mt-8 space-y-3 rounded-2xl border border-slate-200 p-4">
+      {positions.appointments.filter((position) => position.status === "pending").map((position) => <article key={position.id} id={"position-approval-" + position.id} className="scroll-mt-40 xl:scroll-mt-8 space-y-3 rounded-2xl border border-slate-200 p-4">
         <h3 className="font-semibold">{position.title} · {position.status === "pending"
           ? position.acknowledged
             ? position.blockers.length === 0 ? "Awaiting leadership activation" : "Accepted · awaiting readiness completion"
