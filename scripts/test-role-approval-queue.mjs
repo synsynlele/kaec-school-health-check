@@ -12,7 +12,7 @@ assert.match(sql,/st.user_id is distinct from p_actor/);
 assert.match(sql,/pos.organisation_id=p_org/);
 assert.match(sql,/ops_position_blockers\(pos.id\)/);
 assert.doesNotMatch(sql,/delete from|update public\.khpos_ops_staff_role_positions|grant .* to authenticated/);
-assert.match(api,/params\.get\("queue"\) === "1"/);
+assert.match(api,/searchParams\.get\("queue"\) === "1"/);
 assert.match(service,/getPendingRoleApprovals/);
 assert.match(ui,/Pending Role Approvals/);
 assert.match(ui,/Review and activate/);
