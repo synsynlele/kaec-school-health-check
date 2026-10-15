@@ -88,7 +88,11 @@ export function StaffPositionsPanel({ organisationId, people }: {
         <button disabled={busy} className="rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white">Propose additional position</button>
       </form>}
       {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} className="space-y-3 rounded-2xl border border-slate-200 p-4">
-        <h3 className="font-semibold">{position.title} · {position.status}</h3>
+        <h3 className="font-semibold">{position.title} · {position.status === "pending"
+          ? position.acknowledged
+            ? position.blockers.length === 0 ? "Awaiting leadership activation" : "Accepted · awaiting readiness completion"
+            : "Awaiting staff acceptance"
+          : position.status}</h3>
         {position.status === "pending" && <div className="rounded-xl bg-slate-50 p-3 text-sm">
           <p className="font-bold text-slate-900">Position readiness</p>
           <p className={position.acknowledged ? "mt-1 font-semibold text-emerald-800" : "mt-1 font-semibold text-amber-800"}>
