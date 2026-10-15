@@ -19,6 +19,7 @@ function statusLabel(step: AttendanceStep) {
     case "done": return "Recorded";
     case "due": return "Do this now";
     case "blocked": return "Finish the step before this";
+    case "ready": return "Record when it happens";
     case "missed": return "Check-in window closed";
     default: return "Not due yet";
   }
