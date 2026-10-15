@@ -30,6 +30,18 @@ export async function getSchoolPositions(org: string, actor: string, staffId: st
   if (!data || typeof data !== "object") fail("Positions could not be loaded.");
   return data as SchoolPositions;
 }
+export interface PendingRoleApproval {
+  positionId: string; staffId: string; staffName: string;
+  roleTitle: string; campusName: string; unitName: string | null;
+  accepted: boolean; blockers: string[]; ready: boolean; createdAt: string;
+}
+export async function getPendingRoleApprovals(org: string, actor: string): Promise<{items: PendingRoleApproval[]; pendingCount: number}> {
+  const { data, error } = await service().rpc("khpos_ops_pending_role_approvals_server", {p_actor: actor, p_org: org});
+  if (error) fail(error.message);
+  if (!data || typeof data !== "object" || Array.isArray(data)) fail("Role approval queue could not be loaded.");
+  return data as {items: PendingRoleApproval[]; pendingCount: number};
+}
+
 export async function actOnSchoolPosition(org: string, actor: string, mode: string, input: Record<string, unknown>) {
   const { error } = await service().rpc("khpos_ops_role_position_action_server", { p_actor: actor, p_org: org, p_mode: mode, p_input: input });
   if (error) fail(error.message);
