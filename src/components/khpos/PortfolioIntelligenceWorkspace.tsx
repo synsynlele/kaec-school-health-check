@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { PortfolioSystemHealth } from "./PortfolioSystemHealth";
 import {
   ArrowLeft,
   Building2,
   CircleAlert,
-  Gauge,
   Loader2,
   ShieldCheck,
   TrendingUp,
@@ -14,16 +14,6 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposPortfolioIntelligence } from "@/lib/khpos/benchmarking";
-
-const systemLabels: Record<string, string> = {
-  identity_direction: "Identity & Direction",
-  learning_mastery: "Learning & Mastery",
-  capability_development: "Capability Development",
-  value_creation_application: "Value Creation & Application",
-  human_development_ecosystem: "Human Development Ecosystem",
-  institutional_excellence: "Institutional Excellence",
-  intelligence_continuous_improvement: "Intelligence & Continuous Improvement",
-};
 
 const attentionLabels: Record<string, string> = {
   baseline_required: "Baseline required",
@@ -268,43 +258,9 @@ export function PortfolioIntelligenceWorkspace() {
           </div>
         </section>
 
-        <section>
-          <div className="flex items-end justify-between gap-5">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Portfolio system health</p>
-              <h2 className="mt-2 text-2xl font-black">Seven-system distribution across institutions</h2>
-            </div>
-            <Gauge className="hidden size-8 text-brand-700 sm:block" />
-          </div>
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            {portfolio.systems.map((system) => (
-              <article key={system.systemId} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="font-black">{systemLabels[system.systemId] ?? system.systemId}</h3>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                    n={system.institutionCount}
-                  </span>
-                </div>
-                <div className="mt-5 grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl bg-slate-100 p-4">
-                    <p className="text-[11px] font-bold text-slate-500">P25</p>
-                    <p className="mt-1 text-xl font-black">{system.p25}</p>
-                  </div>
-                  <div className="rounded-2xl bg-brand-50 p-4">
-                    <p className="text-[11px] font-bold text-brand-700">Median</p>
-                    <p className="mt-1 text-xl font-black text-brand-950">{system.median}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-100 p-4">
-                    <p className="text-[11px] font-bold text-slate-500">P75</p>
-                    <p className="mt-1 text-xl font-black">{system.p75}</p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <PortfolioSystemHealth systems={portfolio.systems} />
 
-        <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
+        <section id="portfolio-institutions" className="scroll-mt-40 rounded-[30px] border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-slate-200 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Institution portfolio</p>
