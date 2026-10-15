@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 const links = [
+  { href: "/khpos/admin/schools-campuses", label: "Schools & Campuses" },
   { href: "/khpos/admin", label: "Admin Dashboard" },
   { href: "/khpos/admin/partnerships", label: "School Partnerships" },
   { href: "/khpos/portfolio", label: "Portfolio Intelligence" },

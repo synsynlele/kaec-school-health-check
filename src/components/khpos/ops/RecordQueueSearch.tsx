@@ -70,8 +70,8 @@ export function RecordQueueSearchControls({
   hasPriority?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" role="search" aria-label="Find and sort records">
-      <label className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
+    <div className="flex flex-col items-stretch gap-3 rounded-2xl sm:flex-row sm:flex-wrap sm:items-end border border-slate-200 bg-white p-3 shadow-sm" role="search" aria-label="Find and sort records">
+      <label className="min-w-0 sm:flex-[1_1_16rem] text-sm font-semibold text-slate-700">
         Search current view
         <input
           type="search"
@@ -82,7 +82,7 @@ export function RecordQueueSearchControls({
           className="mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:text-sm"
         />
       </label>
-      <label className="min-w-44 text-sm font-semibold text-slate-700">
+      <label className="min-w-0 sm:flex-[0_1_14rem] text-sm font-semibold text-slate-700">
         Sort records
         <select
           value={sort}
