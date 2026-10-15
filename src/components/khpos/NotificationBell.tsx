@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { Bell, X } from "lucide-react";
 import {
   getCurrentSubscription,
@@ -52,6 +53,7 @@ export function NotificationBell({
       ? Notification.permission
       : "unsupported",
   );
+  const panelRef = useRef<HTMLDivElement>(null);
   const seen = useRef<Set<string>>(new Set());
   const initialized = useRef(false);
   const lastFetch = useRef(0);
@@ -256,6 +258,25 @@ export function NotificationBell({
     };
   }, [mobile, saveBrowserSubscription]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const controls = panelRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], [tabindex="0"]');
+      if (!controls?.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panelRef.current)) { event.preventDefault(); first.focus(); }
+    };
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = overflow; window.removeEventListener("keydown", onKey); previous?.focus(); };
+  }, [open]);
+
   async function enablePush() {
     if (!isPushSupported()) {
       setPushState("unsupported");
@@ -356,8 +377,10 @@ export function NotificationBell({
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 z-[90] mt-2 w-[min(90vw,22rem)] rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[120]">
+        <button type="button" aria-label="Close notifications" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50" />
+        <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Your reminders and tasks" className="absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl sm:left-auto sm:right-4 sm:w-96">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">Your reminders and tasks</h2>
             <button
@@ -490,6 +513,7 @@ export function NotificationBell({
             </p>
           )}
         </div>
+        </div>, document.body
       )}
     </div>
   );
