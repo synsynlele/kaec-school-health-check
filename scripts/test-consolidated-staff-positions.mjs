@@ -54,16 +54,16 @@ const client={
     return q;
   }
 };
-const module={exports:{}};
+const testModule={exports:{}};
 const source=ts.transpileModule(fs.readFileSync("src/lib/khpos/ops/people.ts","utf8"),{
   compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}
 }).outputText;
 new Function("require","module","exports","process",source)(
-  ()=>({createClient:()=>client}),module,module.exports,{
+  ()=>({createClient:()=>client}),testModule,testModule.exports,{
     env:{NEXT_PUBLIC_SUPABASE_URL:"https://fixture.invalid",SUPABASE_SERVICE_ROLE_KEY:"isolated-fixture"}
   }
 );
-const result=await module.exports.getKhposOpsPeople(org,user);
+const result=await testModule.exports.getKhposOpsPeople(org,user);
 assert.equal(result.items.length,2,"Role assignments must never become duplicate staff profiles");
 assert.equal(result.items[0].role.title,"Teacher","Original primary role is preserved");
 assert.deepEqual(result.items[0].positions.activeAdditional.map(position=>position.title),["Skills Facilitator"]);
