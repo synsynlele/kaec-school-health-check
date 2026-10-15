@@ -249,7 +249,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <div className="mt-3 space-y-3">
               {own.map(p=>{
                 const today=possibleToday(data.localDay,p.weekday);
-                const mine=Boolean(academic?.streams.find(s=>s.id===p.streamId && s.isTeacher));
+                const mine=p.teacherUserId===data.userId;
                 return <div key={p.id} id={"class-" + p.id} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><h3 className="font-black text-slate-900">{p.subject} · {p.class}</h3>
