@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
-import { actOnPresence, getPresenceWorkspace, KhposPresenceError } from "@/lib/khpos/ops/presence";
+import { actOnPresence, getPresenceWorkspace, getPresenceHistory, KhposPresenceError } from "@/lib/khpos/ops/presence";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +41,18 @@ export async function GET(request: Request, context: { params: Promise<{ id:stri
     verifyPreviewIsolation();
     const { id } = await context.params;validId(id);
     const user = await actor(request);
+    const params = new URL(request.url).searchParams;
+    if (params.get("history") === "1") {
+      const from=params.get("from")??"";
+      const to=params.get("to")??"";
+      const pageRaw=params.get("page")??"0";
+      const isDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)
+        && !Number.isNaN(Date.parse(value+"T00:00:00Z"));
+      if (!isDate(from) || !isDate(to) || !/^(0|[1-9]\d{0,4})$/.test(pageRaw))
+        throw new KhposPresenceError("Choose valid start/end dates and a valid page.");
+      return NextResponse.json({ok:true,history:await getPresenceHistory(id,user.id,from,to,Number(pageRaw))},
+        {headers:{"Cache-Control":"private, no-store"}});
+    }
     return NextResponse.json({ok:true,workspace:await getPresenceWorkspace(id,user.id)},
       {headers:{"Cache-Control":"private, no-store"}});
   } catch(cause) { return responseError(cause); }
