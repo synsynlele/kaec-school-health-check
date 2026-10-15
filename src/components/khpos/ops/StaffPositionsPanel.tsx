@@ -31,6 +31,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingAcceptance, setEditingAcceptance] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [actionFeedback, setActionFeedback] = useState<Record<string, { error: boolean; message: string }>>({});
   const endpoint = `/api/khpos/ops/positions/${organisationId}`;
   const staff = people?.items.filter((item) => item.status === "active" && item.accountLinked) ?? [];
   const roles = people?.roles.filter((role) => ["SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "FINANCE_ADMIN_OFFICER", "SCHOOL_CARE_OPERATIONS_OFFICER", "SECTIONAL_PROMOTER", "TEACHER", "SKILLS_FACILITATOR"].includes(role.code) && (role.code !== "SCHOOL_GUARDIAN" || positions?.canAppointGuardian)) ?? [];
@@ -76,6 +77,8 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
 
   async function act(mode: string, input: Record<string, unknown>) {
     setBusy(true); setError(""); setNotice("");
+    const positionId = typeof input.positionId === "string" ? input.positionId : null;
+    if (positionId) setActionFeedback(current => ({...current, [positionId]: {error: false, message: "Saving…"}}));
     try {
       if (!supabase) throw new Error("Sign in to continue.");
       const { data } = await supabase.auth.getSession();
@@ -89,6 +92,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
       setPositions(body.positions);
       if (people && (mode === "activate" || mode === "end" || mode === "propose")) setRefresh((value) => value + 1);
       onPositionsChanged?.();
+      if (positionId) setActionFeedback(current => ({...current, [positionId]: {error: false, message: mode === "activate" ? "Additional position activated." : mode === "end" ? "Additional position ended." : "Changes saved."}}));
       if (mode === "acknowledge") {
         setEditingAcceptance(null);
         setNotes((current) => ({ ...current, [String(input.positionId)]: "" }));
@@ -100,8 +104,31 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
       } else {
         setNotice("Position details updated.");
       }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "The position could not be updated."); }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "The position could not be updated.";
+      setError(message);
+      if (positionId) setActionFeedback(current => ({...current, [positionId]: {error: true, message}}));
+    }
     finally { setBusy(false); }
+  }
+
+  function managePosition(position: SchoolPositions["appointments"][number]) {
+    if (busy) return;
+    const pending = position.status === "pending";
+    const note = notes[position.id]?.trim() ?? "";
+    const minimum = pending ? 20 : 10;
+    let message = "";
+    if (pending && position.blockers.length > 0) {
+      message = `Activation is waiting for: ${position.blockers.join("; ")}. Refresh readiness after these requirements are completed.`;
+    } else if (note.length < minimum) {
+      message = `Write ${pending ? "an independent readiness review" : "a reason for ending this position"} of at least ${minimum} characters. You have entered ${note.length}.`;
+    }
+    if (message) {
+      setActionFeedback(current => ({...current, [position.id]: {error: true, message}}));
+      if (!pending || position.blockers.length === 0) document.getElementById(`position-review-${position.id}`)?.focus();
+      return;
+    }
+    void act(pending ? "activate" : "end", {positionId: position.id, note});
   }
 
   const field = "w-full rounded-xl border border-slate-300 bg-white p-3 text-sm";
@@ -124,7 +151,8 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
         <button type="button" disabled={busy} onClick={() => {
           setSelectedApprovalId(item.positionId);
           setStaffId(item.staffId); setPositions(null); setError("");
-        }} className="rounded-xl bg-brand-700 px-4 py-2 font-bold text-white disabled:opacity-40">
+          setRefresh(value => value + 1);
+        }} className="min-h-12 touch-manipulation rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:opacity-40">
           {item.ready ? "Review and activate" : "View requirements"}
         </button>
       </div>)}
@@ -143,7 +171,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
         <button disabled={busy} className="rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white">Propose additional position</button>
       </form>}
       <div id="role-position-approval-detail" className="scroll-mt-8">
-      {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} id={"position-approval-" + position.id} className="scroll-mt-8 space-y-3 rounded-2xl border border-slate-200 p-4">
+      {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} id={"position-approval-" + position.id} className="scroll-mt-40 xl:scroll-mt-8 space-y-3 rounded-2xl border border-slate-200 p-4">
         <h3 className="font-semibold">{position.title} · {position.status === "pending"
           ? position.acknowledged
             ? position.blockers.length === 0 ? "Awaiting leadership activation" : "Accepted · awaiting readiness completion"
@@ -170,7 +198,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
           {position.blockers.length > 0 && <div className="text-sm text-amber-900"><strong>Needed before activation</strong><ul className="list-disc pl-5">{position.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>{position.canAcknowledge ? <Link className="underline" href={`/khpos/${organisationId}/onboarding`}>Open My Onboarding for shared practice</Link> : <p className="mt-2">Ask the staff member to open <strong>My Onboarding → My positions</strong> in their own account to resolve these requirements. Refresh readiness after they finish.</p>}</div>}
         </>}
         {(position.canAcknowledge || position.canManage) && position.status !== "ended" && <>
-          {(!position.canAcknowledge || !position.acknowledged || editingAcceptance === position.id) && <label className="block text-sm">{position.canAcknowledge ? "How will you fulfil these responsibilities?" : position.status === "pending" ? "Independent readiness review" : "Reason for ending this additional position"}<textarea className={`${field} mt-1`} value={notes[position.id] ?? ""} maxLength={2000} onChange={(event) => setNotes((current) => ({ ...current, [position.id]: event.target.value }))} /></label>}
+          {(!position.canAcknowledge || !position.acknowledged || editingAcceptance === position.id) && <label className="block text-sm">{position.canAcknowledge ? "How will you fulfil these responsibilities?" : position.status === "pending" ? "Independent readiness review" : "Reason for ending this additional position"}<textarea id={`position-review-${position.id}`} aria-describedby={position.canManage ? `position-review-guidance-${position.id} position-action-feedback-${position.id}` : undefined} aria-invalid={actionFeedback[position.id]?.error || undefined} className={`${field} mt-1`} value={notes[position.id] ?? ""} maxLength={2000} onChange={(event) => setNotes((current) => ({ ...current, [position.id]: event.target.value }))} /></label>}
           {position.canAcknowledge && (position.acknowledged && editingAcceptance !== position.id
             ? <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">Acceptance already recorded</span>
@@ -188,7 +216,20 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
                   className="ml-2 rounded-xl border px-4 py-2 text-sm font-semibold"
                   onClick={() => { setEditingAcceptance(null); setNotes((current) => ({ ...current, [position.id]: "" })); }}>Cancel revision</button>}
               </div>)}
-          {position.canManage && <button disabled={busy || (notes[position.id]?.trim().length ?? 0) < (position.status === "pending" ? 20 : 10) || (position.status === "pending" && position.blockers.length > 0)} className="rounded-xl border border-brand-700 px-4 py-2 font-semibold text-brand-700" onClick={() => void act(position.status === "pending" ? "activate" : "end", { positionId: position.id, note: notes[position.id] })}>{position.status === "pending" ? "Confirm readiness and activate" : "End additional position"}</button>}
+          {position.canManage && <div className="space-y-2">
+            <p id={`position-review-guidance-${position.id}`} className="text-sm text-slate-600">
+              {position.status === "pending" ? "Record what you independently checked before activation." : "Record the handover or withdrawal reason."} At least {position.status === "pending" ? 20 : 10} characters required · {notes[position.id]?.trim().length ?? 0}/2000 entered.
+            </p>
+            <button type="button" disabled={busy} aria-describedby={`position-review-guidance-${position.id} position-action-feedback-${position.id}`}
+              className="min-h-12 w-full touch-manipulation rounded-xl border border-brand-700 bg-brand-50 px-4 py-3 font-semibold text-brand-800 disabled:cursor-wait disabled:opacity-50 sm:w-auto"
+              onClick={() => managePosition(position)}>
+              {busy ? "Saving…" : position.status === "pending" ? "Confirm readiness and activate" : "End additional position"}
+            </button>
+            <p id={`position-action-feedback-${position.id}`} role={actionFeedback[position.id]?.error ? "alert" : "status"}
+              className={actionFeedback[position.id]?.error ? "rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-800" : "text-sm font-semibold text-emerald-800"}>
+              {actionFeedback[position.id]?.message}
+            </p>
+          </div>}
         </>}
       </article>)}
       </div>
