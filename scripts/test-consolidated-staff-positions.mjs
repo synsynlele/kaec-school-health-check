@@ -78,7 +78,7 @@ const panel=fs.readFileSync("src/components/khpos/ops/StaffPositionsPanel.tsx","
 assert.match(ui,/Positions held by this staff member/);
 assert.match(ui,/staff\.positions\?\.activeAdditional/);
 assert.match(ui,/staff\.positions\?\.pendingAdditional/);
-assert.match(ui,/Manage additional positions/);
+assert.match(ui,/Manage positions/);
 assert.match(panel,/selectedStaffId/);
 assert.match(panel,/onPositionsChanged/);
 assert.match(panel,/!people && <ul className="space-y-2">\{positions\.activePositions/);

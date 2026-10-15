@@ -1,11 +1,18 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+export interface ManagedAssignment {
+  assignmentId: string; roleCode: string; title: string; primary: boolean;
+  status: "active" | "disabled" | "inactive" | "ended";
+  campusName: string | null; unitName: string | null; positionId: string | null;
+  handoverBlockers: string[]; remainingActiveCount: number; canManage: boolean; reason: string | null; handover: string | null; updatedAt: string | null;
+}
 export interface SchoolPositions {
+  assignments?: ManagedAssignment[];
   staffId: string | null;
   canManage: boolean;
   canAppointGuardian: boolean;
   activePositions: Array<{ assignmentId: string; roleId: string; roleCode: string; title: string; primary: boolean; campusName: string | null; unitName: string | null; reportsTo: string | null }>;
   appointments: Array<{
-    id: string; roleId: string; title: string; status: "pending" | "active" | "ended";
+    id: string; roleId: string; title: string; status: "pending" | "active" | "disabled" | "ended";
     campusName: string; unitName: string | null; acknowledged: boolean; canAcknowledge: boolean; canManage: boolean;
     blockers: string[];
     charter: { mission: string | null; responsibilities: string[] | null; decisionRights: string[] | null; escalation: string[] | null };
@@ -28,7 +35,17 @@ export async function getSchoolPositions(org: string, actor: string, staffId: st
   const { data, error } = await service().rpc("khpos_ops_get_role_positions_server", { p_actor: actor, p_org: org, p_staff_id: staffId });
   if (error) fail(error.message);
   if (!data || typeof data !== "object") fail("Positions could not be loaded.");
-  return data as SchoolPositions;
+  const result = data as SchoolPositions;
+  if (result.staffId) {
+    const controls = await service().rpc("khpos_ops_get_assignment_controls_server", {p_actor: actor, p_org: org, p_staff: result.staffId});
+    if (controls.error) fail(controls.error.message);
+    result.assignments = (controls.data ?? []) as ManagedAssignment[];
+    for (const appointment of result.appointments) {
+      const assignment = result.assignments.find(item => item.positionId === appointment.id);
+      if (assignment?.status === "disabled") appointment.status = "disabled";
+    }
+  }
+  return result;
 }
 export interface PendingRoleApproval {
   positionId: string; staffId: string; staffName: string;
@@ -44,5 +61,10 @@ export async function getPendingRoleApprovals(org: string, actor: string): Promi
 
 export async function actOnSchoolPosition(org: string, actor: string, mode: string, input: Record<string, unknown>) {
   const { error } = await service().rpc("khpos_ops_role_position_action_server", { p_actor: actor, p_org: org, p_mode: mode, p_input: input });
+  if (error) fail(error.message);
+}
+
+export async function actOnSchoolAssignment(org: string, actor: string, staffId: string, assignmentId: string, mode: string, input: Record<string, unknown>) {
+  const {error} = await service().rpc("khpos_ops_assignment_action_server", {p_actor: actor, p_org: org, p_staff: staffId, p_assignment: assignmentId, p_mode: mode, p_input: input});
   if (error) fail(error.message);
 }

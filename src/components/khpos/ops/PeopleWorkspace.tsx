@@ -797,7 +797,7 @@ export function PeopleWorkspace({
                             document.getElementById("staff-positions-management")?.scrollIntoView({behavior:"smooth",block:"start"});
                           }}
                           className="rounded-xl border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-800">
-                          Manage additional positions
+                          Manage positions
                         </button>
                       )}
                     </div>
@@ -805,7 +805,7 @@ export function PeopleWorkspace({
                       <div className="rounded-xl bg-white p-3 text-sm">
                         <strong className="text-slate-900">Primary</strong>
                         <span className="ml-2 text-slate-700">{staff.role.title}</span>
-                        {staff.status === "active" && <span className="ml-2 text-xs font-bold text-emerald-800">Active</span>}
+                        {staff.status === "active" && <span className={`ml-2 text-xs font-bold ${staff.positions?.primaryStatus === "active" ? "text-emerald-800" : "text-amber-800"}`}>{staff.positions?.primaryStatus === "inactive" ? "Disabled" : staff.positions?.primaryStatus === "ended" ? "Ended" : staff.positions?.primaryStatus === "active" ? "Active" : "No active assignment"}</span>}
                       </div>
                       {(staff.positions?.activeAdditional ?? []).map((position) => (
                         <div key={position.assignmentId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white p-3 text-sm">
@@ -818,6 +818,7 @@ export function PeopleWorkspace({
                           </div>
                         </div>
                       ))}
+                      {(staff.positions?.disabledAdditional ?? []).map(position => <div key={position.assignmentId} className="rounded-xl border border-amber-200 bg-white p-3 text-sm"><strong>{position.title}</strong><span className="ml-2 font-semibold text-amber-800">Additional · Disabled</span></div>)}
                       {(staff.positions?.pendingAdditional ?? []).map((position) => (
                         <div key={position.positionId} className="rounded-xl border border-amber-100 bg-white p-3 text-sm">
                           <strong className="text-slate-900">{position.title}</strong>
@@ -829,7 +830,7 @@ export function PeopleWorkspace({
                           )}
                         </div>
                       ))}
-                      {!staff.positions?.activeAdditional.length && !staff.positions?.pendingAdditional.length && (
+                      {!staff.positions?.activeAdditional.length && !staff.positions?.pendingAdditional.length && !staff.positions?.disabledAdditional?.length && (
                         <p className="text-xs text-slate-600">No additional positions assigned.</p>
                       )}
                     </div>
