@@ -15,6 +15,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
   const [positions, setPositions] = useState<SchoolPositions | null>(null);
   const [approvalQueue, setApprovalQueue] = useState<PendingRoleApproval[]>([]);
   const [approvalQueueError, setApprovalQueueError] = useState("");
+  const [selectedApprovalId, setSelectedApprovalId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [roleId, setRoleId] = useState("");
@@ -60,6 +61,11 @@ export function StaffPositionsPanel({ organisationId, people }: {
     })().catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Positions could not be loaded."); });
     return () => { active = false; };
   }, [endpoint, staffId, supabase, people, refresh]);
+
+  useEffect(() => {
+    if (!selectedApprovalId || !positions?.appointments.some((appointment) => appointment.id === selectedApprovalId)) return;
+    document.getElementById("position-approval-" + selectedApprovalId)?.scrollIntoView({behavior:"smooth",block:"start"});
+  }, [positions,selectedApprovalId]);
 
   async function act(mode: string, input: Record<string, unknown>) {
     setBusy(true); setError(""); setNotice("");
@@ -108,8 +114,8 @@ export function StaffPositionsPanel({ organisationId, people }: {
           {!item.ready && <p className="mt-1 text-xs text-slate-600">{item.blockers.slice(0, 2).join(" · ")}</p>}
         </div>
         <button type="button" disabled={busy} onClick={() => {
+          setSelectedApprovalId(item.positionId);
           setStaffId(item.staffId); setPositions(null); setError("");
-          window.setTimeout(() => document.getElementById("role-position-approval-detail")?.scrollIntoView({behavior:"smooth",block:"start"}), 150);
         }} className="rounded-xl bg-brand-700 px-4 py-2 font-bold text-white disabled:opacity-40">
           {item.ready ? "Review and activate" : "View requirements"}
         </button>
@@ -129,7 +135,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
         <button disabled={busy} className="rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white">Propose additional position</button>
       </form>}
       <div id="role-position-approval-detail" className="scroll-mt-8">
-      {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} className="space-y-3 rounded-2xl border border-slate-200 p-4">
+      {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} id={"position-approval-" + position.id} className="scroll-mt-8 space-y-3 rounded-2xl border border-slate-200 p-4">
         <h3 className="font-semibold">{position.title} · {position.status === "pending"
           ? position.acknowledged
             ? position.blockers.length === 0 ? "Awaiting leadership activation" : "Accepted · awaiting readiness completion"
