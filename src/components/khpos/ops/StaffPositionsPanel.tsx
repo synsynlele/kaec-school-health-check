@@ -6,13 +6,19 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { SchoolPositions, PendingRoleApproval } from "@/lib/khpos/ops/positions";
 import type { KhposOpsPeopleWorkspace } from "@/lib/khpos/ops/people";
 
-export function StaffPositionsPanel({ organisationId, people, selectedStaffId, onPositionsChanged }: {
+export function StaffPositionsPanel({ organisationId, people, selectedStaffId, onSelectedStaffIdChange, onPositionsChanged }: {
   organisationId: string; people?: KhposOpsPeopleWorkspace;
-  selectedStaffId?: string; onPositionsChanged?: () => void;
+  selectedStaffId?: string; onSelectedStaffIdChange?: (staffId: string) => void;
+  onPositionsChanged?: () => void;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [refresh, setRefresh] = useState(0);
-  const [staffId, setStaffId] = useState("");
+  const [ownStaffId, setOwnStaffId] = useState("");
+  const staffId = people ? (selectedStaffId ?? "") : ownStaffId;
+  const setStaffId = (value: string) => {
+    if (people) onSelectedStaffIdChange?.(value);
+    else setOwnStaffId(value);
+  };
   const [positions, setPositions] = useState<SchoolPositions | null>(null);
   const [approvalQueue, setApprovalQueue] = useState<PendingRoleApproval[]>([]);
   const [approvalQueueError, setApprovalQueueError] = useState("");
@@ -27,13 +33,6 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
   const [notice, setNotice] = useState("");
   const endpoint = `/api/khpos/ops/positions/${organisationId}`;
   const staff = people?.items.filter((item) => item.status === "active" && item.accountLinked) ?? [];
-  useEffect(() => {
-    if (!selectedStaffId) return;
-    setStaffId(selectedStaffId);
-    setPositions(null);
-    setError("");
-  }, [selectedStaffId]);
-
   const roles = people?.roles.filter((role) => ["SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "FINANCE_ADMIN_OFFICER", "SCHOOL_CARE_OPERATIONS_OFFICER", "SECTIONAL_PROMOTER", "TEACHER", "SKILLS_FACILITATOR"].includes(role.code) && (role.code !== "SCHOOL_GUARDIAN" || positions?.canAppointGuardian)) ?? [];
 
   useEffect(() => {
