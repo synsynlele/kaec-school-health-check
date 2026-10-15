@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, verifyKhposAccessToken, KhposAuthError } from "@/lib/khpos/auth";
-import { actOnSchoolPosition, getSchoolPositions, SchoolPositionsError } from "@/lib/khpos/ops/positions";
+import { actOnSchoolPosition, getSchoolPositions, getPendingRoleApprovals, SchoolPositionsError } from "@/lib/khpos/ops/positions";
 import { acknowledgeKhposOpsPolicy, KhposOpsLibraryError } from "@/lib/khpos/ops/library";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +21,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const staffId = new URL(request.url).searchParams.get("staffId");
     if (staffId && !UUID_RE.test(staffId)) throw new SchoolPositionsError("Invalid staff reference.");
     const user = await actor(request);
+    if (new URL(request.url).searchParams.get("queue") === "1") {
+      return NextResponse.json({ok: true, approvals: await getPendingRoleApprovals(id, user.id)}, {headers: {"Cache-Control": "private, no-store"}});
+    }
     return NextResponse.json({ ok: true, positions: await getSchoolPositions(id, user.id, staffId) }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (cause) { return error(cause); }
 }
