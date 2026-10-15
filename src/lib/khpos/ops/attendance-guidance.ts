@@ -1,7 +1,7 @@
 import type { KhposPresenceWorkspace, KhposPresencePeriod } from "@/lib/khpos/ops/presence";
 
 export type AttendanceStepKind = "school_in" | "school_out" | "class_in" | "class_out";
-export type AttendanceStepStatus = "done" | "due" | "upcoming" | "blocked" | "missed";
+export type AttendanceStepStatus = "done" | "due" | "upcoming" | "blocked" | "missed" | "ready";
 
 export interface AttendanceStep {
   id: string;
@@ -58,14 +58,17 @@ export function attendanceSteps(
       isToday(today, period.weekday))
     .sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
   const weekdays = new Date(`${today}T12:00:00Z`).getUTCDay();
-  const schoolDay = weekdays >= 1 && weekdays <= 5 || myPeriods.length > 0;
+  const schoolDay = weekdays >= 1 && weekdays <= 6 || myPeriods.length > 0;
   if (!schoolDay && !presence.todayPresence) return [];
 
   const at = (clock: string) => schoolClockMs(today, clock);
   const starts = myPeriods.map((p) => at(p.start)).filter(Number.isFinite);
   const ends = myPeriods.map((p) => at(p.end)).filter(Number.isFinite);
-  const schoolStart = starts.length ? Math.min(...starts) - HALF_HOUR : at("08:00");
-  const schoolEnd = Math.max(at("16:00"), ...(ends.length ? ends : [at("16:00")]));
+  // Do not invent common opening and closing times for all partner schools.
+  // Use a teacher's actual scheduled lesson times. Without a schedule,
+  // manual attendance remains available but there are no invented deadlines.
+  const schoolStart = starts.length ? Math.min(...starts) - HALF_HOUR : null;
+  const schoolEnd = ends.length ? Math.max(...ends) : null;
   const arrival = presence.todayPresence;
   const checkedIn = Boolean(arrival?.in);
   const checkedOut = Boolean(arrival?.out);
@@ -79,11 +82,11 @@ export function attendanceSteps(
     instruction: checkedIn ? "Your arrival time has been saved." :
       "When you arrive at school, record your arrival. This does not mark a class as taught.",
     actionLabel: checkedIn ? "Arrival recorded" : "Record school arrival",
-    status: checkedIn ? "done" : nowMs >= schoolStart ? "due" : "upcoming",
-    dueAt: stamp(nowMs, schoolStart),
+    status: checkedIn ? "done" : schoolStart === null ? "ready" : nowMs >= schoolStart ? "due" : "upcoming",
+    dueAt: schoolStart === null ? null : stamp(nowMs, schoolStart),
     recordedAt: arrival?.in ?? null,
     periodId: null, classLabel: null, schedule: null,
-    urgent: !checkedIn && nowMs >= schoolStart + HALF_HOUR,
+    urgent: !checkedIn && schoolStart !== null && nowMs >= schoolStart + HALF_HOUR,
   });
 
   for (const period of myPeriods) {
@@ -134,7 +137,7 @@ export function attendanceSteps(
   }
 
   const schoolOutStatus: AttendanceStepStatus = checkedOut ? "done" :
-    !checkedIn || ongoing ? "blocked" : nowMs >= schoolEnd ? "due" : "upcoming";
+    !checkedIn || ongoing ? "blocked" : schoolEnd === null ? "ready" : nowMs >= schoolEnd ? "due" : "upcoming";
   result.push({
     id: `attendance:school-out:${today}`,
     kind: "school_out", title: "School check-out",
@@ -143,9 +146,9 @@ export function attendanceSteps(
       !checkedIn ? "Record your school arrival first." :
       "Before you leave school, record your departure. Finish any open class first.",
     actionLabel: checkedOut ? "Departure recorded" : "Record school departure",
-    status: schoolOutStatus, dueAt: stamp(nowMs, schoolEnd),
+    status: schoolOutStatus, dueAt: schoolEnd === null ? null : stamp(nowMs, schoolEnd),
     recordedAt: arrival?.out ?? null, periodId: null, classLabel: null, schedule: null,
-    urgent: schoolOutStatus === "due" && nowMs > schoolEnd + HALF_HOUR,
+    urgent: schoolOutStatus === "due" && schoolEnd !== null && nowMs > schoolEnd + HALF_HOUR,
   });
   return result;
 }
