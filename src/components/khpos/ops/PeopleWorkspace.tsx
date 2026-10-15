@@ -460,6 +460,7 @@ export function PeopleWorkspace({
         {workspace.canManagePeople && <div id="staff-positions-management" className="scroll-mt-6">
           <StaffPositionsPanel organisationId={organisationId} people={workspace}
             selectedStaffId={selectedPositionStaffId}
+            onSelectedStaffIdChange={setSelectedPositionStaffId}
             onPositionsChanged={() => { void refreshStaffProfiles(); }} />
         </div>}
         {error && (
