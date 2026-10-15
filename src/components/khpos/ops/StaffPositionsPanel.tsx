@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { SchoolPositions } from "@/lib/khpos/ops/positions";
+import type { SchoolPositions, PendingRoleApproval } from "@/lib/khpos/ops/positions";
 import type { KhposOpsPeopleWorkspace } from "@/lib/khpos/ops/people";
 
 export function StaffPositionsPanel({ organisationId, people }: {
@@ -13,6 +13,8 @@ export function StaffPositionsPanel({ organisationId, people }: {
   const [refresh, setRefresh] = useState(0);
   const [staffId, setStaffId] = useState("");
   const [positions, setPositions] = useState<SchoolPositions | null>(null);
+  const [approvalQueue, setApprovalQueue] = useState<PendingRoleApproval[]>([]);
+  const [approvalQueueError, setApprovalQueueError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [roleId, setRoleId] = useState("");
@@ -24,6 +26,23 @@ export function StaffPositionsPanel({ organisationId, people }: {
   const endpoint = `/api/khpos/ops/positions/${organisationId}`;
   const staff = people?.items.filter((item) => item.status === "active" && item.accountLinked) ?? [];
   const roles = people?.roles.filter((role) => ["SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "FINANCE_ADMIN_OFFICER", "SCHOOL_CARE_OPERATIONS_OFFICER", "SECTIONAL_PROMOTER", "TEACHER", "SKILLS_FACILITATOR"].includes(role.code) && (role.code !== "SCHOOL_GUARDIAN" || positions?.canAppointGuardian)) ?? [];
+
+  useEffect(() => {
+    let active = true;
+    if (!people) return;
+    void (async () => {
+      if (!supabase) throw new Error("Sign in to review role approvals.");
+      const {data} = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Sign in to review role approvals.");
+      const response = await fetch(endpoint + "?queue=1", {
+        headers: {Authorization: "Bearer " + data.session.access_token}, cache: "no-store"
+      });
+      const body = await response.json() as {ok?:boolean;approvals?:{items:PendingRoleApproval[]};error?:string};
+      if (!response.ok || !body.ok || !body.approvals) throw new Error(body.error ?? "Role approval queue is unavailable.");
+      if (active) {setApprovalQueue(body.approvals.items);setApprovalQueueError("");}
+    })().catch((cause) => {if (active) setApprovalQueueError(cause instanceof Error ? cause.message : "Approval queue is unavailable.");});
+    return () => {active = false;};
+  }, [endpoint, people, refresh, supabase]);
 
   useEffect(() => {
     let active = true;
@@ -55,6 +74,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
       const body = await response.json();
       if (!response.ok || !body.ok) throw new Error(body.error ?? "The position could not be updated.");
       setPositions(body.positions);
+      if (people && (mode === "activate" || mode === "end")) setRefresh((value) => value + 1);
       if (mode === "acknowledge") {
         setEditingAcceptance(null);
         setNotes((current) => ({ ...current, [String(input.positionId)]: "" }));
@@ -74,6 +94,27 @@ export function StaffPositionsPanel({ organisationId, people }: {
   return <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5" aria-busy={busy}>
     <div><h2 className="text-lg font-bold">{people ? "Staff positions" : "My positions"}</h2>
       <p className="mt-1 text-sm text-slate-600">One account can hold several positions. Each position has its own duties and school area. The staff member must accept a new position and acknowledge its current required policies in their own account; a different authorised leader then reviews readiness and activates it.</p></div>
+    {people && <div className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+      <h3 className="text-base font-black text-brand-950">Pending Role Approvals ({approvalQueue.length})</h3>
+      <p className="text-sm text-brand-900">Choose an appointment below to review it and activate it when all requirements are complete. The staff member cannot activate their own additional role.</p>
+      {approvalQueueError && <p role="alert" className="text-sm font-semibold text-rose-800">{approvalQueueError}</p>}
+      {approvalQueue.length === 0 && !approvalQueueError && <p className="text-sm text-brand-800">No additional-role appointments are awaiting approval within your authority.</p>}
+      {approvalQueue.map((item) => <div key={item.positionId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-100 bg-white p-3 text-sm">
+        <div><p className="font-black text-slate-950">{item.staffName} · {item.roleTitle}</p>
+          <p className="text-xs text-slate-600">{item.campusName}{item.unitName ? " · " + item.unitName : ""}</p>
+          <p className={item.ready ? "mt-1 font-bold text-emerald-800" : "mt-1 font-bold text-amber-800"}>
+            {item.ready ? "Ready for leadership activation" : item.accepted ? "Accepted · " + item.blockers.length + " requirement(s) remaining" : "Awaiting staff acceptance"}
+          </p>
+          {!item.ready && <p className="mt-1 text-xs text-slate-600">{item.blockers.slice(0, 2).join(" · ")}</p>}
+        </div>
+        <button type="button" disabled={busy} onClick={() => {
+          setStaffId(item.staffId); setPositions(null); setError("");
+          window.setTimeout(() => document.getElementById("role-position-approval-detail")?.scrollIntoView({behavior:"smooth",block:"start"}), 150);
+        }} className="rounded-xl bg-brand-700 px-4 py-2 font-bold text-white disabled:opacity-40">
+          {item.ready ? "Review and activate" : "View requirements"}
+        </button>
+      </div>)}
+    </div>}
     {people && <label className="block text-sm font-semibold">Staff member<select className={`${field} mt-2`} value={staffId} disabled={busy} onChange={(event) => { setStaffId(event.target.value); setPositions(null); setError(""); }}><option value="">Choose an active staff member</option>{staff.map((item) => <option key={item.id} value={item.id}>{item.displayName}</option>)}</select></label>}
     <button disabled={busy || !!people && !staffId} className="rounded-lg border px-3 py-2 text-sm" onClick={() => setRefresh((value) => value + 1)}>Refresh readiness</button>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-800">{error}</p>}
@@ -87,6 +128,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
         <label className="block text-sm">Section or programme<select className={field} value={unitId} onChange={(event) => setUnitId(event.target.value)}><option value="">Entire campus</option>{people.units.filter((unit) => !unit.campusId || unit.campusId === campusId).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label>
         <button disabled={busy} className="rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white">Propose additional position</button>
       </form>}
+      <div id="role-position-approval-detail" className="scroll-mt-8">
       {positions.appointments.filter((position) => position.status === "pending" || position.status === "active" && position.canManage).map((position) => <article key={position.id} className="space-y-3 rounded-2xl border border-slate-200 p-4">
         <h3 className="font-semibold">{position.title} · {position.status === "pending"
           ? position.acknowledged
@@ -135,6 +177,7 @@ export function StaffPositionsPanel({ organisationId, people }: {
           {position.canManage && <button disabled={busy || (notes[position.id]?.trim().length ?? 0) < (position.status === "pending" ? 20 : 10) || (position.status === "pending" && position.blockers.length > 0)} className="rounded-xl border border-brand-700 px-4 py-2 font-semibold text-brand-700" onClick={() => void act(position.status === "pending" ? "activate" : "end", { positionId: position.id, note: notes[position.id] })}>{position.status === "pending" ? "Confirm readiness and activate" : "End additional position"}</button>}
         </>}
       </article>)}
+      </div>
       {positions.appointments.some((position) => position.status === "ended") && <details className="rounded-xl border p-3 text-sm"><summary className="cursor-pointer font-semibold">Past positions</summary><ul className="mt-2 space-y-2">{positions.appointments.filter((position) => position.status === "ended").map((position) => <li key={position.id}>{position.title} · {position.campusName}{position.unitName ? ` · ${position.unitName}` : ""}</li>)}</ul></details>}
       {!positions.activePositions.length && !positions.appointments.length && <p className="text-sm text-slate-600">No positions have been recorded yet.</p>}
     </>}
