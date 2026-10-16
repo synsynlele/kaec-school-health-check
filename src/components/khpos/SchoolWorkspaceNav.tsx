@@ -100,6 +100,7 @@ const standardLink = {
 } as const;
 
 const operationsLinks = [
+  { suffix: "/reports", label: "Reports", icon: FileCheck2 },
   { suffix: "/announcements", label: "Announcements", icon: MessageCircle },
   { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
@@ -175,7 +176,7 @@ const navigationGroups = [
   { title: "Teaching & learning", icon: GraduationCap, links: [operation("/teaching-presence"), operation("/academic-delivery"), operation("/academic-assurance"), operation("/learner-progress"), intelligenceLinks[1]] },
   { title: "Builder development", icon: Sparkles, links: [operation("/potential-development"), operation("/skills-development"), operation("/leadership-financial"), operation("/young-ceo"), operation("/builder-projects"), operation("/worldready"), intelligenceLinks[2]] },
   { title: "Care & parents", icon: ShieldCheck, links: [operation("/builders-council"), operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/parent-journeys")] },
-  { title: "School operations", icon: LibraryBig, links: [operation("/announcements"), operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
+  { title: "School operations", icon: LibraryBig, links: [operation("/reports"), operation("/announcements"), operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
   { title: "Setup & system", icon: Wrench, links: [operation("/schools-campuses"), activationLink, standardLink, executionControlLink, systemIntegrityLink] },
 ] as const;
 

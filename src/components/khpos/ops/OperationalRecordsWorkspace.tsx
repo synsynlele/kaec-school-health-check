@@ -379,6 +379,8 @@ export function OperationalRecordsWorkspace({
             </Link>
           </div>
 
+          <Link href={`/khpos/${organisationId}/reports`} className="mt-4 inline-flex min-h-12 items-center rounded-xl border border-white/30 px-4 py-3 text-sm font-bold">Open daily, weekly, termly & one-off Reports</Link>
+
           <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-5xl">
             Records & Evidence
           </h1>
