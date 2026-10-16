@@ -1,3 +1,4 @@
+import { getReportAlerts } from "@/lib/khpos/reports";
 import { getAnnouncementAlerts } from "@/lib/khpos/announcements";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getPresenceWorkspace } from "@/lib/khpos/ops/presence";
@@ -96,7 +97,8 @@ export async function getKhposAlerts(
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
   const announcementAlerts = await getAnnouncementAlerts(organisationId, userId).catch(() => []);
-  return [...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
+  const reportAlerts = await getReportAlerts(organisationId, userId).catch(() => []);
+  return [...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
     Number(b.urgent) - Number(a.urgent) ||
     (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
 }

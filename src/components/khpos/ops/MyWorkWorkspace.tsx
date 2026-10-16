@@ -1,5 +1,6 @@
 "use client";
 
+import { ReportsWorkspace } from "@/components/khpos/ReportsWorkspace";
 import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
 
 import { useEffect, useMemo, useState } from "react";
@@ -415,6 +416,7 @@ export function MyWorkWorkspace({
 
         <AnnouncementsWorkspace organisationId={organisationId} compact />
         <TodayAttendanceCard organisationId={organisationId} />
+        <ReportsWorkspace organisationId={organisationId} compact />
 
         {attention && attention.items.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
