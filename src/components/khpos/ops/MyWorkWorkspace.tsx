@@ -1,5 +1,7 @@
 "use client";
 
+import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
@@ -411,6 +413,7 @@ export function MyWorkWorkspace({
           </div>
         )}
 
+        <AnnouncementsWorkspace organisationId={organisationId} compact />
         <TodayAttendanceCard organisationId={organisationId} />
 
         {attention && attention.items.length > 0 && (

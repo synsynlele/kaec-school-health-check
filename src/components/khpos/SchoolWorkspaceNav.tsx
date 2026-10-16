@@ -100,6 +100,7 @@ const standardLink = {
 } as const;
 
 const operationsLinks = [
+  { suffix: "/announcements", label: "Announcements", icon: MessageCircle },
   { suffix: "/work", label: "Today", icon: ListTodo },
   { suffix: "/issues", label: "Issues & Escalations", icon: AlertTriangle },
   { suffix: "/decisions", label: "Decisions & Approvals", icon: CheckCircle2 },
@@ -158,9 +159,9 @@ const workspaceLinks = [
 // Daily actions stay visible on both desktop and mobile. Setup belongs in More.
 const dailyLinks = [
   transformLinks[0],
-  operationsLinks[0],
-  operationsLinks[1],
-  operationsLinks[2],
+  operationsLinks.find(link => link.suffix === "/work")!,
+  operationsLinks.find(link => link.suffix === "/issues")!,
+  operationsLinks.find(link => link.suffix === "/decisions")!,
 ] as const;
 
 // Resolve destinations by route, not array position, so regrouping cannot silently
@@ -174,7 +175,7 @@ const navigationGroups = [
   { title: "Teaching & learning", icon: GraduationCap, links: [operation("/teaching-presence"), operation("/academic-delivery"), operation("/academic-assurance"), operation("/learner-progress"), intelligenceLinks[1]] },
   { title: "Builder development", icon: Sparkles, links: [operation("/potential-development"), operation("/skills-development"), operation("/leadership-financial"), operation("/young-ceo"), operation("/builder-projects"), operation("/worldready"), intelligenceLinks[2]] },
   { title: "Care & parents", icon: ShieldCheck, links: [operation("/builders-council"), operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/parent-journeys")] },
-  { title: "School operations", icon: LibraryBig, links: [operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
+  { title: "School operations", icon: LibraryBig, links: [operation("/announcements"), operation("/campus-readiness"), operation("/assets"), operation("/events"), operation("/library"), operation("/records")] },
   { title: "Setup & system", icon: Wrench, links: [operation("/schools-campuses"), activationLink, standardLink, executionControlLink, systemIntegrityLink] },
 ] as const;
 
