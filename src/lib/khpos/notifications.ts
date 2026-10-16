@@ -1,3 +1,4 @@
+import { getAnnouncementAlerts } from "@/lib/khpos/announcements";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getPresenceWorkspace } from "@/lib/khpos/ops/presence";
 import { attendanceSteps, dueAttendanceSteps } from "@/lib/khpos/ops/attendance-guidance";
@@ -94,7 +95,8 @@ export async function getKhposAlerts(
         (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
-  return [...attendanceAlerts, ...workAlerts].sort((a, b) =>
+  const announcementAlerts = await getAnnouncementAlerts(organisationId, userId).catch(() => []);
+  return [...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
     Number(b.urgent) - Number(a.urgent) ||
     (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
 }
@@ -106,6 +108,7 @@ export function pushEligibleAlerts(
   const tomorrow = nowMs + 24 * 60 * 60 * 1000;
 
   return alerts.filter((alert) => {
+    if (alert.category === "announcement") return alert.urgent;
     if (alert.urgent) return true;
     if (alert.level !== "action") return false;
     if (!alert.dueAt) return alert.category === "verification";
