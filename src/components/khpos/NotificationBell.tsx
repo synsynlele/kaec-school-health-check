@@ -43,6 +43,7 @@ export function NotificationBell({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(false);
   const [pushError, setPushError] = useState("");
+  const [testState, setTestState] = useState<"idle"|"busy"|"shown">("idle");
   const [pushState, setPushState] = useState<PushState>(() =>
     typeof window !== "undefined" && isPushSupported() ? "off" : "unsupported",
   );
@@ -125,7 +126,9 @@ export function NotificationBell({
             const notice = new Notification(alert.title, {
               body: alert.detail,
               tag: `${organisationId}:${alert.id}`,
-            });
+              renotify: true,
+              silent: false,
+            } as NotificationOptions);
             notice.onclick = () => {
               window.focus();
               window.location.href = alert.href;
@@ -326,6 +329,30 @@ export function NotificationBell({
     }
   }
 
+  async function testDeviceAlert() {
+    setTestState("busy");
+    setPushError("");
+    try {
+      if (!("Notification" in window) || Notification.permission !== "granted") throw new Error("Enable device alerts first, then test again.");
+      await navigator.serviceWorker.register("/khpos-sw.js", { scope: "/" });
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification("KHP-OS · Device alert test", {
+        body: "If this alert is quiet, check its Android notification category, sound volume and Do Not Disturb settings.",
+        tag: `khpos-test-${organisationId}`,
+        renotify: true,
+        silent: false,
+        vibrate: [200, 100, 200],
+        icon: "/khpos-icon-192.png",
+        badge: "/khpos-icon-192.png",
+        data: { url: `/khpos/${organisationId}/work` },
+      } as NotificationOptions);
+      setTestState("shown");
+    } catch (cause) {
+      setPushError(cause instanceof Error ? cause.message : "The device test could not run.");
+      setTestState("idle");
+    }
+  }
+
   async function disablePush() {
     setPushState("busy");
     setPushError("");
@@ -410,6 +437,11 @@ export function NotificationBell({
               </button>
             </div>
           )}
+
+          {permission === "granted" && <div className="mt-3 rounded-lg border border-white/15 p-3">
+            <button type="button" disabled={testState === "busy"} onClick={() => void testDeviceAlert()} className="min-h-12 rounded-lg border border-mint-300 px-3 py-2 text-sm font-bold text-mint-300 disabled:opacity-50">{testState === "busy" ? "Showing test…" : "Test device alert"}</button>
+            <p className="mt-2 text-xs leading-5 text-slate-300">{testState === "shown" ? "Test alert sent to this device’s notification system. This does not verify background delivery or whether sound played. " : ""}For sound: long-press a KHP-OS notification → Settings → choose Alerting and a notification sound. If it is attributed to Chrome, check Chrome’s notification category for www.kshc.name.ng. Also check notification volume and Do Not Disturb. Names vary by phone.</p>
+          </div>}
 
           {pushState === "off" && permission !== "denied" && (
             <button

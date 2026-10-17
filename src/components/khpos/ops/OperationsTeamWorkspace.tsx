@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { LearningSectionsPanel, LEARNING_SECTIONS_CHANGED } from "@/components/khpos/LearningSectionsPanel";
 import {
   ArrowLeft,
   Building2,
@@ -52,6 +53,12 @@ export function OperationsTeamWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [structureRevision, setStructureRevision] = useState(0);
+  useEffect(() => {
+    const refresh = (event: Event) => { if ((event as CustomEvent<{organisationId:string}>).detail?.organisationId === organisationId) setStructureRevision(value => value + 1); };
+    window.addEventListener(LEARNING_SECTIONS_CHANGED, refresh);
+    return () => window.removeEventListener(LEARNING_SECTIONS_CHANGED, refresh);
+  }, [organisationId]);
   const [structure, setStructure] = useState<KhposOpsStructure | null>(null);
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
@@ -99,7 +106,7 @@ export function OperationsTeamWorkspace({
     return () => {
       active = false;
     };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, structureRevision]);
 
   if (!structure && !error) {
     return (
@@ -270,6 +277,8 @@ export function OperationsTeamWorkspace({
           </div>
           <p className="mt-6 text-sm leading-6 text-slate-600">Each additional campus needs its own school health check and KAEC partnership approval before it receives a KHP-OS workspace. The School Custodian is the school owner who holds its vision and appoints its School Guardian; this is a leadership seat, not a facilities role. <Link href="/assessment" className="font-bold text-brand-700 underline">Start a campus health check</Link>.</p>
         </section>
+
+        <LearningSectionsPanel organisationId={organisationId} />
 
         <section>
           <div className="max-w-3xl">

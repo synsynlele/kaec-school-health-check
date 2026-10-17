@@ -180,7 +180,7 @@ export function WorldReadyWorkspace({
         </p>
         <h1 className="mt-1 text-3xl font-black text-slate-950">WorldReady Transition</h1>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-          Verify what each SS3 learner can already demonstrate, define the next-step pathway,
+          This final-year secondary transition programme is for SS3 learners. For preschool and primary development, use Learner Progress and Potential Development. Verify what each SS3 learner can already demonstrate, define the next-step pathway,
           and keep remaining transition gaps owned. WorldReady is not an exam score and does not replace WAEC/NECO preparation.
         </p>
       </header>
