@@ -186,17 +186,20 @@ export function InstitutionalLibrary({
   initialQuery = "",
   initialCriticalOnly = false,
   initialEditId = "",
+  initialProcessId = "",
 }: {
   organisationId: string;
   initialTab?: Tab;
   initialQuery?: string;
   initialCriticalOnly?: boolean;
   initialEditId?: string;
+  initialProcessId?: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [library, setLibrary] = useState<KhposOpsLibrary | null>(null);
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const tab = initialTab;
   const [query, setQuery] = useState(initialQuery);
+  const [focusedProcessId, setFocusedProcessId] = useState(initialProcessId);
   const [sortOrder, setSortOrder] = useState<"default" | "name_asc" | "name_desc">("default");
   const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
@@ -240,6 +243,16 @@ export function InstitutionalLibrary({
       active = false;
     };
   }, [organisationId, supabase]);
+
+  useEffect(() => {
+    if (!library || !focusedProcessId || tab !== "processes") return;
+    const frame = window.requestAnimationFrame(() => {
+      const element = document.getElementById(`library-process-${focusedProcessId}`);
+      element?.scrollIntoView({behavior:"smooth",block:"start"});
+      element?.focus({preventScroll:true});
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [library, focusedProcessId, tab]);
 
   async function acknowledge(policy: KhposOpsPolicy) {
     if (!supabase || !policy.activeVersion) return;
@@ -328,6 +341,7 @@ export function InstitutionalLibrary({
   );
   const processes = library.processes.filter(
     (item) =>
+      (!focusedProcessId || item.id === focusedProcessId) &&
       (!criticalOnly || (item.criticality === "P0" && !item.activeVersion)) &&
       (!needle ||
         `${item.code} ${item.title} ${item.operatingSystem} ${item.ownerLabel}`
@@ -411,17 +425,18 @@ export function InstitutionalLibrary({
               ["processes", "Processes", Workflow],
               ["tools", "Tools", Wrench],
             ] as const).map(([value, label, Icon]) => (
-              <button
+              <Link
                 key={value}
-                type="button"
-                onClick={() => setTab(value)}
+                href={`/khpos/${organisationId}/library?tab=${value}`}
+                aria-current={tab === value ? "page" : undefined}
+                onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); }}
                 className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition ${
                   tab === value ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
                 }`}
               >
                 <Icon className="size-4" />
                 {label}
-              </button>
+              </Link>
             ))}
           </div>
 
@@ -443,7 +458,7 @@ export function InstitutionalLibrary({
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => { setQuery(event.target.value); setFocusedProcessId(""); }}
                 placeholder="Search code, title, system or owner"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               />
@@ -509,16 +524,17 @@ export function InstitutionalLibrary({
               </div>
             )}
 
+            {focusedProcessId && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand-50 p-4 text-sm"><p>Showing the selected process. {processes.length===0?"It may no longer be available to your account.":processes[0]?.activeVersion ? "Its current published document is expanded below." : "This process has no published document yet. Its registered details are shown below."}</p><Link href={`/khpos/${organisationId}/library?tab=processes`} className="inline-flex min-h-12 items-center rounded-xl border border-brand-300 px-4 py-3 font-bold text-brand-800">Show all processes</Link></div>}
             <div className="mt-6 space-y-4">
               {processes.length ? (
                 processes.map((process) => (
-                  <div key={process.id} className="space-y-2">
+                  <div key={process.id} id={`library-process-${process.id}`} tabIndex={-1} className="scroll-mt-36 space-y-2">
                     {canEditDocuments && <div className="flex justify-end">
                       <Link href={`/khpos/${organisationId}/library?tab=processes&q=${encodeURIComponent(process.code)}&edit=${process.id}`} className="rounded-full border border-brand-300 bg-brand-50 px-4 py-2 text-xs font-black text-brand-800">
                         {process.activeVersion ? "Edit / create approved revision" : "Edit / complete draft"}
                       </Link>
                     </div>}
-                    <ProcessDocument process={process} organisationId={organisationId} />
+                    <ProcessDocument process={process} organisationId={organisationId} defaultOpen={focusedProcessId === process.id || query.trim().toLowerCase() === process.code.toLowerCase()} />
                   </div>
                 ))
               ) : (
@@ -567,7 +583,7 @@ export function InstitutionalLibrary({
                     </p>
                   </summary>
                   <div className="border-t border-slate-100 px-6 pb-6 pt-5">
-                    <ToolUsageGuide tool={tool} organisationId={organisationId} />
+                    <ToolUsageGuide tool={tool} organisationId={organisationId} processes={library.processes} />
                   </div>
                 </details>
               ))}

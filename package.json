@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle && npm run test:today-attendance-guidance && npm run test:presence-leadership-history && npm run test:safeguarding-policy-ack && npm run test:position-acceptance-clarity && npm run test:role-approval-queue && npm run test:consolidated-staff-positions && npm run test:schools-campuses && npm run test:position-lifecycle && npm run test:announcements && npm run test:reporting-centre && npm run test:notification-sound && npm run test:learning-sections && npm run test:tool-guides",
+    "test": "node scripts/test-core.mjs && node scripts/validate-navigation.mjs && node scripts/validate-khpos-lite.mjs && npm run test:positions && npm run test:attention && npm run test:transient-auth && npm run test:teaching-presence && npm run test:kshc-report-leadership && npm run test:school-support-roles && npm run test:record-queues && npm run test:manual-record-editing && npm run test:academic-record-lifecycle && npm run test:today-attendance-guidance && npm run test:presence-leadership-history && npm run test:safeguarding-policy-ack && npm run test:position-acceptance-clarity && npm run test:role-approval-queue && npm run test:consolidated-staff-positions && npm run test:schools-campuses && npm run test:position-lifecycle && npm run test:announcements && npm run test:reporting-centre && npm run test:notification-sound && npm run test:learning-sections && npm run test:tool-guides && npm run test:library-tool-navigation",
     "test:scoring": "node scripts/test-scoring.mjs",
     "validate:khpos": "node scripts/validate-khpos-foundation.mjs",
     "validate:stage1b": "node scripts/validate-stage1b.mjs",
@@ -40,7 +40,8 @@
     "test:reporting-centre": "node scripts/test-reporting-centre.mjs && node scripts/test-report-alerts.mjs",
     "test:notification-sound": "node scripts/test-notification-sound.mjs",
     "test:learning-sections": "node scripts/test-learning-sections.mjs",
-    "test:tool-guides": "node scripts/test-tool-guides.mjs"
+    "test:tool-guides": "node scripts/test-tool-guides.mjs",
+    "test:library-tool-navigation": "node scripts/test-library-tool-navigation.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
