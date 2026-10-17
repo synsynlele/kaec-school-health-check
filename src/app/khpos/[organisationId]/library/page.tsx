@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { InstitutionalLibrary } from "@/components/khpos/ops/InstitutionalLibrary";
+import { libraryNavigationKey } from "@/lib/khpos/ops/library-navigation";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default async function KhposOperationsLibraryPage({
     q?: string | string[];
     critical?: string | string[];
     edit?: string | string[];
+    process?: string | string[];
   }>;
 }) {
   const { organisationId } = await params;
@@ -35,14 +37,28 @@ export default async function KhposOperationsLibraryPage({
       : "policies";
   const initialQuery = (first(query.q) ?? "").trim().slice(0, 120);
   const initialCriticalOnly = first(query.critical) === "missing";
+  const requestedProcess = first(query.process) ?? "";
+  const initialProcessId = UUID_RE.test(requestedProcess)
+    ? requestedProcess
+    : "";
+  const initialEditId = first(query.edit) ?? "";
 
   return (
     <InstitutionalLibrary
+      key={libraryNavigationKey(
+        organisationId,
+        initialTab,
+        initialQuery,
+        initialCriticalOnly,
+        initialEditId,
+        initialProcessId,
+      )}
       organisationId={organisationId}
       initialTab={initialTab}
       initialQuery={initialQuery}
       initialCriticalOnly={initialCriticalOnly}
-      initialEditId={first(query.edit) ?? ""}
+      initialEditId={initialEditId}
+      initialProcessId={initialProcessId}
     />
   );
 }

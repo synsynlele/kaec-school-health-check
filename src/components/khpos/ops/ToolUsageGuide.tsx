@@ -1,15 +1,26 @@
 import Link from "next/link";
 import { getToolGuide, toolFieldPreview } from "@/lib/khpos/ops/tool-guides";
-import type { KhposOpsToolTemplate } from "@/lib/khpos/ops/library";
+import {
+  relatedToolProcesses,
+  processDocumentHref,
+} from "@/lib/khpos/ops/library-navigation";
+import type {
+  KhposOpsProcess,
+  KhposOpsToolTemplate,
+} from "@/lib/khpos/ops/library";
 export function ToolUsageGuide({
   tool,
   organisationId,
+  processes = [],
 }: {
   tool: KhposOpsToolTemplate;
   organisationId: string;
+  processes?: KhposOpsProcess[];
 }) {
   const guide = getToolGuide(tool.toolType),
     fields = toolFieldPreview(tool.schemaDefinition);
+  const related = relatedToolProcesses(tool, processes);
+  const opensProcesses = guide.destination === "/library?tab=processes";
   return (
     <div className="space-y-5">
       <section>
@@ -55,12 +66,54 @@ export function ToolUsageGuide({
           This page explains the tool; it does not create a new record.
         </p>
       )}
-      <Link
-        href={`/khpos/${organisationId}${guide.destination}`}
-        className="inline-flex min-h-12 items-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white"
-      >
-        {guide.label} →
-      </Link>
+      {related.length > 0 && (
+        <section className="space-y-3">
+          <h4 className="font-bold text-slate-900">
+            {related.length === 1
+              ? "Process using this tool"
+              : "Processes using this tool"}
+          </h4>
+          <p className="text-sm text-slate-600">
+            Choose a process to open its current document and operating
+            instructions.
+          </p>
+          <div className="space-y-2">
+            {related.map((process) => (
+              <Link
+                key={process.id}
+                href={processDocumentHref(organisationId, process.id)}
+                className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm font-bold text-brand-900"
+              >
+                <span>
+                  {process.code} · {process.title}
+                </span>
+                <span className="text-xs font-normal">
+                  {process.activeVersion
+                    ? "Published document"
+                    : "Document awaiting publication"}{" "}
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+      {opensProcesses && related.length === 0 && (
+        <p className="rounded-xl bg-amber-50 p-3 text-sm leading-6 text-amber-950">
+          No process-to-tool connection is recorded for this tool in the
+          Library. Browse the school’s processes and check the instructions with
+          your school leader; this guide cannot identify a specific related
+          process yet.
+        </p>
+      )}
+      {(!opensProcesses || related.length === 0) && (
+        <Link
+          href={`/khpos/${organisationId}${guide.destination}`}
+          className="inline-flex min-h-12 items-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white"
+        >
+          {opensProcesses ? "Browse processes" : guide.label} →
+        </Link>
+      )}
       <p className="text-xs leading-5 text-slate-500">
         Available forms and actions depend on your role and the school’s
         approved setup.
