@@ -40,6 +40,8 @@ for (const type of types) {
   );
 }
 assert.equal(getToolGuide("audit").automatic, true);
+for (const key of ["constructor", "toString", "__proto__"]) assert.equal(getToolGuide(key).destination, "/library?tab=processes");
+assert.equal(toolFieldPreview({fields:[{key:"value",type:"constructor"}]})[0].answer,"Written answer");
 assert.ok(getToolGuide("case").steps.some((s) => s.includes("confidential")));
 assert.ok(getToolGuide("meeting").steps[0].includes("must configure"));
 assert.deepEqual(

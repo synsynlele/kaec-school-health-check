@@ -338,7 +338,7 @@ const guides: Record<string, ToolGuide> = {
 };
 export function getToolGuide(type: string): ToolGuide {
   return (
-    guides[type] ??
+    (Object.hasOwn(guides, type) ? guides[type] : undefined) ??
     guide(
       "Use this tool when the school’s approved process calls for it.",
       "/library?tab=processes",
@@ -432,7 +432,7 @@ export function toolFieldPreview(
         label: readableToolLabel(label),
         answer: choices.length
           ? "Choose an option"
-          : (labels[String(f.type)] ?? "Written answer"),
+          : (Object.hasOwn(labels, String(f.type)) ? labels[String(f.type)] : "Written answer"),
         required:
           typeof f.required === "boolean"
             ? f.required
