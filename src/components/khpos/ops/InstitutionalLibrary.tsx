@@ -17,6 +17,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PolicyGovernance } from "@/components/khpos/ops/PolicyGovernance";
 import { ProcessGovernance } from "@/components/khpos/ops/ProcessGovernance";
+import { ToolUsageGuide } from "@/components/khpos/ops/ToolUsageGuide";
 import { ProcessDocument } from "@/components/khpos/ops/ProcessDocument";
 import type {
   KhposOpsLibrary,
@@ -51,67 +52,6 @@ function SectionList({
         ))}
       </ul>
     </section>
-  );
-}
-
-function ToolDefinition({ schema }: { schema: Record<string, unknown> }) {
-  const entries = Object.entries(schema);
-
-  if (!entries.length) {
-    return (
-      <p className="text-sm leading-6 text-slate-500">
-        No additional configurable field schema is registered for this reusable
-        operating primitive.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {entries.map(([key, value]) => (
-        <section key={key}>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">
-            {readable(key)}
-          </h4>
-          {Array.isArray(value) ? (
-            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-              {value.map((item, itemIndex) => (
-                <li
-                  key={`${key}-${itemIndex}`}
-                  className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700"
-                >
-                  {typeof item === "string" ? readable(item) : JSON.stringify(item)}
-                </li>
-              ))}
-            </ul>
-          ) : value && typeof value === "object" ? (
-            <div className="mt-2 space-y-2">
-              {Object.entries(value as Record<string, unknown>).map(
-                ([childKey, childValue]) => (
-                  <div
-                    key={childKey}
-                    className="flex flex-col gap-1 rounded-xl bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-start sm:justify-between"
-                  >
-                    <span className="font-bold text-slate-700">
-                      {readable(childKey)}
-                    </span>
-                    <span className="text-slate-500">
-                      {Array.isArray(childValue)
-                        ? childValue.map(String).join(", ")
-                        : String(childValue)}
-                    </span>
-                  </div>
-                ),
-              )}
-            </div>
-          ) : (
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {String(value)}
-            </p>
-          )}
-        </section>
-      ))}
-    </div>
   );
 }
 
@@ -593,10 +533,10 @@ export function InstitutionalLibrary({
         {tab === "tools" && (
           <section>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Tools Registry</p>
-              <h2 className="mt-2 text-2xl font-black">What people use to execute work</h2>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Work tools</p>
+              <h2 className="mt-2 text-2xl font-black">Choose the right tool for your work</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Reusable tools prevent your school from creating a different form for every process. The same Issue, Approval, Checklist, Evidence and Review primitives can serve many operating systems.
+                Find out when to use each tool, what to record and where to do the work. Open a guide below, then follow its link to the right work area. You do not fill in or submit forms on this page.
               </p>
             </div>
 
@@ -620,14 +560,14 @@ export function InstitutionalLibrary({
                       {tool.purpose}
                     </p>
                     <p className="mt-4 text-xs font-black text-brand-700 group-open:hidden">
-                      View tool definition
+                      How to use this tool
                     </p>
                     <p className="mt-4 hidden text-xs font-black text-brand-700 group-open:block">
-                      Hide tool definition
+                      Close tool guide
                     </p>
                   </summary>
                   <div className="border-t border-slate-100 px-6 pb-6 pt-5">
-                    <ToolDefinition schema={tool.schemaDefinition} />
+                    <ToolUsageGuide tool={tool} organisationId={organisationId} />
                   </div>
                 </details>
               ))}
