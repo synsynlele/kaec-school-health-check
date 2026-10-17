@@ -1,3 +1,7 @@
+// This worker only handles notifications; no page or API responses are cached.
+self.addEventListener("install", (event) => event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener("push", (event) => {
   let payload = { title: "KHP-OS", body: "You have an action that needs attention.", url: "/khpos", tag: "khpos" };
 
@@ -19,6 +23,9 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       tag: payload.tag,
+      renotify: true,
+      silent: false,
+      vibrate: [200, 100, 200],
       icon: "/khpos-icon-192.png",
       badge: "/khpos-icon-192.png",
       data: { url: payload.url },

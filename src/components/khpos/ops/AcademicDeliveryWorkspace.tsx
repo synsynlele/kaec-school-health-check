@@ -559,10 +559,11 @@ export function AcademicDeliveryWorkspace({
                         </option>
                       ))}
                     </select>
+                    <Link href={`/khpos/${organisationId}/team#learning-sections`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline sm:col-span-2">Missing a preschool or primary section? Manage learning sections</Link>
                     <input
                       value={classLabel}
                       onChange={(event) => setClassLabel(event.target.value)}
-                      placeholder="Class e.g. JSS 1"
+                      aria-label="Class or learning group" placeholder="Class / group e.g. Nursery 1, Primary 3 or JSS 1"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     />
                     <input
@@ -574,7 +575,7 @@ export function AcademicDeliveryWorkspace({
                     <input
                       value={subjectLabel}
                       onChange={(event) => setSubjectLabel(event.target.value)}
-                      placeholder="Subject"
+                      placeholder="Subject / learning area"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     />
                     <select

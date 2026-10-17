@@ -416,7 +416,7 @@ export function LearnerProgressWorkspace({
                     <input
                       value={anchorClass}
                       onChange={(event) => setAnchorClass(event.target.value)}
-                      placeholder="Class, e.g. JSS1"
+                      placeholder="Class / group, e.g. Nursery 1, Primary 3 or JSS1"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     />
                     <input
