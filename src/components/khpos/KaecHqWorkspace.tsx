@@ -79,6 +79,7 @@ export function KaecHqWorkspace() {
   const [memberEmail, setMemberEmail] = useState("");
   const [memberName, setMemberName] = useState("");
   const [memberRole, setMemberRole] = useState("team_member");
+  const [memberAction, setMemberAction] = useState("grant");
   const [mfaCode, setMfaCode] = useState("");
   const [mfaFactor, setMfaFactor] = useState("");
   const [mfaQr, setMfaQr] = useState("");
@@ -290,15 +291,22 @@ export function KaecHqWorkspace() {
             <p className="mt-1 text-xs text-slate-600">A school position does not create a KAEC-NG corporate appointment.</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {snapshot.members.map((member) => <div key={member.user_id} className="rounded-xl bg-slate-50 p-3">
-                <p className="text-sm font-bold">{member.display_name}</p><p className="text-xs text-slate-600">{roleNames[member.role]}</p>
+                <p className="text-sm font-bold">{member.display_name}</p><p className="text-xs text-slate-600">{roleNames[member.role]} · {pretty(member.status)}</p>
                 {privileged && <p className="mt-1 break-all text-xs text-slate-500">{member.email}</p>}
+                {privileged && member.role !== "vision_custodian" && <button disabled={busy || snapshot.viewer.aal !== "aal2"} className="mt-2 text-xs font-bold text-emerald-800 underline disabled:opacity-40"
+                  onClick={() => void act("member",{ action: member.status === "active" ? "suspend" : "reactivate", email: member.email, display_name: member.display_name, role: member.role })}>
+                  {member.status === "active" ? "Suspend corporate access" : "Reactivate corporate access"}
+                </button>}
               </div>)}
             </div>
             {privileged && <form className="mt-5 grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" onSubmit={(event) => {
               event.preventDefault();
-              void act("member", { action: "grant", email: memberEmail, display_name: memberName, role: memberRole }).then((done) => { if (done) {setMemberEmail("");setMemberName("");} });
+              void act("member", { action: memberAction, email: memberEmail, display_name: memberName, role: memberRole }).then((done) => { if (done) {setMemberEmail("");setMemberName("");} });
             }}>
-              <h4 className="sm:col-span-2 text-sm font-black">Appoint a verified KAEC account</h4>
+              <h4 className="sm:col-span-2 text-sm font-black">Manage a verified KAEC account</h4>
+              <label className={clsLabel}>Appointment action<select className={clsInput} value={memberAction} onChange={(e) => setMemberAction(e.target.value)}>
+                <option value="grant">Grant or change role</option><option value="suspend">Suspend access</option><option value="reactivate">Reactivate access</option>
+              </select></label>
               <label className={clsLabel}>Email<input required type="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} className={clsInput}/></label>
               <label className={clsLabel}>Name<input required minLength={2} value={memberName} onChange={(e) => setMemberName(e.target.value)} className={clsInput}/></label>
               <label className={clsLabel}>Company role<select className={clsInput} value={memberRole} onChange={(e) => setMemberRole(e.target.value)}>
@@ -330,9 +338,9 @@ export function KaecHqWorkspace() {
                 <label className={clsLabel}>Priority<select className={clsInput} value={form.priority} onChange={(e) => setForm({...form,priority:e.target.value})}>
                   {["low","normal","high","critical"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
                 <label className={clsLabel}>Accountable owner<select className={clsInput} value={form.owner_user_id} onChange={(e) => setForm({...form,owner_user_id:e.target.value})}><option value="">Not assigned</option>
-                  {snapshot.members.map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name} — {roleNames[m.role]}</option>)}</select></label>
+                  {snapshot.members.filter((m) => m.status === "active").map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name} — {roleNames[m.role]}</option>)}</select></label>
                 <label className={clsLabel}>Backup person<select className={clsInput} value={form.backup_user_id} onChange={(e) => setForm({...form,backup_user_id:e.target.value})}><option value="">Not assigned</option>
-                  {snapshot.members.filter((m) => m.user_id !== form.owner_user_id).map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name}</option>)}</select></label>
+                  {snapshot.members.filter((m) => m.status === "active" && m.user_id !== form.owner_user_id).map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name}</option>)}</select></label>
                 <label className={clsLabel}>Due date<input type="date" className={clsInput} value={form.due_on} onChange={(e) => setForm({...form,due_on:e.target.value})}/></label>
                 <label className={clsLabel}>Cadence<select className={clsInput} value={form.cadence} onChange={(e) => setForm({...form,cadence:e.target.value})}>{["once","daily","weekly","monthly","termly","quarterly","yearly"].map((s) => <option key={s} value={s}>{pretty(s)}</option>)}</select></label>
                 {tab === "finance" && <>
