@@ -10,6 +10,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { HqDataModule, HqModule, HqRecord, HqSnapshot } from "@/lib/khpos/hq";
 import type { SchoolDeskSnapshot } from "@/lib/khpos/hq-schools";
+import type { HqReportingDesk } from "@/lib/khpos/hq-reports";
 
 const areas: { id: HqModule; label: string; subtitle: string; icon: LucideIcon }[] = [
   { id: "command", label: "Command Centre", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
@@ -98,6 +99,8 @@ export function KaecHqWorkspace() {
   const [snapshot, setSnapshot] = useState<HqSnapshot | null>(null);
   const [schoolDesk, setSchoolDesk] = useState<SchoolDeskSnapshot | null>(null);
   const [schoolNotice, setSchoolNotice] = useState("");
+  const [reportDesk, setReportDesk] = useState<HqReportingDesk | null>(null);
+  const [reportNotice, setReportNotice] = useState("");
   const [access, setAccess] = useState<"loading" | "signed_out" | "denied" | "ready">("loading");
   const [error, setError] = useState("");
   const [tab, setTab] = useState<HqModule>("command");
@@ -132,6 +135,15 @@ export function KaecHqWorkspace() {
       setSnapshot(json.snapshot);
       setAccess("ready");
       setError("");
+      try {
+        const reportResponse = await fetch("/api/khpos/hq/reports", {
+          headers: { Authorization: "Bearer " + token }, cache: "no-store",
+        });
+        const reportJson = await reportResponse.json() as {ok?:boolean;desk?:HqReportingDesk};
+        if (reportResponse.ok && reportJson.ok && reportJson.desk) {
+          setReportDesk(reportJson.desk);setReportNotice("");
+        } else {setReportDesk(null);setReportNotice("Reporting Centre data is currently unavailable.");}
+      } catch {setReportDesk(null);setReportNotice("Reporting schedules could not refresh. Open the Reporting Centre to retry.");}
       if (["vision_custodian", "system_steward", "alliance_catalyst", "school_pathfinder"].includes(json.snapshot.viewer.role)) {
         try {
           const schoolResponse = await fetch("/api/khpos/hq/schools", {
@@ -301,6 +313,7 @@ export function KaecHqWorkspace() {
             <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
             <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
             <Link href="/khpos/hq/schools" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/60 bg-emerald-900/40 px-3 py-2 text-emerald-100">School Pathfinders</Link>
+            <Link href="/khpos/hq/reports" className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2">Reporting Centre</Link>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
             <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
           </div>
@@ -369,6 +382,28 @@ export function KaecHqWorkspace() {
               {!overdue.length && !waitingReview.length && !critical.length && !dueSoon.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded in the visible set. This does not guarantee all work is on track.</p>}
             </section>
           </>}
+
+          {tab === "command" && reportDesk && <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div><h3 className="text-lg font-black">Corporate Reporting Lines</h3>
+                <p className="mt-1 text-xs text-slate-600">Your assigned daily, weekly, monthly, quarterly and yearly reporting obligations and review queue.</p></div>
+              <Link href="/khpos/hq/reports" className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white">Open Reporting Centre →</Link>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {([
+                ["Active reporting lines",reportDesk.lines.filter(l=>l.status==="active").length],
+                ["Reports overdue",reportDesk.lines.filter(l=>l.status==="active" && l.next_due_on<reportDesk.generated_at.slice(0,10)).length],
+                ["Awaiting review",reportDesk.submissions.filter(s=>s.status==="submitted").length],
+                ["Returned for correction",reportDesk.submissions.filter(s=>s.status==="returned").length],
+              ] as [string,number][]).map(([caption,value])=>
+                <div key={caption} className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-2xl font-black">{value}</p><p className="mt-1 text-xs text-slate-600">{caption}</p>
+                </div>)}
+            </div>
+            {!reportDesk.lines.length && <p className="mt-3 text-sm text-slate-600">No reporting chains have been assigned. Appoint corporate leaders, create a reporting line, and set the first due date.</p>}
+            {reportDesk.capped && <p className="mt-3 text-xs text-amber-900">Numbers reflect only the visible reporting records, not lifetime totals.</p>}
+          </section>}
+          {tab === "command" && reportNotice && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{reportNotice}</p>}
 
           {tab === "command" && schoolDesk && <section className="rounded-2xl border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
