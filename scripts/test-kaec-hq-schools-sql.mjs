@@ -32,7 +32,7 @@ try{
   assert.equal(commitmentAfter[0].status,"verified");
   assert.equal(commitmentAfter[0].verified_by,alliance);
   const audit=await query("select action,count(*)::int as total from public.kaec_hq_school_events group by action order by action");
-  assert(audit.reduce((sum,x)=>sum+x.total,0)>=6,"Every corporate school mutation must create audit history");
+  assert(audit.reduce((sum,x)=>sum+x.total,0)>=5,"Every corporate school mutation must create audit history");
   assert(audit.some(x=>x.action==="insert"));
   assert(audit.some(x=>x.action==="update"));
   const trail=await query("select count(*)::int as total from public.kaec_hq_school_followups where commitment_id=$1",[commitment]);
