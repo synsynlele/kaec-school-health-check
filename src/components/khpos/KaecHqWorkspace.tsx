@@ -405,11 +405,13 @@ export function KaecHqWorkspace() {
                   <label className={clsLabel}>Amount<input className={clsInput} type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({...form,amount:e.target.value})}/></label>
                   <label className={clsLabel}>Currency<select className={clsInput} value={form.currency} onChange={(e) => setForm({...form,currency:e.target.value})}>{["NGN","USD","GBP","EUR"].map((s) => <option key={s}>{s}</option>)}</select></label>
                 </>}
-                <label className={clsLabel + " sm:col-span-2"}>Description, procedure or supporting note
-                  <textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/>
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className={clsLabel}>Description, procedure or supporting note
+                    <textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/>
+                  </label>
                   {templates[form.record_type] && <button type="button" className="text-left text-xs font-bold text-emerald-800 underline"
                     onClick={() => setForm({...form, description: form.description ? form.description + "\n\n" + templates[form.record_type] : templates[form.record_type]})}>Insert {pretty(form.record_type)} outline</button>}
-                </label>
+                </div>
                 <label className={clsLabel + " sm:col-span-2"}>Evidence or progress note (optional until submission)
                   <textarea rows={3} maxLength={5000} value={form.evidence_note} onChange={(e) => setForm({...form,evidence_note:e.target.value})} className={clsInput} placeholder="What has actually been done, checked or observed? Do not include passwords or private student information."/>
                 </label>
