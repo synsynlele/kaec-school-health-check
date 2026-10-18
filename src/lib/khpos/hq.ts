@@ -183,10 +183,9 @@ export async function getHqSnapshot(user: VerifiedKhposUser): Promise<HqSnapshot
   if (member.role === "team_member") {
     query = query.or("owner_user_id.eq." + user.id + ",backup_user_id.eq." + user.id + ",created_by.eq." + user.id);
   }
-  const [recordsResult, membersResult] = await Promise.all([
-    query,
-    db().from("kaec_hq_members").select("user_id,email,display_name,role,status").eq("status", "active").order("display_name"),
-  ]);
+  let membersQuery = db().from("kaec_hq_members").select("user_id,email,display_name,role,status").order("display_name");
+  if (member.role !== "vision_custodian") membersQuery = membersQuery.eq("status", "active");
+  const [recordsResult, membersResult] = await Promise.all([query, membersQuery]);
   if (recordsResult.error || membersResult.error) throw new HqError("KAEC HQ could not load corporate records.", 503);
   const records = (recordsResult.data ?? []) as HqRecord[];
   return {
