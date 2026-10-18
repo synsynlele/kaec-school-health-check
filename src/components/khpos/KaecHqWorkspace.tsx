@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { HqDataModule, HqModule, HqRecord, HqSnapshot } from "@/lib/khpos/hq";
+import type { SchoolDeskSnapshot } from "@/lib/khpos/hq-schools";
 
 const areas: { id: HqModule; label: string; subtitle: string; icon: LucideIcon }[] = [
   { id: "command", label: "Command Centre", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
@@ -95,6 +96,8 @@ function RoleStatus({ status }: { status: HqRecord["status"] }) {
 export function KaecHqWorkspace() {
   const client = useMemo(() => createBrowserSupabaseClient(), []);
   const [snapshot, setSnapshot] = useState<HqSnapshot | null>(null);
+  const [schoolDesk, setSchoolDesk] = useState<SchoolDeskSnapshot | null>(null);
+  const [schoolNotice, setSchoolNotice] = useState("");
   const [access, setAccess] = useState<"loading" | "signed_out" | "denied" | "ready">("loading");
   const [error, setError] = useState("");
   const [tab, setTab] = useState<HqModule>("command");
@@ -129,6 +132,17 @@ export function KaecHqWorkspace() {
       setSnapshot(json.snapshot);
       setAccess("ready");
       setError("");
+      if (["vision_custodian", "system_steward", "alliance_catalyst", "school_pathfinder"].includes(json.snapshot.viewer.role)) {
+        try {
+          const schoolResponse = await fetch("/api/khpos/hq/schools", {
+            headers: { Authorization: "Bearer " + token }, cache: "no-store",
+          });
+          const schoolJson = await schoolResponse.json() as {ok?:boolean;desk?:SchoolDeskSnapshot};
+          if (schoolResponse.ok && schoolJson.ok && schoolJson.desk) {
+            setSchoolDesk(schoolJson.desk);setSchoolNotice("");
+          } else {setSchoolDesk(null);setSchoolNotice("School supervision data is not currently available.");}
+        } catch {setSchoolDesk(null);setSchoolNotice("School supervision could not refresh. Open the School Pathfinders desk to retry.");}
+      }
     } catch {
       setAccess("denied");
       setError("The service could not be reached. Check your connection and try again.");
@@ -355,6 +369,39 @@ export function KaecHqWorkspace() {
               {!overdue.length && !waitingReview.length && !critical.length && !dueSoon.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded in the visible set. This does not guarantee all work is on track.</p>}
             </section>
           </>}
+
+          {tab === "command" && schoolDesk && <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><h3 className="text-lg font-black">School supervision — live commitments</h3>
+                <p className="mt-1 text-xs text-slate-600">From actual licensed-school supervision records only; unverified agreement setups are not counted as supervised.</p></div>
+              <Link href="/khpos/hq/schools" className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white">Open School Pathfinders →</Link>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {([
+                ["Active schools", schoolDesk.engagements.filter(e => e.engagement_status === "active").length],
+                ["Open commitments", schoolDesk.commitments.filter(c => !["verified","cancelled"].includes(c.status)).length],
+                ["Blocked", schoolDesk.commitments.filter(c => c.status === "blocked").length],
+                ["Awaiting evidence review", schoolDesk.commitments.filter(c => c.status === "evidence_submitted").length],
+              ] as [string,number][]).map(([caption,value]) =>
+                <div key={caption} className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-2xl font-black">{value}</p><p className="mt-1 text-xs text-slate-600">{caption}</p>
+                </div>)}
+            </div>
+            {schoolDesk.engagements.slice(0,6).map(e => {
+              const tasks = schoolDesk.commitments.filter(c => c.engagement_id === e.id);
+              const late = tasks.filter(c => c.due_on && c.due_on < schoolDesk.generated_at.slice(0,10) && !["verified","cancelled"].includes(c.status));
+              const name = schoolDesk.organisations.find(o => o.id === e.organisation_id)?.name ?? "Registered partner school";
+              const rep = schoolDesk.members.find(m => m.user_id === e.representative_user_id)?.display_name ?? "Unassigned";
+              return <div key={e.id} className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+                <div><p className="text-sm font-bold">{name}</p>
+                  <p className="mt-1 text-xs text-slate-600">Pathfinder: {rep} · {pretty(e.engagement_status)} · {tasks.length} commitments</p></div>
+                <span className={"text-xs font-bold " + (late.length ? "text-red-700" : "text-slate-500")}>{late.length} overdue</span>
+              </div>;
+            })}
+            {!schoolDesk.engagements.length && <p className="mt-4 text-sm text-slate-600">No partner agreements have been linked for supervision yet. Start by selecting existing registered schools, confirming their signed terms and assigning a Pathfinder.</p>}
+            {schoolDesk.capped && <p className="mt-3 text-xs text-amber-900">Figures reflect only the capped visible record set, not complete historical totals.</p>}
+          </section>}
+          {tab === "command" && schoolNotice && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{schoolNotice}</p>}
 
           {tab === "people" && <section className="rounded-2xl border border-slate-200 bg-white p-5">
             <h3 className="text-lg font-black">Corporate appointments</h3>
