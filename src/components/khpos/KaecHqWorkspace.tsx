@@ -127,6 +127,7 @@ export function KaecHqWorkspace() {
         return false;
       }
       setSnapshot(result.snapshot);
+      setAccess("ready");
       return true;
     } catch {
       setError("The request failed. Please check your connection.");
