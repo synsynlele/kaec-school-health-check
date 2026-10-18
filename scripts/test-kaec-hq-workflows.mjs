@@ -82,6 +82,8 @@ const svc=module.exports;
 const proof="A complete written evidence statement for this activity.";
 const note="Independent review confirmed the submitted evidence.";
 const worker=user(0),steward=user(1),finance=user(2),vision=user(3);
+await svc.updateHqRecord(worker,{id:uuid(10),title:"Updated routine work title",description:"",record_type:"task",status:"active",priority:"normal",owner_user_id:worker.id,backup_user_id:null,due_on:"2026-10-22",cadence:"once",amount:null,currency:"NGN",evidence_note:""});
+assert.equal(rows.find(r=>r.id===uuid(10)).title,"Updated routine work title");
 await assert.rejects(svc.completeRoutineHqRecord(steward,{id:uuid(10),evidence_note:proof}),e=>e.status===403);
 await assert.rejects(svc.completeRoutineHqRecord(worker,{id:uuid(10),evidence_note:"short"}),e=>e.status===400);
 await svc.completeRoutineHqRecord(worker,{id:uuid(10),evidence_note:proof});
