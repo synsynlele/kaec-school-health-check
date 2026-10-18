@@ -35,6 +35,7 @@ const roleNames: Record<string, string> = {
   movement_curator: "Movement Curator",
   finance_steward: "Finance Steward",
   team_member: "Team Member",
+  school_pathfinder: "School Pathfinder",
 };
 type FormFields = {
   title: string; description: string; record_type: string; status: string;
@@ -244,6 +245,11 @@ export function KaecHqWorkspace() {
   const dueSoon = active.filter((record) => !!record.due_on && !!compareDate
     && record.due_on >= compareDate && record.due_on <= nextWeek);
   const reviewable = waitingReview.filter((record) => snapshot && canReviewVisibleRecord(record, snapshot.viewer.role, snapshot.viewer.userId));
+  const reviewersFor = (record: HqRecord) => (snapshot?.members ?? []).filter((person) =>
+    person.status === "active" && person.user_id !== record.created_by && person.user_id !== record.owner_user_id &&
+    (person.role === "vision_custodian" ||
+      (person.role === "system_steward" && record.module !== "finance") ||
+      (person.role === "finance_steward" && record.module === "finance")));
 
   if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
   if (access === "signed_out") return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
@@ -280,6 +286,7 @@ export function KaecHqWorkspace() {
             <span>{roleNames[snapshot.viewer.role] ?? snapshot.viewer.role}</span>
             <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
             <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
+            <Link href="/khpos/hq/schools" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/60 bg-emerald-900/40 px-3 py-2 text-emerald-100">School Pathfinders</Link>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
             <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
           </div>
@@ -296,6 +303,10 @@ export function KaecHqWorkspace() {
               <Icon className="mt-0.5 size-4 shrink-0"/><span>{item.label}</span>
             </button>;
           })}
+          <Link href="/khpos/hq/schools" className="col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left text-xs font-bold text-emerald-900 sm:col-span-3 lg:col-span-1">
+            <span className="block">School Pathfinders →</span>
+            <span className="mt-1 block font-normal text-emerald-800">Live school commitments, follow-ups, visits and evidence</span>
+          </Link>
         </nav>
         <main className="min-w-0 space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -332,6 +343,7 @@ export function KaecHqWorkspace() {
             </div>
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <h3 className="text-lg font-black">Leadership attention</h3>
+              <Link href="/khpos/hq/schools" className="mt-3 inline-block rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white">Open live School Pathfinder desk →</Link>
               <p className="mt-1 text-xs text-slate-600">Based on accessible HQ records only; no simulated figures or school-level private data. The current view is capped at the latest 300 records.</p>
               <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-900">Due in the next 7 days: <strong>{dueSoon.length}</strong> · Awaiting independent review: <strong>{waitingReview.length}</strong>. Review ownership before assuming another person will act.</p>
               {Array.from(new Map([...overdue, ...reviewable, ...critical, ...dueSoon].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
@@ -377,7 +389,7 @@ export function KaecHqWorkspace() {
 
           {isDataModule(tab) && <>
             {tab === "partnerships" && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-              Corporate partnership activities live here. Institutional access approvals remain in the existing <Link className="font-bold underline" href="/khpos/admin/partnerships">KHP-OS Partnership Registry</Link>, where separately authorised platform administrators manage them.
+              Use <Link className="font-bold underline" href="/khpos/hq/schools">School Pathfinders</Link> to assign KAEC representatives, map signed supervision commitments, record virtual-first follow-ups and track visits. Institutional access approvals stay in the separate <Link className="font-bold underline" href="/khpos/admin/partnerships">KHP-OS Partnership Registry</Link> with its own permissions.
             </div>}
             {tab === "finance" && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
               This is a controlled budget and obligation register, not yet a banking, payment processing or accounting reconciliation system. Approval and money movement remain separate.
@@ -441,6 +453,15 @@ export function KaecHqWorkspace() {
                     {record.module === "finance" && record.amount !== null && <span>Amount: <strong>{record.currency} {Number(record.amount).toLocaleString()}</strong></span>}
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>
+                  {record.status === "in_review" && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-950">
+                    <strong>Approval route:</strong> {reviewersFor(record).length
+                      ? reviewersFor(record).map(p => p.display_name + " (" + roleNames[p.role] + ")").join(", ")
+                      : "No eligible independent reviewer has been appointed. The author and accountable owner cannot approve their own controlled submission."}
+                    <p className="mt-1">Corporate internal reviews can be decided by a different authorised Vision Custodian, System Steward or Finance Steward within scope. Binding legal, constitutional, equity and payment decisions still require their formal external approvals.</p>
+                    {record.created_by === snapshot.viewer.userId && !record.reviewed_by && <button disabled={busy}
+                      className="mt-2 rounded-lg border border-amber-500 bg-white px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40"
+                      onClick={() => void act("withdraw",{id:record.id})}>Withdraw my submission for revision</button>}
+                  </div>}
                   {record.evidence_note && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-700"><strong>Evidence/progress:</strong> <span className="whitespace-pre-wrap">{record.evidence_note}</span></div>}
                   {record.review_note && <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900"><strong>{record.reviewed_by ? "Independent review:" : "Completion method:"}</strong> <span className="whitespace-pre-wrap">{record.review_note}</span></div>}
                   <div className="mt-3 flex flex-wrap gap-2">
