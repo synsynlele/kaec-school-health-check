@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
 import {
-  bootstrapHq, changeHqMember, createHqRecord, getHqSnapshot,
-  HqError, reviewHqRecord, updateHqRecord,
+  bootstrapHq, changeHqMember, completeRoutineHqRecord, createHqRecord,
+  getHqSnapshot, HqError, reviewHqRecord, submitHqRecord, updateHqRecord,
 } from "@/lib/khpos/hq";
 
 export const runtime = "nodejs";
@@ -46,6 +46,8 @@ export async function POST(request: Request) {
       case "bootstrap": snapshot = await bootstrapHq(user); break;
       case "create": snapshot = await createHqRecord(user, body.record); break;
       case "update": snapshot = await updateHqRecord(user, body.record); break;
+      case "submit": snapshot = await submitHqRecord(user, body); break;
+      case "complete": snapshot = await completeRoutineHqRecord(user, body); break;
       case "review": snapshot = await reviewHqRecord(user, body); break;
       case "member": snapshot = await changeHqMember(user, body); break;
       default: return json({ ok: false, error: "Unknown KAEC HQ operation." }, 400);

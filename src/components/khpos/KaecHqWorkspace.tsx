@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BookOpen, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleAlert,
   ClipboardCheck, FolderKanban, Landmark, LayoutDashboard, Loader2, LockKeyhole,
-  Plus, RefreshCw, ShieldCheck, Users, Wallet, type LucideIcon,
+  Plus, RefreshCw, ShieldCheck, Users, Wallet, LogOut, type LucideIcon,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { HqDataModule, HqModule, HqRecord, HqSnapshot } from "@/lib/khpos/hq";
@@ -39,7 +39,7 @@ const roleNames: Record<string, string> = {
 type FormFields = {
   title: string; description: string; record_type: string; status: string;
   priority: string; owner_user_id: string; backup_user_id: string;
-  due_on: string; cadence: string; amount: string; currency: string;
+  due_on: string; cadence: string; amount: string; currency: string; evidence_note: string;
 };
 const clsInput = "w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 outline-offset-2 focus-visible:outline-2 focus-visible:outline-emerald-600";
 const clsLabel = "block space-y-1.5 text-xs font-bold text-slate-600";
@@ -48,15 +48,40 @@ function isDataModule(value: HqModule): value is HqDataModule { return value !==
 function newForm(module: HqDataModule, viewer: string): FormFields {
   return { title: "", description: "", record_type: types[module][0], status: "draft",
     priority: "normal", owner_user_id: viewer, backup_user_id: "", due_on: "",
-    cadence: "once", amount: "", currency: "NGN" };
+    cadence: "once", amount: "", currency: "NGN", evidence_note: "" };
 }
 function recordForm(record: HqRecord): FormFields {
   return { title: record.title, description: record.description, record_type: record.record_type,
     status: record.status, priority: record.priority, owner_user_id: record.owner_user_id ?? "",
     backup_user_id: record.backup_user_id ?? "", due_on: record.due_on ?? "",
-    cadence: record.cadence, amount: record.amount?.toString() ?? "", currency: record.currency };
+    cadence: record.cadence, amount: record.amount?.toString() ?? "", currency: record.currency, evidence_note: record.evidence_note ?? "" };
 }
 function dateOnly(value: string | null) { return value ? value.slice(0, 10) : "No date"; }
+const templates: Record<string, string> = {
+  report: "Reporting period:\nProgress achieved:\nEvidence and outcomes:\nRisks or blockers:\nDecisions required:\nNext actions and owner:",
+  supervision: "Partner school and visit date:\nKHP-OS usage and adoption:\nLeadership observations:\nAgreed corrective actions:\nResponsible person and next check-in:",
+  onboarding: "School and agreement reference:\nCurrent activation stage:\nAssigned KAEC lead:\nOpen requirements:\nNext meeting or handover:",
+  release: "Product and version:\nChange summary:\nTesting and evidence:\nKnown issues and rollback:\nIndependent approval required:",
+  budget: "Period and cost centre:\nPurpose and allocation:\nSupporting breakdown:\nApproval authority:\nDecision reference:",
+  decision: "Issue or opportunity:\nOptions considered:\nDecision and rationale:\nAccountable owner:\nReview date:",
+};
+function canEditVisibleRecord(record: HqRecord, role: string, userId: string) {
+  if (role === "vision_custodian" || role === "system_steward") return true;
+  if (role === "finance_steward" && record.module === "finance") return true;
+  if (role === "alliance_catalyst" && record.module === "partnerships") return true;
+  if ((role === "product_architect" || role === "movement_curator") && record.module === "products") return true;
+  return [record.owner_user_id,record.backup_user_id,record.created_by].includes(userId);
+}
+function canReviewVisibleRecord(record: HqRecord, role: string, userId: string) {
+  return record.status === "in_review" && record.created_by !== userId && record.owner_user_id !== userId &&
+    (role === "vision_custodian" || (role === "system_steward" && record.module !== "finance") ||
+      (role === "finance_steward" && record.module === "finance"));
+}
+function canCompleteRoutine(record: HqRecord, userId: string) {
+  return record.module === "work" && ["task", "meeting_action", "recurring_obligation"].includes(record.record_type)
+    && ["low","normal"].includes(record.priority) && record.owner_user_id === userId;
+}
+type ActionMode = "submit" | "complete" | "approve" | "return";
 function RoleStatus({ status }: { status: HqRecord["status"] }) {
   const colors: Record<HqRecord["status"], string> = {
     draft: "bg-slate-100 text-slate-700", active: "bg-blue-50 text-blue-800",
@@ -83,6 +108,9 @@ export function KaecHqWorkspace() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaFactor, setMfaFactor] = useState("");
   const [mfaQr, setMfaQr] = useState("");
+  const [actionRecord, setActionRecord] = useState<HqRecord | null>(null);
+  const [actionMode, setActionMode] = useState<ActionMode>("submit");
+  const [actionNote, setActionNote] = useState("");
 
   const load = useCallback(async () => {
     if (!client) { setError("KAEC sign-in is unavailable."); setAccess("denied"); return; }
@@ -162,6 +190,28 @@ export function KaecHqWorkspace() {
     setMfaQr(""); setMfaFactor(""); setMfaCode("");
     await load();
   }
+  async function signOut() {
+    if (!client) return;
+    setBusy(true);
+    const { error: signOutError } = await client.auth.signOut();
+    setBusy(false);
+    if (signOutError) { setError("Could not sign out. Please retry from Account."); return; }
+    setSnapshot(null); setAccess("signed_out");
+  }
+  function startAction(record: HqRecord, mode: ActionMode) {
+    setActionRecord(record); setActionMode(mode);
+    setActionNote(mode === "submit" || mode === "complete" ? record.evidence_note ?? "" : "");
+    setForm(null); setEditing(null); setError("");
+  }
+  async function confirmAction() {
+    if (!actionRecord) return;
+    const reviewMode = actionMode === "approve" || actionMode === "return";
+    const success = await act(reviewMode ? "review" : actionMode, {
+      id: actionRecord.id,
+      ...(reviewMode ? { decision: actionMode === "approve" ? "approve" : "return", note: actionNote } : { evidence_note: actionNote }),
+    });
+    if (success) { setActionRecord(null); setActionNote(""); }
+  }
   async function submitRecord(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form || !isDataModule(tab)) return;
@@ -187,6 +237,13 @@ export function KaecHqWorkspace() {
   const waitingReview = active.filter((record) => record.status === "in_review");
   const critical = active.filter((record) => record.priority === "critical");
   const mine = active.filter((record) => record.owner_user_id === snapshot?.viewer.userId || record.backup_user_id === snapshot?.viewer.userId);
+  const compareDate = snapshot?.generatedAt?.slice(0, 10) ?? "";
+  const soonDate = new Date(compareDate + "T00:00:00Z");
+  if (compareDate) soonDate.setUTCDate(soonDate.getUTCDate() + 7);
+  const nextWeek = compareDate ? soonDate.toISOString().slice(0, 10) : "";
+  const dueSoon = active.filter((record) => !!record.due_on && !!compareDate
+    && record.due_on >= compareDate && record.due_on <= nextWeek);
+  const reviewable = waitingReview.filter((record) => snapshot && canReviewVisibleRecord(record, snapshot.viewer.role, snapshot.viewer.userId));
 
   if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
   if (access === "signed_out") return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
@@ -200,19 +257,18 @@ export function KaecHqWorkspace() {
     <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8">
       <ShieldCheck className="size-10 text-emerald-300"/><h1 className="mt-4 text-3xl font-black">Restricted corporate workspace</h1>
       <p className="mt-3 text-sm leading-7 text-slate-300">{error}</p>
-      <p className="mt-3 text-sm leading-7 text-slate-300">The Vision Custodian must be explicitly appointed before KAEC HQ opens. Initial activation requires the designated Platform Super Admin, an MFA-verified session and the approved bootstrap email configuration.</p>
+      <p className="mt-3 text-sm leading-7 text-slate-300">The Vision Custodian must be explicitly appointed before KAEC HQ opens. Initial activation requires the designated verified corporate account and MFA. KAEC HQ permissions are separate from platform administration.</p>
       <div className="mt-5 flex flex-wrap gap-3">
         <button disabled={busy} onClick={() => void act("bootstrap")} className="rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-40">Activate if designated</button>
         <button onClick={() => void load()} className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold">Retry access</button>
         <Link href="/account" className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold">Account</Link>
       </div>
-      <p className="mt-5 text-xs text-slate-400">If you have not completed MFA, verify it in the Platform Admin Console first.</p>
-      <Link href="/khpos/admin" className="mt-2 inline-block text-sm font-bold text-emerald-300 underline">Open Platform Admin Console</Link>
+      <p className="mt-5 text-xs text-slate-400">If you have not completed MFA, verify it through your account's authenticator.</p>
+      <Link href="/account" className="mt-2 inline-block text-sm font-bold text-emerald-300 underline">Account security</Link>
     </section>
   </main>;
 
   const privileged = snapshot.viewer.role === "vision_custodian";
-  const canReview = snapshot.viewer.role === "vision_custodian" || snapshot.viewer.role === "system_steward" || snapshot.viewer.role === "finance_steward";
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-slate-950 text-white">
@@ -225,6 +281,7 @@ export function KaecHqWorkspace() {
             <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
             <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
+            <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
           </div>
         </div>
       </header>
@@ -232,7 +289,7 @@ export function KaecHqWorkspace() {
         <nav aria-label="KAEC HQ areas" className="grid content-start grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
           {areas.filter((item) => snapshot.allowedModules.includes(item.id)).map((item) => {
             const Icon = item.icon;
-            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setSearch(""); }}
+            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}
               aria-current={tab === item.id ? "page" : undefined}
               className={"flex min-w-0 items-start gap-2.5 rounded-xl border p-3 text-left text-xs font-bold transition " +
                 (tab === item.id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white hover:bg-slate-50")}>
@@ -265,7 +322,7 @@ export function KaecHqWorkspace() {
           {tab === "command" && <>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[["My live responsibilities", mine.length, ClipboardCheck], ["Overdue work", overdue.length, CalendarClock],
-                ["Awaiting verification", waitingReview.length, CheckCircle2], ["Critical open issues", critical.length, CircleAlert]].map(([label, value, Icon]) => {
+                ["Reviews I can decide", reviewable.length, CheckCircle2], ["Critical open issues", critical.length, CircleAlert]].map(([label, value, Icon]) => {
                   const Component = Icon as LucideIcon;
                   return <div key={label as string} className="rounded-2xl border border-slate-200 bg-white p-5">
                     <Component className="size-5 text-emerald-700"/><p className="mt-3 text-3xl font-black">{value as number}</p>
@@ -275,14 +332,15 @@ export function KaecHqWorkspace() {
             </div>
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <h3 className="text-lg font-black">Leadership attention</h3>
-              <p className="mt-1 text-xs text-slate-600">Derived from authorised corporate work records. No simulated figures or school-level private data.</p>
-              {Array.from(new Map([...overdue, ...waitingReview, ...critical].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
+              <p className="mt-1 text-xs text-slate-600">Based on accessible HQ records only; no simulated figures or school-level private data. The current view is capped at the latest 300 records.</p>
+              <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-900">Due in the next 7 days: <strong>{dueSoon.length}</strong> · Awaiting independent review: <strong>{waitingReview.length}</strong>. Review ownership before assuming another person will act.</p>
+              {Array.from(new Map([...overdue, ...reviewable, ...critical, ...dueSoon].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
                 <button key={r.id} className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm hover:bg-slate-50"
                   onClick={() => {setTab(r.module);setSearch(r.title);}}>
                   <span><strong className="block">{r.title}</strong><span className="text-xs text-slate-600">{pretty(r.module)} · {memberLabel(r.owner_user_id)}</span></span>
                   <RoleStatus status={r.status}/>
                 </button>)}
-              {!overdue.length && !waitingReview.length && !critical.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded. This does not guarantee all work is on track.</p>}
+              {!overdue.length && !waitingReview.length && !critical.length && !dueSoon.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded in the visible set. This does not guarantee all work is on track.</p>}
             </section>
           </>}
 
@@ -325,7 +383,7 @@ export function KaecHqWorkspace() {
               This is a controlled budget and obligation register, not yet a banking, payment processing or accounting reconciliation system. Approval and money movement remain separate.
             </div>}
             {tab === "work" && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900">
-              Recurrence intervals are recorded here. Automatic recurring task creation and reminder delivery will be enabled only after their execution and reliability checks pass.
+              For daily, weekly, monthly, quarterly and yearly work, completing one evidenced cycle creates the next occurrence automatically. Termly work remains a manual scheduling decision. This does not send push alerts or emails.
             </div>}
             {form && <form onSubmit={(event) => void submitRecord(event)} className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between"><h3 className="text-lg font-black">{editing ? "Edit corporate record" : "New " + pretty(tab) + " record"}</h3>
@@ -334,7 +392,7 @@ export function KaecHqWorkspace() {
                 <label className={clsLabel}>Title<input required minLength={4} maxLength={180} className={clsInput} value={form.title} onChange={(e) => setForm({...form,title:e.target.value})}/></label>
                 <label className={clsLabel}>Record type<select className={clsInput} value={form.record_type} onChange={(e) => setForm({...form,record_type:e.target.value})}>{types[tab].map((t) => <option value={t} key={t}>{pretty(t)}</option>)}</select></label>
                 <label className={clsLabel}>Status<select className={clsInput} value={form.status} onChange={(e) => setForm({...form,status:e.target.value})}>
-                  {["draft","active","in_review","cancelled"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
+                  {["draft","active","cancelled"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
                 <label className={clsLabel}>Priority<select className={clsInput} value={form.priority} onChange={(e) => setForm({...form,priority:e.target.value})}>
                   {["low","normal","high","critical"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
                 <label className={clsLabel}>Accountable owner<select className={clsInput} value={form.owner_user_id} onChange={(e) => setForm({...form,owner_user_id:e.target.value})}><option value="">Not assigned</option>
@@ -342,12 +400,21 @@ export function KaecHqWorkspace() {
                 <label className={clsLabel}>Backup person<select className={clsInput} value={form.backup_user_id} onChange={(e) => setForm({...form,backup_user_id:e.target.value})}><option value="">Not assigned</option>
                   {snapshot.members.filter((m) => m.status === "active" && m.user_id !== form.owner_user_id).map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name}</option>)}</select></label>
                 <label className={clsLabel}>Due date<input type="date" className={clsInput} value={form.due_on} onChange={(e) => setForm({...form,due_on:e.target.value})}/></label>
-                <label className={clsLabel}>Cadence<select className={clsInput} value={form.cadence} onChange={(e) => setForm({...form,cadence:e.target.value})}>{["once","daily","weekly","monthly","termly","quarterly","yearly"].map((s) => <option key={s} value={s}>{pretty(s)}</option>)}</select></label>
+                {tab === "work" && <label className={clsLabel}>Work cadence<select className={clsInput} value={form.cadence} onChange={(e) => setForm({...form,cadence:e.target.value})}>{["once","daily","weekly","monthly","termly","quarterly","yearly"].map((s) => <option key={s} value={s}>{pretty(s)}</option>)}</select><span className="text-[11px] text-slate-500">Choose a due date for recurring work. Termly dates are scheduled manually.</span></label>}
                 {tab === "finance" && <>
                   <label className={clsLabel}>Amount<input className={clsInput} type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({...form,amount:e.target.value})}/></label>
                   <label className={clsLabel}>Currency<select className={clsInput} value={form.currency} onChange={(e) => setForm({...form,currency:e.target.value})}>{["NGN","USD","GBP","EUR"].map((s) => <option key={s}>{s}</option>)}</select></label>
                 </>}
-                <label className={clsLabel + " sm:col-span-2"}>Description, procedure or supporting note<textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/></label>
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className={clsLabel}>Description, procedure or supporting note
+                    <textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/>
+                  </label>
+                  {templates[form.record_type] && <button type="button" className="text-left text-xs font-bold text-emerald-800 underline"
+                    onClick={() => setForm({...form, description: form.description ? form.description + "\n\n" + templates[form.record_type] : templates[form.record_type]})}>Insert {pretty(form.record_type)} outline</button>}
+                </div>
+                <label className={clsLabel + " sm:col-span-2"}>Evidence or progress note (optional until submission)
+                  <textarea rows={3} maxLength={5000} value={form.evidence_note} onChange={(e) => setForm({...form,evidence_note:e.target.value})} className={clsInput} placeholder="What has actually been done, checked or observed? Do not include passwords or private student information."/>
+                </label>
               </div>
               <div className="mt-4 flex items-center gap-4">
                 <button disabled={busy || (tab === "finance" && snapshot.viewer.aal !== "aal2")} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{busy ? "Saving…" : "Save corporate record"}</button>
@@ -370,18 +437,38 @@ export function KaecHqWorkspace() {
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-600">
                     <span>Owner: <strong>{memberLabel(record.owner_user_id)}</strong></span><span>Backup: <strong>{memberLabel(record.backup_user_id)}</strong></span>
                     <span>Due: <strong>{dateOnly(record.due_on)}</strong></span>
-                    {record.cadence !== "once" && <span>Cadence: <strong>{pretty(record.cadence)}</strong></span>}
+                    {record.cadence !== "once" && <span>Cadence: <strong>{pretty(record.cadence)}</strong>{record.module === "work" && record.cadence !== "termly" ? " · Cycle " + (record.cycle_index ?? 1) : ""}</span>}
                     {record.module === "finance" && record.amount !== null && <span>Amount: <strong>{record.currency} {Number(record.amount).toLocaleString()}</strong></span>}
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>
+                  {record.evidence_note && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-700"><strong>Evidence/progress:</strong> <span className="whitespace-pre-wrap">{record.evidence_note}</span></div>}
+                  {record.review_note && <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900"><strong>{record.reviewed_by ? "Independent review:" : "Completion method:"}</strong> <span className="whitespace-pre-wrap">{record.review_note}</span></div>}
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {record.status !== "completed" && record.status !== "cancelled" &&
-                      <button disabled={busy} onClick={() => { setTab(record.module);setEditing(record);setForm(recordForm(record)); }}
-                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40">Edit / submit</button>}
-                    {canReview && record.status === "in_review" && record.owner_user_id !== snapshot.viewer.userId && record.created_by !== snapshot.viewer.userId &&
-                      <><button disabled={busy} onClick={() => void act("review", { id: record.id, decision: "approve" })} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Verify completion</button>
-                        <button disabled={busy} onClick={() => void act("review", { id: record.id, decision: "return" })} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button></>}
+                    {record.status !== "completed" && record.status !== "cancelled" && record.status !== "in_review" && canEditVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) &&
+                      <button disabled={busy} onClick={() => { setTab(record.module);setEditing(record);setForm(recordForm(record)); setActionRecord(null); }}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40">Edit record</button>}
+                    {record.status === "active" && canEditVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) && <>
+                      <button disabled={busy} onClick={() => startAction(record,"submit")} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Submit for verification</button>
+                      {canCompleteRoutine(record,snapshot.viewer.userId) &&
+                        <button disabled={busy} onClick={() => startAction(record,"complete")} className="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-900 disabled:opacity-40">Log routine completion</button>}
+                    </>}
+                    {canReviewVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) &&
+                      <>
+                        <button disabled={busy} onClick={() => startAction(record,"approve")} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Verify completion</button>
+                        <button disabled={busy} onClick={() => startAction(record,"return")} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button>
+                      </>}
                   </div>
+                  {actionRecord?.id === record.id && <form onSubmit={(event) => {event.preventDefault(); void confirmAction();}} className="mt-3 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-bold">{actionMode === "submit" ? "Submit evidence for independent review" : actionMode === "complete" ? "Attest that your routine work is complete" : actionMode === "approve" ? "Record independent approval" : "Return this work with a clear reason"}</p>
+                    <p className="text-xs text-emerald-950">{actionMode === "complete" ? "Only routine, non-critical work may be owner-attested. This is not independent approval." : actionMode === "submit" ? "The author and accountable owner cannot independently verify this record." : "An auditable review note is required. Make your decision based on real evidence."}</p>
+                    <label className={clsLabel}>{actionMode === "approve" || actionMode === "return" ? "Reviewer decision and reason" : "Evidence of work completed"}
+                      <textarea required minLength={actionMode === "approve" || actionMode === "return" ? 12 : 15} maxLength={actionMode === "approve" || actionMode === "return" ? 2000 : 5000} rows={3} className={clsInput} value={actionNote} onChange={(event) => setActionNote(event.target.value)} />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="submit" disabled={busy} className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirm {actionMode === "return" ? "return" : actionMode === "approve" ? "approval" : actionMode === "submit" ? "submission" : "routine completion"}</button>
+                      <button type="button" onClick={() => setActionRecord(null)} className="rounded-lg border border-emerald-400 px-4 py-2.5 text-xs font-bold">Cancel</button>
+                    </div>
+                  </form>}
                 </article>)}
               </div>
             </section>
