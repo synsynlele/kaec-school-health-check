@@ -109,7 +109,7 @@ await assert.rejects(svc.reviewHqRecord(vision,{id:uuid(12),decision:"approve",n
 await assert.rejects(svc.reviewHqRecord(user(2,"aal1"),{id:uuid(12),decision:"approve",note}),e=>e.status===403);
 await svc.reviewHqRecord(finance,{id:uuid(12),decision:"approve",note});
 assert.equal(rows.find(r=>r.id===uuid(12)).status,"completed");
-await assert.rejects(svc.submitHqRecord(worker,{id:uuid(13),evidence_note:"Tiny"}),e=>e.status===400);
+await assert.rejects(svc.submitHqRecord(worker,{id:uuid(13),evidence_note:proof}),e=>e.status===403);
 assert(route.includes('case "submit"') && route.includes('case "complete"'));
 assert(ui.includes('Log routine completion') && ui.includes('Submit for verification') && ui.includes('Reviewer decision and reason'));
 for(const key of ["evidence_note","review_note","series_anchor_on","kaec_hq_work_roll_forward","make_interval","on conflict"])assert(migration.includes(key),"Missing "+key);
