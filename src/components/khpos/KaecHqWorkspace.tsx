@@ -282,7 +282,8 @@ export function KaecHqWorkspace() {
     <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
       <LockKeyhole className="mx-auto size-10 text-emerald-300"/><h1 className="mt-4 text-3xl font-black">KAEC HQ sign-in</h1>
       <p className="mt-4 text-sm leading-7 text-slate-300">Sign in with your existing KAEC account. Corporate access is a separate appointment; school membership alone does not grant entry.</p>
-      <Link href="/account" className="mt-6 inline-block rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-slate-950">Sign in securely</Link>
+      <Link href="/account?next=%2Fkhpos%2Fhq" className="mt-6 inline-block rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-slate-950">Sign in securely</Link>
+      <Link href="/khpos" className="mt-4 block text-sm font-bold text-emerald-300 underline">Back to the main entrance</Link>
     </section>
   </main>;
   if (access === "denied" || !snapshot) return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
