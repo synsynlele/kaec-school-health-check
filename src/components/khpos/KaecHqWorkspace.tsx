@@ -65,6 +65,18 @@ const templates: Record<string, string> = {
   budget: "Period and cost centre:\nPurpose and allocation:\nSupporting breakdown:\nApproval authority:\nDecision reference:",
   decision: "Issue or opportunity:\nOptions considered:\nDecision and rationale:\nAccountable owner:\nReview date:",
 };
+function canEditVisibleRecord(record: HqRecord, role: string, userId: string) {
+  if (role === "vision_custodian" || role === "system_steward") return true;
+  if (role === "finance_steward" && record.module === "finance") return true;
+  if (role === "alliance_catalyst" && record.module === "partnerships") return true;
+  if ((role === "product_architect" || role === "movement_curator") && record.module === "products") return true;
+  return [record.owner_user_id,record.backup_user_id,record.created_by].includes(userId);
+}
+function canReviewVisibleRecord(record: HqRecord, role: string, userId: string) {
+  return record.status === "in_review" && record.created_by !== userId && record.owner_user_id !== userId &&
+    (role === "vision_custodian" || (role === "system_steward" && record.module !== "finance") ||
+      (role === "finance_steward" && record.module === "finance"));
+}
 function canCompleteRoutine(record: HqRecord, userId: string) {
   return record.module === "work" && ["task", "meeting_action", "recurring_obligation"].includes(record.record_type)
     && ["low","normal"].includes(record.priority) && record.owner_user_id === userId;
@@ -231,12 +243,7 @@ export function KaecHqWorkspace() {
     const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10);
     return record.due_on >= today && record.due_on <= nextWeek;
   });
-  const reviewable = waitingReview.filter((record) => {
-    if (!snapshot || record.created_by === snapshot.viewer.userId || record.owner_user_id === snapshot.viewer.userId) return false;
-    const role = snapshot.viewer.role;
-    return role === "vision_custodian" || (role === "system_steward" && record.module !== "finance") ||
-      (role === "finance_steward" && record.module === "finance");
-  });
+  const reviewable = waitingReview.filter((record) => snapshot && canReviewVisibleRecord(record, snapshot.viewer.role, snapshot.viewer.userId));
 
   if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
   if (access === "signed_out") return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
@@ -262,7 +269,6 @@ export function KaecHqWorkspace() {
   </main>;
 
   const privileged = snapshot.viewer.role === "vision_custodian";
-  const canReview = snapshot.viewer.role === "vision_custodian" || snapshot.viewer.role === "system_steward" || snapshot.viewer.role === "finance_steward";
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-slate-950 text-white">
@@ -434,17 +440,17 @@ export function KaecHqWorkspace() {
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>
                   {record.evidence_note && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-700"><strong>Evidence/progress:</strong> <span className="whitespace-pre-wrap">{record.evidence_note}</span></div>}
-                  {record.review_note && <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900"><strong>Review decision:</strong> <span className="whitespace-pre-wrap">{record.review_note}</span></div>}
+                  {record.review_note && <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900"><strong>{record.reviewed_by ? "Independent review:" : "Completion method:"}</strong> <span className="whitespace-pre-wrap">{record.review_note}</span></div>}
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {record.status !== "completed" && record.status !== "cancelled" && record.status !== "in_review" &&
+                    {record.status !== "completed" && record.status !== "cancelled" && record.status !== "in_review" && canEditVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) &&
                       <button disabled={busy} onClick={() => { setTab(record.module);setEditing(record);setForm(recordForm(record)); setActionRecord(null); }}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40">Edit record</button>}
-                    {record.status === "active" && <>
+                    {record.status === "active" && canEditVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) && <>
                       <button disabled={busy} onClick={() => startAction(record,"submit")} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Submit for verification</button>
                       {canCompleteRoutine(record,snapshot.viewer.userId) &&
                         <button disabled={busy} onClick={() => startAction(record,"complete")} className="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-900 disabled:opacity-40">Log routine completion</button>}
                     </>}
-                    {canReview && record.status === "in_review" && record.owner_user_id !== snapshot.viewer.userId && record.created_by !== snapshot.viewer.userId &&
+                    {canReviewVisibleRecord(record,snapshot.viewer.role,snapshot.viewer.userId) &&
                       <>
                         <button disabled={busy} onClick={() => startAction(record,"approve")} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Verify completion</button>
                         <button disabled={busy} onClick={() => startAction(record,"return")} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button>
