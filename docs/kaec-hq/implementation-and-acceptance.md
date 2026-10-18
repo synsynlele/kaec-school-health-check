@@ -36,15 +36,30 @@ The first implementation provides an accountable, auditable corporate record wor
 7. Test records across all six data modules, the derived Command Centre, assignment and backup checks, independent completion review, member suspension, cross-role access denial, finance MFA, and audit append.
 8. Only after acceptance, merge to production; inspect the Vercel READY production deployment. No new Android submission is normally needed for website-only work, but verify the wrapper's routing and Play policy declarations.
 
+
+## Operational workflow release — October 18, 2026
+
+**Record lifecycle:** Draft → Active → Submit for verification → Independently approved (Completed) or Returned (Active). Evidence notes (minimum 15 characters) and reviewer reasons (minimum 12 characters) are part of the record and its append-only database audit history. Submitted and completed records cannot be casually edited. Return-to-active is a deliberate reviewer action, not a status-dropdown shortcut.
+
+**Owner-attested routine work:** An accountable owner can directly log completion, with written evidence, for non-critical Work tasks, meeting actions and recurring obligations only. These are visibly labelled owner-attested, not independently approved. Finance, governance, reports, partnerships, product releases and critical work continue to require a different authorised reviewer, with MFA for financial and critical decisions. A solo founder can record ordinary task completion without making false claims of independent review.
+
+**Work recurrence:** When a valid daily/weekly/monthly/quarterly/yearly Work occurrence is completed, a database trigger atomically creates exactly one new occurrence, keeping its owner, backup, due cadence and original schedule anchor. Month-end dates remain anchored to the original schedule date. The source remains in History, while the new occurrence starts Active. Inactive owners or missing critical backup turn the new occurrence into Draft for reassignment. Termly cadence is recorded but the next term date **must be manually planned**. Rollover is **completion-triggered**, not a cron job; uncompleted overdue cycles are not silently advanced. No notifications are sent.
+
+**Templates and command:** Optional outlines guide work reports, school supervision, partner onboarding, product release, budgets and decisions. The Command Centre highlights upcoming dates and reviewable items from the existing role-filtered, **300-record** viewport. Counts must not be described as network-wide totals until exact server-level aggregation exists.
+
+**Security:** The new corporate fields are only accessed through the existing HQ server API; previous RLS, table grants, independent membership checks and audit triggers remain. No data is shared across schools and HQ. No bank movements, payments, contract-signing, GitHub deployments or permission escalation occurs as a side effect of marking work complete.
+
+**Acceptance / rollout:** Run foundation tests plus scripts/test-kaec-hq-workflows.mjs, lint, TypeScript and production build. Apply the additive 20261018113000 migration before releasing its code. Verify read-only access for unauthorised accounts; create and return an evidenced report using two role-appropriate accounts; attest an ordinary task; independently approve a financial record only with MFA; confirm audit entries and one next cycle after an approved recurring task; confirm no duplicate on repeated review. Use an approved test fixture (not real invoices or partner decisions) and clean up via the proper corporate lifecycle. Do not treat fixture-only tests as a production multi-user acceptance.
+
 ## Known limitations / next acceptance work
 
 - Governance: document versioning, approval lineage and templated playbook execution beyond record descriptions.
 - People: corporate role matrix, availability and takeover drills with independent sign-off.
-- Execution: recurring scheduler, reminders, reporting templates, evidence attachments and escalations.
+- Execution: clock-based reminders, configurable term dates, attachments, scheduled escalations and exact activity counters. Completion-triggered work recurrence and editable outlines are now implemented.
 - Partnerships: sync existing KHP-OS Partnership Registry read-only via separately authorised platform scope; contract lifecycle management.
 - Products: release gate integration with GitHub/Vercel and incident tracking.
 - Finance: invoice generation, collection ledger, bank/accounting reconciliation and approval thresholds.
-- Command: complete portfolio KPIs and exception drill-down beyond the latest authorised 300 records.
+- Command: complete portfolio KPIs and exception drill-down beyond the latest authorised 300 records. Current counts explicitly reflect only visible records.
 - Paginate/filter server-side for >300 records; avoid interpreting capped results as complete totals.
 
 ## Acceptance gates
