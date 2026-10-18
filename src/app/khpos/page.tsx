@@ -42,6 +42,7 @@ export default function KhposAccessPage() {
             <Link href="/khpos/admin" className="text-mint-300 underline">Admin Console</Link>
             <Link href="/khpos/admin/partnerships" className="text-mint-300 underline">Partnership Registry</Link>
             <Link href="/khpos/portfolio" className="text-mint-300 underline">Portfolio Intelligence</Link>
+            <Link href="/khpos/hq" className="text-mint-300 underline">KAEC HQ (separate corporate access)</Link>
           </div>
         </details>
         <footer className="mt-10 flex flex-wrap gap-5 border-t border-white/10 pt-5 text-xs font-semibold text-slate-300">
