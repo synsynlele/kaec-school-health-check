@@ -50,8 +50,7 @@ function date(v:unknown,label:string){
 }
 function canManage(role:string){return role==="vision_custodian"||role==="system_steward"||role==="alliance_catalyst";}
 function maySee(line:HqReportingLine,viewer:{userId:string;role:string}){
- return viewer.role==="vision_custodian"||line.reporter_user_id===viewer.userId||line.reviewer_user_id===viewer.userId||
-  (viewer.role==="system_steward"&&line.reporter_user_id!==viewer.userId);
+ return viewer.role==="vision_custodian"||line.reporter_user_id===viewer.userId||line.reviewer_user_id===viewer.userId;
 }
 async function loadLine(id:string):Promise<HqReportingLine>{
  const {data,error}=await db().from("kaec_hq_reporting_lines").select("*").eq("id",id).maybeSingle();
@@ -97,7 +96,7 @@ export async function getHqReportingDesk(user:VerifiedKhposUser):Promise<HqRepor
  let linesQuery=db().from("kaec_hq_reporting_lines").select("*").order("next_due_on",{ascending:true}).limit(301);
  // Non-Vision users only see reports where they are a reporter or reviewer. 
  // System Stewards additionally have oversight of eligible corporate reporting lines.
- if(snapshot.viewer.role!=="vision_custodian" && snapshot.viewer.role!=="system_steward")
+ if(snapshot.viewer.role!=="vision_custodian")
   linesQuery=linesQuery.or("reporter_user_id.eq."+user.id+",reviewer_user_id.eq."+user.id);
  const {data:rawLines,error:lineError}=await linesQuery;
  if(lineError)throw new HqError("Corporate reporting lines could not load.",503);
@@ -159,7 +158,7 @@ export async function changeHqReportingLine(user:VerifiedKhposUser,raw:unknown){
 }
 export async function submitHqScheduledReport(user:VerifiedKhposUser,raw:unknown){
  const x=object(raw),line=await loadLine(uuid(x.line_id,"reporting line"));
- const snapshot=await getHqSnapshot(user);
+ await getHqSnapshot(user);
  if(line.reporter_user_id!==user.id)throw new HqError("Only the appointed reporting officer can submit this report.",403);
  if(line.status!=="active")throw new HqError("The reporting line is paused.",409);
  const contents={
@@ -193,7 +192,7 @@ export async function submitHqScheduledReport(user:VerifiedKhposUser,raw:unknown
 export async function reviewHqScheduledReport(user:VerifiedKhposUser,raw:unknown){
  const x=object(raw),report=await loadSubmission(uuid(x.id,"submitted report"));
  const line=await loadLine(report.line_id);
- const snapshot=await getHqSnapshot(user);
+ await getHqSnapshot(user);
  if(line.reviewer_user_id!==user.id||line.reporter_user_id===user.id)
   throw new HqError("Only the appointed independent recipient can review this report.",403);
  if(report.status!=="submitted")throw new HqError("This report has already been reviewed.",409);
