@@ -1,11 +1,16 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "ng.name.khpos.lite",
       "sha256_cert_fingerprints": [
-        "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E"
+        "43:D7:AC:C8:15:57:83:F9:35:4F:61:F8:8F:D6:4C:E1:FB:24:F1:9B:16:3E:BF:F9:1B:FC:CB:AD:0D:AF:40:4E",
+        "C0:09:13:AB:BC:99:85:60:69:41:34:BC:D8:13:D1:FD:EA:B8:9F:5B:3D:0D:74:BA:CA:E9:DD:8B:73:EF:13:83",
+        "87:1F:44:B9:36:98:AD:A1:07:38:73:CB:AF:B9:C6:9B:16:DF:3F:F3:80:B2:34:22:A9:CD:15:49:44:55:61:34",
+        "21:D2:AB:70:9D:A0:0D:C9:9F:F5:81:93:63:14:02:4B:62:86:9C:27:55:6B:BC:0E:BE:98:C4:0D:5F:F4:8C:55"
       ]
     }
   }
