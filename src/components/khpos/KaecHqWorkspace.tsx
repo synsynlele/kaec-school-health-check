@@ -460,7 +460,7 @@ export function KaecHqWorkspace() {
                       <button type="submit" disabled={busy} className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirm {actionMode === "return" ? "return" : actionMode === "approve" ? "approval" : actionMode === "submit" ? "submission" : "routine completion"}</button>
                       <button type="button" onClick={() => setActionRecord(null)} className="rounded-lg border border-emerald-400 px-4 py-2.5 text-xs font-bold">Cancel</button>
                     </div>
-                  </form>
+                  </form>}
                 </article>)}
               </div>
             </section>
