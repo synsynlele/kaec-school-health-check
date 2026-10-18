@@ -74,11 +74,11 @@ const originalKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
 process.env.NEXT_PUBLIC_SUPABASE_URL="https://test.invalid";
 process.env.SUPABASE_SERVICE_ROLE_KEY="test-key";
 const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-const module={exports:{}};
+const testModule={exports:{}};
 new Function("require","module","exports",js)(
   (name)=>{if(name==="@supabase/supabase-js")return {createClient:()=>adapter};throw Error("Unexpected import: "+name);},
-  module,module.exports);
-const svc=module.exports;
+  testModule,testModule.exports);
+const svc=testModule.exports;
 const proof="A complete written evidence statement for this activity.";
 const note="Independent review confirmed the submitted evidence.";
 const worker=user(0),steward=user(1),finance=user(2),vision=user(3);
