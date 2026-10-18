@@ -1,5 +1,4 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getKhposPlatformAccess } from "@/lib/khpos/platform-admin";
 import type { VerifiedKhposUser } from "@/lib/khpos/auth";
 
 export const HQ_MODULES = ["governance", "people", "work", "partnerships", "products", "finance", "command"] as const;
@@ -289,10 +288,10 @@ export async function bootstrapHq(user: VerifiedKhposUser): Promise<HqSnapshot> 
   requireMfa(user);
   const designatedEmail = process.env.KAEC_HQ_BOOTSTRAP_EMAIL?.trim().toLowerCase();
   if (!designatedEmail || user.email !== designatedEmail) throw new HqError("KAEC HQ founder provisioning is not authorised for this account.", 403);
-  const platform = await getKhposPlatformAccess(user.id);
-  if (platform?.status !== "active" || platform.role !== "super_admin") {
-    throw new HqError("Provisioning requires an active Platform Super Admin with MFA.", 403);
-  }
+  // The Vision Custodian is a corporate appointment, not a school or
+  // platform administration role. The server-configured exact email,
+  // independently verified identity, MFA and zero-members gate authorise
+  // the one-time bootstrap without granting school/platform privileges.
   const { count, error } = await db().from("kaec_hq_members").select("user_id", { count: "exact", head: true });
   if (error) throw new HqError("KAEC HQ provisioning status could not be checked.", 503);
   if (count !== 0) throw new HqError("KAEC HQ is already provisioned. Use corporate role management.", 409);
