@@ -20,7 +20,7 @@ The first implementation provides an accountable, auditable corporate record wor
 - Data model uses independent kaec_hq_members / kaec_hq_records / kaec_hq_audit_events tables.
 - RLS enabled; direct anon/authenticated Data API privileges revoked. Data access runs through a bearer-verified, role-checked server API with a private service role.
 - Only explicitly appointed HQ members may enter. KHP-OS school roles cannot grant corporate access.
-- Initial Vision Custodian provisioning is one-time and requires: verified signed-in account; active KHP-OS Platform Super Admin; AAL2 MFA; a server-configured KAEC_HQ_BOOTSTRAP_EMAIL matching the verified account; and an empty HQ membership register.
+- Initial Vision Custodian provisioning is one-time and requires: verified signed-in account; AAL2 MFA; a server-configured KAEC_HQ_BOOTSTRAP_EMAIL matching the verified account; and an empty HQ membership register.
 - Further member appointments require Vision Custodian and MFA. Additional Vision Custodian appointments are blocked pending board governance.
 - Finance edits and critical approvals require MFA. Completion requires a different authorised verifier from the author and owner. No silent edit of completed work.
 - Changes are audited in a database-triggered append-only event log. Never expose secrets or entire school records in corporate notes.
@@ -30,7 +30,7 @@ The first implementation provides an accountable, auditable corporate record wor
 1. Review this PR and the additive SQL migration; run CI typecheck/lint/build.
 2. Apply the reviewed migration to the existing KHP-OS Supabase project. It does not alter existing school records.
 3. Verify tables, grants, RLS and audit trigger, and run Supabase security advisor.
-4. Set KAEC_HQ_BOOTSTRAP_EMAIL in the Vercel server environment (not NEXT_PUBLIC), using the designated founder account; don't paste credentials into chat.
+4. KAEC_HQ_BOOTSTRAP_EMAIL is configured as a server-only encrypted Vercel variable for the designated Vision Custodian. Do not add it to NEXT_PUBLIC variables. Corporate appointment is independent of school access and the KHP-OS Platform Admin role.
 5. In a staged environment verify signed-out, school-only, platform-only, HQ member and HQ founder role journeys.
 6. The designated founder signs in and completes MFA; use "Activate if designated" once. Appoint other corporate members only after their email identity is verified.
 7. Test records across all six data modules, the derived Command Centre, assignment and backup checks, independent completion review, member suspension, cross-role access denial, finance MFA, and audit append.
