@@ -144,7 +144,7 @@ export async function getSchoolDesk(user:VerifiedKhposUser):Promise<SchoolDeskSn
         ? db().from("organisations").select("id,name,partner_status,partner_entitlements,status")
             .in("id",engagements.map(e=>e.organisation_id))
         : Promise.resolve({data:[],error:null}),
-    mayGovern(member)
+    maySeeAll(member)
       ? db().from("kaec_hq_members").select("user_id,display_name,role,status").order("display_name")
       : db().from("kaec_hq_members").select("user_id,display_name,role,status").eq("user_id",user.id)
   ]);
