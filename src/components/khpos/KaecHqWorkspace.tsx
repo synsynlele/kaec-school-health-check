@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BookOpen, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleAlert,
   ClipboardCheck, FolderKanban, Landmark, LayoutDashboard, Loader2, LockKeyhole,
-  Plus, RefreshCw, ShieldCheck, Users, Wallet, type LucideIcon,
+  Plus, RefreshCw, ShieldCheck, Users, Wallet, LogOut, type LucideIcon,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { HqDataModule, HqModule, HqRecord, HqSnapshot } from "@/lib/khpos/hq";
@@ -39,7 +39,7 @@ const roleNames: Record<string, string> = {
 type FormFields = {
   title: string; description: string; record_type: string; status: string;
   priority: string; owner_user_id: string; backup_user_id: string;
-  due_on: string; cadence: string; amount: string; currency: string;
+  due_on: string; cadence: string; amount: string; currency: string; evidence_note: string;
 };
 const clsInput = "w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 outline-offset-2 focus-visible:outline-2 focus-visible:outline-emerald-600";
 const clsLabel = "block space-y-1.5 text-xs font-bold text-slate-600";
@@ -48,15 +48,28 @@ function isDataModule(value: HqModule): value is HqDataModule { return value !==
 function newForm(module: HqDataModule, viewer: string): FormFields {
   return { title: "", description: "", record_type: types[module][0], status: "draft",
     priority: "normal", owner_user_id: viewer, backup_user_id: "", due_on: "",
-    cadence: "once", amount: "", currency: "NGN" };
+    cadence: "once", amount: "", currency: "NGN", evidence_note: "" };
 }
 function recordForm(record: HqRecord): FormFields {
   return { title: record.title, description: record.description, record_type: record.record_type,
     status: record.status, priority: record.priority, owner_user_id: record.owner_user_id ?? "",
     backup_user_id: record.backup_user_id ?? "", due_on: record.due_on ?? "",
-    cadence: record.cadence, amount: record.amount?.toString() ?? "", currency: record.currency };
+    cadence: record.cadence, amount: record.amount?.toString() ?? "", currency: record.currency, evidence_note: record.evidence_note ?? "" };
 }
 function dateOnly(value: string | null) { return value ? value.slice(0, 10) : "No date"; }
+const templates: Record<string, string> = {
+  report: "Reporting period:\nProgress achieved:\nEvidence and outcomes:\nRisks or blockers:\nDecisions required:\nNext actions and owner:",
+  supervision: "Partner school and visit date:\nKHP-OS usage and adoption:\nLeadership observations:\nAgreed corrective actions:\nResponsible person and next check-in:",
+  onboarding: "School and agreement reference:\nCurrent activation stage:\nAssigned KAEC lead:\nOpen requirements:\nNext meeting or handover:",
+  release: "Product and version:\nChange summary:\nTesting and evidence:\nKnown issues and rollback:\nIndependent approval required:",
+  budget: "Period and cost centre:\nPurpose and allocation:\nSupporting breakdown:\nApproval authority:\nDecision reference:",
+  decision: "Issue or opportunity:\nOptions considered:\nDecision and rationale:\nAccountable owner:\nReview date:",
+};
+function canCompleteRoutine(record: HqRecord, userId: string) {
+  return record.module === "work" && ["task", "meeting_action", "recurring_obligation"].includes(record.record_type)
+    && ["low","normal"].includes(record.priority) && record.owner_user_id === userId;
+}
+type ActionMode = "submit" | "complete" | "approve" | "return";
 function RoleStatus({ status }: { status: HqRecord["status"] }) {
   const colors: Record<HqRecord["status"], string> = {
     draft: "bg-slate-100 text-slate-700", active: "bg-blue-50 text-blue-800",
@@ -83,6 +96,9 @@ export function KaecHqWorkspace() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaFactor, setMfaFactor] = useState("");
   const [mfaQr, setMfaQr] = useState("");
+  const [actionRecord, setActionRecord] = useState<HqRecord | null>(null);
+  const [actionMode, setActionMode] = useState<ActionMode>("submit");
+  const [actionNote, setActionNote] = useState("");
 
   const load = useCallback(async () => {
     if (!client) { setError("KAEC sign-in is unavailable."); setAccess("denied"); return; }
@@ -162,6 +178,28 @@ export function KaecHqWorkspace() {
     setMfaQr(""); setMfaFactor(""); setMfaCode("");
     await load();
   }
+  async function signOut() {
+    if (!client) return;
+    setBusy(true);
+    const { error: signOutError } = await client.auth.signOut();
+    setBusy(false);
+    if (signOutError) { setError("Could not sign out. Please retry from Account."); return; }
+    setSnapshot(null); setAccess("signed_out");
+  }
+  function startAction(record: HqRecord, mode: ActionMode) {
+    setActionRecord(record); setActionMode(mode);
+    setActionNote(mode === "submit" || mode === "complete" ? record.evidence_note ?? "" : "");
+    setForm(null); setEditing(null); setError("");
+  }
+  async function confirmAction() {
+    if (!actionRecord) return;
+    const reviewMode = actionMode === "approve" || actionMode === "return";
+    const success = await act(reviewMode ? "review" : actionMode, {
+      id: actionRecord.id,
+      ...(reviewMode ? { decision: actionMode === "approve" ? "approve" : "return", note: actionNote } : { evidence_note: actionNote }),
+    });
+    if (success) { setActionRecord(null); setActionNote(""); }
+  }
   async function submitRecord(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form || !isDataModule(tab)) return;
@@ -187,6 +225,18 @@ export function KaecHqWorkspace() {
   const waitingReview = active.filter((record) => record.status === "in_review");
   const critical = active.filter((record) => record.priority === "critical");
   const mine = active.filter((record) => record.owner_user_id === snapshot?.viewer.userId || record.backup_user_id === snapshot?.viewer.userId);
+  const dueSoon = active.filter((record) => {
+    if (!record.due_on) return false;
+    const today = new Date().toISOString().slice(0, 10);
+    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10);
+    return record.due_on >= today && record.due_on <= nextWeek;
+  });
+  const reviewable = waitingReview.filter((record) => {
+    if (!snapshot || record.created_by === snapshot.viewer.userId || record.owner_user_id === snapshot.viewer.userId) return false;
+    const role = snapshot.viewer.role;
+    return role === "vision_custodian" || (role === "system_steward" && record.module !== "finance") ||
+      (role === "finance_steward" && record.module === "finance");
+  });
 
   if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
   if (access === "signed_out") return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
@@ -200,14 +250,14 @@ export function KaecHqWorkspace() {
     <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8">
       <ShieldCheck className="size-10 text-emerald-300"/><h1 className="mt-4 text-3xl font-black">Restricted corporate workspace</h1>
       <p className="mt-3 text-sm leading-7 text-slate-300">{error}</p>
-      <p className="mt-3 text-sm leading-7 text-slate-300">The Vision Custodian must be explicitly appointed before KAEC HQ opens. Initial activation requires the designated Platform Super Admin, an MFA-verified session and the approved bootstrap email configuration.</p>
+      <p className="mt-3 text-sm leading-7 text-slate-300">The Vision Custodian must be explicitly appointed before KAEC HQ opens. Initial activation requires the designated verified corporate account and MFA. KAEC HQ permissions are separate from platform administration.</p>
       <div className="mt-5 flex flex-wrap gap-3">
         <button disabled={busy} onClick={() => void act("bootstrap")} className="rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-40">Activate if designated</button>
         <button onClick={() => void load()} className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold">Retry access</button>
         <Link href="/account" className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold">Account</Link>
       </div>
-      <p className="mt-5 text-xs text-slate-400">If you have not completed MFA, verify it in the Platform Admin Console first.</p>
-      <Link href="/khpos/admin" className="mt-2 inline-block text-sm font-bold text-emerald-300 underline">Open Platform Admin Console</Link>
+      <p className="mt-5 text-xs text-slate-400">If you have not completed MFA, verify it through your account's authenticator.</p>
+      <Link href="/account" className="mt-2 inline-block text-sm font-bold text-emerald-300 underline">Account security</Link>
     </section>
   </main>;
 
@@ -225,6 +275,7 @@ export function KaecHqWorkspace() {
             <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
             <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
+            <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
           </div>
         </div>
       </header>
@@ -232,7 +283,7 @@ export function KaecHqWorkspace() {
         <nav aria-label="KAEC HQ areas" className="grid content-start grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
           {areas.filter((item) => snapshot.allowedModules.includes(item.id)).map((item) => {
             const Icon = item.icon;
-            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setSearch(""); }}
+            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}
               aria-current={tab === item.id ? "page" : undefined}
               className={"flex min-w-0 items-start gap-2.5 rounded-xl border p-3 text-left text-xs font-bold transition " +
                 (tab === item.id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white hover:bg-slate-50")}>
