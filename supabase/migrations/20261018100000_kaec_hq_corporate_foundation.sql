@@ -66,3 +66,48 @@ grant select, insert on public.kaec_hq_audit_events to service_role;
 comment on table public.kaec_hq_members is 'KAEC-NG corporate roles only, separate from every KHP-OS school membership.';
 comment on table public.kaec_hq_records is 'Governance, People, Work, Partnerships, Products and Finance records powering seven KAEC HQ areas.';
 comment on table public.kaec_hq_audit_events is 'Append-only corporate operating audit trail; never expose through browser Supabase.';
+
+-- Database-owned history makes the audit write atomic with each record change.
+create or replace function public.kaec_hq_audit_record_change()
+returns trigger language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  insert into public.kaec_hq_audit_events
+    (record_id,actor_user_id,action,summary,before_state,after_state)
+  values (
+    new.id, new.updated_by,
+    case when tg_op='INSERT' then 'create' else 'update' end,
+    new.module || ':' || new.record_type,
+    case when tg_op='UPDATE' then to_jsonb(old) else null end,
+    to_jsonb(new)
+  );
+  return new;
+end;
+$$;
+drop trigger if exists kaec_hq_record_audit on public.kaec_hq_records;
+create trigger kaec_hq_record_audit after insert or update on public.kaec_hq_records
+for each row execute function public.kaec_hq_audit_record_change();
+
+create or replace function public.kaec_hq_audit_member_change()
+returns trigger language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  insert into public.kaec_hq_audit_events
+    (actor_user_id,action,summary,before_state,after_state)
+  values (
+    coalesce(new.granted_by,new.user_id),
+    case when tg_op='INSERT' then 'appoint_member' else 'update_member' end,
+    'corporate_membership',
+    case when tg_op='UPDATE' then to_jsonb(old) else null end,
+    to_jsonb(new)
+  );
+  return new;
+end;
+$$;
+drop trigger if exists kaec_hq_member_audit on public.kaec_hq_members;
+create trigger kaec_hq_member_audit after insert or update on public.kaec_hq_members
+for each row execute function public.kaec_hq_audit_member_change();
+revoke all on function public.kaec_hq_audit_record_change() from public, anon, authenticated;
+revoke all on function public.kaec_hq_audit_member_change() from public, anon, authenticated;
