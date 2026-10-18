@@ -433,14 +433,34 @@ export function KaecHqWorkspace() {
                     {record.module === "finance" && record.amount !== null && <span>Amount: <strong>{record.currency} {Number(record.amount).toLocaleString()}</strong></span>}
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>
+                  {record.evidence_note && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-700"><strong>Evidence/progress:</strong> <span className="whitespace-pre-wrap">{record.evidence_note}</span></div>}
+                  {record.review_note && <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900"><strong>Review decision:</strong> <span className="whitespace-pre-wrap">{record.review_note}</span></div>}
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {record.status !== "completed" && record.status !== "cancelled" &&
-                      <button disabled={busy} onClick={() => { setTab(record.module);setEditing(record);setForm(recordForm(record)); }}
-                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40">Edit / submit</button>}
+                    {record.status !== "completed" && record.status !== "cancelled" && record.status !== "in_review" &&
+                      <button disabled={busy} onClick={() => { setTab(record.module);setEditing(record);setForm(recordForm(record)); setActionRecord(null); }}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40">Edit record</button>}
+                    {record.status === "active" && <>
+                      <button disabled={busy} onClick={() => startAction(record,"submit")} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Submit for verification</button>
+                      {canCompleteRoutine(record,snapshot.viewer.userId) &&
+                        <button disabled={busy} onClick={() => startAction(record,"complete")} className="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-900 disabled:opacity-40">Log routine completion</button>}
+                    </>}
                     {canReview && record.status === "in_review" && record.owner_user_id !== snapshot.viewer.userId && record.created_by !== snapshot.viewer.userId &&
-                      <><button disabled={busy} onClick={() => void act("review", { id: record.id, decision: "approve" })} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Verify completion</button>
-                        <button disabled={busy} onClick={() => void act("review", { id: record.id, decision: "return" })} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button></>}
+                      <>
+                        <button disabled={busy} onClick={() => startAction(record,"approve")} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Verify completion</button>
+                        <button disabled={busy} onClick={() => startAction(record,"return")} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button>
+                      </>}
                   </div>
+                  {actionRecord?.id === record.id && <form onSubmit={(event) => {event.preventDefault(); void confirmAction();}} className="mt-3 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-bold">{actionMode === "submit" ? "Submit evidence for independent review" : actionMode === "complete" ? "Attest that your routine work is complete" : actionMode === "approve" ? "Record independent approval" : "Return this work with a clear reason"}</p>
+                    <p className="text-xs text-emerald-950">{actionMode === "complete" ? "Only routine, non-critical work may be owner-attested. This is not independent approval." : actionMode === "submit" ? "The author and accountable owner cannot independently verify this record." : "An auditable review note is required. Make your decision based on real evidence."}</p>
+                    <label className={clsLabel}>{actionMode === "approve" || actionMode === "return" ? "Reviewer decision and reason" : "Evidence of work completed"}
+                      <textarea required minLength={actionMode === "approve" || actionMode === "return" ? 12 : 15} maxLength={actionMode === "approve" || actionMode === "return" ? 2000 : 5000} rows={3} className={clsInput} value={actionNote} onChange={(event) => setActionNote(event.target.value)} />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="submit" disabled={busy} className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirm {actionMode === "return" ? "return" : actionMode === "approve" ? "approval" : actionMode === "submit" ? "submission" : "routine completion"}</button>
+                      <button type="button" onClick={() => setActionRecord(null)} className="rounded-lg border border-emerald-400 px-4 py-2.5 text-xs font-bold">Cancel</button>
+                    </div>
+                  </form>
                 </article>)}
               </div>
             </section>
