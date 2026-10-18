@@ -7,6 +7,7 @@ import {
   ShieldCheck,Loader2,Plus,RefreshCw,Search,Users,Video,
 } from "lucide-react";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
+import {PathfinderSchedulePanel} from "@/components/khpos/PathfinderSchedulePanel";
 import type {
   SchoolDeskSnapshot,SchoolEngagement,SchoolCommitment,
 } from "@/lib/khpos/hq-schools";
@@ -258,6 +259,7 @@ export function SchoolPathfinderDesk() {
                   <button type="button" onClick={()=>setAgreement(null)} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold">Close</button></div>
               </form>}
             </section>
+            <PathfinderSchedulePanel key={selected.id} engagement={selected} viewer={desk.viewer} members={desk.members}/>
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div><h2 className="text-lg font-black">Agreed work to be done</h2>
