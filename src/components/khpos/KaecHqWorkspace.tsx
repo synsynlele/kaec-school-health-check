@@ -237,12 +237,12 @@ export function KaecHqWorkspace() {
   const waitingReview = active.filter((record) => record.status === "in_review");
   const critical = active.filter((record) => record.priority === "critical");
   const mine = active.filter((record) => record.owner_user_id === snapshot?.viewer.userId || record.backup_user_id === snapshot?.viewer.userId);
-  const dueSoon = active.filter((record) => {
-    if (!record.due_on) return false;
-    const today = new Date().toISOString().slice(0, 10);
-    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10);
-    return record.due_on >= today && record.due_on <= nextWeek;
-  });
+  const compareDate = snapshot?.generatedAt?.slice(0, 10) ?? "";
+  const soonDate = new Date(compareDate + "T00:00:00Z");
+  if (compareDate) soonDate.setUTCDate(soonDate.getUTCDate() + 7);
+  const nextWeek = compareDate ? soonDate.toISOString().slice(0, 10) : "";
+  const dueSoon = active.filter((record) => !!record.due_on && !!compareDate
+    && record.due_on >= compareDate && record.due_on <= nextWeek);
   const reviewable = waitingReview.filter((record) => snapshot && canReviewVisibleRecord(record, snapshot.viewer.role, snapshot.viewer.userId));
 
   if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
