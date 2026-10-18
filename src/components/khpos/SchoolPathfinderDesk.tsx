@@ -227,7 +227,8 @@ export function SchoolPathfinderDesk() {
                 <div><strong>Next site visit</strong><p className="mt-1 text-slate-600">{dateOf(selected.next_site_visit_on)}</p></div>
               </div>
               {selected.agreed_scope&&<div className="mt-4 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-700"><strong>Agreed support scope:</strong> {selected.agreed_scope}</div>}
-              {canGovern&&<button onClick={()=>{setAgreement(agreementForm(selected));setCommitment(null);}} className="mt-4 rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold">Manage agreement & Pathfinder</button>}
+              {(isVision || (canGovern && selected.engagement_status==="setup" && !selected.contract_verified_at))&&<button onClick={()=>{setAgreement(agreementForm(selected));setCommitment(null);}} className="mt-4 rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold">Manage agreement & Pathfinder</button>}
+              {!isVision && selected.contract_verified_at && canGovern&&<p className="mt-4 text-xs text-slate-600">Verified agreements may only be revised, paused or ended by the Vision Custodian.</p>}
               {agreement?.id===selected.id&&<form className="mt-4 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
                 onSubmit={e=>{e.preventDefault();void act("update_engagement",{
                   ...agreement,representative_user_id:agreement.representative_user_id||null,
