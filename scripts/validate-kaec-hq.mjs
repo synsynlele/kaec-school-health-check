@@ -43,8 +43,6 @@ new Function("require","module","exports",js)(
   },
   module, exports,
 );
-if (nativeEnvUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = nativeEnvUrl;
-if (nativeEnvKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = nativeEnvKey;
 const service = module.exports;
 assert.equal(service.HQ_MODULES.length,7);
 assert.equal(Object.keys(service.HQ_RECORD_TYPES).length,6);
@@ -69,3 +67,6 @@ for (const table of ["kaec_hq_members","kaec_hq_records","kaec_hq_audit_events"]
 assert(migration.includes("create trigger kaec_hq_record_audit"));
 assert(migration.includes("create trigger kaec_hq_member_audit"));
 console.log("KAEC HQ role isolation, seven modules, MFA gates, PII limitation and atomic audit triggers passed.");
+
+if (nativeEnvUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = nativeEnvUrl;
+if (nativeEnvKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = nativeEnvKey;
