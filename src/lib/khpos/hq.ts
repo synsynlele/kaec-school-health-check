@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { VerifiedKhposUser } from "@/lib/khpos/auth";
 
 export const HQ_MODULES = ["governance", "people", "work", "partnerships", "products", "finance", "command"] as const;
-export const HQ_ROLES = ["vision_custodian", "system_steward", "alliance_catalyst", "product_architect", "movement_curator", "finance_steward", "team_member"] as const;
+export const HQ_ROLES = ["vision_custodian", "system_steward", "alliance_catalyst", "product_architect", "movement_curator", "finance_steward", "team_member", "school_pathfinder"] as const;
 export type HqModule = (typeof HQ_MODULES)[number];
 export type HqDataModule = Exclude<HqModule, "command">;
 export type HqRole = (typeof HQ_ROLES)[number];
@@ -17,6 +17,7 @@ const allowedModules: Record<HqRole, readonly HqModule[]> = {
   movement_curator: ["work", "products", "command"],
   finance_steward: ["work", "finance", "command"],
   team_member: ["work", "command"],
+  school_pathfinder: ["work", "command"],
 };
 export const HQ_RECORD_TYPES: Record<HqDataModule, readonly string[]> = {
   governance: ["constitution", "policy", "playbook", "authority", "decision"],
@@ -200,7 +201,7 @@ export async function getHqSnapshot(user: VerifiedKhposUser): Promise<HqSnapshot
   const member = await memberFor(user);
   const visible = allowedModules[member.role].filter((x) => x !== "command") as HqDataModule[];
   let query = db().from("kaec_hq_records").select("*").in("module", visible).order("updated_at", { ascending: false }).limit(301);
-  if (member.role === "team_member") {
+  if (member.role === "team_member" || member.role === "school_pathfinder") {
     query = query.or("owner_user_id.eq." + user.id + ",backup_user_id.eq." + user.id + ",created_by.eq." + user.id);
   }
   let membersQuery = db().from("kaec_hq_members").select("user_id,email,display_name,role,status").order("display_name");
@@ -226,7 +227,7 @@ export async function createHqRecord(user: VerifiedKhposUser, raw: unknown): Pro
   if (input.module === "finance") requireMfa(user);
   const values = validateRecordFields(input, input.module, user.id);
   if (values.status === "completed" || values.status === "in_review" || values.status === "cancelled") throw new HqError("Start new records as drafts or active work.");
-  if (actor.role === "team_member" && values.owner_user_id !== user.id) throw new HqError("Team members may create work only for themselves.", 403);
+  if (["team_member","school_pathfinder"].includes(actor.role) && values.owner_user_id !== user.id) throw new HqError("Team members may create work only for themselves.", 403);
   await checkAppointedUsers([values.owner_user_id, values.backup_user_id]);
   const { error } = await db().from("kaec_hq_records").insert({ ...values, created_by: user.id, updated_by: user.id });
   if (error) throw new HqError("Could not create the corporate record: " + error.message, 500);
@@ -246,7 +247,7 @@ export async function updateHqRecord(user: VerifiedKhposUser, raw: unknown): Pro
   if (values.status === "completed" || values.status === "in_review") {
     throw new HqError("Use Submit for review or Log routine completion to progress work.");
   }
-  if (actor.role === "team_member" && values.owner_user_id !== user.id) throw new HqError("Team members cannot reassign work to another person.", 403);
+  if (["team_member","school_pathfinder"].includes(actor.role) && values.owner_user_id !== user.id) throw new HqError("Team members cannot reassign work to another person.", 403);
   await checkAppointedUsers([values.owner_user_id, values.backup_user_id]);
   const { data, error } = await db().from("kaec_hq_records").update({ ...values, review_note: "", reviewed_by: null, reviewed_at: null, updated_by: user.id, updated_at: new Date().toISOString() }).eq("id", id).eq("updated_at", previous.updated_at).select("id");
   if (error) throw new HqError("Could not update the corporate record.", 500);
@@ -319,6 +320,25 @@ export async function completeRoutineHqRecord(user: VerifiedKhposUser, raw: unkn
 }
 export async function reviewHqRecord(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
   return transitionRecord(user, raw, "review");
+}
+export async function withdrawHqSubmission(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
+  const actor = await memberFor(user);
+  const input = ensureObject(raw);
+  const id = idValue(input.id, "record ID");
+  if (!id) throw new HqError("Record ID is required.");
+  const previous = await loadRecord(id);
+  if (previous.status !== "in_review" || previous.created_by !== user.id || !canAccess(actor, previous.module)) {
+    throw new HqError("Only the original submitter may withdraw a pending unreviewed submission.", 403);
+  }
+  if (previous.reviewed_by || previous.reviewed_at) throw new HqError("Reviewed submissions cannot be withdrawn.", 409);
+  if (previous.module === "finance" || previous.priority === "critical") requireMfa(user);
+  const { data, error } = await db().from("kaec_hq_records").update({
+    status: "draft", review_note: "Withdrawn by original author for revision; no approval was granted.",
+    reviewed_by: null, reviewed_at: null, updated_by: user.id, updated_at: new Date().toISOString(),
+  }).eq("id",id).eq("status","in_review").eq("updated_at",previous.updated_at).select("id");
+  if (error) throw new HqError("The submission could not be withdrawn.",500);
+  if (!data?.length) throw new HqError("This submission changed. Refresh and try again.",409);
+  return getHqSnapshot(user);
 }
 export async function changeHqMember(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
   const actor = await memberFor(user);
