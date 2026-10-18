@@ -54,6 +54,13 @@ begin
   select case when exists (
     select 1 from public.kaec_hq_members m
     where m.user_id = new.owner_user_id and m.status = 'active'
+  ) and (
+    new.priority <> 'critical' or (
+      new.backup_user_id is not null and exists (
+        select 1 from public.kaec_hq_members m
+        where m.user_id = new.backup_user_id and m.status='active'
+      )
+    )
   ) then 'active' else 'draft' end into next_status;
 
   insert into public.kaec_hq_records (
