@@ -10,6 +10,7 @@ const links = [
   { href: "/khpos/admin", label: "Admin Dashboard" },
   { href: "/khpos/admin/partnerships", label: "School Partnerships" },
   { href: "/khpos/portfolio", label: "Portfolio Intelligence" },
+  { href: "/khpos/hq", label: "KAEC HQ" },
 ];
 
 export function AdminNav() {
