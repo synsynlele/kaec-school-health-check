@@ -226,6 +226,7 @@ export async function addSchoolCommitment(user:VerifiedKhposUser,raw:unknown):Pr
   if(!mayGovern(member))throw new SchoolDeskError("Only partnership leads can register agreed school expectations.",403);
   const input=object(raw),engagement=await loadEngagement(uuid(input.engagement_id,"engagement"));
   if(engagement.engagement_status!=="active")throw new SchoolDeskError("Activate a verified supervision agreement before assigning commitments.",409);
+  await validPartner(engagement.organisation_id);
   const title=text(input.title,"Commitment title",4,180);
   const expectation=text(input.agreed_expectation,"Agreed expectation",15,3000);
   const clause=text(input.agreement_clause,"Agreement clause or signed plan reference",4,200);
@@ -247,6 +248,7 @@ export async function updateSchoolCommitment(user:VerifiedKhposUser,raw:unknown)
   const engagement=await loadEngagement(prior.engagement_id);
   if(!canExecute(member,engagement,user))throw new SchoolDeskError("Only the school's appointed Pathfinder or alliance lead may record progress.",403);
   if(engagement.engagement_status!=="active")throw new SchoolDeskError("This agreement is not active for execution.",409);
+  await validPartner(engagement.organisation_id);
   if(prior.status==="verified" || prior.status==="cancelled")throw new SchoolDeskError("Closed expectations cannot be silently overwritten.",409);
   const status=choice(input.status,["planned","in_progress","blocked","evidence_submitted"] as const,"progress");
   const note=text(input.progress_note,"Progress or blocker note",15,3000);
@@ -268,6 +270,7 @@ export async function verifySchoolCommitment(user:VerifiedKhposUser,raw:unknown)
   const input=object(raw),prior=await loadCommitment(uuid(input.id,"commitment"));
   const engagement=await loadEngagement(prior.engagement_id);
   if(engagement.engagement_status!=="active")throw new SchoolDeskError("School engagement is not active.",409);
+  await validPartner(engagement.organisation_id);
   if(prior.status!=="evidence_submitted")throw new SchoolDeskError("Only submitted evidence can be verified.",409);
   if(prior.updated_by===user.id || engagement.representative_user_id===user.id)
     throw new SchoolDeskError("An independent corporate lead must verify the Pathfinder's evidence.",403);
@@ -291,6 +294,7 @@ export async function logSchoolFollowup(user:VerifiedKhposUser,raw:unknown):Prom
   if(!canExecute(actor,engagement,user))throw new SchoolDeskError("You are not assigned to this school.",403);
   if(engagement.engagement_status!=="active" || ["verified","cancelled"].includes(commitment.status))
     throw new SchoolDeskError("Only open commitments under an active agreement can receive follow-ups.",409);
+  await validPartner(engagement.organisation_id);
   const mode=choice(input.mode,["phone","whatsapp","video","email","site_visit"] as const,"follow-up channel");
   const outcome=text(input.outcome,"Follow-up outcome",15,3000);
   const evidence=optionalText(input.evidence_reference,"Evidence reference",700);
