@@ -193,7 +193,10 @@ export async function getHqSnapshot(user: VerifiedKhposUser): Promise<HqSnapshot
     viewer: { userId: user.id, email: user.email, role: member.role, aal: user.aal },
     allowedModules: allowedModules[member.role],
     records: records.slice(0, 300),
-    members: (membersResult.data ?? []) as HqMember[],
+    members: ((membersResult.data ?? []) as HqMember[]).map((person) => ({
+      ...person,
+      email: member.role === "vision_custodian" ? person.email : "",
+    })),
     limitedTo: 300, hasMore: records.length > 300, generatedAt: new Date().toISOString(),
   };
 }
