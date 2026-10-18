@@ -112,6 +112,12 @@ await assert.rejects(svc.reviewHqRecord(user(2,"aal1"),{id:uuid(12),decision:"ap
 await svc.reviewHqRecord(finance,{id:uuid(12),decision:"approve",note});
 assert.equal(rows.find(r=>r.id===uuid(12)).status,"completed");
 await assert.rejects(svc.submitHqRecord(worker,{id:uuid(13),evidence_note:proof}),e=>e.status===403);
+rows.push({...record(14,"governance","playbook",3,3,"high"),status:"in_review"});
+await assert.rejects(svc.withdrawHqSubmission(worker,{id:uuid(14)}),e=>e.status===403);
+await svc.withdrawHqSubmission(vision,{id:uuid(14)});
+assert.equal(rows.find(r=>r.id===uuid(14)).status,"draft");
+assert.match(rows.find(r=>r.id===uuid(14)).review_note,/no approval/i);
+assert(route.includes('case "withdraw"'));
 assert(route.includes('case "submit"') && route.includes('case "complete"'));
 assert(ui.includes('Log routine completion') && ui.includes('Submit for verification') && ui.includes('Reviewer decision and reason'));
 for(const key of ["evidence_note","review_note","series_anchor_on","kaec_hq_work_roll_forward","make_interval","on conflict"])assert(migration.includes(key),"Missing "+key);
