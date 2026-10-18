@@ -316,7 +316,7 @@ export function KaecHqWorkspace() {
           {tab === "command" && <>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[["My live responsibilities", mine.length, ClipboardCheck], ["Overdue work", overdue.length, CalendarClock],
-                ["Awaiting verification", waitingReview.length, CheckCircle2], ["Critical open issues", critical.length, CircleAlert]].map(([label, value, Icon]) => {
+                ["Reviews I can decide", reviewable.length, CheckCircle2], ["Critical open issues", critical.length, CircleAlert]].map(([label, value, Icon]) => {
                   const Component = Icon as LucideIcon;
                   return <div key={label as string} className="rounded-2xl border border-slate-200 bg-white p-5">
                     <Component className="size-5 text-emerald-700"/><p className="mt-3 text-3xl font-black">{value as number}</p>
@@ -326,14 +326,15 @@ export function KaecHqWorkspace() {
             </div>
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <h3 className="text-lg font-black">Leadership attention</h3>
-              <p className="mt-1 text-xs text-slate-600">Derived from authorised corporate work records. No simulated figures or school-level private data.</p>
-              {Array.from(new Map([...overdue, ...waitingReview, ...critical].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
+              <p className="mt-1 text-xs text-slate-600">Based on accessible HQ records only; no simulated figures or school-level private data. The current view is capped at the latest 300 records.</p>
+              <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-900">Due in the next 7 days: <strong>{dueSoon.length}</strong> · Awaiting independent review: <strong>{waitingReview.length}</strong>. Review ownership before assuming another person will act.</p>
+              {Array.from(new Map([...overdue, ...reviewable, ...critical, ...dueSoon].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
                 <button key={r.id} className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm hover:bg-slate-50"
                   onClick={() => {setTab(r.module);setSearch(r.title);}}>
                   <span><strong className="block">{r.title}</strong><span className="text-xs text-slate-600">{pretty(r.module)} · {memberLabel(r.owner_user_id)}</span></span>
                   <RoleStatus status={r.status}/>
                 </button>)}
-              {!overdue.length && !waitingReview.length && !critical.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded. This does not guarantee all work is on track.</p>}
+              {!overdue.length && !waitingReview.length && !critical.length && !dueSoon.length && <p className="mt-4 text-sm text-slate-500">No current exceptions recorded in the visible set. This does not guarantee all work is on track.</p>}
             </section>
           </>}
 
@@ -376,7 +377,7 @@ export function KaecHqWorkspace() {
               This is a controlled budget and obligation register, not yet a banking, payment processing or accounting reconciliation system. Approval and money movement remain separate.
             </div>}
             {tab === "work" && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900">
-              Recurrence intervals are recorded here. Automatic recurring task creation and reminder delivery will be enabled only after their execution and reliability checks pass.
+              For daily, weekly, monthly, quarterly and yearly work, completing one evidenced cycle creates the next occurrence automatically. Termly work remains a manual scheduling decision. This does not send push alerts or emails.
             </div>}
             {form && <form onSubmit={(event) => void submitRecord(event)} className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between"><h3 className="text-lg font-black">{editing ? "Edit corporate record" : "New " + pretty(tab) + " record"}</h3>
@@ -385,7 +386,7 @@ export function KaecHqWorkspace() {
                 <label className={clsLabel}>Title<input required minLength={4} maxLength={180} className={clsInput} value={form.title} onChange={(e) => setForm({...form,title:e.target.value})}/></label>
                 <label className={clsLabel}>Record type<select className={clsInput} value={form.record_type} onChange={(e) => setForm({...form,record_type:e.target.value})}>{types[tab].map((t) => <option value={t} key={t}>{pretty(t)}</option>)}</select></label>
                 <label className={clsLabel}>Status<select className={clsInput} value={form.status} onChange={(e) => setForm({...form,status:e.target.value})}>
-                  {["draft","active","in_review","cancelled"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
+                  {["draft","active","cancelled"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
                 <label className={clsLabel}>Priority<select className={clsInput} value={form.priority} onChange={(e) => setForm({...form,priority:e.target.value})}>
                   {["low","normal","high","critical"].map((s) => <option value={s} key={s}>{pretty(s)}</option>)}</select></label>
                 <label className={clsLabel}>Accountable owner<select className={clsInput} value={form.owner_user_id} onChange={(e) => setForm({...form,owner_user_id:e.target.value})}><option value="">Not assigned</option>
@@ -393,12 +394,19 @@ export function KaecHqWorkspace() {
                 <label className={clsLabel}>Backup person<select className={clsInput} value={form.backup_user_id} onChange={(e) => setForm({...form,backup_user_id:e.target.value})}><option value="">Not assigned</option>
                   {snapshot.members.filter((m) => m.status === "active" && m.user_id !== form.owner_user_id).map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name}</option>)}</select></label>
                 <label className={clsLabel}>Due date<input type="date" className={clsInput} value={form.due_on} onChange={(e) => setForm({...form,due_on:e.target.value})}/></label>
-                <label className={clsLabel}>Cadence<select className={clsInput} value={form.cadence} onChange={(e) => setForm({...form,cadence:e.target.value})}>{["once","daily","weekly","monthly","termly","quarterly","yearly"].map((s) => <option key={s} value={s}>{pretty(s)}</option>)}</select></label>
+                {tab === "work" && <label className={clsLabel}>Work cadence<select className={clsInput} value={form.cadence} onChange={(e) => setForm({...form,cadence:e.target.value})}>{["once","daily","weekly","monthly","termly","quarterly","yearly"].map((s) => <option key={s} value={s}>{pretty(s)}</option>)}</select><span className="text-[11px] text-slate-500">Choose a due date for recurring work. Termly dates are scheduled manually.</span></label>}
                 {tab === "finance" && <>
                   <label className={clsLabel}>Amount<input className={clsInput} type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({...form,amount:e.target.value})}/></label>
                   <label className={clsLabel}>Currency<select className={clsInput} value={form.currency} onChange={(e) => setForm({...form,currency:e.target.value})}>{["NGN","USD","GBP","EUR"].map((s) => <option key={s}>{s}</option>)}</select></label>
                 </>}
-                <label className={clsLabel + " sm:col-span-2"}>Description, procedure or supporting note<textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/></label>
+                <label className={clsLabel + " sm:col-span-2"}>Description, procedure or supporting note
+                  <textarea rows={4} maxLength={5000} value={form.description} onChange={(e) => setForm({...form,description:e.target.value})} className={clsInput}/>
+                  {templates[form.record_type] && <button type="button" className="text-left text-xs font-bold text-emerald-800 underline"
+                    onClick={() => setForm({...form, description: form.description ? form.description + "\n\n" + templates[form.record_type] : templates[form.record_type]})}>Insert {pretty(form.record_type)} outline</button>}
+                </label>
+                <label className={clsLabel + " sm:col-span-2"}>Evidence or progress note (optional until submission)
+                  <textarea rows={3} maxLength={5000} value={form.evidence_note} onChange={(e) => setForm({...form,evidence_note:e.target.value})} className={clsInput} placeholder="What has actually been done, checked or observed? Do not include passwords or private student information."/>
+                </label>
               </div>
               <div className="mt-4 flex items-center gap-4">
                 <button disabled={busy || (tab === "finance" && snapshot.viewer.aal !== "aal2")} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{busy ? "Saving…" : "Save corporate record"}</button>
@@ -421,7 +429,7 @@ export function KaecHqWorkspace() {
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-600">
                     <span>Owner: <strong>{memberLabel(record.owner_user_id)}</strong></span><span>Backup: <strong>{memberLabel(record.backup_user_id)}</strong></span>
                     <span>Due: <strong>{dateOnly(record.due_on)}</strong></span>
-                    {record.cadence !== "once" && <span>Cadence: <strong>{pretty(record.cadence)}</strong></span>}
+                    {record.cadence !== "once" && <span>Cadence: <strong>{pretty(record.cadence)}</strong>{record.module === "work" && record.cadence !== "termly" ? " · Cycle " + (record.cycle_index ?? 1) : ""}</span>}
                     {record.module === "finance" && record.amount !== null && <span>Amount: <strong>{record.currency} {Number(record.amount).toLocaleString()}</strong></span>}
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>
