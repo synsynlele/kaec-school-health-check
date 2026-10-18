@@ -31,7 +31,7 @@ const adapter = {
   },
 };
 const exports = {};
-const module = { exports };
+const testModule = { exports };
 const nativeEnvUrl = process.env.NEXT_PUBLIC_SUPABASE_URL, nativeEnvKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://fixture.invalid";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "fixture-only";
@@ -41,9 +41,9 @@ new Function("require","module","exports",js)(
     if (name === "@/lib/khpos/platform-admin") return { getKhposPlatformAccess: async () => null };
     throw new Error("Unexpected import: " + name);
   },
-  module, exports,
+  testModule, exports,
 );
-const service = module.exports;
+const service = testModule.exports;
 assert.equal(service.HQ_MODULES.length,7);
 assert.equal(Object.keys(service.HQ_RECORD_TYPES).length,6);
 const worker = { id: users[0].user_id, email: users[0].email, aal: "aal1" };
