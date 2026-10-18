@@ -75,6 +75,20 @@ async function checkReporterAndReviewer(reporter:string,reviewer:string,role:str
  if(!person||!lead)throw new HqError("Select valid corporate members.");
  if(!["vision_custodian","system_steward","alliance_catalyst","finance_steward"].includes(lead.role))
   throw new HqError("Select a Vision Custodian, System Steward, Alliance Catalyst or Finance Steward as reviewer.");
+ const reportingHierarchy:Record<string,string[]>={
+  school_pathfinder:["alliance_catalyst","vision_custodian"],
+  alliance_catalyst:["system_steward","vision_custodian"],
+  system_steward:["vision_custodian"],
+  product_architect:["system_steward","vision_custodian"],
+  movement_curator:["system_steward","vision_custodian"],
+  finance_steward:["vision_custodian"],
+  team_member:["system_steward","alliance_catalyst","vision_custodian"],
+  vision_custodian:["system_steward"],
+ };
+ if(!reportingHierarchy[person.role]?.includes(lead.role))
+  throw new HqError("This recipient does not follow the KAEC corporate reporting hierarchy.");
+ if(person.role==="finance_steward" && role!=="vision_custodian")
+  throw new HqError("Only the Vision Custodian can establish sensitive finance reporting routes.",403);
  if(role==="system_steward"&&
    (person.role==="vision_custodian"||lead.role==="finance_steward"||lead.role==="alliance_catalyst"))
   throw new HqError("System Stewards cannot assign Vision Custodian or independent Finance/Alliance reporting routes.",403);
@@ -139,13 +153,10 @@ export async function changeHqReportingLine(user:VerifiedKhposUser,raw:unknown){
  const snapshot=await getHqSnapshot(user),x=object(raw);
  if(!canManage(snapshot.viewer.role))throw new HqError("This role cannot change reporting schedules.",403);
  const line=await loadLine(uuid(x.id,"reporting line"));
- if(snapshot.viewer.role==="alliance_catalyst" &&
-   (line.reviewer_user_id!==user.id||!line.engagement_id))
-  throw new HqError("You can manage only Pathfinder reports routed to you.",403);
- if(snapshot.viewer.role==="system_steward"){
-  const {data:reporter}=await db().from("kaec_hq_members").select("role").eq("user_id",line.reporter_user_id).maybeSingle();
-  if(reporter?.role==="vision_custodian")throw new HqError("Vision Custodian reporting routes require Vision Custodian authority.",403);
- }
+ if(snapshot.viewer.role!=="vision_custodian" && line.reviewer_user_id!==user.id)
+  throw new HqError("Only the Vision Custodian or this line's appointed recipient can pause or resume the schedule.",403);
+ if(snapshot.viewer.role==="alliance_catalyst"&&!line.engagement_id)
+  throw new HqError("Alliance Catalysts can manage only their assigned Pathfinder reporting lines.",403);
  const status=x.status;
  if(status!=="active"&&status!=="paused")throw new HqError("Select Active or Paused.");
  if(line.status===status)return getHqReportingDesk(user);
