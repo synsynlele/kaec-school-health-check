@@ -4,7 +4,7 @@ import { HQ_ROLES, type HqRole } from "@/lib/khpos/hq";
 
 export type SchoolEngagement = {
   id: string; organisation_id: string; engagement_status: "setup"|"active"|"paused"|"ended";
-  agreement_reference: string; agreed_scope: string; contract_verified_at: string|null;
+  agreement_reference: string; agreed_scope: string; contract_verified_at: string|null; contract_verified_by:string|null;
   representative_user_id: string|null; school_liaison: string;
   next_virtual_check_on: string|null; next_site_visit_on: string|null;
   updated_at: string; created_at: string;
@@ -16,7 +16,7 @@ export type SchoolCommitment = {
   priority: "low"|"normal"|"high"|"critical"; due_on: string|null;
   next_followup_on: string|null; followup_mode: "virtual"|"onsite";
   progress_note: string; evidence_reference: string; verified_by: string|null;
-  verified_at: string|null; created_by: string; updated_at: string;
+  verified_at: string|null; created_by: string; updated_by:string; updated_at: string;
 };
 export type SchoolFollowup = {
   id: string; commitment_id: string; mode: "phone"|"whatsapp"|"video"|"email"|"site_visit";
@@ -192,7 +192,10 @@ export async function updateSchoolEngagement(user:VerifiedKhposUser,raw:unknown)
   const reference=optionalText(input.agreement_reference??prior.agreement_reference,"Agreement reference",240);
   const scope=optionalText(input.agreed_scope??prior.agreed_scope,"Agreed scope",3000);
   const liaison=optionalText(input.school_liaison??prior.school_liaison,"School liaison",140);
-  const checked=Boolean(input.confirm_verified);
+  const checked=input.confirm_verified===true;
+  const agreementChanged=reference!==prior.agreement_reference || scope!==prior.agreed_scope;
+  if(agreementChanged && prior.contract_verified_at && !checked && status==="active")
+    throw new SchoolDeskError("The agreement reference or scope changed. Re-check the actual signed terms before keeping supervision active.",409);
   if(status==="active") {
     requireMfa(user);
     await validPartner(prior.organisation_id);
@@ -208,8 +211,8 @@ export async function updateSchoolEngagement(user:VerifiedKhposUser,raw:unknown)
     representative_user_id:representative,school_liaison:liaison,
     next_virtual_check_on:dateOrNull(input.next_virtual_check_on??prior.next_virtual_check_on,"next virtual check"),
     next_site_visit_on:dateOrNull(input.next_site_visit_on??prior.next_site_visit_on,"next site visit"),
-    contract_verified_at:checked?new Date().toISOString():prior.contract_verified_at,
-    contract_verified_by:checked?user.id:undefined,
+    contract_verified_at:checked?new Date().toISOString():agreementChanged?null:prior.contract_verified_at,
+    contract_verified_by:checked?user.id:agreementChanged?null:prior.contract_verified_by,
     updated_by:user.id,updated_at:new Date().toISOString()
   };
   const {data,error}=await db().from("kaec_hq_school_engagements").update(values)
