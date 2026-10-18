@@ -51,6 +51,12 @@ export interface HqRecord {
   updated_by: string;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  evidence_note: string;
+  review_note: string;
+  series_root_id: string | null;
+  previous_cycle_id: string | null;
+  series_anchor_on: string | null;
+  cycle_index: number;
   created_at: string;
   updated_at: string;
 }
@@ -117,10 +123,22 @@ function canAccess(member: HqMember, module: HqModule) {
 }
 function canEditRecord(member: HqMember, record: HqRecord, userId: string) {
   if (!canAccess(member, record.module)) return false;
-  if (member.role === "team_member") {
-    return [record.owner_user_id, record.backup_user_id, record.created_by].includes(userId);
-  }
-  return true;
+  if (member.role === "vision_custodian" || member.role === "system_steward") return true;
+  if (record.module === "finance" && member.role === "finance_steward") return true;
+  if (record.module === "partnerships" && member.role === "alliance_catalyst") return true;
+  if (record.module === "products" && ["product_architect", "movement_curator"].includes(member.role)) return true;
+  return [record.owner_user_id, record.backup_user_id, record.created_by].includes(userId);
+}
+function canReviewRecord(member: HqMember, record: HqRecord, actor: string) {
+  if (!canAccess(member, record.module)) return false;
+  if (record.created_by === actor || record.owner_user_id === actor) return false;
+  if (member.role === "vision_custodian") return true;
+  if (member.role === "system_steward" && record.module !== "finance") return true;
+  return member.role === "finance_steward" && record.module === "finance";
+}
+function isRoutineSelfCompletion(record: HqRecord) {
+  return record.module === "work" && ["task", "meeting_action", "recurring_obligation"].includes(record.record_type)
+    && ["low", "normal"].includes(record.priority);
 }
 function requireMfa(user: VerifiedKhposUser) {
   if (user.aal !== "aal2") throw new HqError("Verify your authenticator MFA to perform this corporate governance action.", 403);
@@ -152,13 +170,16 @@ function validateRecordFields(
     throw new HqError("Amount must be a non-negative value with at most two decimal places.");
   }
   if (module !== "finance" && amount !== null) throw new HqError("Financial values belong in Finance.");
+  if (module !== "work" && cadence !== "once") throw new HqError("Recurring cycles are currently available only for Work & Execution.");
+  if (module === "work" && cadence !== "once" && !due) throw new HqError("Recurring work needs a start due date.");
+  const evidence = stringValue(input.evidence_note ?? "", 5000, "evidence note");
   return {
     module,
     record_type: recordType,
     title: stringValue(input.title, 180, "title", 4),
     description: stringValue(input.description ?? "", 5000, "description"),
     status, priority, owner_user_id: owner, backup_user_id: backup,
-    due_on: due, cadence, currency, amount,
+    due_on: due, cadence, currency, amount, evidence_note: evidence,
   };
 }
 async function checkAppointedUsers(ids: (string | null)[]) {
@@ -204,7 +225,8 @@ export async function createHqRecord(user: VerifiedKhposUser, raw: unknown): Pro
   if (!dataModule(input.module) || !canAccess(actor, input.module)) throw new HqError("This corporate module is not assigned to your role.", 403);
   if (input.module === "finance") requireMfa(user);
   const values = validateRecordFields(input, input.module, user.id);
-  if (values.status === "completed" || values.status === "in_review") throw new HqError("Start new records as drafts or active work.");
+  if (values.status === "completed" || values.status === "in_review" || values.status === "cancelled") throw new HqError("Start new records as drafts or active work.");
+  if (actor.role === "team_member" && values.owner_user_id !== user.id) throw new HqError("Team members may create work only for themselves.", 403);
   await checkAppointedUsers([values.owner_user_id, values.backup_user_id]);
   const { error } = await db().from("kaec_hq_records").insert({ ...values, created_by: user.id, updated_by: user.id });
   if (error) throw new HqError("Could not create the corporate record: " + error.message, 500);
@@ -219,40 +241,84 @@ export async function updateHqRecord(user: VerifiedKhposUser, raw: unknown): Pro
   if (!canEditRecord(actor, previous, user.id)) throw new HqError("You cannot change this corporate record.", 403);
   if (previous.module === "finance") requireMfa(user);
   if (previous.status === "completed" || previous.status === "cancelled") throw new HqError("Closed records cannot be silently rewritten. Create a new record.", 409);
+  if (previous.status === "in_review") throw new HqError("Submitted records must first be returned by an independent reviewer.", 409);
   const values = validateRecordFields({ ...previous, ...input, module: previous.module }, previous.module, user.id);
-  if (values.status === "completed") throw new HqError("Submit for review, then an independent authorised reviewer can complete the item.");
-  if (previous.status === "in_review" && values.status !== "in_review" && values.status !== "active") {
-    throw new HqError("Review records may only be returned to active work.");
+  if (values.status === "completed" || values.status === "in_review") {
+    throw new HqError("Use Submit for review or Log routine completion to progress work.");
   }
+  if (actor.role === "team_member" && values.owner_user_id !== user.id) throw new HqError("Team members cannot reassign work to another person.", 403);
   await checkAppointedUsers([values.owner_user_id, values.backup_user_id]);
-  const { data, error } = await db().from("kaec_hq_records").update({ ...values, updated_by: user.id, updated_at: new Date().toISOString() }).eq("id", id).eq("updated_at", previous.updated_at).select("id");
+  const { data, error } = await db().from("kaec_hq_records").update({ ...values, review_note: "", reviewed_by: null, reviewed_at: null, updated_by: user.id, updated_at: new Date().toISOString() }).eq("id", id).eq("updated_at", previous.updated_at).select("id");
   if (error) throw new HqError("Could not update the corporate record.", 500);
   if (!data?.length) throw new HqError("Someone edited this record. Refresh and try again.", 409);
   return getHqSnapshot(user);
 }
-export async function reviewHqRecord(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
+async function transitionRecord(
+  user: VerifiedKhposUser,
+  raw: unknown,
+  mode: "submit" | "complete" | "review",
+): Promise<HqSnapshot> {
   const member = await memberFor(user);
   const input = ensureObject(raw);
   const id = idValue(input.id, "record ID");
-  if (!id) throw new HqError("Record ID required.");
+  if (!id) throw new HqError("Record ID is required.");
   const previous = await loadRecord(id);
-  if (previous.status !== "in_review") throw new HqError("Only work submitted for review can be verified.", 409);
-  if (!canAccess(member, previous.module)) throw new HqError("This review is outside your authority.", 403);
-  const verifier = member.role === "vision_custodian" || member.role === "system_steward" || (previous.module === "finance" && member.role === "finance_steward");
-  if (!verifier) throw new HqError("An authorised corporate reviewer is required.", 403);
-  if (previous.created_by === user.id || previous.owner_user_id === user.id) {
-    throw new HqError("Corporate evidence must be reviewed by a different authorised person.", 403);
+  const expectedStatus = mode === "review" ? "in_review" : "active";
+  if (previous.status !== expectedStatus) {
+    throw new HqError(mode === "review" ? "Only submitted work can be reviewed." : "Only active work can be progressed.", 409);
   }
-  if (previous.module === "finance" || previous.priority === "critical") requireMfa(user);
-  const decision = pick(input.decision, ["approve", "return"] as const, "review decision");
-  const { data, error } = await db().from("kaec_hq_records").update({
-    status: decision === "approve" ? "completed" : "active",
-    reviewed_by: user.id, reviewed_at: new Date().toISOString(),
-    updated_by: user.id, updated_at: new Date().toISOString(),
-  }).eq("id", id).eq("status", "in_review").eq("updated_at", previous.updated_at).select("id");
-  if (error) throw new HqError("Review decision could not be recorded.", 500);
-  if (!data?.length) throw new HqError("This record changed while you were reviewing it. Refresh.", 409);
+  const now = new Date().toISOString();
+  const updates: Record<string, unknown> = { updated_by: user.id, updated_at: now };
+
+  if (mode === "review") {
+    if (!canReviewRecord(member, previous, user.id)) {
+      throw new HqError("This record needs an independent authorised reviewer. The author or owner cannot approve it.", 403);
+    }
+    const decision = pick(input.decision, ["approve", "return"] as const, "review decision");
+    const reviewNote = stringValue(input.note, 2000, "review decision note", 12);
+    if (previous.module === "finance" || previous.priority === "critical") requireMfa(user);
+    updates.status = decision === "approve" ? "completed" : "active";
+    updates.review_note = reviewNote;
+    updates.reviewed_by = user.id;
+    updates.reviewed_at = now;
+  } else {
+    if (!canEditRecord(member, previous, user.id)) throw new HqError("You cannot progress this record.", 403);
+    const evidence = stringValue(input.evidence_note, 5000, "completion or submission evidence", 15);
+    if (mode === "complete") {
+      if (!isRoutineSelfCompletion(previous) || previous.owner_user_id !== user.id) {
+        throw new HqError("Direct completion is allowed only for your own routine work. Controlled items need independent review.", 403);
+      }
+      updates.status = "completed";
+      updates.review_note = "Owner-attested routine completion; independent approval not claimed.";
+      updates.reviewed_by = null;
+      updates.reviewed_at = null;
+    } else {
+      if (previous.created_by === previous.owner_user_id && previous.owner_user_id === user.id) {
+        // Submission is allowed; the future independent reviewer must be someone else.
+      }
+      updates.status = "in_review";
+      updates.review_note = "";
+      updates.reviewed_by = null;
+      updates.reviewed_at = null;
+    }
+    if (previous.module === "finance" || previous.priority === "critical") requireMfa(user);
+    updates.evidence_note = evidence;
+  }
+  const { data, error } = await db().from("kaec_hq_records").update(updates)
+    .eq("id", id).eq("status", expectedStatus)
+    .eq("updated_at", previous.updated_at).select("id");
+  if (error) throw new HqError("Corporate workflow update failed: " + error.message, 500);
+  if (!data?.length) throw new HqError("This record changed. Refresh and try again.", 409);
   return getHqSnapshot(user);
+}
+export async function submitHqRecord(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
+  return transitionRecord(user, raw, "submit");
+}
+export async function completeRoutineHqRecord(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
+  return transitionRecord(user, raw, "complete");
+}
+export async function reviewHqRecord(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
+  return transitionRecord(user, raw, "review");
 }
 export async function changeHqMember(user: VerifiedKhposUser, raw: unknown): Promise<HqSnapshot> {
   const actor = await memberFor(user);
