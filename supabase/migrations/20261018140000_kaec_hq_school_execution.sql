@@ -94,8 +94,9 @@ create or replace function public.kaec_hq_audit_school_execution()
 returns trigger language plpgsql set search_path=public,pg_temp as $$
 declare actor uuid;
 begin
- actor:=case when tg_table_name='kaec_hq_school_followups' then new.recorded_by
-             else new.updated_by end;
+ actor:=case when tg_table_name='kaec_hq_school_followups'
+             then (to_jsonb(new)->>'recorded_by')::uuid
+             else (to_jsonb(new)->>'updated_by')::uuid end;
  insert into public.kaec_hq_school_events(entity_kind,entity_id,actor_user_id,action,before_state,after_state)
  values (tg_table_name,new.id,actor,lower(tg_op),
    case when tg_op='UPDATE' then to_jsonb(old) else null end,to_jsonb(new));
