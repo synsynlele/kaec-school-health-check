@@ -108,6 +108,7 @@ export function ReportsWorkspace({
     [selected, setSelected] = useState<string | null>(null),
     [editor, setEditor] = useState<ReportType | null | false>(false);
   const deepLinkHandled = useRef(false);
+  const listRequest = useRef(0);
   const endpoint = `/api/khpos/reports?school=${organisationId}`;
   const request = useCallback(
     async (input?: Record<string, unknown>, params = "") => {
@@ -131,12 +132,17 @@ export function ReportsWorkspace({
   );
   const params = compact
     ? "&summary=1"
-    : `&q=${encodeURIComponent(query)}&status=${encodeURIComponent(status)}&offset=${offset}&type=${typeFilter}&from=${from}&to=${to}`;
+    : `&view=${tab === "review" ? "review" : "mine"}&q=${encodeURIComponent(query)}&status=${encodeURIComponent(status)}&offset=${offset}&type=${typeFilter}&from=${from}&to=${to}`;
   const load = useCallback(async () => {
+    const version=++listRequest.current;
     try {
-      setData((await request(undefined, params)).workspace);
+      const response=await request(undefined, params);
+      if(version!==listRequest.current)return;
+      setData(response.workspace);
       setError("");
     } catch (cause) {
+      if(version!==listRequest.current)return;
+      setData(null);
       setError(
         cause instanceof Error ? cause.message : "Reports could not load.",
       );
@@ -144,10 +150,11 @@ export function ReportsWorkspace({
   }, [request, params]);
   useEffect(() => {
     let live = true;
+    const version=++listRequest.current;
     const timer = window.setTimeout(() => {
       void request(undefined, params)
         .then((body) => {
-          if (live) {
+          if (live && version===listRequest.current) {
             setData(body.workspace);
             setError("");
             if (!deepLinkHandled.current) {
@@ -160,7 +167,7 @@ export function ReportsWorkspace({
           }
         })
         .catch((cause) => {
-          if (live) setError(cause.message);
+          if (live && version===listRequest.current) { setData(null); setError(cause.message); }
         });
     }, 250);
     return () => {
@@ -184,7 +191,10 @@ export function ReportsWorkspace({
     let live = true;
     void request(undefined, `&report=${selected}`)
       .then((body) => {
-        if (live) setDetail(body.workspace);
+        if (live) {
+          setDetail(body.workspace);
+          if(body.workspace.items[0]?.canReview && !body.workspace.items[0]?.isMine) setTab("review");
+        }
       })
       .catch((cause) => {
         if (live) setError(cause.message);
@@ -226,7 +236,9 @@ export function ReportsWorkspace({
           ? "Draft saved."
           : input.mode === "submit"
             ? "Report submitted to its designated reviewer."
-            : "Saved. The reporting history has been retained.",
+            : input.mode === "return"
+              ? "Returned to its author. Corrections remain private until resubmitted."
+              : "Saved. The reporting history has been retained.",
       );
       window.dispatchEvent(
         new CustomEvent(KHPOS_ACTIVITY_CHANGED, { detail: { organisationId } }),
@@ -327,7 +339,8 @@ export function ReportsWorkspace({
       </div>
       <nav aria-label="Report views" className="flex flex-wrap gap-2">
         {[
-          ["reports", "Reports & history"],
+          ["reports", "My reports"],
+          ["review", "Reports to review"],
           ["log", "Log a report"],
           ["types", "Report types & schedules"],
         ].map(([key, label]) => (
@@ -337,6 +350,8 @@ export function ReportsWorkspace({
             aria-pressed={tab === key}
             className={tab === key ? primary : button}
             onClick={() => {
+              ++listRequest.current;
+              setData(null);setStatus("");setOffset(0);
               setTab(key);
               setEditor(false);
               setSelected(null);
@@ -347,8 +362,9 @@ export function ReportsWorkspace({
           </button>
         ))}
       </nav>
-      {tab === "reports" && (
+      {(tab === "reports" || tab === "review") && (
         <>
+          <p className="rounded-xl bg-brand-50 p-3 text-sm text-brand-950">{tab === "review" ? "Reviewer inbox: only reports submitted to your authorised reviewer role and scope. Unsubmitted drafts are private to their author." : "Your own assigned reports and submitted history. Reports you review for other staff appear separately in Reports to review."}</p>
           <form
             className="grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2"
             onSubmit={(e) => e.preventDefault()}
@@ -987,6 +1003,8 @@ function TypeCard({
         {t.cadence === "custom_days" ? ` (${t.interval_days})` : ""} · Owner:{" "}
         {roles.find((r) => r.id === t.owner_role_id)?.title} · Reviewer:{" "}
         {roles.find((r) => r.id === t.reviewer_role_id)?.title}
+        <br />Audience: {t.audience_mode === "selected" ? `Selected staff${t.canManage ? ` (${t.audience_assignment_ids?.length ?? 0})` : ""}` : "Everyone in the submitter role"}
+        {t.audience_mode === "selected" && t.canManage && !t.audience_assignment_ids?.length && <strong className="block text-amber-800">Select the intended staff before activating this report.</strong>}
         <br />
         Starts {dateOnly(t.start_date)}
         {t.end_date ? ` · Ends ${dateOnly(t.end_date)}` : ""} · Due {t.due_days}{" "}
@@ -1002,7 +1020,7 @@ function TypeCard({
       {t.canManage && (
         <div className="flex flex-wrap gap-3">
           <button className={button} disabled={busy} onClick={onEdit}>
-            Edit form & future deadlines
+            Edit form, audience & deadlines
           </button>
           <button
             className={button}
@@ -1078,12 +1096,17 @@ function TypeEditor({
       t?.fields ?? standardFields.map((f) => ({ ...f })),
     ),
     [cadence, setCadence] = useState(t?.cadence ?? "weekly");
+  const [ownerRole,setOwnerRole]=useState(t?.owner_role_id??"");
+  const [audienceMode,setAudienceMode]=useState(t?.audience_mode??"all_role");
+  const [audienceIds,setAudienceIds]=useState<string[]>(t?.audience_assignment_ids??[]);
   const scopeIndex = t
     ? workspace.scopes.findIndex(
         (s) => s.campusId === t.campus_id && s.unitId === t.unit_id,
       )
     : 0;
   const [scope, setScope] = useState(Math.max(0, scopeIndex));
+  const eligibleRecipients=(workspace.recipients??[]).filter(a=>a.roleId===ownerRole && (!workspace.scopes[scope]?.campusId || a.campusId===workspace.scopes[scope].campusId) && (!workspace.scopes[scope]?.unitId || a.unitId===workspace.scopes[scope].unitId));
+  const activeAudienceIds=audienceIds.filter(id=>eligibleRecipients.some(a=>a.id===id));
   function update(index: number, value: Partial<ReportField>) {
     setFields((old) =>
       old.map((f, i) => (i === index ? { ...f, ...value } : f)),
@@ -1108,6 +1131,8 @@ function TypeEditor({
           unitId: s.unitId,
           ownerRoleId: t?.owner_role_id ?? f.get("owner"),
           reviewerRoleId: t?.reviewer_role_id ?? f.get("reviewer"),
+          audienceMode,
+          audienceAssignmentIds: activeAudienceIds,
           cadence,
           intervalDays: Number(f.get("interval") || t?.interval_days || 14),
           startDate: f.get("start"),
@@ -1123,8 +1148,7 @@ function TypeEditor({
         {t ? "Edit report type" : "Create report type"}
       </h3>
       <p className="text-sm text-slate-600">
-        Choose a scope, submitter role and reviewer role. Each matching active
-        position gets its own report. Reviewers must have an active assignment
+        Choose a scope, submitter role and reviewer role. Assign the report to everyone in that role or explicitly select the staff positions that need it. For a class-teacher report, select only the appointed class teachers. Reviewers must have an active assignment
         covering the submitter’s campus and section; nobody can review their own
         report.
       </p>
@@ -1157,7 +1181,7 @@ function TypeEditor({
             disabled={!!t}
             className={field}
             value={scope}
-            onChange={(e) => setScope(Number(e.target.value))}
+            onChange={(e) => {setScope(Number(e.target.value));setAudienceIds([]);}}
           >
             {workspace.scopes.map((s, i) => (
               <option key={i} value={i}>
@@ -1186,7 +1210,8 @@ function TypeEditor({
           <select
             name="owner"
             required
-            defaultValue={t?.owner_role_id ?? ""}
+            value={ownerRole}
+            onChange={e=>{setOwnerRole(e.target.value);setAudienceIds([]);}}
             className={field}
             disabled={!!t}
           >
@@ -1219,6 +1244,15 @@ function TypeEditor({
             ))}
           </select>
         </label>
+        <label className="block text-sm font-bold">Who must submit this report?
+          <select className={field} value={audienceMode} onChange={e=>setAudienceMode(e.target.value === "selected" ? "selected" : "all_role")}><option value="all_role">Everyone in the selected role</option><option value="selected">Only selected staff positions</option></select>
+        </label>
+        {audienceMode === "selected" && <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 sm:col-span-2"><legend className="px-1 text-sm font-bold">Select the actual submitters</legend>
+          <p className="text-xs text-slate-600">Selection changes hide unsubmitted obligations for removed staff; existing submitted reports remain in their private history. Save, then activate the schedule when ready.</p>
+          {eligibleRecipients.map(a=><label key={a.id} className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={audienceIds.includes(a.id)} onChange={e=>setAudienceIds(ids=>e.target.checked?[...ids,a.id]:ids.filter(id=>id!==a.id))}/>{a.label}</label>)}
+          {!ownerRole && <p className="text-sm">Choose the submitter role first.</p>}
+          {activeAudienceIds.length===0 && <p className="text-sm font-bold text-amber-800">Select at least one staff position to save.</p>}
+        </fieldset>}
         <label className="block text-sm font-bold">
           Start date
           <input
@@ -1408,7 +1442,7 @@ function TypeEditor({
         </label>
       )}
       <div className="flex flex-wrap gap-3">
-        <button className={primary} disabled={busy || !workspace.scopes.length}>
+        <button className={primary} disabled={busy || !workspace.scopes.length || (audienceMode === "selected" && activeAudienceIds.length === 0)}>
           Save report type
         </button>
         <button className={button} type="button" onClick={onCancel}>
