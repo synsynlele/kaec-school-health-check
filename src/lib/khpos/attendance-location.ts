@@ -26,7 +26,7 @@ export function needsLocationReview(location: AttendanceLocation | null | undefi
 }
 
 /** One reading in direct response to an attendance tap. Never watches the user. */
-export function captureAttendanceLocation(): Promise<LocationCapture> {
+export function captureAttendanceLocation({ timeoutMs = 12000 }: { timeoutMs?: number } = {}): Promise<LocationCapture> {
   if (typeof navigator === "undefined" || !navigator.geolocation)
     return Promise.resolve({ status: "unsupported" });
   return new Promise(resolve => {
@@ -35,13 +35,23 @@ export function captureAttendanceLocation(): Promise<LocationCapture> {
       if (finished) return;
       finished = true; clearTimeout(timer); resolve(value);
     };
-    const timer = setTimeout(() => finish({ status: "timeout" }), 15000);
+    const timeout = Math.max(1000, Math.min(30000, timeoutMs));
+    const timer = setTimeout(() => finish({ status: "timeout" }), timeout + 3000);
     try {
       navigator.geolocation.getCurrentPosition(p => finish({
         status: "captured", latitude: p.coords.latitude, longitude: p.coords.longitude,
         accuracy: p.coords.accuracy, capturedAt: new Date(p.timestamp).toISOString(),
       }), e => finish({ status: e.code === 1 ? "denied" : e.code === 3 ? "timeout" : "unavailable" }),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
+      { enableHighAccuracy: true, maximumAge: 0, timeout });
     } catch { finish({ status: "unavailable" }); }
   });
+}
+
+export function locationCaptureHelp(status: LocationCapture["status"]) {
+  switch (status) {
+    case "denied": return "Location permission was blocked. Enable location for KHP-OS or Chrome in your phone settings and allow it for www.kshc.name.ng, then retry. You can also enter the campus coordinates manually.";
+    case "timeout": return "The phone took too long to find its position. Turn on Location and precise location, move near a window or outdoors, then retry. You can also enter the campus coordinates manually.";
+    case "unsupported": return "This browser cannot provide location. Open KHP-OS in an up-to-date browser or enter the campus coordinates manually.";
+    default: return "The phone could not find its position. Check that Location is on and precise location is allowed, then retry outdoors or enter the campus coordinates manually.";
+  }
 }
