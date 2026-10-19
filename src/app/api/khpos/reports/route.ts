@@ -34,6 +34,7 @@ async function handle(request: Request, write: boolean) {
           items: [],
           types: [],
           roles: [],
+          recipients: [],
           scopes: [],
           history: [],
           total: 0,
@@ -98,6 +99,7 @@ async function handle(request: Request, write: boolean) {
     return reply({
       id,
       workspace: await getReports(user.id, school, {
+        view: url.searchParams.get("view") === "review" ? "review" : "mine",
         query: (url.searchParams.get("q") || "").slice(0, 160),
         status: url.searchParams.get("status") || "",
         offset: Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0,

@@ -13,6 +13,8 @@ export type ReportType = {
   instructions: string;
   campus_id: string | null;
   unit_id: string | null;
+  audience_mode: "all_role" | "selected";
+  audience_assignment_ids?: string[];
   owner_role_id: string;
   reviewer_role_id: string;
   cadence: string;
@@ -53,6 +55,7 @@ export type SchoolReport = {
   submitted_at: string | null;
   reviewed_at: string | null;
   review_note: string | null;
+  isMine: boolean;
   canEdit: boolean;
   canReview: boolean;
   reviewerAvailable: boolean;
@@ -68,6 +71,7 @@ export type ReportsWorkspace = {
   types: ReportType[];
   scopes: { campusId: string | null; unitId: string | null; label: string }[];
   roles: { id: string; title: string }[];
+  recipients: {id:string;roleId:string;campusId:string|null;unitId:string|null;label:string}[];
   history: {
     id: string;
     action: string;
@@ -90,6 +94,7 @@ export async function getReports(
   actor: string,
   school: string,
   options: {
+    view?: "mine" | "review";
     query?: string;
     status?: string;
     offset?: number;
@@ -105,7 +110,7 @@ export async function getReports(
       p_actor: actor,
       p_school: school,
       p_query: options.query || "",
-      p_status: options.status || "",
+      p_status: (options.view === "review" ? "reviewer:" : "mine:") + (options.status || ""),
       p_offset: options.offset || 0,
       p_report: options.report || null,
       p_type: options.type || null,

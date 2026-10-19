@@ -37,7 +37,7 @@
     "test:schools-campuses": "node scripts/test-schools-campuses.mjs",
     "test:position-lifecycle": "node scripts/test-position-lifecycle.mjs",
     "test:announcements": "node scripts/test-announcements.mjs && node scripts/test-announcement-alerts.mjs",
-    "test:reporting-centre": "node scripts/test-reporting-centre.mjs && node scripts/test-report-alerts.mjs",
+    "test:reporting-centre": "node scripts/test-reporting-centre.mjs && node scripts/test-report-alerts.mjs && node scripts/test-report-audience-privacy.mjs && node scripts/test-report-audience-ui.mjs",
     "test:notification-sound": "node scripts/test-notification-sound.mjs",
     "test:learning-sections": "node scripts/test-learning-sections.mjs",
     "test:tool-guides": "node scripts/test-tool-guides.mjs",
