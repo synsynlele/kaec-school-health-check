@@ -51,6 +51,10 @@ The app opens to `/khpos` where reviewers can sign in to an authorised school ac
 
 When validating the TWA, use the **Play App Signing certificate** (not merely the local upload certificate) to check Android Digital Asset Links for the package and domain.
 
+## Attendance location disclosure update (October 2026)
+
+Point-in-time attendance GPS now collects precise location (latitude/longitude, accuracy and capture/receipt times) with phone permission at staff and on-site Pathfinder check-in/out. It is used for attendance/app functionality and campus-boundary exception review. There is no continuous/background tracking. If unavailable or declined, attendance can be recorded with an explanation. Update the Play Console Data safety answers to match this collection and the published privacy policy before using location collection in the Play-distributed app. This web release does not submit those Console declarations.
+
 ## Data safety operator mapping — review before answering Play Console
 
 Account and school records can include email, name, school association, staff/parent/learner information, user-created text, school activity records, photos/files if uploaded through enabled modules, attendance or performance evidence, and restricted safeguarding/welfare information. Diagnostic and AI features may process submitted information through configured service providers. Auth, hosting and operating platforms process technical/security information. Do not claim the app collects *no* personal/learner information.

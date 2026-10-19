@@ -9,6 +9,11 @@ import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic
 import type { KhposHqlsDomain } from "@/lib/khpos/ops/presence";
 import type { KhposPresenceWorkspace, KhposPresenceHistory } from "@/lib/khpos/ops/presence";
 
+import { useAttendanceLocation } from "@/components/khpos/useAttendanceLocation";
+import { AttendanceLocationEvidence } from "@/components/khpos/AttendanceLocationEvidence";
+import { CampusLocationPanel } from "@/components/khpos/CampusLocationPanel";
+import { needsLocationReview } from "@/lib/khpos/attendance-location";
+
 type Panel = "day" | "lessons" | "hqls" | "leaders";
 type Domain = { code:string; name:string; test:string; automatic?:string };
 const HQLS: Domain[] = [
@@ -39,6 +44,9 @@ function possibleToday(date:string,weekday:number) {
 function ratingText(score:number) { return score===3?"Strong":score===2?"Partial":"Weak"; }
 
 export function TeacherPresenceWorkspace({organisationId}:{organisationId:string}) {
+  const locationCapture=useAttendanceLocation();
+  const [locationNote,setLocationNote]=useState("");
+  const [exceptionsOnly,setExceptionsOnly]=useState(false);
   const supabase=useMemo(()=>createBrowserSupabaseClient(),[]);
   const [data,setData]=useState<KhposPresenceWorkspace|null>(null);
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
@@ -125,6 +133,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   async function act(mode:string,payload:Record<string,unknown>={},label="Action saved") {
     setBusy(mode);setError("");setNotice("");
     try{
+      if(mode==="school_in"||mode==="school_out") {
+        setNotice("Getting your location for this attendance action…");
+        const location=await locationCapture.capture(locationNote);
+        if(!location){setNotice("");return false;}
+        payload={...payload,location};setNotice("");
+      }
       const token=await authToken();
       const response=await fetch("/api/khpos/ops/presence/"+organisationId,{
         method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
@@ -193,9 +207,10 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const observed=(data?.observations??[]);
   const own=(data?.periods??[]).filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()));
   const presenceMatches=(value:string)=>presenceQuery.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term=>value.toLowerCase().includes(term));
-  const schoolRows=(presenceHistory?.schoolRecords??[]).filter(d=>presenceMatches([d.name,data?.campuses.find(c=>c.id===d.campusId)?.name??"",d.in,d.out??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.name.localeCompare(b.name):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
+  const schoolRows=(presenceHistory?.schoolRecords??[]).filter(d=>!exceptionsOnly||needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).filter(d=>presenceMatches([d.name,data?.campuses.find(c=>c.id===d.campusId)?.name??"",d.in,d.out??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.name.localeCompare(b.name):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
   const classRows=(presenceHistory?.classRecords??[]).filter(d=>presenceMatches([d.teacher,d.class,d.subject,d.topic??"",d.outcome??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.teacher.localeCompare(b.teacher):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
+    {locationCapture.dialog}
     <div className="mx-auto max-w-6xl space-y-5">
       <Link href={"/khpos/"+organisationId} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
         <ArrowLeft className="size-4"/> School Overview
@@ -237,13 +252,16 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         {tab==="day"&&<div className="grid gap-4 lg:grid-cols-2">
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
-            <p className="mb-4 text-sm text-slate-600">First record your arrival at school. When you leave, record your departure. Both actions save the date and exact time. Your classes must be recorded separately.</p>
+            <p className="mb-4 text-sm text-slate-600">Arrival and departure save server time and request one location reading, with your permission. Your supervisors can view the coordinates and accuracy. No background tracking. If GPS fails, explain why and still record attendance. Your classes are recorded separately.</p>
+            <label className="mb-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
             {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your School Guardian to complete People & Staff onboarding.</p>
             :<div className="space-y-3">
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
               <p className="text-sm"><b>School day:</b> {data.localDay}</p>
               {data.todayPresence?<>
                 <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>School check-in recorded:</b> {dateTime(data.todayPresence.in)}<br/><b>School check-out recorded:</b> {dateTime(data.todayPresence.out)}{data.todayPresence.administrativelyClosed?" (administratively closed)":""}</p>
+                <AttendanceLocationEvidence location={data.todayPresence.checkInLocation} label="Arrival location"/>
+                {data.todayPresence.out&&<AttendanceLocationEvidence location={data.todayPresence.checkOutLocation} label="Departure location"/>}
                 {!data.todayPresence.out&&<button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-out</button>}
               </>:<>
                 <label className="block text-sm font-bold text-slate-800" htmlFor="schoolCampus">Campus</label>
@@ -267,6 +285,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           </section>
         </div>}
 
+        {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">Scheduled subject lessons</h2>
@@ -452,9 +471,10 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           <section className={box} aria-label="School attendance records">
             <h3 className="text-lg font-black text-slate-900">1. School check-in and check-out</h3>
             <p className="mt-1 text-sm text-slate-600">Staff arrival and departure across the selected dates. A school check-in does not prove a class was taught.</p>
+            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions on this page ({(presenceHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
             {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
               <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[650px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">School date</th><th className="p-2">School check-in recorded</th><th className="p-2">School check-out recorded</th></tr></thead>
-                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}</td><td className="p-2">{dateTime(d.out)}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div>}
+                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}<AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/></td><td className="p-2">{dateTime(d.out)}{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div>}
           </section>
           <section className={box} aria-label="Class attendance records">
             <h3 className="text-lg font-black text-slate-900">2. Class lesson check-in and check-out</h3>
