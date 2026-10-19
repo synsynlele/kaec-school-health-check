@@ -37,7 +37,7 @@ vm.runInNewContext(ts.transpileModule(configSource, { compilerOptions: { module:
 const headers = await configExports.default.headers();
 const policy = item => item.headers.find(h => h.key === "Permissions-Policy").value;
 assert.match(policy(headers.find(x => x.source === "/khpos/:path*")), /geolocation=\(\)/);
-for (const path of ["/khpos/:organisationId/teaching-presence", "/khpos/hq/schools"])
+for (const path of ["/khpos/:organisationId/teaching-presence", "/khpos/:organisationId/work", "/khpos/hq/schools"])
   assert.match(policy(headers.find(x => x.source === path)), /geolocation=\(self\)/);
 console.log("Attendance location browser capture passed: user-triggered single reading, fresh high-accuracy request, all permission/error paths, timeout cleanup and exception classification.");
 

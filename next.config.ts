@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
         source: "/api/khpos/:path*",
         headers: privateSecurityHeaders,
       },
-      ...["/khpos/:organisationId/teaching-presence", "/khpos/hq/schools"].map(source => ({
+      ...["/khpos/:organisationId/teaching-presence", "/khpos/:organisationId/work", "/khpos/hq/schools"].map(source => ({
         source,
         headers: privateSecurityHeaders.map(header => header.key === "Permissions-Policy"
           ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)") }

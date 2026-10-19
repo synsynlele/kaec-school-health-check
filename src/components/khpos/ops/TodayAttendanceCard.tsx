@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock3, School, BookOpenCheck, AlertCircle, Loader2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import { attendanceSteps, type AttendanceStep } from "@/lib/khpos/ops/attendance-guidance";
 import type { KhposPresenceWorkspace } from "@/lib/khpos/ops/presence";
+
+import { createAttendanceRefreshGate } from "@/lib/khpos/ops/attendance-refresh";
+import { useAttendanceLocation } from "@/components/khpos/useAttendanceLocation";
+import { AttendanceLocationEvidence } from "@/components/khpos/AttendanceLocationEvidence";
 
 function recordedAt(value: string | null) {
   return value ? new Intl.DateTimeFormat("en-NG", {
@@ -63,12 +67,12 @@ function AttendanceRow({
           {canRecord && step.kind !== "school_out" &&
             <button type="button" disabled={busy} onClick={() => onRecord(step.kind as "school_in" | "class_in", step.periodId)}
               className="rounded-full bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
-              {step.actionLabel}
+              {busy ? "Saving attendance…" : step.actionLabel}
             </button>}
           {canRecord && step.kind === "school_out" &&
             <button type="button" disabled={busy} onClick={() => onRecord("school_out", null)}
               className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
-              Record school departure
+              {busy ? "Saving attendance…" : "Record school departure"}
             </button>}
           <Link href={destination} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-800">
             {step.kind === "class_out" ? "Record lesson outcome" : step.status === "missed" ? "Open attendance help" : "Open attendance"}
@@ -80,6 +84,8 @@ function AttendanceRow({
 }
 
 export function TodayAttendanceCard({ organisationId }: { organisationId: string }) {
+  const refreshGate = useRef(createAttendanceRefreshGate());
+  const locationCapture = useAttendanceLocation();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [presence, setPresence] = useState<KhposPresenceWorkspace | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +96,8 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const load = useCallback(async () => {
+    const read = refreshGate.current.startRead();
+    if (read === null) return;
     if (!supabase) { setError("Sign in to see school attendance."); setLoading(false); return; }
     try {
       const session = (await supabase.auth.getSession()).data.session;
@@ -99,13 +107,14 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       });
       const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string };
       if (!response.ok || !body.ok || !body.workspace) throw new Error(body.error || "School attendance could not load.");
+      if (!refreshGate.current.canApplyRead(read)) return;
       setPresence(body.workspace);
       setCampusId((current) => current || body.workspace?.staff?.campusId || body.workspace?.campuses[0]?.id || "");
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load school attendance.");
+      if (refreshGate.current.canApplyRead(read)) setError(cause instanceof Error ? cause.message : "Could not load school attendance.");
     } finally {
-      setLoading(false);
+      if (refreshGate.current.canApplyRead(read)) setLoading(false);
     }
   }, [organisationId, supabase]);
 
@@ -133,14 +142,18 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
   async function record(kind: "school_in" | "school_out" | "class_in", periodId: string | null) {
     if (!supabase || !presence || busy) return;
     if (kind === "school_out" && !window.confirm("Are you leaving school now? Your departure time will be recorded.")) return;
+    if (!refreshGate.current.beginWrite()) return;
     setBusy(true); setError(""); setNotice("");
     try {
+      if (kind === "school_in" || kind === "school_out") setNotice("Getting your location before saving attendance…");
+      const location = kind === "school_in" || kind === "school_out" ? await locationCapture.capture() : undefined;
+      if (location === null) { setNotice(""); return; }
       const session = (await supabase.auth.getSession()).data.session;
       if (!session?.access_token) throw new Error("Your session has ended. Sign in again.");
       const response = await fetch(`/api/khpos/ops/presence/${organisationId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: kind, ...(kind === "school_in" ? { campusId } : {}),
+        body: JSON.stringify({ mode: kind, ...(location ? { location } : {}), ...(kind === "school_in" ? { campusId } : {}),
           ...(kind === "class_in" ? { periodId } : {}) }),
       });
       const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string };
@@ -151,12 +164,13 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
         kind === "school_out" ? "School departure saved with date and time." : "Class start saved with date and time.");
       announceKhposActivityChanged(organisationId);
     } catch (cause) {
+      setNotice("");
       setError(cause instanceof Error ? cause.message : "Attendance could not be saved. Please try again.");
-    } finally { setBusy(false); }
+    } finally { refreshGate.current.finishWrite(); setBusy(false); setLoading(false); }
   }
 
   const steps = presence ? attendanceSteps(presence, nowMs) : [];
-  const schoolSteps = steps.filter((step) => step.kind.startsWith("school"));
+  const schoolSteps = steps.filter((step) => step.kind === (presence?.todayPresence?.in ? "school_out" : "school_in") && step.status !== "done");
   const classSteps = steps.filter((step) => step.kind.startsWith("class"));
   const due = steps.filter((step) => step.status === "due").length;
   const done = steps.filter((step) => step.status === "done").length;
@@ -165,6 +179,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
 
   return (
     <section aria-label="Today's school attendance and classes" className="rounded-[30px] border border-brand-200 bg-white p-5 shadow-sm sm:p-8">
+      {locationCapture.dialog}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-brand-700">Daily attendance</p>
@@ -199,6 +214,15 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       </div>}
       {presence?.pilotEnabled && presence.staff && (
         <>
+          <p className="mt-4 text-base font-black text-slate-950">Staff member: {presence.staff.name || "Your staff profile"}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-600">Arrival and departure request one location reading with your permission. Only you and authorised attendance leaders can view it. No background tracking. If unavailable, explain why to record attendance.</p>
+          {presence.todayPresence && <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+            <p><strong>{presence.todayPresence.out ? "School attendance completed" : "Checked in — record check-out when you leave"}</strong></p>
+            <p className="mt-1">Check-in: {recordedAt(presence.todayPresence.in)}</p>
+            <p>Check-out: {recordedAt(presence.todayPresence.out)}</p>
+            <AttendanceLocationEvidence location={presence.todayPresence.checkInLocation} label="Arrival location"/>
+            {presence.todayPresence.out && <AttendanceLocationEvidence location={presence.todayPresence.checkOutLocation} label="Departure location"/>}
+          </div>}
           <p className="mt-5 text-sm font-semibold text-slate-700">{due} action{due === 1 ? "" : "s"} due now · {done} recorded</p>
           {schoolSteps.length > 0 &&
             <div className="mt-4">
