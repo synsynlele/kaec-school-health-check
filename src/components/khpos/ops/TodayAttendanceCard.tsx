@@ -253,7 +253,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
             </div>}
           </div>
           <p className="mt-5 rounded-xl bg-brand-50 p-3 text-sm leading-6 text-brand-950">
-            <strong>Need phone reminders?</strong> Open the bell icon and select <strong>Enable device alerts</strong>.
+            <strong>Need phone reminders?</strong> Open the bell icon → <strong>Notification settings</strong> → <strong>Enable device alerts</strong>.
             Reminders appear only for actions that are due, and stop once you record them.
           </p>
         </>
