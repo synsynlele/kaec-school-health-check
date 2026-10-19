@@ -36,9 +36,8 @@ const configExports = {};
 vm.runInNewContext(ts.transpileModule(configSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: configExports });
 const headers = await configExports.default.headers();
 const policy = item => item.headers.find(h => h.key === "Permissions-Policy").value;
-assert.match(policy(headers.find(x => x.source === "/khpos/:path*")), /geolocation=\(\)/);
-for (const path of ["/khpos/:organisationId/teaching-presence", "/khpos/:organisationId/work", "/khpos/hq/schools"])
-  assert.match(policy(headers.find(x => x.source === path)), /geolocation=\(self\)/);
+assert.match(policy(headers.find(x => x.source === "/khpos/:path*")), /geolocation=\(self\)/, "Opening app document must allow later attendance navigation");
+assert.match(policy(headers.find(x => x.source === "/api/khpos/:path*")), /geolocation=\(\)/);
 console.log("Attendance location browser capture passed: user-triggered single reading, fresh high-accuracy request, all permission/error paths, timeout cleanup and exception classification.");
 
 const longCapture = environment({ getCurrentPosition(success, _failure, options) { assert.equal(options.timeout, 30000); success({coords:{latitude:6.55,longitude:3.25,accuracy:500},timestamp:Date.now()}); } });

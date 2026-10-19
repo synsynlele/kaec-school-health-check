@@ -6,6 +6,8 @@ Campus-pin setup allows up to 30 seconds for a fresh position. A reading with ac
 
 On-site Pathfinder schedules select an active campus belonging to that school. Previously scheduled visits without a campus select it at arrival. Virtual activities do not request GPS. A visit's campus cannot change after arrival.
 
+KHP-OS documents allow same-origin geolocation because client-side navigation retains the opening document’s permission policy. This allowance does not request or collect location by itself; API responses keep their restrictive policy.
+
 Each school or on-site visit check-in/out requests one fresh device position (12 second browser timeout; 15 second fallback). The screen explains purpose, supervisor access and no background tracking before the action. Denied, unavailable, unsupported or timed-out capture opens a reason dialog; the user can record with a 5–500 character explanation or cancel. An optional attendance explanation supports off-site duties. Existing clients can still record attendance; missing location is explicitly marked not recorded rather than silently passing verification.
 
 The server validates coordinate/accuracy ranges, records its receipt time, snapshots the campus boundary, and calculates distance using a clamped Haversine calculation. A reading older than two minutes or over 30 seconds in the future is flagged stale. Accuracy worse than 100 m is flagged low accuracy. A reading wholly inside the boundary including its accuracy circle is within boundary; wholly outside is outside; intersecting the boundary needs accuracy review. No configured pin is a separate flag. Attendance is never rejected merely because GPS is unavailable, inaccurate or off-site.
