@@ -2,10 +2,11 @@ import {NextResponse} from "next/server";
 import {bearerTokenFromRequest,verifyKhposAccessToken,KhposAuthError} from "@/lib/khpos/auth";
 import {SchoolDeskError} from "@/lib/khpos/hq-schools";
 import {getPathfinderSessions,schedulePathfinder,actOnPathfinderSession} from "@/lib/khpos/hq-sessions";
+import {KhposPresenceError} from "@/lib/khpos/ops/presence";
 export const runtime="nodejs";export const dynamic="force-dynamic";
 function json(body:unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});}
 function fail(e:unknown){
- if(e instanceof KhposAuthError||e instanceof SchoolDeskError)return json({ok:false,error:e.message},e.status);
+ if(e instanceof KhposAuthError||e instanceof SchoolDeskError||e instanceof KhposPresenceError)return json({ok:false,error:e.message},e.status);
  console.error("[kaec-hq-pathfinder-sessions]",e);
  return json({ok:false,error:"Could not complete Pathfinder activity."},500);
 }

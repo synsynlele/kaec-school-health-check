@@ -1,3 +1,4 @@
+import type { AttendanceLocation } from "@/lib/khpos/attendance-location";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,16 +24,16 @@ export interface KhposHqlsObservation {
 export interface KhposPresenceWorkspace {
   localDay: string; userId: string; canManage: boolean; canEnablePilot: boolean; pilotEnabled: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
-  todayPresence: null | { id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
+  todayPresence: null | { checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
   periods: KhposPresencePeriod[]; observations: KhposHqlsObservation[];
-  teamPresence: Array<{ name: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean }>;
+  teamPresence: Array<{ checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; name: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean }>;
   openClassSessions: Array<{ id: string; date: string; class: string; subject: string; teacher: string; in: string }>;
   openSchoolAttendance: Array<{ id: string; date: string; teacher: string; campusId: string; in: string }>;
 }
 export interface KhposPresenceHistory {
   from: string; to: string; page: number; pageSize: number;
   schoolTotal: number; classTotal: number;
-  schoolRecords: Array<{ id:string; name:string; campusId:string; date:string; in:string; out:string|null; administrativelyClosed:boolean }>;
+  schoolRecords: Array<{ checkInLocation?:AttendanceLocation|null; checkOutLocation?:AttendanceLocation|null; id:string; name:string; campusId:string; date:string; in:string; out:string|null; administrativelyClosed:boolean }>;
   classRecords: Array<{ id:string; date:string; teacher:string; class:string; subject:string; in:string; out:string|null; topic:string|null; outcome:string|null; administrativelyClosed:boolean }>;
 }
 

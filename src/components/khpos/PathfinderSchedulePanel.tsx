@@ -4,12 +4,19 @@ import {CalendarCheck2,CheckCircle2,ClipboardCheck,Clock3,MapPin,Video,AlertTria
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
 import type {SchoolEngagement,SchoolDeskSnapshot} from "@/lib/khpos/hq-schools";
 import type {SessionDesk,PathfinderSession} from "@/lib/khpos/hq-sessions";
+import { useAttendanceLocation } from "@/components/khpos/useAttendanceLocation";
+import { AttendanceLocationEvidence } from "@/components/khpos/AttendanceLocationEvidence";
+import { CampusLocationPanel } from "@/components/khpos/CampusLocationPanel";
+import { needsLocationReview, type CampusLocation } from "@/lib/khpos/attendance-location";
 const ctrl="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950";
 const lbl="block space-y-1 text-xs font-bold text-slate-700";
 function showDate(value:string|null){return value?new Date(value).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"}):"Not recorded";}
 function toLocalDate(iso:string){const d=new Date(iso);return d.toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"});}
 export function PathfinderSchedulePanel({engagement,viewer,members}:{
  engagement:SchoolEngagement;viewer:SchoolDeskSnapshot["viewer"];members:SchoolDeskSnapshot["members"];}){
+ const locationCapture=useAttendanceLocation();
+ const [campuses,setCampuses]=useState<CampusLocation[]>([]),[campusId,setCampusId]=useState("");
+ const [locationNote,setLocationNote]=useState(""),[exceptionsOnly,setExceptionsOnly]=useState(false);
  const client=useMemo(()=>createBrowserSupabaseClient(),[]);
  const [desk,setDesk]=useState<SessionDesk|null>(null),[error,setError]=useState("");
  const [busy,setBusy]=useState(false),[showSchedule,setShowSchedule]=useState(false);
@@ -35,6 +42,11 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
   if(!client)return false;
   setBusy(true);setError("");
   try{
+   if(action==="check_in"||action==="check_out"){
+    const location=await locationCapture.capture(locationNote);
+    if(!location)return false;
+    args={...args,location};
+   }
    const {data}=await client.auth.getSession();
    const token=data.session?.access_token;
    if(!token)throw new Error("Sign in again.");
@@ -72,17 +84,23 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
    {[["Scheduled",sessions.filter(s=>s.status==="scheduled").length],["Missed / awaiting action",missed.length],["Completed",sessions.filter(s=>s.status==="completed").length],["Independently reviewed",verified.length]].map(([label,value])=>
     <div key={label} className="rounded-xl bg-slate-50 p-3"><strong className="text-xl">{value}</strong><p className="text-xs text-slate-600">{label}</p></div>)}
   </div>
-  <p className="mt-3 text-xs text-slate-600">Reviewed sessions with documented problem resolutions: <strong>{resolved.length}</strong>. Attendance is self-declared through server-recorded check-in/out; it is not GPS or independent proof of presence. Duration is not an impact score.</p>
+  <p className="mt-3 text-xs text-slate-600">Reviewed sessions with documented problem resolutions: <strong>{resolved.length}</strong>. Attendance includes server timestamps and, with phone permission, a location reading at arrival and departure. GPS accuracy and campus-boundary exceptions support review; they do not independently prove work or prevent spoofing. Duration is not an impact score.</p>
   {desk?.capped&&<p className="mt-2 text-xs text-amber-800">Showing a capped recent activity history; counts here are not lifetime totals.</p>}
+  {locationCapture.dialog}
+  <div className="mt-4"><CampusLocationPanel school={engagement.organisation_id} hq onLoaded={setCampuses}/></div>
+  <p className="mt-3 text-xs leading-5 text-slate-600">Location is requested only when you tap check-in or check-out. Coordinates and accuracy are visible to authorised HQ supervisors. No background tracking. If location is unavailable, give an explanation to record attendance.</p>
+  {assigned&&<label className={lbl+" mt-3"}>Attendance location explanation (optional)<input maxLength={500} className={ctrl+" !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>}
+  <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions ({sessions.filter(s=>needsLocationReview(s.check_in_location)||needsLocationReview(s.check_out_location)).length})</label>
   {error&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-900">{error}</p>}
   {showSchedule&&lead&&<form className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"
    onSubmit={e=>{e.preventDefault();if(!start)return;void act("schedule_session",{
-    engagement_id:engagement.id,mode,title,objective,
+    engagement_id:engagement.id,mode,campus_id:campusId,title,objective,
     scheduled_start_at:new Date(start).toISOString(),
     scheduled_end_at:end?new Date(end).toISOString():null
    }).then(ok=>{if(ok){setShowSchedule(false);setTitle("");setObjective("");setStart("");setEnd("");}});}}>
    <p className="sm:col-span-2 text-xs font-bold">Assign to {name(engagement.representative_user_id??"")}. The Pathfinder must already be appointed to this school.</p>
    <label className={lbl}>Mode<select className={ctrl} value={mode} onChange={e=>setMode(e.target.value)}><option value="virtual">Virtual follow-up</option><option value="onsite">Physical school visit</option></select></label>
+   {mode==="onsite"&&<label className={lbl}>Campus for this visit<select required className={ctrl} value={campusId} onChange={e=>setCampusId(e.target.value)}><option value="">Choose school campus</option>{campuses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
    <label className={lbl}>Activity title<input className={ctrl} required minLength={4} maxLength={180} value={title} onChange={e=>setTitle(e.target.value)}/></label>
    <label className={lbl+" sm:col-span-2"}>Purpose and expected result<textarea className={ctrl} required minLength={15} maxLength={2000} rows={2} value={objective} onChange={e=>setObjective(e.target.value)}/></label>
    <label className={lbl}>Scheduled start<input className={ctrl} type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/></label>
@@ -94,7 +112,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
   </form>}
   <div className="mt-4 space-y-3">
    {!sessions.length&&<p className="rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500">No scheduled work for this school yet. Attendance and performance will not be inferred until a real session is scheduled and recorded.</p>}
-   {sessions.map(s=><article key={s.id} className="rounded-xl border border-slate-200 p-4">
+   {sessions.filter(s=>!exceptionsOnly||needsLocationReview(s.check_in_location)||needsLocationReview(s.check_out_location)).map(s=><article key={s.id} className="rounded-xl border border-slate-200 p-4">
     <div className="flex flex-wrap items-start justify-between gap-2">
      <div><h3 className="text-sm font-black">{s.title}</h3>
       <p className="mt-1 text-xs text-slate-600">{s.mode==="onsite"?"Physical visit":"Virtual follow-up"} · {toLocalDate(s.scheduled_start_at)} · {name(s.representative_user_id)}</p>
@@ -107,6 +125,12 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
      {s.reviewed_at&&<span><CheckCircle2 className="mr-1 inline size-3"/>Reviewed {showDate(s.reviewed_at)}</span>}
      {s.status==="scheduled"&&now&&s.scheduled_start_at<now&&<strong className="text-amber-800">Scheduled start passed — needs review</strong>}
     </div>
+    {s.mode==="onsite"&&<div className="mt-2">
+      <p className="text-xs font-bold">Visit campus: {campuses.find(c=>c.id===s.campus_id)?.name??"Not yet selected"}</p>
+      {s.check_in_at&&<AttendanceLocationEvidence location={s.check_in_location} label="Arrival location"/>}
+      {s.check_out_at&&<AttendanceLocationEvidence location={s.check_out_location} label="Departure location"/>}
+      {assigned&&!s.campus_id&&s.status==="scheduled"&&<label className={lbl}>Select campus before arrival<select className={ctrl} value={campusId} onChange={e=>setCampusId(e.target.value)}><option value="">Choose school campus</option>{campuses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
+    </div>}
     {s.status==="completed"&&<div className="mt-3 space-y-1 rounded-xl bg-slate-50 p-3 text-xs leading-5">
      <p><strong>Work reported:</strong> {s.outcome_note}</p>
      {s.issues_note&&<p><strong>Problems:</strong> {s.issues_note}</p>}
@@ -116,7 +140,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
      {s.review_note&&<p><strong>Supervisor's assessment:</strong> {s.review_note}</p>}
     </div>}
     <div className="mt-3 flex flex-wrap gap-2">
-     {assigned&&s.representative_user_id===viewer.userId&&s.mode==="onsite"&&s.status==="scheduled"&&<button disabled={busy} onClick={()=>void act("check_in",{id:s.id})} className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-900"><MapPin className="mr-1 inline size-3"/>Check in on arrival</button>}
+     {assigned&&s.representative_user_id===viewer.userId&&s.mode==="onsite"&&s.status==="scheduled"&&<button disabled={busy} onClick={()=>void act("check_in",{id:s.id,campus_id:s.campus_id??campusId})} className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-900"><MapPin className="mr-1 inline size-3"/>Check in on arrival</button>}
      {assigned&&s.representative_user_id===viewer.userId&&s.mode==="onsite"&&s.status==="checked_in"&&<button onClick={()=>actionFor(s,"check_out")} className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white">Check out & report work</button>}
      {assigned&&s.representative_user_id===viewer.userId&&s.mode==="virtual"&&s.status==="scheduled"&&<button onClick={()=>actionFor(s,"complete_virtual")} className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white">Log virtual work done</button>}
      {lead&&s.status==="scheduled"&&<button onClick={()=>actionFor(s,"cancel_session")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold">Cancel / missed visit reason</button>}
@@ -145,7 +169,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
     </form>}
    </article>)}
   </div>
-  <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500"><Clock3 className="mt-0.5 size-4 shrink-0"/>Times are recorded by the server; location is not tracked. A checked-in visit without a check-out remains unfinished. Problems resolved count only when the supervisor reviews the documented outcome.</p>
+  <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500"><Clock3 className="mt-0.5 size-4 shrink-0"/>Times are recorded by the server; location is captured only at arrival and departure, with your permission. A checked-in visit without a check-out remains unfinished. Problems resolved count only when the supervisor reviews the documented outcome.</p>
   {missed.length>0&&<p className="mt-2 flex items-start gap-2 text-xs text-amber-900"><AlertTriangle className="size-4"/>A past scheduled start is not automatically proof of absence; follow up for circumstances and reschedule or document appropriately.</p>}
  </section>;
 }

@@ -66,6 +66,7 @@ export async function POST(request: Request, context: { params: Promise<{ id:str
     try { payload = await request.json(); } catch { throw new KhposPresenceError("Invalid request."); }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new KhposPresenceError("Invalid request.");
     const body=payload as Record<string,unknown>;
+    if(JSON.stringify(body).length>16000) throw new KhposPresenceError("Attendance request is too long.");
     if (typeof body.mode !== "string" || !MODES.has(body.mode)) throw new KhposPresenceError("Unsupported attendance action.");
     for (const field of ["campusId","streamId","periodId","classSessionId","observationId","presenceId"]) {
       if (body[field]!=null && body[field]!=="" && (typeof body[field]!=="string" || !UUID_RE.test(body[field] as string))) {

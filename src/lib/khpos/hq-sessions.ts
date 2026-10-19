@@ -1,8 +1,12 @@
+import { evaluateAttendanceLocation } from "@/lib/khpos/attendance-location-server";
+import type { AttendanceLocation } from "@/lib/khpos/attendance-location";
+import { UUID_RE } from "@/lib/http";
 import {createClient,type SupabaseClient} from "@supabase/supabase-js";
 import type {VerifiedKhposUser} from "@/lib/khpos/auth";
 import {getSchoolDesk,type SchoolEngagement, SchoolDeskError} from "@/lib/khpos/hq-schools";
 
 export type PathfinderSession={
+ campus_id:string|null;check_in_location:AttendanceLocation|null;check_out_location:AttendanceLocation|null;
  id:string;engagement_id:string;representative_user_id:string;
  mode:"virtual"|"onsite";title:string;objective:string;
  scheduled_start_at:string;scheduled_end_at:string|null;
@@ -30,7 +34,7 @@ function bodyOf(x:unknown):Record<string,unknown>{
  return x as Record<string,unknown>;
 }
 function uuid(x:unknown,label:string):string{
- if(typeof x!=="string"||!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(x))
+ if(typeof x!=="string"||!UUID_RE.test(x))
   throw new SchoolDeskError("Invalid "+label+".");
  return x;
 }
@@ -46,6 +50,10 @@ function iso(x:unknown,label:string):string{
  if(!Number.isFinite(d.getTime())||!/(Z|[+-]\d\d:\d\d)$/i.test(value))
   throw new SchoolDeskError("Use a date and time with a timezone for "+label+".");
  return d.toISOString();
+}
+async function validCampus(campus:string,school:string){
+ const {data,error}=await db().from("khpos_ops_campuses").select("id").eq("id",campus).eq("organisation_id",school).eq("status","active").maybeSingle();
+ if(error||!data)throw new SchoolDeskError("Select an active campus belonging to this school.",400);
 }
 async function loadSession(id:string):Promise<PathfinderSession>{
  const {data,error}=await db().from("kaec_hq_pathfinder_sessions").select("*").eq("id",id).maybeSingle();
@@ -96,11 +104,13 @@ export async function schedulePathfinder(user:VerifiedKhposUser,raw:unknown):Pro
  if(!representative)throw new SchoolDeskError("Appoint a School Pathfinder to this school before scheduling.",409);
  const mode=x.mode==="virtual"?"virtual":x.mode==="onsite"?"onsite":null;
  if(!mode)throw new SchoolDeskError("Select virtual or on-site supervision.");
+ const campus=mode==="onsite"?uuid(x.campus_id,"campus"):null;
+ if(campus)await validCampus(campus,engagement.organisation_id);
  const start=iso(x.scheduled_start_at,"scheduled start");
  const end=x.scheduled_end_at?iso(x.scheduled_end_at,"scheduled end"):null;
  if(end&&end<=start)throw new SchoolDeskError("End time must follow the starting time.");
  const {error}=await db().from("kaec_hq_pathfinder_sessions").insert({
-  engagement_id:engagementId,representative_user_id:representative,mode,
+  engagement_id:engagementId,representative_user_id:representative,mode,campus_id:campus,
   title:field(x.title,"Title",4,180),objective:field(x.objective,"Expected outcome",15,2000),
   scheduled_start_at:start,scheduled_end_at:end,status:"scheduled",
   created_by:user.id,updated_by:user.id
@@ -119,10 +129,15 @@ export async function actOnPathfinderSession(user:VerifiedKhposUser,raw:unknown)
  if(action==="check_in"){
   if(old.mode!=="onsite"||old.status!=="scheduled"||!assigned)
    throw new SchoolDeskError("Only the assigned Pathfinder may check into a scheduled on-site visit.",403);
+  const campus=old.campus_id??uuid(x.campus_id,"visit campus");
+  await validCampus(campus,engagement.organisation_id);
+  changes.campus_id=campus;
+  changes.check_in_location=await evaluateAttendanceLocation(x.location,campus);
   changes.status="checked_in";changes.check_in_at=now;
  }else if(action==="check_out"){
   if(old.mode!=="onsite"||old.status!=="checked_in"||!assigned)
    throw new SchoolDeskError("You must check in before completing an on-site visit.",403);
+  changes.check_out_location=await evaluateAttendanceLocation(x.location,old.campus_id);
   changes.status="completed";changes.check_out_at=now;
   changes.outcome_note=field(x.outcome_note,"Actual work completed",20,3000);
   changes.issues_note=optional(x.issues_note,"Problems discovered",2000);
