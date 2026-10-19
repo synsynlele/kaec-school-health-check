@@ -17,3 +17,5 @@ Sections use the existing `khpos_ops_units` records, so staff appointments, teac
 Rename/restore preserve IDs and historical records. Duplicate names within a campus, stale edits and cross-school/campus management are rejected. Deactivation is blocked while active staff, current positions or draft/approved/active teaching streams still use the section. Reassignment uses the existing governed controls. School membership and current leadership scope are checked by service-only RPCs; client execution is revoked. Each change is audited.
 
 Schema: `20261017181306_school_learning_sections.sql`. Tests: `npm run test:notification-sound` and `npm run test:learning-sections`, plus the full regression/lint/type/build checks. Apply and verify the migration before deploying the section-management API/UI.
+
+Notification settings are reached from the bell dropdown. Device alert on/off controls and **Test device alert** appear in that settings view; sound troubleshooting is collapsed under **Notifications not making sound?** The daily dropdown shows reminders/tasks without the setup text.

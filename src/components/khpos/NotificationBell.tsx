@@ -41,6 +41,7 @@ export function NotificationBell({
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [total, setTotal] = useState(0);
   const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [error, setError] = useState(false);
   const [pushError, setPushError] = useState("");
   const [testState, setTestState] = useState<"idle"|"busy"|"shown">("idle");
@@ -268,7 +269,7 @@ export function NotificationBell({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") { setOpen(false); return; }
       if (event.key !== "Tab") return;
-      const controls = panelRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], [tabindex="0"]');
+      const controls = panelRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], summary, [tabindex="0"]');
       if (!controls?.length) return;
       const first = controls[0], last = controls[controls.length - 1];
       if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) { event.preventDefault(); last.focus(); }
@@ -278,7 +279,7 @@ export function NotificationBell({
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = overflow; window.removeEventListener("keydown", onKey); previous?.focus(); };
-  }, [open]);
+  }, [open, settingsOpen]);
 
   async function enablePush() {
     if (!isPushSupported()) {
@@ -391,6 +392,7 @@ export function NotificationBell({
         aria-label={`Notifications, ${total} active`}
         aria-expanded={open}
         onClick={() => {
+          setSettingsOpen(false);
           setOpen(!open);
           if (!open) void refresh(true);
         }}
@@ -407,9 +409,9 @@ export function NotificationBell({
       {open && createPortal(
         <div className="fixed inset-0 z-[120]">
         <button type="button" aria-label="Close notifications" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50" />
-        <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Your reminders and tasks" className="absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl sm:left-auto sm:right-4 sm:w-96">
+        <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={settingsOpen ? "Notification settings" : "Your reminders and tasks"} className="absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-slate-700 bg-slate-950 p-3 text-white shadow-2xl sm:left-auto sm:right-4 sm:w-96">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold">Your reminders and tasks</h2>
+            <h2 className="font-bold">{settingsOpen ? "Notification settings" : "Your reminders and tasks"}</h2>
             <button
               type="button"
               aria-label="Close notifications"
@@ -419,9 +421,14 @@ export function NotificationBell({
             </button>
           </div>
 
-          <p className="mt-1 text-xs text-slate-400">
+          <button type="button" onClick={() => setSettingsOpen(!settingsOpen)} className="mt-3 min-h-11 text-sm font-bold text-mint-300 underline">
+            {settingsOpen ? "← Back to notifications" : "Notification settings"}
+          </button>
+          {!settingsOpen && <p className="mt-1 text-xs text-slate-400">
             See what needs your attention now, including school arrival, scheduled lessons, reports and approvals. Completed attendance actions stop appearing here.
-          </p>
+          </p>}
+
+          {settingsOpen && <section aria-label="Device alert settings">
 
           {pushState === "on" && (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-2">
@@ -440,7 +447,7 @@ export function NotificationBell({
 
           {permission === "granted" && <div className="mt-3 rounded-lg border border-white/15 p-3">
             <button type="button" disabled={testState === "busy"} onClick={() => void testDeviceAlert()} className="min-h-12 rounded-lg border border-mint-300 px-3 py-2 text-sm font-bold text-mint-300 disabled:opacity-50">{testState === "busy" ? "Showing test…" : "Test device alert"}</button>
-            <p className="mt-2 text-xs leading-5 text-slate-300">{testState === "shown" ? "Test alert sent to this device’s notification system. This does not verify background delivery or whether sound played. " : ""}For sound: long-press a KHP-OS notification → Settings → choose Alerting and a notification sound. If it is attributed to Chrome, check Chrome’s notification category for www.kshc.name.ng. Also check notification volume and Do Not Disturb. Names vary by phone.</p>
+            {testState === "shown" && <p role="status" className="mt-2 text-xs leading-5 text-slate-300">Test alert sent to this device’s notification system. This does not verify background delivery or whether sound played.</p>}
           </div>}
 
           {pushState === "off" && permission !== "denied" && (
@@ -476,10 +483,16 @@ export function NotificationBell({
             </p>
           )}
 
+          <details className="mt-4 rounded-lg border border-white/15 p-3 text-xs leading-5 text-slate-300">
+            <summary className="cursor-pointer font-bold text-white">Notifications not making sound?</summary>
+            <p className="mt-2">For sound: long-press a KHP-OS notification → Settings → choose Alerting and a notification sound. If it is attributed to Chrome, check Chrome’s notification category for www.kshc.name.ng. Also check notification volume and Do Not Disturb. Names vary by phone.</p>
+          </details>
           {pushError && (
-            <p className="mt-2 text-xs text-amber-300">{pushError}</p>
+            <p role="alert" className="mt-2 text-xs text-amber-300">{pushError}</p>
           )}
+          </section>}
 
+          {!settingsOpen && <>
           {error && (
             <p className="mt-3 text-xs text-amber-300">
               Alerts could not load.{" "}
@@ -538,8 +551,9 @@ export function NotificationBell({
               </Link>
             ))}
           </div>
+          </>}
 
-          {total > alerts.length && (
+          {!settingsOpen && total > alerts.length && (
             <p className="mt-2 text-xs text-slate-400">
               Showing 50 of {total} alerts.
             </p>
