@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
+import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
@@ -13,6 +13,8 @@ import { useAttendanceLocation } from "@/components/khpos/useAttendanceLocation"
 import { AttendanceLocationEvidence } from "@/components/khpos/AttendanceLocationEvidence";
 import { CampusLocationPanel } from "@/components/khpos/CampusLocationPanel";
 import { needsLocationReview } from "@/lib/khpos/attendance-location";
+
+import { createAttendanceRefreshGate } from "@/lib/khpos/ops/attendance-refresh";
 
 type Panel = "day" | "lessons" | "hqls" | "leaders";
 type Domain = { code:string; name:string; test:string; automatic?:string };
@@ -44,6 +46,8 @@ function possibleToday(date:string,weekday:number) {
 function ratingText(score:number) { return score===3?"Strong":score===2?"Partial":"Weak"; }
 
 export function TeacherPresenceWorkspace({organisationId}:{organisationId:string}) {
+  const refreshGate=useRef(createAttendanceRefreshGate());
+  const [attendanceRevision,setAttendanceRevision]=useState(0);
   const locationCapture=useAttendanceLocation();
   const [locationNote,setLocationNote]=useState("");
   const [exceptionsOnly,setExceptionsOnly]=useState(false);
@@ -92,23 +96,26 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   },[supabase]);
 
   const load=useCallback(async()=>{
+    const read=refreshGate.current.startRead();
+    if(read===null)return;
     try {
       const token=await authToken();
       const headers={Authorization:"Bearer "+token};
       const response=await fetch("/api/khpos/ops/presence/"+organisationId,{headers,cache:"no-store"});
       const body=await response.json() as {ok?:boolean;workspace?:KhposPresenceWorkspace;error?:string};
       if(!response.ok||!body.ok||!body.workspace) throw new Error(body.error??"Attendance could not be loaded.");
+      if(!refreshGate.current.canApplyRead(read))return;
       setData(body.workspace);
       setCampusId(v=>v||body.workspace?.staff?.campusId||body.workspace?.campuses[0]?.id||"");
       try {
         const res=await fetch("/api/khpos/ops/academic-delivery/"+organisationId,{headers,cache:"no-store"});
         if(res.ok) {
           const academicBody=await res.json() as {academic?:KhposOpsAcademicDeliveryWorkspace};
-          setAcademic(academicBody.academic??null);
+          if(refreshGate.current.canApplyRead(read))setAcademic(academicBody.academic??null);
         }
       } catch { /* Attendance remains available if Academic Delivery cannot be loaded. */ }
-      setError("");
-    } catch(e){setError(e instanceof Error?e.message:"Unable to load attendance.");}
+      if(refreshGate.current.canApplyRead(read))setError("");
+    } catch(e){if(refreshGate.current.canApplyRead(read))setError(e instanceof Error?e.message:"Unable to load attendance.");}
   },[authToken,organisationId]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -130,7 +137,16 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     return ()=>{active=false;};
   },[load]);
 
+  useEffect(()=>{
+    const refresh=()=>{void load();};
+    const visible=()=>{if(document.visibilityState==="visible")refresh();};
+    const activity=(event:Event)=>{if(event instanceof CustomEvent&&event.detail?.organisationId===organisationId)refresh();};
+    window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",visible);window.addEventListener(KHPOS_ACTIVITY_CHANGED,activity);
+    return()=>{window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",visible);window.removeEventListener(KHPOS_ACTIVITY_CHANGED,activity);};
+  },[load,organisationId]);
+
   async function act(mode:string,payload:Record<string,unknown>={},label="Action saved") {
+    if(!refreshGate.current.beginWrite())return false;
     setBusy(mode);setError("");setNotice("");
     try{
       if(mode==="school_in"||mode==="school_out") {
@@ -147,11 +163,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       const body=await response.json() as {ok?:boolean;error?:string;workspace?:KhposPresenceWorkspace};
       if(!response.ok||!body.ok)throw new Error(body.error??"The request could not be completed.");
       if(body.workspace)setData(body.workspace);
+      setAttendanceRevision(v=>v+1);
       setNotice(label);
       announceKhposActivityChanged(organisationId);
       return true;
     }catch(e){setError(e instanceof Error?e.message:"Unable to complete action.");}
-    finally{setBusy("");}
+    finally{refreshGate.current.finishWrite();setBusy("");}
     return false;
   }
 
@@ -198,7 +215,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     }
     void loadHistory();
     return ()=>{cancelled=true;};
-  },[tab,localDay,selectedFrom,selectedTo,historyPage,organisationId,authToken]);
+  },[tab,localDay,selectedFrom,selectedTo,historyPage,organisationId,authToken,attendanceRevision]);
 
   const canManage=Boolean(data?.canManage);
   const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
@@ -473,15 +490,22 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <p className="mt-1 text-sm text-slate-600">Staff arrival and departure across the selected dates. A school check-in does not prove a class was taught.</p>
             <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions on this page ({(presenceHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
             {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
-              <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[650px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">School date</th><th className="p-2">School check-in recorded</th><th className="p-2">School check-out recorded</th></tr></thead>
-                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}<AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/></td><td className="p-2">{dateTime(d.out)}{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div>}
+              <><div className="mt-3 space-y-3 md:hidden">{schoolRows.map(d=><article key={d.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                <h4 className="font-black text-slate-950">{d.name||"Staff member"}</h4><p className="mt-1 text-xs text-slate-600">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"} · {d.date}</p>
+                <p className="mt-2"><strong>Check-in:</strong> {dateTime(d.in)}</p><p><strong>Check-out:</strong> {dateTime(d.out)}{d.administrativelyClosed?" (administratively closed)":""}</p>
+                <AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/>{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}
+              </article>)}</div><div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full min-w-[650px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">School date</th><th className="p-2">School check-in recorded</th><th className="p-2">School check-out recorded</th></tr></thead>
+                <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}<AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/></td><td className="p-2">{dateTime(d.out)}{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div></>}
           </section>
           <section className={box} aria-label="Class attendance records">
             <h3 className="text-lg font-black text-slate-900">2. Class lesson check-in and check-out</h3>
             <p className="mt-1 text-sm text-slate-600">Recorded attendance for individual subject lessons across the selected dates. Only actual class check-ins appear; unchecked lessons are not counted as delivered.</p>
             {classRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No class check-ins match this search.":"No class lesson check-ins have been recorded in the selected dates within your scope."}</p>:
-              <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Teacher</th><th className="p-2">Class / subject</th><th className="p-2">School date</th><th className="p-2">Class check-in recorded</th><th className="p-2">Class check-out recorded</th><th className="p-2">Lesson outcome</th></tr></thead>
-                <tbody>{classRows.map(p=><tr key={p.id} className="border-b"><td className="p-2">{p.teacher}</td><td className="p-2">{p.class} · {p.subject}</td><td className="p-2">{p.date}</td><td className="p-2">{dateTime(p.in)}</td><td className="p-2">{dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</td><td className="p-2">{p.outcome||"In progress"}</td></tr>)}</tbody></table></div>}
+              <><div className="mt-3 space-y-3 md:hidden">{classRows.map(p=><article key={p.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                <h4 className="font-black text-slate-950">{p.teacher||"Assigned teacher"}</h4><p className="mt-1 text-xs text-slate-600">{p.class} · {p.subject} · {p.date}</p>
+                <p className="mt-2"><strong>Class check-in:</strong> {dateTime(p.in)}</p><p><strong>Class check-out:</strong> {dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</p><p><strong>Outcome:</strong> {p.outcome||"In progress"}</p>
+              </article>)}</div><div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Teacher</th><th className="p-2">Class / subject</th><th className="p-2">School date</th><th className="p-2">Class check-in recorded</th><th className="p-2">Class check-out recorded</th><th className="p-2">Lesson outcome</th></tr></thead>
+                <tbody>{classRows.map(p=><tr key={p.id} className="border-b"><td className="p-2">{p.teacher}</td><td className="p-2">{p.class} · {p.subject}</td><td className="p-2">{p.date}</td><td className="p-2">{dateTime(p.in)}</td><td className="p-2">{dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</td><td className="p-2">{p.outcome||"In progress"}</td></tr>)}</tbody></table></div></>}
           </section>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm">
             <span className="text-slate-600">School records: {presenceHistory?.schoolTotal??0} · Class records: {presenceHistory?.classTotal??0} · Page {historyPage+1}</span>

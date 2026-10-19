@@ -16,18 +16,16 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/khpos/:path*",
-        headers: privateSecurityHeaders,
+        // App Router navigation reuses the opening document's policy. Allow
+        // same-origin requests throughout the app; only attendance taps ask.
+        headers: privateSecurityHeaders.map(header => header.key === "Permissions-Policy"
+          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)") }
+          : header),
       },
       {
         source: "/api/khpos/:path*",
         headers: privateSecurityHeaders,
       },
-      ...["/khpos/:organisationId/teaching-presence", "/khpos/hq/schools"].map(source => ({
-        source,
-        headers: privateSecurityHeaders.map(header => header.key === "Permissions-Policy"
-          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)") }
-          : header),
-      })),
     ];
   },
 };

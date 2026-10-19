@@ -29,7 +29,7 @@
     "test:manual-record-editing": "node scripts/test-manual-record-editing.mjs",
     "test:academic-record-lifecycle": "node scripts/test-academic-record-lifecycle.mjs",
     "test:presence-leadership-history": "node scripts/test-presence-leadership-history.mjs",
-    "test:today-attendance-guidance": "node scripts/test-today-attendance-guidance.mjs",
+    "test:today-attendance-guidance": "node scripts/test-today-attendance-guidance.mjs && node scripts/test-attendance-screen-state.mjs",
     "test:safeguarding-policy-ack": "node scripts/test-safeguarding-policy-acknowledgement.mjs",
     "test:position-acceptance-clarity": "node scripts/test-position-acceptance-clarity.mjs",
     "test:role-approval-queue": "node scripts/test-role-approval-queue.mjs",
