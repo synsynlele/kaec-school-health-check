@@ -31,6 +31,7 @@ async function handle(request: Request, write: boolean) {
       return reply({
         workspace: {
           summary: attention.summary,
+          tasks: attention.items,
           items: [],
           types: [],
           roles: [],

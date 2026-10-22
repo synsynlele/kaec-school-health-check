@@ -64,6 +64,7 @@ export type SchoolReport = {
   reviewerTitle: string;
   campusName: string | null;
 };
+export type ReportTask = Pick<SchoolReport, "id" | "title" | "period_start" | "period_end" | "status" | "lock_version" | "due_at" | "submitted_at" | "canEdit" | "canReview" | "overdue">;
 export type ReportsWorkspace = {
   items: SchoolReport[];
   total: number;
@@ -72,6 +73,7 @@ export type ReportsWorkspace = {
   scopes: { campusId: string | null; unitId: string | null; label: string }[];
   roles: { id: string; title: string }[];
   recipients: {id:string;roleId:string;campusId:string|null;unitId:string|null;label:string}[];
+  tasks?: ReportTask[];
   history: {
     id: string;
     action: string;
@@ -141,17 +143,7 @@ export async function getReportAttention(
   actor: string,
 ): Promise<{
   summary: ReportsWorkspace["summary"];
-  items: Pick<
-    SchoolReport,
-    | "id"
-    | "status"
-    | "lock_version"
-    | "due_at"
-    | "submitted_at"
-    | "canEdit"
-    | "canReview"
-    | "overdue"
-  >[];
+  items: ReportTask[];
 }> {
   const { data, error } = await service().rpc("khpos_report_attention_server", {
     p_actor: actor,
@@ -177,7 +169,7 @@ export async function getReportAlerts(school: string, actor: string) {
             ? "Report returned for correction"
             : n.overdue
               ? "Report overdue"
-              : "Report due soon",
+              : "Report ready to complete",
       detail: "Open School Reports to view your assigned reporting action.",
       href: `/khpos/${school}/reports?report=${n.id}`,
       dueAt: n.status === "submitted" ? n.submitted_at || n.due_at : n.due_at,
