@@ -91,7 +91,7 @@ export function NotificationBell({
 
   const refresh = useCallback(async (force = false) => {
     if (!isActiveBell(mobile)) return;
-    if (!force && Date.now() - lastFetch.current < 60_000) return;
+    if (!force && Date.now() - lastFetch.current < 25_000) return;
     lastFetch.current = Date.now();
     const requestId = ++latestRequest.current;
 
@@ -173,7 +173,7 @@ export function NotificationBell({
     // Poll only on the active visible layout; mutations refresh immediately.
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh();
-    }, 180_000);
+    }, 30_000);
     const onFocus = () => void refresh(true);
     const onVisibility = () => {
       if (document.visibilityState === "visible") void refresh(true);

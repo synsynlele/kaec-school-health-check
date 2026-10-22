@@ -176,16 +176,23 @@ export function ReportsWorkspace({
     };
   }, [request, params]);
   useEffect(() => {
-    const focus = () => void load();
+    const focus = () => { if (document.visibilityState === "visible") void load(); };
+    const activity = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail?.organisationId === organisationId) focus();
+    };
     window.addEventListener("focus", focus);
+    document.addEventListener("visibilitychange", focus);
+    window.addEventListener(KHPOS_ACTIVITY_CHANGED, activity);
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void load();
-    }, 180000);
+    }, 30000);
     return () => {
       window.removeEventListener("focus", focus);
+      document.removeEventListener("visibilitychange", focus);
+      window.removeEventListener(KHPOS_ACTIVITY_CHANGED, activity);
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [load, organisationId]);
   useEffect(() => {
     if (!selected) return;
     let live = true;
@@ -220,7 +227,9 @@ export function ReportsWorkspace({
     setError("");
     setNotice("");
     try {
+      ++listRequest.current;
       const body = await request(input, params);
+      ++listRequest.current;
       setData(body.workspace);
       if (input.mode === "create" && body.id) {
         setSelected(body.id);
@@ -274,6 +283,19 @@ export function ReportsWorkspace({
             {summary.open} to complete · {summary.overdue} overdue ·{" "}
             {summary.review} awaiting your review
           </p>
+        )}
+        {!!data?.tasks?.length && (
+          <ul className="space-y-2" aria-label="Your reporting actions">
+            {data.tasks.slice(0, 5).map(task => (
+              <li key={task.id} className="rounded-xl border border-slate-200 p-3">
+                <p className="font-bold">{task.title}</p>
+                <p className="text-sm text-slate-600">{dateOnly(task.period_start)} – {dateOnly(task.period_end)} · Due {time(task.due_at)}</p>
+                <Link className={button + " mt-2"} href={`/khpos/${organisationId}/reports?report=${task.id}`}>
+                  {task.canReview && task.status === "submitted" ? "Review report" : task.status === "returned" ? "Correct report" : "Complete report"}
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     );

@@ -161,7 +161,7 @@ try {
     cadence: "daily",
     startDate: date,
     endDate: "",
-    dueDays: 0,
+    dueDays: 7,
     dueTime: "17:00",
     fields,
     campusId: campus,
@@ -196,11 +196,24 @@ try {
   );
 
   await db.exec(fs.readFileSync("supabase/migrations/20261019165907_report_audience_privacy.sql","utf8"));
+  // Stub only the extension API; run the full deployment migration against the fixture.
+  await db.exec(`create schema cron;
+    create table cron.job(jobid bigint,jobname text,schedule text,active boolean,command text);
+    insert into cron.job values(7,'khpos-daily-push-reminders','*/30 5-16 * * 1-6',true,'preserved authenticated endpoint');
+    create function cron.alter_job(bigint,schedule text) returns void language sql as $$update cron.job set schedule=$2 where jobid=$1$$;`);
+  await db.exec(fs.readFileSync("supabase/migrations/20261022174503_report_prompt_delivery.sql","utf8"));
+  const job=(await q("select * from cron.job"))[0];
+  assert.equal(job.schedule,"*/5 5-16 * * 1-6");
+  assert.equal(job.jobid,7);assert.equal(job.command,"preserved authenticated endpoint");
   const teacherAssignment=id(100+Number(teacher.slice(-3))),peerAssignment=id(100+Number(peer.slice(-3)));
   const inbox=async(actor,report=null)=> (await q("select khpos_reports_workspace_server($1,$2,'','reviewer:',0,$3) data",[actor,school,report]))[0].data;
   const attention=async(actor)=>(await q("select khpos_report_attention_server($1,$2) data",[actor,school]))[0].data;
   const typeId=await act(owner,school,"type_save",type);
   let report=(await feed(teacher,school)).items[0];
+  const ready = (await attention(teacher)).items;
+  assert.ok(ready.some(n => n.id === report.id), "Assigned report appears before its deadline reminder window");
+  assert.equal(ready.find(n => n.id === report.id).title, report.title);
+  assert.equal(ready.find(n => n.id === report.id).period_start, report.period_start);
   const peerReport=(await feed(peer,school)).items[0];
   assert.equal((await feed(guardian,school)).items.length,0,"Personal view excludes peer reports even for reviewers");
   assert.equal((await inbox(guardian)).items.length,0,"Reviewer cannot read any unsubmitted drafts");

@@ -115,6 +115,7 @@ assert.deepEqual(
   [
     "report:overdue:draft:v1",
     "report:soon:draft:v2",
+    "report:returned:returned:v3",
     "report:review:submitted:v4",
   ],
 );

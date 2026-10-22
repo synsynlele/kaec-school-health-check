@@ -36,15 +36,14 @@ export async function getKhposAlerts(
   userId: string,
   nowMs = Date.now(),
 ): Promise<KhposAlert[]> {
-  const attention = await retryClockSkew(() =>
-    getKhposAttention(organisationId, userId, nowMs),
-  );
   const week = nowMs + 7 * 86_400_000;
 
   // Attendance uses the existing authenticated, school-scoped presence service.
   // A disabled pilot, missing staff identity, or a completed check-in/out
   // produces no attendance reminder. Other operational alerts are unaffected.
-  const attendanceAlerts: KhposAlert[] = await retryClockSkew(() =>
+  const [attention, attendanceAlerts, announcementAlerts, reportAlerts] = await Promise.all([
+    retryClockSkew(() => getKhposAttention(organisationId, userId, nowMs)),
+    retryClockSkew(() =>
     getPresenceWorkspace(organisationId, userId)
   ).then((presence) =>
     dueAttendanceSteps(attendanceSteps(presence, nowMs)).map((step) => ({
@@ -57,7 +56,10 @@ export async function getKhposAlerts(
       level: step.urgent ? "urgent" as const : "action" as const,
       category: "attendance",
     }))
-  ).catch(() => [] as KhposAlert[]);
+  ).catch(() => [] as KhposAlert[]),
+    getAnnouncementAlerts(organisationId, userId).catch(() => []),
+    getReportAlerts(organisationId, userId).catch(() => []),
+  ]);
   const workAlerts: KhposAlert[] = attention.items
     .filter((item) => {
       if (item.severity === "critical" || item.severity === "high") return true;
@@ -96,8 +98,6 @@ export async function getKhposAlerts(
         (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
-  const announcementAlerts = await getAnnouncementAlerts(organisationId, userId).catch(() => []);
-  const reportAlerts = await getReportAlerts(organisationId, userId).catch(() => []);
   return [...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
     Number(b.urgent) - Number(a.urgent) ||
     (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
@@ -112,6 +112,7 @@ export function pushEligibleAlerts(
   return alerts.filter((alert) => {
     if (alert.category === "announcement") return alert.urgent;
     if (alert.urgent) return true;
+    if (alert.category === "school_report") return alert.level === "action";
     if (alert.level !== "action") return false;
     if (!alert.dueAt) return alert.category === "verification";
     const due = Date.parse(alert.dueAt);
