@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/decisions"', "school workspace navigation");
-requireText(nav, 'label: "Decisions & Approvals"', "school workspace navigation");
+requireText(nav, 'label: "Approvals & decisions"', "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/decisions/page.tsx");
 requireText(page, "DecisionsWorkspace", "decisions route");
@@ -45,13 +45,13 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/DecisionsWorkspace.tsx");
 for (const expected of [
-  "Operations · O5",
-  "Decisions & Approvals",
-  "Make authority visible.",
+  "School operations",
+  "Approvals & decisions",
+  "Send a request to the person authorised to decide.",
   "Request authority",
   "Record decision",
-  "Implementation in My Work",
-  "KHP-OS will not guess authority.",
+  "Actions in Today",
+  "Ask your school leader to assign your position and reporting line",
 ]) {
   requireText(workspace, expected, "O5 decisions workspace");
 }

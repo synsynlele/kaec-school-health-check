@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/potential-development"', "workspace navigation");
-requireText(nav, 'label: "Potential Development"', "workspace navigation");
+requireText(nav, 'label: "Learner development"', "workspace navigation");
 requireText(nav, 'suffix: "/learner-progress"', "O14 navigation continuity");
 requireText(nav, 'suffix: "/academic-assurance"', "O15 navigation continuity");
 requireText(nav, 'suffix: "/human-potential-intelligence"', "Human Potential intelligence continuity");
@@ -57,8 +57,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/PotentialDevelopmentWorkspace.tsx");
 for (const expected of [
-  "Operations · O16",
-  "Potential Development",
+  "School operations",
+  "Learner development",
   "Potential is a living hypothesis",
   "PipuPath privacy boundary",
   "Aggregate visibility only",

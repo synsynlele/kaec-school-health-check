@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/learner-progress"', "school workspace navigation");
-requireText(nav, 'label: "Learner Progress"', "school workspace navigation");
+requireText(nav, 'label: "Learner support"', "school workspace navigation");
 requireText(nav, 'suffix: "/academic-delivery"', "O12 navigation continuity");
 
 const page = read("src/app/khpos/[organisationId]/learner-progress/page.tsx");
@@ -68,8 +68,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/LearnerProgressWorkspace.tsx");
 for (const expected of [
-  "Operations · O14",
-  "Learner Progress & Intervention",
+  "School operations",
+  "Learner support",
   "No learner should quietly fall through the cracks",
   "Aggregate learner-risk visibility",
   "Store only the identity/context needed to run support work",

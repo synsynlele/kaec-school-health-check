@@ -61,13 +61,13 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/YoungCeoWorkspace.tsx");
 for (const expected of [
-  "Operations · O19",
+  "School operations",
   "Young CEO Hub",
   "Problem → customer → solution → value → costing → pricing → pitch",
   "Commercial boundary",
   "workspace.commercialBoundary",
   "Team success does not become automatic evidence for every learner",
-  "Verify → O16",
+  "Verify & add to learner development",
   "Milestone-gated value creation",
 ]) {
   requireText(workspace, expected, "O19 workspace");

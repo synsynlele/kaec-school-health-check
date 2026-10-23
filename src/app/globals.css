@@ -103,9 +103,10 @@ body {
 }
 
 @media (min-width: 1280px) {
-  /* The persistent sidebar becomes the desktop chrome, so per-page mini headers are redundant. */
+  /* Keep page titles, instructions and actions visible beside the sidebar. */
   .khpos-school-shell > div > main > header {
-    display: none;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
   /* Give institutional workspaces a wider operating canvas without widening error/loading cards. */

@@ -204,7 +204,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -223,7 +223,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
             href={`/khpos/${organisationId}`}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
           >
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
           <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -231,7 +231,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
                 KHP-OS | Benchmark Intelligence
               </p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                Context without competition.
+                Compare your school safely
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
                 See how your institution sits within an anonymised peer band. KHP-OS never exposes another school&apos;s identity, exact score or rank here.
@@ -249,9 +249,9 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
         {workspace.status === "awaiting_baseline" && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
             <Gauge className="size-9 text-brand-700" />
-            <h2 className="mt-4 text-2xl font-black">Complete the institutional baseline first.</h2>
+            <h2 className="mt-4 text-2xl font-black">Complete the school baseline first.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Benchmarking starts from the school&apos;s own completed KSHC truth. KHP-OS will not compare an institution before it has a valid baseline.
+              Complete your school’s first School Health Check before viewing comparisons.
             </p>
           </section>
         )}
@@ -281,7 +281,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
               <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Overall institutional position</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Overall school position</p>
                     <h2 className="mt-2 text-3xl font-black">{overall.ownScore}</h2>
                     <p className="mt-1 text-sm text-slate-500">Latest completed KSHC overall score</p>
                   </div>
@@ -313,14 +313,14 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
                 <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-mint-300">Benchmark rule</p>
                 <h2 className="mt-2 text-2xl font-black">No league tables.</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  The middle 50% peer band gives strategic context without turning institutional transformation into a public contest. Benchmarking informs judgement; it cannot close a priority or certify improvement.
+                  The middle 50% peer band gives strategic context without turning school transformation into a public contest. Benchmarking informs judgement; it cannot close a priority or certify improvement.
                 </p>
                 {workspace.portfolioAccess && (
                   <Link
                     href="/khpos/portfolio"
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-black text-slate-950"
                   >
-                    <Building2 className="size-4" /> Open KAEC Portfolio Intelligence
+                    <Building2 className="size-4" /> Open KAEC Network summary
                   </Link>
                 )}
               </div>
@@ -387,8 +387,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
                 How reliably does the operating system execute?
               </h2>
               <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-500">
-                This compares evidence-derived execution rates only among schools on the same
-                KAEC Standard release. Another school&apos;s name, exact record or rank is never exposed.
+                Compare recorded task results with schools using the same KAEC Standard version. Other schools’ names, exact records and rankings stay private.
               </p>
             </div>
             {workspace.operating.standardCode && (
@@ -405,8 +404,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
                 Adopt the KAEC Standard before operating peer comparison.
               </p>
               <p className="mt-1 text-sm leading-6 text-amber-900">
-                Operating comparisons are meaningful only when schools are executing the same
-                governed standard.
+                Schools must use the same approved standard before their task results can be compared.
               </p>
               <Link
                 href={"/khpos/" + organisationId + "/standard"}
@@ -435,8 +433,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
                 <ShieldCheck className="size-5 text-mint-300" />
                 <p className="mt-3 font-black">No thin-cohort inference.</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  The platform waits for enough institutions rather than exposing identifiable
-                  or statistically weak operating comparisons.
+                  Comparisons will appear when enough schools qualify to protect their privacy and make the results useful.
                 </p>
               </div>
             </div>
@@ -510,7 +507,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand-700" />
             <p className="leading-6">
-              <strong className="text-slate-950">Epistemic boundary:</strong> benchmark position is context, not proof of quality or causality. Only fresh KSHC reassessment can change Verified Institutional Improvement or resolve a diagnosed priority.
+              <strong className="text-slate-950">Epistemic boundary:</strong> comparisons help with planning. A new School Health Check is required to confirm improvement or close a school priority.
             </p>
           </div>
         </section>

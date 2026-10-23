@@ -83,12 +83,12 @@ const executionUi = read(
   "src/components/khpos/ops/ExecutionControlWorkspace.tsx",
 );
 for (const expected of [
-  "Apply safe mappings",
+  "Use suggested task settings",
   "safeMappingCandidates",
   "blockedMissingAssignment",
-  "Start Process",
-  "safe owner mapping ready",
-  "owner role is not staffed",
+  "Start task",
+  "Responsible position found",
+  "No one holds the responsible position",
 ]) {
   requireText(executionUi, expected, "Execution Control experience");
 }
@@ -120,12 +120,12 @@ for (const expected of [
 const workUi = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
 for (const expected of [
   "Available to start",
-  "On-demand responsibilities you own",
+  "Tasks you can start",
   "startAvailableProcess",
   'action: "start_process"',
   "process.campusId",
   "process.unitId",
-  "Start Process",
+  "Start task",
 ]) {
   requireText(workUi, expected, "Today on-demand execution experience");
 }

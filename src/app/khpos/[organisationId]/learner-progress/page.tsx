@@ -4,7 +4,7 @@ import { LearnerProgressWorkspace } from "@/components/khpos/ops/LearnerProgress
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Learner Progress & Intervention · KHP-OS",
+  title: "Learner support · KHP-OS",
   robots: { index: false, follow: false },
 };
 

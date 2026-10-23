@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -20,9 +22,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposStandardWorkspace } from "@/lib/khpos/ops/standard";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function dateLabel(value: string | null | undefined) {
   if (!value) return "—";
@@ -200,7 +200,7 @@ export function KaecStandardWorkspace({
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
@@ -213,13 +213,10 @@ export function KaecStandardWorkspace({
                 KHP-OS | KAEC Standard
               </p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">
-                Scale the operating standard, not founder memory.
+                Use the KAEC school standard
               </h1>
               <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100">
-                Every approved school receives the same versioned KAEC operating
-                baseline. The school adopts it explicitly, may govern legitimate
-                local revisions, and retains a clear history of what came from
-                KAEC and what changed locally.
+                Review and adopt the KAEC Standard for your school. You can propose school-specific changes through the normal approval process. The history shows the original standard and your changes.
               </p>
             </div>
           </div>
@@ -296,7 +293,7 @@ export function KaecStandardWorkspace({
               <article className="rounded-[30px] bg-slate-950 p-6 text-white shadow-sm sm:p-8">
                 <Sparkles className="size-7 text-mint-300" />
                 <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-mint-300">
-                  Next institutional action
+                  Next school action
                 </p>
                 <h2 className="mt-2 text-2xl font-black capitalize">
                   {next === "current"
@@ -306,23 +303,18 @@ export function KaecStandardWorkspace({
 
                 {next === "adopt" && (
                   <p className="mt-3 text-sm leading-6 text-slate-300">
-                    The inherited release is unchanged and ready for explicit
-                    institutional adoption by the active{" "}
+                    The inherited release is unchanged and ready for explicit school adoption by the active{" "}
                     {workspace.access.custodianLabel}.
                   </p>
                 )}
                 {next === "finish_local_governance" && (
                   <p className="mt-3 text-sm leading-6 text-slate-300">
-                    A local edit deliberately broke baseline lineage. Complete
-                    that revision through independent governance before blanket
-                    adoption.
+                    This school has edited the standard. A different authorised leader must approve those changes before you can adopt it.
                   </p>
                 )}
                 {next === "activate_operations" && (
                   <p className="mt-3 text-sm leading-6 text-slate-300">
-                    The standard is adopted. Recurring operating routines remain
-                    paused until the school confirms real role holders and
-                    deliberately activates execution.
+                    The standard is adopted. Assign the people responsible, then activate the repeated tasks when your school is ready.
                   </p>
                 )}
                 {next === "current" && (
@@ -366,7 +358,7 @@ export function KaecStandardWorkspace({
                     href={"/khpos/" + organisationId + "/library"}
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-black text-slate-950"
                   >
-                    Open Institutional Library
+                    Open School library
                     <ArrowRight className="size-4" />
                   </Link>
                 )}
@@ -376,7 +368,7 @@ export function KaecStandardWorkspace({
                     href={"/khpos/" + organisationId + "/execution-control"}
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-black text-slate-950"
                   >
-                    Review Execution Control
+                    Review Task setup
                     <ArrowRight className="size-4" />
                   </Link>
                 )}
@@ -476,11 +468,7 @@ export function KaecStandardWorkspace({
                       Standardisation does not erase school judgement.
                     </h2>
                     <p className="mt-2 text-sm leading-7 text-slate-700">
-                      The KAEC Standard supplies a tested baseline. If a school
-                      changes an inherited policy or process, KHP-OS marks it as a
-                      local revision and removes automatic baseline lineage. That
-                      revision must complete the school&apos;s normal independent
-                      governance before it becomes authoritative.
+                      If your school changes a KAEC policy or procedure, the app saves it as a school-specific draft. A different authorised leader must approve it before it becomes official.
                     </p>
                   </div>
                 </div>

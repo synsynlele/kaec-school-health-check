@@ -14,7 +14,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/academic-delivery"', "school workspace navigation");
-requireText(nav, 'label: "Academic Delivery"', "school workspace navigation");
+requireText(nav, 'label: "Teaching plans"', "school workspace navigation");
 requireText(nav, 'suffix: "/staff-transition"', "O11 navigation continuity");
 
 const page = read("src/app/khpos/[organisationId]/academic-delivery/page.tsx");
@@ -64,8 +64,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/AcademicDeliveryWorkspace.tsx");
 for (const expected of [
-  "Operations · O12",
-  "Academic Planning & Delivery",
+  "School operations",
+  "Teaching plans",
   "Planned is not Delivered",
   "Delivered is not Verified",
   "Technology boundary",

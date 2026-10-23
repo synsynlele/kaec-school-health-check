@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -22,9 +24,7 @@ import type {
   KhposOpsWorkforceRequest,
 } from "@/lib/khpos/ops/recruitment";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -232,17 +232,16 @@ export function RecruitmentWorkspace({
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
-            People & Staff
+            Staff
           </Link>
           <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
-            Operations · O13
+            School operations
           </p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-            Workforce & Recruitment
+            Hiring
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Approved need → governed vacancy → evidence-based selection →
-            conditional selection → safer recruitment → O7 appointment.
+            Approved need → approved vacancy → evidence-based selection → conditional selection → safer recruitment → Staff appointment.
           </p>
         </div>
         <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-xs font-black text-brand-900">
@@ -407,26 +406,26 @@ export function RecruitmentWorkspace({
                     onChange={(event) => setDesiredStartDate(event.target.value)}
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                   />
-                  <input
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Budget/authority reference (if applicable)</span><input
                     value={budgetReference}
                     onChange={(event) => setBudgetReference(event.target.value)}
                     placeholder="Budget/authority reference (if applicable)"
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
-                  />
-                  <textarea
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>What school outcome/work needs an owner?</span><textarea
                     value={rationale}
                     onChange={(event) => setRationale(event.target.value)}
-                    placeholder="What institutional outcome/work needs an owner?"
+                    placeholder="What school outcome/work needs an owner?"
                     rows={3}
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
-                  />
-                  <textarea
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>What alternatives were considered before adding headcount?</span><textarea
                     value={alternatives}
                     onChange={(event) => setAlternatives(event.target.value)}
                     placeholder="What alternatives were considered before adding headcount?"
                     rows={3}
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
-                  />
+                  /></label>
                 </div>
                 <button
                   type="button"
@@ -478,7 +477,7 @@ export function RecruitmentWorkspace({
                     Vacancies
                   </p>
                   <h2 className="mt-1 text-xl font-black text-slate-950">
-                    Role Charter + complete brief before publication
+                    Role guide + complete brief before publication
                   </h2>
                 </div>
                 <RecordQueueTabs view={vacancyQueue.view} setView={vacancyQueue.setView} activeCount={vacancyQueue.activeCount} historyCount={vacancyQueue.historyCount} />
@@ -616,13 +615,13 @@ function WorkforceCard({
 
       {request.status === "submitted" ? (
         <div className="mt-4 border-t border-slate-100 pt-4">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned approval / decline note</span><textarea
             value={notes[key] ?? ""}
             onChange={(event) => onNote(key, event.target.value)}
             placeholder="Reasoned approval / decline note"
             rows={2}
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-          />
+          /></label>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
@@ -723,7 +722,7 @@ function VacancyCard({
             onChange={(event) => onValue(`${prefix}-title`, event.target.value)}
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
           />
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Role outcomes</span><textarea
             value={values[`${prefix}-outcomes`] ?? vacancy.roleOutcomes}
             onChange={(event) =>
               onValue(`${prefix}-outcomes`, event.target.value)
@@ -731,8 +730,8 @@ function VacancyCard({
             rows={3}
             placeholder="Role outcomes"
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Minimum relevant requirements</span><textarea
             value={
               values[`${prefix}-requirements`] ??
               vacancy.minimumRequirements ??
@@ -744,8 +743,8 @@ function VacancyCard({
             rows={3}
             placeholder="Minimum relevant requirements"
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Safeguarding statement</span><textarea
             value={
               values[`${prefix}-safeguarding`] ??
               vacancy.safeguardingStatement
@@ -756,7 +755,7 @@ function VacancyCard({
             rows={2}
             placeholder="Safeguarding statement"
             className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2"
-          />
+          /></label>
           <input
             type="date"
             value={dates[`${prefix}-close-date`] ?? vacancy.closingDate ?? ""}
@@ -793,7 +792,7 @@ function VacancyCard({
             disabled={busyId === `${prefix}-save`}
             className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-black text-white disabled:opacity-60"
           >
-            Save governed vacancy brief
+            Save approved vacancy brief
           </button>
         </div>
       ) : (
@@ -878,38 +877,38 @@ function VacancyCard({
         <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50 p-4">
           <p className="text-xs font-black text-brand-950">Add candidate application</p>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Candidate full name</span><input
               value={values[`${prefix}-candidate-name`] ?? ""}
               onChange={(event) =>
                 onValue(`${prefix}-candidate-name`, event.target.value)
               }
               placeholder="Candidate full name"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Candidate email</span><input
               value={values[`${prefix}-candidate-email`] ?? ""}
               onChange={(event) =>
                 onValue(`${prefix}-candidate-email`, event.target.value)
               }
               placeholder="Candidate email"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Phone (optional)</span><input
               value={values[`${prefix}-candidate-phone`] ?? ""}
               onChange={(event) =>
                 onValue(`${prefix}-candidate-phone`, event.target.value)
               }
               placeholder="Phone (optional)"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Source</span><input
               value={values[`${prefix}-candidate-source`] ?? ""}
               onChange={(event) =>
                 onValue(`${prefix}-candidate-source`, event.target.value)
               }
               placeholder="Source"
               className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -1065,7 +1064,7 @@ function ApplicationCard({
               <option value="needs_more_evidence">Needs more evidence</option>
               <option value="do_not_progress">Do not progress</option>
             </select>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific competence evidence</span><textarea
               value={notes[`${prefix}-competence`] ?? ""}
               onChange={(event) =>
                 onNote(`${prefix}-competence`, event.target.value)
@@ -1073,8 +1072,8 @@ function ApplicationCard({
               placeholder="Specific competence evidence"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific role-fit evidence</span><textarea
               value={notes[`${prefix}-fit`] ?? ""}
               onChange={(event) =>
                 onNote(`${prefix}-fit`, event.target.value)
@@ -1082,8 +1081,8 @@ function ApplicationCard({
               placeholder="Specific role-fit evidence"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Builder philosophy evidence (optional)</span><textarea
               value={notes[`${prefix}-builder`] ?? ""}
               onChange={(event) =>
                 onNote(`${prefix}-builder`, event.target.value)
@@ -1091,14 +1090,14 @@ function ApplicationCard({
               placeholder="Builder philosophy evidence (optional)"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Concern/gap (optional)</span><textarea
               value={notes[`${prefix}-gap`] ?? ""}
               onChange={(event) => onNote(`${prefix}-gap`, event.target.value)}
               placeholder="Concern/gap (optional)"
               rows={2}
               className="rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -1217,14 +1216,14 @@ function ApplicationCard({
               >
                 Decline
               </button>
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Decision note when needed</span><input
                 value={notes[`${prefix}-decision`] ?? ""}
                 onChange={(event) =>
                   onNote(`${prefix}-decision`, event.target.value)
                 }
                 placeholder="Decision note when needed"
                 className="min-w-64 rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
             </>
           ) : null}
         </div>
@@ -1258,22 +1257,22 @@ function ApplicationCard({
                 </span>
               </div>
               <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Outcome note</span><input
                   value={notes[`clearance-note-${item.id}`] ?? ""}
                   onChange={(event) =>
                     onNote(`clearance-note-${item.id}`, event.target.value)
                   }
                   placeholder="Outcome note"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                   value={values[`clearance-ref-${item.id}`] ?? ""}
                   onChange={(event) =>
                     onValue(`clearance-ref-${item.id}`, event.target.value)
                   }
                   placeholder="Evidence reference"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                />
+                /></label>
                 <select
                   value={selects[`clearance-action-${item.id}`] ?? "verify"}
                   onChange={(event) =>
@@ -1309,7 +1308,7 @@ function ApplicationCard({
               </button>
             </div>
           ))}
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Final clearance decision note</span><textarea
             value={notes[`${prefix}-clearance-final`] ?? ""}
             onChange={(event) =>
               onNote(`${prefix}-clearance-final`, event.target.value)
@@ -1317,7 +1316,7 @@ function ApplicationCard({
             placeholder="Final clearance decision note"
             rows={2}
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
+          /></label>
           <button
             type="button"
             onClick={() =>
@@ -1343,8 +1342,7 @@ function ApplicationCard({
             Cleared for appointment handoff
           </p>
           <p className="mt-1 text-xs leading-5 text-emerald-900">
-            Appointment creates an O7 staff record in Onboarding. It does not
-            activate the staff member or bypass onboarding/account linkage.
+            Appointment creates an Staff staff record in Onboarding. It does not activate the staff member or bypass onboarding/account linkage.
           </p>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             <input
@@ -1391,7 +1389,7 @@ function ApplicationCard({
             className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white"
           >
             <BadgeCheck className="size-4" />
-            Create O7 appointment record
+            Add staff appointment
           </button>
         </div>
       ) : null}

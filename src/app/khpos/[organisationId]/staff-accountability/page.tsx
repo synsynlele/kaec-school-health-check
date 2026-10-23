@@ -4,7 +4,7 @@ import { StaffAccountabilityWorkspace } from "@/components/khpos/ops/StaffAccoun
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Recognition & Accountability · KHP-OS",
+  title: "Staff concerns & praise · KHP-OS",
   robots: { index: false, follow: false },
 };
 

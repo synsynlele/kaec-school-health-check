@@ -40,7 +40,7 @@ if (accountEntry.includes('router.replace("/khpos/admin")') || accountEntry.incl
 const portfolio = read("src/components/khpos/PortfolioIntelligenceWorkspace.tsx");
 requireText(portfolio, 'href="/khpos/admin"', "Portfolio return link");
 if (portfolio.includes('href="/"')) {
-  throw new Error("Navigation contract failed: Portfolio Intelligence must not return to the public homepage.");
+  throw new Error("Navigation contract failed: Network summary must not return to the public homepage.");
 }
 
 const accessHub = read("src/app/khpos/page.tsx");
@@ -85,11 +85,11 @@ const playbooksLibrary = read("src/lib/khpos/playbooks.ts");
 requireText(playbooksLibrary, "transformation-leadership", "Universal playbook library");
 requireText(playbooksLibrary, "sustainability-institutionalisation", "Universal playbook library");
 const playbooksWorkspace = read("src/components/khpos/PlaybooksWorkspace.tsx");
-requireText(playbooksWorkspace, "Active Intervention Playbooks", "School playbooks workspace");
+requireText(playbooksWorkspace, "Current action guides", "School playbooks workspace");
 requireText(playbooksWorkspace, "/api/khpos/implementation/${organisationId}", "Playbook implementation data source");
 
 const commandCentre = read("src/components/khpos/CommandCentre.tsx");
-requireText(commandCentre, "View full KSHC report", "School workspace KSHC report access");
+requireText(commandCentre, "View School Health Check report", "School workspace KSHC report access");
 requireText(commandCentre, "/report/${baseline.assessmentId}", "School workspace KSHC report route");
 
 const partnershipStatus = read("src/components/khpos/PartnershipStatusWorkspace.tsx");
@@ -137,7 +137,7 @@ const iconNames = schoolNav.match(/import \{([^}]*?)\} from "lucide-react"/)[1]
   .split(",").map((name) => name.trim()).filter(Boolean);
 const context = Object.fromEntries(iconNames.map((name) => [name, {}]));
 const navigation = vm.runInNewContext(
-  ts.transpile(declarations + "\n({ workspaceLinks, dailyLinks, navigationGroups });"),
+  ts.transpile(declarations + "\n({ workspaceLinks, dailyLinks, navigationGroups, schoolAreas, primarySuffix, matchesSearch });"),
   context,
 );
 const visibleLinks = [...navigation.dailyLinks, ...navigation.navigationGroups.flatMap((group) => group.links)];
@@ -146,11 +146,19 @@ if (new Set(destinations).size !== destinations.length) {
   throw new Error("School navigation contains duplicate destinations.");
 }
 for (const link of navigation.workspaceLinks) {
-  if (!destinations.includes(link.suffix)) throw new Error(`School navigation lost ${link.suffix || "overview"}.`);
+  const reachable = destinations.includes(link.suffix) || navigation.schoolAreas.some(area => area.routes.includes(link.suffix) && destinations.includes(area.routes[0]));
+  if (!reachable) throw new Error(`School navigation lost ${link.suffix || "overview"}.`);
   const page = path.join(root, "src/app/khpos/[organisationId]", link.suffix, "page.tsx");
   if (!fs.existsSync(page)) throw new Error(`School navigation has no page for ${link.suffix}.`);
 }
 if (navigation.dailyLinks.map((link) => link.suffix).join(",") !== ",/work,/issues,/decisions") {
   throw new Error("School daily navigation must expose overview, work, issues and approvals.");
 }
-console.log(`School navigation coverage validated: ${destinations.length} unique destinations and visible daily approvals.`);
+if (destinations.length > 22) throw new Error("Keep the main menu at 22 entrances or fewer.");
+const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);
+if (new Set(secondaryRoutes).size !== secondaryRoutes.length) throw new Error("A page must belong to only one work area.");
+for (const area of navigation.schoolAreas) for (const route of area.routes) {
+  if (navigation.primarySuffix(route)!==area.routes[0]) throw new Error(`Wrong area entrance for ${route}`);
+}
+if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
+console.log(`School navigation validated: ${navigation.workspaceLinks.length} routes reachable through ${destinations.length} unique main entrances, with related pages grouped and searchable.`);

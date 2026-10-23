@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -22,9 +24,7 @@ import type {
   KhposOpsPotentialReview,
 } from "@/lib/khpos/ops/potential-discovery";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -166,7 +166,7 @@ export function PotentialDevelopmentWorkspace({
       error?: string;
     };
     if (!response.ok || !body.ok || !body.potential) {
-      setError(body.error ?? "Potential Development could not be loaded.");
+      setError(body.error ?? "Learner development could not be loaded.");
       return;
     }
     setWorkspace(body.potential);
@@ -209,7 +209,7 @@ export function PotentialDevelopmentWorkspace({
       };
       if (!active) return;
       if (!response.ok || !body.ok || !body.potential) {
-        setError(body.error ?? "Potential Development could not be loaded.");
+        setError(body.error ?? "Learner development could not be loaded.");
         return;
       }
       setWorkspace(body.potential);
@@ -256,7 +256,7 @@ export function PotentialDevelopmentWorkspace({
     setBusy("");
 
     if (!response.ok || !body.ok || !body.potential) {
-      setError(body.error ?? "Potential Development operation could not be completed.");
+      setError(body.error ?? "Learner development operation could not be completed.");
       return false;
     }
 
@@ -287,14 +287,14 @@ export function PotentialDevelopmentWorkspace({
         <div className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <ShieldCheck className="mx-auto size-8 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">
-            Potential Development unavailable
+            Learner development unavailable
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
           >
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -310,18 +310,18 @@ export function PotentialDevelopmentWorkspace({
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 text-xs font-bold text-brand-100"
             >
-              <ArrowLeft className="size-4" /> Command Centre
+              <ArrowLeft className="size-4" /> School overview
             </Link>
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Operations · O16
+              School operations
             </span>
           </div>
           <div className="mt-6 max-w-4xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-300">
-              Human Potential Development
+              Human Learner development
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">
-              Potential Development
+              Learner development
             </h1>
             <p className="mt-4 text-sm leading-7 text-brand-100 sm:text-base">
               Discover possibilities, test them through real experiences, collect
@@ -400,9 +400,7 @@ export function PotentialDevelopmentWorkspace({
             <ShieldCheck className="mx-auto size-9 text-brand-700" />
             <h2 className="mt-3 text-xl font-black">Aggregate visibility only</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Your executive view shows institutional counts, not learner-level
-              discovery records. Learner-level work belongs to the operating roles
-              responsible for development.
+              Your role can view school summaries here. Individual learner records are available only to staff assigned to support their development.
             </p>
           </section>
         ) : workspace.learners.length === 0 ? (
@@ -410,9 +408,7 @@ export function PotentialDevelopmentWorkspace({
             <Compass className="mx-auto size-9 text-slate-400" />
             <h2 className="mt-3 text-xl font-black">No learner anchors yet</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              O16 intentionally reuses O14 learners. Create or sync learners in
-              Learner Progress first; Potential Development does not create a
-              second student database.
+              Learner development intentionally reuses Learner support learners. Create or sync learners in Learner Progress first; Learner development does not create a second student database.
             </p>
             <Link
               href={`/khpos/${organisationId}/learner-progress`}
@@ -483,8 +479,8 @@ export function PotentialDevelopmentWorkspace({
                           ["Recurring strengths", strengths, setStrengths],
                           ["Repeated choices", choices, setChoices],
                         ].map(([label, value, setter]) => (
-                          <textarea
-                            key={String(label)}
+                          <label key={String(label)} className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{String(label)}</span><textarea
+
                             value={String(value)}
                             onChange={(event) =>
                               (setter as (value: string) => void)(event.target.value)
@@ -492,24 +488,24 @@ export function PotentialDevelopmentWorkspace({
                             placeholder={String(label)}
                             rows={2}
                             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                          />
+                          /></label>
                         ))}
                       </div>
-                      <textarea
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence-based discovery note. Avoid fixed talent labels.</span><textarea
                         value={discoveryNote}
                         onChange={(event) => setDiscoveryNote(event.target.value)}
                         placeholder="Evidence-based discovery note. Avoid fixed talent labels."
                         rows={3}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <input
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                         value={discoveryReference}
                         onChange={(event) =>
                           setDiscoveryReference(event.target.value)
                         }
                         placeholder="Evidence reference"
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       <button
                         type="button"
                         disabled={busy === "discovery"}
@@ -541,13 +537,13 @@ export function PotentialDevelopmentWorkspace({
                       title="Keep possibilities open to evidence"
                       icon={Lightbulb}
                     >
-                      <input
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Theme, e.g. Practical Problem Solving</span><input
                         value={hypothesisTheme}
                         onChange={(event) => setHypothesisTheme(event.target.value)}
                         placeholder="Theme, e.g. Practical Problem Solving"
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <textarea
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is this worth exploring? State evidence, not certainty.</span><textarea
                         value={hypothesisSummary}
                         onChange={(event) =>
                           setHypothesisSummary(event.target.value)
@@ -555,14 +551,14 @@ export function PotentialDevelopmentWorkspace({
                         placeholder="Why is this worth exploring? State evidence, not certainty."
                         rows={3}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <textarea
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional next-test note</span><textarea
                         value={hypothesisNote}
                         onChange={(event) => setHypothesisNote(event.target.value)}
                         placeholder="Optional next-test note"
                         rows={2}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       <button
                         type="button"
                         disabled={busy === "hypothesis"}
@@ -641,27 +637,27 @@ export function PotentialDevelopmentWorkspace({
                           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                         />
                       </div>
-                      <input
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
                         value={evidenceTitle}
                         onChange={(event) => setEvidenceTitle(event.target.value)}
                         placeholder="Evidence title"
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <textarea
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What did the learner actually demonstrate?</span><textarea
                         value={evidenceNote}
                         onChange={(event) => setEvidenceNote(event.target.value)}
                         placeholder="What did the learner actually demonstrate?"
                         rows={3}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <input
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                         value={evidenceReference}
                         onChange={(event) =>
                           setEvidenceReference(event.target.value)
                         }
                         placeholder="Evidence reference"
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       <button
                         type="button"
                         disabled={busy === "evidence"}
@@ -736,12 +732,12 @@ export function PotentialDevelopmentWorkspace({
                             </option>
                           ))}
                         </select>
-                        <input
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Exploration area</span><input
                           value={explorationArea}
                           onChange={(event) => setExplorationArea(event.target.value)}
                           placeholder="Exploration area"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                        />
+                        /></label>
                         <input
                           type="date"
                           value={explorationPlanned}
@@ -759,7 +755,7 @@ export function PotentialDevelopmentWorkspace({
                           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                         />
                       </div>
-                      <textarea
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What are we trying to test or develop?</span><textarea
                         value={explorationPurpose}
                         onChange={(event) =>
                           setExplorationPurpose(event.target.value)
@@ -767,7 +763,7 @@ export function PotentialDevelopmentWorkspace({
                         placeholder="What are we trying to test or develop?"
                         rows={3}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       <button
                         type="button"
                         disabled={busy === "exploration"}
@@ -810,7 +806,7 @@ export function PotentialDevelopmentWorkspace({
                           </option>
                         ))}
                       </select>
-                      <textarea
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Learning summary—not a copied private journal.</span><textarea
                         value={reflectionSummary}
                         onChange={(event) =>
                           setReflectionSummary(event.target.value)
@@ -818,23 +814,23 @@ export function PotentialDevelopmentWorkspace({
                         placeholder="Learning summary—not a copied private journal."
                         rows={3}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
-                      <textarea
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Next step</span><textarea
                         value={reflectionNext}
                         onChange={(event) => setReflectionNext(event.target.value)}
                         placeholder="Next step"
                         rows={2}
                         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <input
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                           value={reflectionReference}
                           onChange={(event) =>
                             setReflectionReference(event.target.value)
                           }
                           placeholder="Evidence reference"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                        />
+                        /></label>
                         <input
                           type="datetime-local"
                           value={reflectedAt}
@@ -894,8 +890,8 @@ export function PotentialDevelopmentWorkspace({
                             ["Contribution summary", reviewContribution, setReviewContribution],
                             ["Next priorities", reviewPriorities, setReviewPriorities],
                           ].map(([label, value, setter]) => (
-                            <textarea
-                              key={String(label)}
+                            <label key={String(label)} className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{String(label)}</span><textarea
+
                               value={String(value)}
                               onChange={(event) =>
                                 (setter as (value: string) => void)(event.target.value)
@@ -903,14 +899,14 @@ export function PotentialDevelopmentWorkspace({
                               placeholder={String(label)}
                               rows={2}
                               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm first:mt-0"
-                            />
+                            /></label>
                           ))}
-                          <input
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional portfolio reference</span><input
                             value={reviewPortfolio}
                             onChange={(event) => setReviewPortfolio(event.target.value)}
                             placeholder="Optional portfolio reference"
                             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                          />
+                          /></label>
                           <button
                             type="button"
                             disabled={busy === "review-save"}
@@ -1124,7 +1120,7 @@ function PotentialRecords({
                       <option value="developing">Developing</option>
                       <option value="demonstrated">Demonstrated</option>
                     </select>
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence-based review note</span><textarea
                       value={notes[noteKey] ?? ""}
                       onChange={(event) =>
                         setNotes((current) => ({
@@ -1135,7 +1131,7 @@ function PotentialRecords({
                       placeholder="Evidence-based review note"
                       rows={2}
                       className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                    />
+                    /></label>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -1212,7 +1208,7 @@ function PotentialRecords({
                 </div>
                 {["planned", "active"].includes(item.status) ? (
                   <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Outcome / action note</span><input
                       value={notes[noteKey] ?? ""}
                       onChange={(event) =>
                         setNotes((current) => ({
@@ -1222,8 +1218,8 @@ function PotentialRecords({
                       }
                       placeholder="Outcome / action note"
                       className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion evidence reference</span><input
                       value={references[refKey] ?? ""}
                       onChange={(event) =>
                         setReferences((current) => ({
@@ -1233,7 +1229,7 @@ function PotentialRecords({
                       }
                       placeholder="Completion evidence reference"
                       className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                    />
+                    /></label>
                     <div className="flex gap-2 md:col-span-2">
                       {item.status === "planned" ? (
                         <button
@@ -1392,54 +1388,54 @@ function ReviewCard({
 
       {editable ? (
         <div className="mt-4 grid gap-2 md:grid-cols-2">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Discovery summary</span><textarea
             value={discovery}
             onChange={(event) => setDiscovery(event.target.value)}
             placeholder="Discovery summary"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What you think may explain the problem</span><textarea
             value={hypotheses}
             onChange={(event) => setHypotheses(event.target.value)}
-            placeholder="Hypothesis summary"
+            placeholder="What you think may explain the problem"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence summary</span><textarea
             value={evidence}
             onChange={(event) => setEvidence(event.target.value)}
             placeholder="Evidence summary"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Development summary</span><textarea
             value={development}
             onChange={(event) => setDevelopment(event.target.value)}
             placeholder="Development summary"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Contribution summary</span><textarea
             value={contribution}
             onChange={(event) => setContribution(event.target.value)}
             placeholder="Contribution summary"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Next priorities</span><textarea
             value={priorities}
             onChange={(event) => setPriorities(event.target.value)}
             placeholder="Next priorities"
             rows={3}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Optional portfolio reference</span><input
             value={portfolio}
             onChange={(event) => setPortfolio(event.target.value)}
             placeholder="Optional portfolio reference"
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-          />
+          /></label>
           <div className="flex flex-wrap gap-2 md:col-span-2">
             <button
               type="button"
@@ -1493,7 +1489,7 @@ function ReviewCard({
 
       {review.status === "submitted" && workspace.canApproveReview ? (
         <div className="mt-4">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Independent approval/return note</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -1504,7 +1500,7 @@ function ReviewCard({
             placeholder="Independent approval/return note"
             rows={2}
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
+          /></label>
           <div className="mt-2 flex gap-2">
             <button
               type="button"

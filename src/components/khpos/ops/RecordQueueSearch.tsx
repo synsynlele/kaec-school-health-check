@@ -72,7 +72,7 @@ export function RecordQueueSearchControls({
   return (
     <div className="flex flex-col items-stretch gap-3 rounded-2xl sm:flex-row sm:flex-wrap sm:items-end border border-slate-200 bg-white p-3 shadow-sm" role="search" aria-label="Find and sort records">
       <label className="min-w-0 sm:flex-[1_1_16rem] text-sm font-semibold text-slate-700">
-        Search current view
+        Search this list
         <input
           type="search"
           autoComplete="off"
@@ -103,7 +103,7 @@ export function RecordQueueSearchControls({
         </button>
       )}
       <p className="w-full text-xs text-slate-500" role="status" aria-live="polite">
-        Showing {shown} of {total} in this view. Change Active, Waiting or History to search that queue.
+        Showing {shown} of {total} in this list. Choose Needs attention, Waiting on others or History to search another list.
       </p>
     </div>
   );

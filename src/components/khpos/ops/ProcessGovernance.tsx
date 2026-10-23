@@ -45,7 +45,7 @@ const fields: { key: ArrayField; label: string; api: string }[] = [
   { key: "evidence", label: "Required evidence", api: "evidence" },
   { key: "exception_conditions", label: "Exception conditions", api: "exceptionConditions" },
   { key: "escalation", label: "Escalation", api: "escalation" },
-  { key: "kpis", label: "KPIs / success checks", api: "kpis" },
+  { key: "kpis", label: "Measures / success checks", api: "kpis" },
 ];
 
 function lines(value: string) {
@@ -292,10 +292,7 @@ export function ProcessGovernance({
       <h3 className="text-xl font-black">Process drafting and approval</h3>
       <p className="mt-2 text-sm text-slate-600">Edit your existing draft here. A published process is never overwritten: choose it to prepare a new controlled revision for independent approval.</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Leaders turn registered processes into school-owned operating procedures. A different authorised leader
-        must review the draft. If the School Custodian authors a P0 process, the School Guardian becomes the
-        independent co-approver; if another leader authors it, the School Custodian approves. Governing policies
-        must already be active before publication.
+        Draft the steps for your school, then ask a different authorised leader to review them. For a P0 critical procedure, the School Guardian co-approves a School Custodian’s draft; the School Custodian approves drafts from other leaders. Required policies must be active before the procedure is published.
       </p>
 
       <label className="mt-5 block text-sm font-bold">
@@ -336,7 +333,7 @@ export function ProcessGovernance({
             <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
               <p className="font-bold text-brand-900">KAEC baseline loaded</p>
               <p className="mt-1">
-                This registered process did not yet have a school-owned procedure. Review and customise the baseline before saving. It remains a draft until a different authorised leader approves it, and governing policies must be active first.
+                Check and adapt these steps for your school. They stay in draft until a different authorised leader approves them. Required policies must be active before publication.
               </p>
             </div>
           )}
@@ -345,7 +342,7 @@ export function ProcessGovernance({
             <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
               <p className="font-bold text-brand-900">KAEC baseline draft</p>
               <p className="mt-1">
-                KHP-OS prepared this starting procedure from the controlled KAEC baseline. The named author must review and customise it; independent approval remains mandatory.
+                This draft starts from the KAEC standard. Its author must check and adapt it for the school. A different authorised leader must approve it.
               </p>
             </div>
           )}
@@ -361,7 +358,7 @@ export function ProcessGovernance({
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
               <p className="font-bold">Awaiting independent approval</p>
               <p className="mt-1">
-                You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same process in <b>Institutional Library → Process drafting and approval</b>, review the frozen draft, then approve or return it.
+                You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same process in <b>School library → Process drafting and approval</b>, review the frozen draft, then approve or return it.
               </p>
             </div>
           )}

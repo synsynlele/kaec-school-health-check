@@ -112,7 +112,7 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
           <ShieldCheck className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">Learning intelligence unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
-          <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950">Command Centre</Link>
+          <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950">School overview</Link>
         </div>
       </main>
     );
@@ -129,9 +129,9 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] text-mint-300">KHP-OS × KSI</p>
-              <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">Learning quality becomes institutional context.</h1>
+              <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">Learning summary</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                KSI remains the specialist learning engine. KHP-OS receives only governed school-level signals that help leadership understand whether learning systems are operating consistently.
+                KSI handles lesson planning and assessments. This page shows school-level summaries to help leaders check teaching and learning.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
@@ -150,7 +150,7 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
           <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">Epistemic boundary</p>
           <h2 className="mt-2 text-xl font-black text-amber-950">KSI context does not resolve KSHC priorities.</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-amber-900/80">
-            These signals can strengthen interpretation, intervention review and institutional learning. Only a fresh KSHC reassessment can verify improvement or resolve a diagnosed priority.
+            Use these summaries to support your review. A new School Health Check is still needed to confirm improvement or close a school priority.
           </p>
         </section>
 
@@ -161,7 +161,7 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
               One authorised KHP-OS leader starts the connection. In KSI, an Owner or Admin approves the exact school workspace once. After that, KSI syncs bounded 90-day aggregate learning signals automatically.
             </p>
-            <p className="mt-3 text-xs font-semibold text-slate-500">No student records, teacher rankings, lesson content or diagnosis prose are transferred.</p>
+            <p className="mt-3 text-xs font-semibold text-slate-500">Private student records, teacher rankings, lesson content and assessment notes are not shared here.</p>
             {workspace.membership.canConnect ? (
               <button type="button" disabled={busy} onClick={() => void connect()} className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white disabled:opacity-50">
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />} Connect KSI securely

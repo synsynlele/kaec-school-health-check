@@ -4,7 +4,7 @@ import { IssuesWorkspace } from "@/components/khpos/ops/IssuesWorkspace";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Issues & Escalations · KHP-OS",
+  title: "Issues & help · KHP-OS",
   robots: { index: false, follow: false },
 };
 

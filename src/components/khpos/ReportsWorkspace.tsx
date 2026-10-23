@@ -318,12 +318,7 @@ export function ReportsWorkspace({
           designated reviewer. Templates and reporting totals can be managed by
           authorised school leaders.
         </p>
-        <Link
-          href={`/khpos/${organisationId}/records`}
-          className="inline-flex min-h-11 items-center text-sm font-bold text-brand-800 underline"
-        >
-          View existing process reports, checklists & evidence
-        </Link>
+
       </header>
       {error && (
         <p
@@ -957,7 +952,7 @@ function ReportEditor({
       )}
       <details className="rounded-xl bg-slate-50 p-3">
         <summary className="min-h-11 cursor-pointer font-bold">
-          Submission & review history ({history.length})
+          Saved answers & review history ({history.length})
         </summary>
         <div className="space-y-3">
           {history.map((h) => (

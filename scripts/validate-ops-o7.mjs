@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/people"', "school workspace navigation");
-requireText(nav, 'label: "People & Staff"', "school workspace navigation");
+requireText(nav, 'label: "Staff"', "school workspace navigation");
 requireText(nav, 'suffix: "/team"', "O1 Team & Roles navigation");
 
 const page = read("src/app/khpos/[organisationId]/people/page.tsx");
@@ -47,9 +47,9 @@ for (const expected of [
 const workspace = read("src/components/khpos/ops/PeopleWorkspace.tsx");
 for (const expected of [
   "People & staff",
-  "People & Staff",
+  "Staff",
   "Appoint and onboard a person",
-  "Minimal personnel data by design",
+  "What to keep in staff records",
   "Deployment blockers",
   "Onboarding certification",
   "Activate operating role",

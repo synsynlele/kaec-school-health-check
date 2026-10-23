@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LearningSectionsPanel, LEARNING_SECTIONS_CHANGED } from "@/components/khpos/LearningSectionsPanel";
@@ -17,9 +19,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsStructure } from "@/lib/khpos/ops/structure";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function ListBlock({
   title,
@@ -114,7 +114,7 @@ export function OperationsTeamWorkspace({
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
           <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading institutional structure…
+            Loading school structure…
           </p>
         </div>
       </main>
@@ -135,7 +135,7 @@ export function OperationsTeamWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -148,23 +148,23 @@ export function OperationsTeamWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O1
+              School operations
             </span>
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold capitalize text-slate-100">
-              Workspace authority: {readable(structure.membershipRole)}
+              Your school access: {readable(structure.membershipRole)}
             </span>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-300">
-                Institutional Structure & Roles
+                Staff roles & reporting lines
               </p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
                 {structure.organisation.name}
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Authority, reporting lines and role expectations are defined independently from transformation permissions. The school can scale its operating structure without changing the existing KHP-OS transformation engine.
+                See each position, who holds it, who they report to and what they are responsible for. Assigning a school position does not automatically give access to school improvement decisions.
               </p>
             </div>
 
@@ -173,7 +173,7 @@ export function OperationsTeamWorkspace({
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-black text-white transition hover:bg-white/15"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
         </div>
@@ -219,13 +219,13 @@ export function OperationsTeamWorkspace({
           <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
             <p className="text-sm font-black text-amber-950">Operating seats still need active people.</p>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-900/80">
-              Team & Roles defines the structure; People & Staff is where a person is appointed, onboarded and activated into that structure.
+              Staff & roles defines the structure; Staff is where a person is appointed, onboarded and activated into that structure.
             </p>
             <Link
               href={`/khpos/${organisationId}/people`}
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-xs font-black text-white"
             >
-              Open People & Staff
+              Open Staff
               <ChevronRight className="size-4" />
             </Link>
           </section>
@@ -237,7 +237,7 @@ export function OperationsTeamWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
                 Campus structure
               </p>
-              <h2 className="mt-2 text-2xl font-black">Where the institution operates</h2>
+              <h2 className="mt-2 text-2xl font-black">Schools, campuses and sections</h2>
             </div>
             <Building2 className="size-7 text-brand-700" />
           </div>
@@ -289,7 +289,7 @@ export function OperationsTeamWorkspace({
               Every seat has a mission, authority and reporting line.
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              These are institutional roles, not KHP-OS transformation permissions. Role assignments can change without rewriting the school operating model.
+              These are school positions and reporting lines. Access to school improvement decisions is managed separately.
             </p>
           </div>
 
@@ -360,15 +360,15 @@ export function OperationsTeamWorkspace({
 
                   {role.charter ? (
                     <div className="grid gap-7 lg:grid-cols-2">
-                      <ListBlock title="Owned outcomes" items={role.charter.ownedOutcomes} />
+                      <ListBlock title="Expected results" items={role.charter.ownedOutcomes} />
                       <ListBlock title="Responsibilities" items={role.charter.responsibilities} />
-                      <ListBlock title="Decision rights" items={role.charter.decisionRights} />
-                      <ListBlock title="Escalation rules" items={role.charter.escalationRules} />
-                      <ListBlock title="Role KPIs" items={role.charter.kpis} />
+                      <ListBlock title="Decisions this role can make" items={role.charter.decisionRights} />
+                      <ListBlock title="When to ask for help" items={role.charter.escalationRules} />
+                      <ListBlock title="Role Measures" items={role.charter.kpis} />
                     </div>
                   ) : (
                     <p className="text-sm leading-6 text-slate-600">
-                      This operating role is registered, but its active Role Charter has not yet been published.
+                      This position has been added, but its responsibilities have not yet been approved and published.
                     </p>
                   )}
                 </div>

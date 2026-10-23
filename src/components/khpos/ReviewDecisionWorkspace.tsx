@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -45,10 +47,7 @@ function formatDate(value: string | null | undefined): string {
   }).format(date);
 }
 
-function readable(value: string | null | undefined): string {
-  if (!value) return "—";
-  return value.replaceAll("_", " ");
-}
+function readable(value: string | null | undefined): string { return plainLabel(value); }
 
 function decisionTone(decision: KhposReviewDecision): string {
   if (decision === "complete") return "border-emerald-200 bg-emerald-50 text-emerald-800";
@@ -99,7 +98,7 @@ function ReviewDecisionPanel({
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Human authority</p>
           <h3 className="mt-1 text-lg font-black text-slate-950">Approve the decision—not the review report.</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            KHP-OS has prepared the evidence, progress analysis, adaptation intelligence and deterministic recommendation. An Executive or Transformation Lead retains the final decision.
+            KHP-OS has prepared the evidence, progress analysis, adaptation intelligence and standard recommendation. An Executive or Transformation Lead retains the final decision.
           </p>
         </div>
       </div>
@@ -136,7 +135,9 @@ function ReviewDecisionPanel({
         })}
       </div>
 
-      <textarea
+      <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{noteRequired
+            ? "Required: briefly explain why you are overriding the recommendation, pausing or stopping."
+            : "Optional decision note for the institutional record."}</span><textarea
         value={note}
         disabled={!canDecide || busy}
         maxLength={2000}
@@ -147,11 +148,11 @@ function ReviewDecisionPanel({
             : "Optional decision note for the institutional record."
         }
         className="mt-4 min-h-24 w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none focus:border-brand-500 disabled:bg-slate-100"
-      />
+      /></label>
 
       {!canDecide ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          You can review this intelligence, but only an Executive or Transformation Lead can approve the institutional decision.
+          You can review this intelligence, but only an Executive or Transformation Lead can approve the school decision.
         </div>
       ) : (
         <button
@@ -280,7 +281,7 @@ export function ReviewDecisionWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">Preparing the institutional review…</p>
+          <p className="mt-4 text-sm font-semibold text-slate-300">Preparing the school review…</p>
         </div>
       </main>
     );
@@ -294,7 +295,7 @@ export function ReviewDecisionWorkspace({
           <h1 className="mt-4 text-2xl font-black">Review workspace unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -317,10 +318,10 @@ export function ReviewDecisionWorkspace({
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Review & Decision</p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                Evidence drives the review. Leadership makes the call.
+                Review progress and decide the next step
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                KHP-OS separates implementation activity from institutional change, interprets the evidence against the outcome contract and explains what should happen next. The deterministic recommendation remains authoritative; human leadership retains the final decision.
+                KHP-OS separates implementation activity from school change, interprets the evidence against the outcome contract and explains what should happen next. The standard recommendation remains authoritative; human leadership retains the final decision.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
@@ -464,7 +465,7 @@ export function ReviewDecisionWorkspace({
                 )}
 
                 <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Institutional lessons</p>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">School lessons</p>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     {review.lessons.map((lesson, index) => (
                       <div key={`${review.id}-lesson-${index}`} className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
@@ -477,7 +478,7 @@ export function ReviewDecisionWorkspace({
                 <section className={`rounded-3xl border p-6 ${decisionTone(review.recommendation.decision)}`}>
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.18em]">KHP-OS deterministic recommendation</p>
+                      <p className="text-xs font-black uppercase tracking-[0.18em]">KHP-OS standard recommendation</p>
                       <h3 className="mt-2 text-2xl font-black capitalize">{review.recommendation.decision}</h3>
                       <p className="mt-3 max-w-3xl text-sm leading-7">{review.recommendation.reason}</p>
                     </div>
@@ -512,7 +513,7 @@ export function ReviewDecisionWorkspace({
               <CheckCircle2 className="size-5 text-emerald-700" />
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Decision history</p>
-                <h2 className="mt-1 text-2xl font-black">Institutional review record</h2>
+                <h2 className="mt-1 text-2xl font-black">School review record</h2>
               </div>
             </div>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">

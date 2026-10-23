@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/staff-transition"', "school workspace navigation");
-requireText(nav, 'label: "Progression & Exit"', "school workspace navigation");
+requireText(nav, 'label: "Staff changes & leaving"', "school workspace navigation");
 requireText(nav, 'suffix: "/staff-accountability"', "O10 navigation continuity");
 requireText(nav, 'suffix: "/staff-performance"', "O9 navigation continuity");
 
@@ -66,10 +66,10 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/StaffTransitionWorkspace.tsx");
 for (const expected of [
-  "Operations · O11",
-  "Progression, Succession & Exit",
+  "School operations",
+  "Staff changes & leaving",
   "Succession is a development hypothesis, not a promotion promise.",
-  "No score promotes a person.",
+  "A score alone cannot promote someone.",
   "Your acceptance is required",
   "No departure without continuity, clearance and access closure",
   "Employment-action boundary",

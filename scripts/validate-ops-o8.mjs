@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/availability"', "school workspace navigation");
-requireText(nav, 'label: "Availability & Coverage"', "school workspace navigation");
+requireText(nav, 'label: "Leave & cover"', "school workspace navigation");
 requireText(nav, 'suffix: "/people"', "O7 People & Staff navigation");
 
 const page = read("src/app/khpos/[organisationId]/availability/page.tsx");
@@ -46,8 +46,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/AvailabilityWorkspace.tsx");
 for (const expected of [
-  "Operations · O8",
-  "Availability & Coverage",
+  "School operations",
+  "Leave & cover",
   "KHP-OS does not replace the school attendance system.",
   "Transactional boundary",
   "Coverage gaps",

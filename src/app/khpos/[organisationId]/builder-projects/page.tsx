@@ -4,7 +4,7 @@ import { BuilderProjectsWorkspace } from "@/components/khpos/ops/BuilderProjects
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Builder Projects & Defence · KHP-OS",
+  title: "Builder projects · KHP-OS",
   robots: { index: false, follow: false },
 };
 

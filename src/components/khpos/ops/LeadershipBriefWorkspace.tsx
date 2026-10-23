@@ -99,14 +99,14 @@ export function LeadershipBriefWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Generated from live institutional reality
+              Generated from live school reality
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
@@ -114,9 +114,7 @@ export function LeadershipBriefWorkspace({
             Leadership Brief
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">
-            Use the meeting to decide, unblock and improve. KHP-OS has already
-            assembled what changed, what is failing, what needs authority and
-            what is coming next.
+            Use this summary to prepare your meeting. Review progress, resolve blocked work, make decisions and agree next steps.
           </p>
           <p className="mt-3 text-xs text-brand-200">
             Prepared {formatDate(brief.generatedAt)}
@@ -205,7 +203,7 @@ export function LeadershipBriefWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
                 Evidence-derived execution
               </p>
-              <h2 className="mt-1 text-2xl font-black">Institutional operating signals</h2>
+              <h2 className="mt-1 text-2xl font-black">School operating signals</h2>
             </div>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -248,9 +246,9 @@ export function LeadershipBriefWorkspace({
               </li>
             ))}
           </ol>
-          {!brief.meetingAgenda.items.length && <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Your attention queue has no items for this agenda. Use the operating signals and upcoming obligations to prepare improvement discussions.</p>}
+          {!brief.meetingAgenda.items.length && <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">No tasks need attention for this meeting. Check the school summary and upcoming dates to prepare your discussion.</p>}
           {brief.meetingAgenda.remainingCount > 0 && <p className="mt-4 text-sm text-slate-600">{brief.meetingAgenda.remainingCount} more items remain in your attention queue. <Link href={`/khpos/${organisationId}/work`} className="font-bold text-brand-700">Review Today</Link></p>}
-          <p className="mt-4 text-xs leading-5 text-slate-500">Agenda prompts do not approve decisions or change work. Record conclusions in their source workspace so existing authority, evidence and verification controls apply.</p>
+          <p className="mt-4 text-xs leading-5 text-slate-500">Record decisions and follow-up actions in their own pages after the meeting. Notes on this page do not approve requests or change tasks.</p>
         </section>
 
         <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
@@ -283,7 +281,7 @@ export function LeadershipBriefWorkspace({
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                Next on the institutional clock
+                Next on the school clock
               </p>
               <h2 className="mt-2 text-2xl font-black">Upcoming</h2>
             </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -53,9 +55,7 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function priorityClasses(priority: KhposOpsDecisionPriority) {
   if (priority === "P1") return "border-red-200 bg-red-50 text-red-800";
@@ -532,7 +532,7 @@ export function DecisionsWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -549,26 +549,24 @@ export function DecisionsWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O5
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Decisions & Approvals
+                Approvals & decisions
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Make authority visible. Decisions move up the real reporting
-                chain, then approved actions move into My Work with an owner,
-                outcome, deadline and evidence.
+                Send a request to the person authorised to decide. Approved actions appear in Today with a person responsible, deadline and required evidence.
               </p>
             </div>
             <button
@@ -612,15 +610,13 @@ export function DecisionsWorkspace({
           <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-950 shadow-sm">
             <h2 className="font-black">Your operating role is not assigned yet.</h2>
             <p className="mt-2 text-sm leading-6">
-              KHP-OS will not guess authority. Assign your assigned school role in Team
-              & Roles first; decision routing will then follow the actual
-              reporting line.
+              Ask your school leader to assign your position and reporting line in Staff & roles. KHP-OS uses that reporting line to send requests to the right person.
             </p>
             <Link
               href={`/khpos/${organisationId}/team`}
               className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white"
             >
-              Open Team & Roles
+              Open Staff & roles
             </Link>
           </section>
         )}
@@ -855,8 +851,7 @@ export function DecisionsWorkspace({
                   <span>
                     This decision creates implementation work.
                     <span className="mt-1 block text-xs font-normal leading-5 text-slate-500">
-                      KHP-OS will create an evidence-required item in the
-                      selected owner’s My Work queue.
+                      KHP-OS will create an evidence-required item in the selected owner’s Today queue.
                     </span>
                   </span>
                 </label>
@@ -1080,7 +1075,7 @@ export function DecisionsWorkspace({
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">
-                            Implementation in My Work
+                            Actions in Today
                           </p>
                           <p className="mt-2 text-sm font-black text-brand-950">
                             {decision.work.title}
@@ -1095,7 +1090,7 @@ export function DecisionsWorkspace({
                           className="inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2 text-xs font-black text-white"
                         >
                           <ListTodo className="size-3.5" />
-                          Open My Work
+                          Open Today
                         </Link>
                       </div>
                     </div>
@@ -1120,8 +1115,7 @@ export function DecisionsWorkspace({
                           <span>
                             Approval creates implementation work.
                             <span className="mt-1 block text-xs font-normal leading-5 text-slate-500">
-                              The action will enter the selected owner’s My Work
-                              queue and require evidence before completion.
+                              The action will enter the selected owner’s Today queue and require evidence before completion.
                             </span>
                           </span>
                         </label>

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -31,10 +33,7 @@ const SYSTEM_NAMES: Record<string, string> = {
   intelligence_continuous_improvement: "Intelligence & Continuous Improvement",
 };
 
-function readable(value: string | null | undefined) {
-  if (!value) return "—";
-  return value.replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function delta(value: number | null | undefined) {
   if (value === null || value === undefined) return "—";
@@ -177,7 +176,7 @@ export function ImprovementIntelligenceWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">Calculating institutional change…</p>
+          <p className="mt-4 text-sm font-semibold text-slate-300">Calculating school change…</p>
         </div>
       </main>
     );
@@ -191,7 +190,7 @@ export function ImprovementIntelligenceWorkspace({
           <h1 className="mt-4 text-2xl font-black">Improvement intelligence unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -209,16 +208,16 @@ export function ImprovementIntelligenceWorkspace({
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
           <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
           <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Reassessment & Improvement Intelligence</p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                Did the institution actually get better?
+                Check what has improved
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                KHP-OS compares fresh KSHC evidence with the original baseline and previous assessment, then updates priorities and the next operating cycle automatically.
+                Complete a new School Health Check to compare your current results with earlier checks and decide what to improve next.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -239,9 +238,9 @@ export function ImprovementIntelligenceWorkspace({
         <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
           <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Reassessment control</p>
-            <h2 className="mt-2 text-2xl font-black">Fresh institutional truth, same KSHC framework.</h2>
+            <h2 className="mt-2 text-2xl font-black">Fresh school truth, same KSHC framework.</h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-              School identity, framework, baseline linkage and comparison logic are handled automatically. The reassessment asks only the 55 KSHC indicators again so the new claim is based on fresh evidence rather than implementation activity.
+              Answer the 55 School Health Check questions using current evidence. Your earlier results stay saved so you can see what changed.
             </p>
             {inProgress && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -261,7 +260,7 @@ export function ImprovementIntelligenceWorkspace({
               </button>
             ) : (
               <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                You can view improvement intelligence. An Executive or Transformation Lead starts a new institutional reassessment.
+                You can view the results here. An authorised Executive or Transformation Lead can start a new School Health Check.
               </p>
             )}
           </div>
@@ -271,7 +270,7 @@ export function ImprovementIntelligenceWorkspace({
             <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Verified improvement rule</p>
             <p className="mt-2 text-xl font-black">Implementation is not improvement.</p>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              KHP-OS only marks verified institutional improvement when the fresh KSHC score improves meaningfully and more indicators improve than regress. Individual priorities require their own maturity threshold before resolution.
+              KHP-OS only marks verified school improvement when the fresh KSHC score improves meaningfully and more indicators improve than regress. Individual priorities require their own maturity threshold before resolution.
             </p>
           </div>
         </section>
@@ -300,7 +299,7 @@ export function ImprovementIntelligenceWorkspace({
                 <p className="mt-2 text-4xl font-black">{delta(latest.deltaFromBaseline)}</p>
               </div>
               <div className={`rounded-3xl border p-5 shadow-sm ${latest.verifiedImprovement ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-900"}`}>
-                <p className="text-xs font-black uppercase opacity-70">Institutional finding</p>
+                <p className="text-xs font-black uppercase opacity-70">School finding</p>
                 <p className="mt-2 text-lg font-black capitalize">{readable(latest.classification)}</p>
                 <p className="mt-2 text-xs font-bold">{latest.verifiedImprovement ? "Verified improvement" : "No verified improvement claim"}</p>
               </div>
@@ -340,7 +339,7 @@ export function ImprovementIntelligenceWorkspace({
               </div>
 
               <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Seven institutional systems</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Seven school systems</p>
                 <h2 className="mt-2 text-2xl font-black">System-level change</h2>
                 <div className="mt-5 space-y-3">
                   {workspace.systemChanges.map((system) => (
@@ -486,7 +485,7 @@ export function ImprovementIntelligenceWorkspace({
             <div>
               <h2 className="text-xl font-black text-slate-950">Historical truth is preserved.</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                KHP-OS never overwrites the baseline or previous assessment. Every reassessment remains versioned, attributable and reconstructable, including the exact priority outcome it produced.
+                Earlier checks stay saved. Each new check records who completed it, its results and what happened to the school priorities.
               </p>
             </div>
           </div>

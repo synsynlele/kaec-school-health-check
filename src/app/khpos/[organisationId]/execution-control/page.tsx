@@ -4,7 +4,7 @@ import { ExecutionControlWorkspace } from "@/components/khpos/ops/ExecutionContr
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Execution Control · KHP-OS",
+  title: "Task setup · KHP-OS",
   robots: { index: false, follow: false },
 };
 

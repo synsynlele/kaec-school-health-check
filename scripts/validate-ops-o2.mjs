@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/library"', "school workspace navigation");
-requireText(nav, "Policies & Processes", "school workspace navigation");
+requireText(nav, "School library", "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/library/page.tsx");
 requireText(page, "InstitutionalLibrary", "library route");
@@ -42,14 +42,14 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/InstitutionalLibrary.tsx");
 for (const expected of [
-  "Institutional Control Library",
+  "School library",
   "Policy Register",
   "Process Register",
   "Work tools",
   "How to use this tool",
   "ToolUsageGuide",
   "Registered · document pending",
-  "Controlled Institutional Policy",
+  "Controlled School Policy",
   "Transformation Playbooks remain intact",
 ]) {
   requireText(workspace, expected, "Institutional Library workspace");

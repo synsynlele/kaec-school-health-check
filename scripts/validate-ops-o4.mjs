@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/issues"', "school workspace navigation");
-requireText(nav, 'label: "Issues & Escalations"', "school workspace navigation");
+requireText(nav, 'label: "Issues & help"', "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/issues/page.tsx");
 requireText(page, "IssuesWorkspace", "Issues route");
@@ -44,12 +44,12 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/IssuesWorkspace.tsx");
 for (const expected of [
-  "Operations · O4",
-  "Issues & Escalations",
-  "A deviation does not disappear into WhatsApp or memory.",
+  "School operations",
+  "Issues & help",
+  "Report a problem, assign someone to fix it",
   "Report issue",
   "Case history",
-  "Do not place confidential safeguarding disclosure details in the standard issue queue.",
+  "Report child safety concerns in Safeguarding; do not enter confidential case details here.",
 ]) {
   requireText(workspace, expected, "O4 issue workspace");
 }

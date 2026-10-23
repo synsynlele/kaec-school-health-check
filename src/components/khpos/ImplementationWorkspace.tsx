@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -32,18 +34,16 @@ function formatDate(value: string | null | undefined): string {
   }).format(date);
 }
 
-function readableStatus(value: string): string {
-  return value.replaceAll("_", " ");
-}
+function readableStatus(value: string): string { return plainLabel(value); }
 
 function SourceBadge({ source }: { source: "system" | "ai_assisted" }) {
   return source === "ai_assisted" ? (
     <span className="rounded-full bg-mint-300 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-950">
-      AI-contextualised
+      Adapted with AI
     </span>
   ) : (
     <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-200">
-      Deterministic safe plan
+      Standard plan
     </span>
   );
 }
@@ -120,7 +120,7 @@ export function ImplementationWorkspace({
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -144,7 +144,7 @@ export function ImplementationWorkspace({
             href={`/khpos/${organisationId}`}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
           >
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
         </div>
       </header>
@@ -155,17 +155,17 @@ export function ImplementationWorkspace({
             Canonical method · institution-specific intelligence
           </span>
           <h1 className="mt-5 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-            The intervention stays disciplined. The execution becomes specific.
+            Put your improvement plan into action
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            KHP-OS keeps KSHC evidence and the approved KAEC-NG intervention authoritative, then contextualises the execution path, outcome contract, evidence standard and review cadence for this institution. Humans execute the real-world work and provide proof.
+            Follow the plan agreed for your school. Each step shows the work to do, the expected result, the evidence needed and the review date.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold">
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2">
               {workspace.activePlanCount} active {workspace.activePlanCount === 1 ? "plan" : "plans"}
             </span>
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2">
-              {workspace.aiAssistedPlanCount} AI-contextualised
+              {workspace.aiAssistedPlanCount} Adapted with AI
             </span>
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
@@ -180,7 +180,7 @@ export function ImplementationWorkspace({
             <Layers3 className="size-8 text-brand-700" />
             <h2 className="mt-5 text-2xl font-black">No implementation plan is active yet.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Approve a transformation priority first. KHP-OS will create the safe deterministic plan and, when AI intelligence is available, contextualise it before execution begins.
+              An authorised school leader must approve a priority first. KHP-OS will then prepare an action plan for your school.
             </p>
             <Link
               href={`/khpos/${organisationId}/priorities`}
@@ -248,7 +248,7 @@ export function ImplementationWorkspace({
                           <div className="flex items-center gap-3">
                             <BrainCircuit className="size-5 text-brand-700" />
                             <div>
-                              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Institutional context</p>
+                              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">School context</p>
                               <h3 className="mt-1 text-lg font-black">What this intervention means here</h3>
                             </div>
                           </div>
@@ -273,7 +273,7 @@ export function ImplementationWorkspace({
 
                     {!ai && plan.intervention.intelligenceSource === "fallback" && (
                       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-                        <strong>Safe fallback in use:</strong> AI contextualisation did not pass the required contract, so KHP-OS preserved the deterministic intervention rather than presenting unverified intelligence as fact.
+                        <strong>Safe fallback in use:</strong> The AI suggestions could not be checked. The approved standard plan is shown instead.
                       </div>
                     )}
 
@@ -282,7 +282,7 @@ export function ImplementationWorkspace({
                         <div className="flex items-center gap-3">
                           <ClipboardCheck className="size-5 text-mint-800" />
                           <div>
-                            <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-800">Outcome contract</p>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-800">Expected result</p>
                             <h3 className="mt-1 text-xl font-black">Completion means change—not task activity.</h3>
                           </div>
                         </div>
@@ -433,7 +433,7 @@ export function ImplementationWorkspace({
                     </section>
 
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-                      <strong>Human role:</strong> approve the institutional commitment, execute the real-world actions and provide evidence. KHP-OS controls the sequence, evidence standard and review cadence; reassessment—not activity completion—verifies institutional improvement.
+                      <strong>Human role:</strong> approve the plan, carry out the work and add proof. KHP-OS tracks the steps and review dates. A new School Health Check confirms whether the school has improved.
                     </div>
                   </div>
                 </section>

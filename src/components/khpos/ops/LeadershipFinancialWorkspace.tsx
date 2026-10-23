@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -19,9 +21,7 @@ import type {
   KhposOpsLeadershipOpportunity,
 } from "@/lib/khpos/ops/leadership-financial";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -148,7 +148,7 @@ export function LeadershipFinancialWorkspace({
       if (!active) return;
       if (!response.ok || !body.ok || !body.capability) {
         setError(
-          body.error ?? "Leadership & Financial Capability could not be loaded.",
+          body.error ?? "Leadership & money skills could not be loaded.",
         );
         return;
       }
@@ -210,7 +210,7 @@ export function LeadershipFinancialWorkspace({
     setBusyId(null);
     if (!response.ok || !body.ok || !body.capability) {
       setError(
-        body.error ?? "Leadership & Financial Capability operation failed.",
+        body.error ?? "Leadership & money skills operation failed.",
       );
       return false;
     }
@@ -317,7 +317,7 @@ export function LeadershipFinancialWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <h1 className="text-2xl font-black">
-            Leadership & Financial Capability is unavailable
+            Leadership & money skills is unavailable
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
@@ -325,7 +325,7 @@ export function LeadershipFinancialWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -338,19 +338,19 @@ export function LeadershipFinancialWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O18
+              School operations
             </span>
             <Link
               href={"/khpos/" + organisationId}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl">
-            Leadership & Financial Capability
+            Leadership & money skills
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
             Leadership is demonstrated through responsibility, service and
@@ -409,9 +409,7 @@ export function LeadershipFinancialWorkspace({
           <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
             <p className="text-sm font-black">Executive aggregate view</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Learner-level evidence is intentionally hidden from a pure
-              executive account. Operational staff with governed learner
-              responsibility record and verify the underlying evidence.
+              Learner-level evidence is intentionally hidden from a pure executive account. Operational staff with approved learner responsibility record and verify the underlying evidence.
             </p>
           </section>
         ) : null}
@@ -534,19 +532,19 @@ export function LeadershipFinancialWorkspace({
                     </option>
                   ))}
                 </select>
-                <textarea
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific behaviour, decision or application observed</span><textarea
                   value={evNote}
                   onChange={(event) => setEvNote(event.target.value)}
                   rows={3}
                   placeholder="Specific behaviour, decision or application observed"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                   value={evReference}
                   onChange={(event) => setEvReference(event.target.value)}
                   placeholder="Evidence reference"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
                 <label className="block text-xs font-black text-slate-600">
                   Observed at
                   <input
@@ -643,9 +641,7 @@ export function LeadershipFinancialWorkspace({
               Independent verification required
             </h2>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-              The person who records capability evidence cannot verify that same
-              evidence. Only verified evidence is linked into O16 Potential
-              Development.
+              The person who records capability evidence cannot verify that same evidence. Only verified evidence is linked into Learner development.
             </p>
           </div>
           {workspace.evidence.length === 0 ? (
@@ -788,19 +784,19 @@ function CreateLeadershipCard(props: {
             </option>
           ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Opportunity title</span><input
           value={props.title}
           onChange={(event) => props.setTitle(event.target.value)}
           placeholder="Opportunity title"
           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-        />
-        <textarea
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What real responsibility or contribution will learners practise?</span><textarea
           value={props.purpose}
           onChange={(event) => props.setPurpose(event.target.value)}
           rows={2}
           placeholder="What real responsibility or contribution will learners practise?"
           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-        />
+        /></label>
         <div className="grid grid-cols-2 gap-2">
           <input
             type="date"
@@ -914,19 +910,19 @@ function CreateFinancialCard(props: {
             </option>
           ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Activity title</span><input
           value={props.title}
           onChange={(event) => props.setTitle(event.target.value)}
           placeholder="Activity title"
           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-        />
-        <textarea
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What practical financial decision or capability is being developed?</span><textarea
           value={props.purpose}
           onChange={(event) => props.setPurpose(event.target.value)}
           rows={2}
           placeholder="What practical financial decision or capability is being developed?"
           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-        />
+        /></label>
         <input
           type="date"
           value={props.date}
@@ -992,7 +988,7 @@ function LeadershipCard({
       {(item.isOwner || item.canManage) &&
       ["planned", "active"].includes(item.status) ? (
         <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion/cancellation note</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -1003,8 +999,8 @@ function LeadershipCard({
             placeholder="Completion/cancellation note"
             rows={2}
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion evidence reference</span><input
             value={references[refKey] ?? ""}
             onChange={(event) =>
               setReferences((current) => ({
@@ -1014,7 +1010,7 @@ function LeadershipCard({
             }
             placeholder="Completion evidence reference"
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
+          /></label>
           <div className="flex flex-wrap gap-2">
             {item.status === "planned" ? (
               <button
@@ -1127,7 +1123,7 @@ function FinancialCard({
       </p>
       {item.issueId ? (
         <p className="mt-2 rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-900">
-          O4 recovery issue created · {item.issueId.slice(0, 8)}
+          Issues recovery issue created · {item.issueId.slice(0, 8)}
         </p>
       ) : null}
       {item.status === "missed" ? (
@@ -1139,7 +1135,7 @@ function FinancialCard({
 
       {(item.isOwner || item.canManage) && item.status === "planned" ? (
         <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Delivery, missed-delivery or cancellation note</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -1150,8 +1146,8 @@ function FinancialCard({
             placeholder="Delivery, missed-delivery or cancellation note"
             rows={2}
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Delivery evidence reference</span><input
             value={references[refKey] ?? ""}
             onChange={(event) =>
               setReferences((current) => ({
@@ -1161,7 +1157,7 @@ function FinancialCard({
             }
             placeholder="Delivery evidence reference"
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
+          /></label>
           <input
             type="date"
             value={dates[dateKey] ?? ""}
@@ -1239,7 +1235,7 @@ function FinancialCard({
           <p className="text-xs font-black text-amber-900">
             Close the recovery obligation
           </p>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What recovery happened, or why is a waiver justified?</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -1250,8 +1246,8 @@ function FinancialCard({
             placeholder="What recovery happened, or why is a waiver justified?"
             rows={2}
             className="w-full rounded-xl border border-amber-200 px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Recovery evidence reference</span><input
             value={references[refKey] ?? ""}
             onChange={(event) =>
               setReferences((current) => ({
@@ -1261,7 +1257,7 @@ function FinancialCard({
             }
             placeholder="Recovery evidence reference"
             className="w-full rounded-xl border border-amber-200 px-3 py-2 text-xs"
-          />
+          /></label>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -1352,7 +1348,7 @@ function EvidenceCard({
           </p>
           {item.potentialEvidenceId ? (
             <p className="mt-2 text-xs font-black text-emerald-700">
-              Linked to O16 Potential Development
+              Linked to Learner development
             </p>
           ) : null}
         </div>
@@ -1362,13 +1358,13 @@ function EvidenceCard({
             <p className="text-xs font-black text-brand-950">
               Independent verification required
             </p>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why does this evidence support—or fail to support—the claim?</span><textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
               rows={2}
               placeholder="Why does this evidence support—or fail to support—the claim?"
               className="mt-3 w-full rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
             <div className="mt-2 flex gap-2">
               <button
                 type="button"

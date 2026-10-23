@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -19,9 +21,7 @@ import type {
   KhposOpsAcademicTarget,
 } from "@/lib/khpos/ops/academic-delivery";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -354,7 +354,7 @@ export function AcademicDeliveryWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -370,7 +370,7 @@ export function AcademicDeliveryWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O12
+              School operations
             </span>
             <div className="flex flex-wrap gap-2">
               <Link
@@ -385,13 +385,13 @@ export function AcademicDeliveryWorkspace({
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
               >
                 <ArrowLeft className="size-4" />
-                Command Centre
+                School overview
               </Link>
             </div>
           </div>
 
           <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl">
-            Academic Planning & Delivery
+            Teaching plans
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
             Planned is not Delivered. Delivered is not Verified. Missed or weak
@@ -463,24 +463,24 @@ export function AcademicDeliveryWorkspace({
                     </option>
                   ))}
                 </select>
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Session e.g. 2026/2027</span><input
                   value={sessionLabel}
                   onChange={(event) => setSessionLabel(event.target.value)}
                   placeholder="Session e.g. 2026/2027"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Term code e.g. TERM-1</span><input
                   value={termCode}
                   onChange={(event) => setTermCode(event.target.value)}
                   placeholder="Term code e.g. TERM-1"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Term name</span><input
                   value={termName}
                   onChange={(event) => setTermName(event.target.value)}
                   placeholder="Term name"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
                 <input
                   type="date"
                   value={termStartDate}
@@ -525,8 +525,7 @@ export function AcademicDeliveryWorkspace({
               {editingStreamId && <p className="mt-2 text-sm text-amber-800">Update the existing curriculum record. Approved or active changes are logged and checked against related academic evidence.</p>}
               {workspace.teacherAssignments.length === 0 ? (
                 <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-                  No active Teacher role assignment exists yet. Activate real
-                  Teachers in People & Staff before creating delivery streams.
+                  No active Teacher role assignment exists yet. Activate real Teachers in Staff before creating delivery streams.
                 </p>
               ) : (
                 <>
@@ -566,18 +565,18 @@ export function AcademicDeliveryWorkspace({
                       aria-label="Class or learning group" placeholder="Class / group e.g. Nursery 1, Primary 3 or JSS 1"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     />
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Section e.g. A</span><input
                       value={sectionLabel}
                       onChange={(event) => setSectionLabel(event.target.value)}
                       placeholder="Section e.g. A"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Subject / learning area</span><input
                       value={subjectLabel}
                       onChange={(event) => setSubjectLabel(event.target.value)}
                       placeholder="Subject / learning area"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                     <select
                       value={schemeSource}
                       onChange={(event) =>
@@ -596,21 +595,21 @@ export function AcademicDeliveryWorkspace({
                       <option value="external">External approved source</option>
                       <option value="manual">Controlled manual source</option>
                     </select>
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Approved scheme reference</span><input
                       value={schemeReference}
                       onChange={(event) => setSchemeReference(event.target.value)}
                       placeholder="Approved scheme reference"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Approved timetable reference</span><input
                       value={timetableReference}
                       onChange={(event) =>
                         setTimetableReference(event.target.value)
                       }
                       placeholder="Approved timetable reference"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Weeks</span><input
                       type="number"
                       min={1}
                       max={24}
@@ -618,7 +617,7 @@ export function AcademicDeliveryWorkspace({
                       onChange={(event) => setExpectedWeeks(event.target.value)}
                       placeholder="Weeks"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                   </div>
                   {editingStreamId && <label className="mt-3 block text-xs font-bold text-slate-700">Reason for correcting curriculum execution
                     <textarea value={streamEditReason} onChange={(event) => setStreamEditReason(event.target.value)}
@@ -815,7 +814,7 @@ export function AcademicDeliveryWorkspace({
                     {observation.isObservedTeacher &&
                       observation.followUpStatus === "open" && (
                         <div className="mt-4 grid gap-2">
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What did you change?</span><textarea
                             value={notes[noteKey] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
@@ -825,8 +824,8 @@ export function AcademicDeliveryWorkspace({
                             }
                             placeholder="What did you change?"
                             className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                          />
-                          <input
+                          /></label>
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                             value={refs[refKey] ?? ""}
                             onChange={(event) =>
                               setRefs((current) => ({
@@ -836,7 +835,7 @@ export function AcademicDeliveryWorkspace({
                             }
                             placeholder="Evidence reference"
                             className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-                          />
+                          /></label>
                           <SmallButton
                             label="Submit follow-up"
                             onClick={() =>
@@ -1090,40 +1089,51 @@ function StreamCard({
             <div className="mt-3 grid gap-3 lg:grid-cols-2">
               <div className="rounded-xl bg-slate-50 p-3">
                 <p className="text-xs font-black">Add weekly target</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">Set what this class should learn that week. Lesson days and times are managed in Attendance & lessons.</p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">Week number
                   <input
                     type="number"
                     min={1}
                     max={stream.expectedWeeks}
                     value={numbers[weekKey] ?? ""}
                     onChange={(event) => setNumber(weekKey, event.target.value)}
-                    placeholder="Week"
+                    placeholder="For example, 1"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                   />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">Scheme reference
                   <input
                     value={refs[targetRefKey] ?? ""}
                     onChange={(event) => setRef(targetRefKey, event.target.value)}
-                    placeholder="Scheme target ref"
+                    placeholder="Topic or scheme reference"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                   />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700 sm:col-span-2">What learners should achieve
                   <input
                     value={notes[targetKey] ?? ""}
                     onChange={(event) => setNote(targetKey, event.target.value)}
-                    placeholder="Target label"
+                    placeholder="For example, use pronouns correctly"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:col-span-2"
                   />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">Planned start date (optional)
                   <input
                     type="date"
                     value={dates[startKey] ?? ""}
                     onChange={(event) => setDate(startKey, event.target.value)}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                   />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">Planned end date (optional)
                   <input
                     type="date"
                     value={dates[endKey] ?? ""}
                     onChange={(event) => setDate(endKey, event.target.value)}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                   />
+                  </label>
                 </div>
                 <SmallButton
                   label="Add target"
@@ -1165,14 +1175,14 @@ function StreamCard({
                     }
                     className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
                   />
-                  <textarea
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is Teacher/timetable changing?</span><textarea
                     value={notes[changeNoteKey] ?? ""}
                     onChange={(event) =>
                       setNote(changeNoteKey, event.target.value)
                     }
                     placeholder="Why is Teacher/timetable changing?"
                     className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                  />
+                  /></label>
                   <SmallButton
                     label="Update deployment"
                     secondary
@@ -1266,18 +1276,18 @@ function StreamCard({
           <summary className="cursor-pointer text-sm font-black">
             Record teaching observation
           </summary>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific strengths/evidence observed</span><textarea
             value={notes[obsStrengthKey] ?? ""}
             onChange={(event) => setNote(obsStrengthKey, event.target.value)}
             placeholder="Specific strengths/evidence observed"
             className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-          />
-          <textarea
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Required follow-up action (optional)</span><textarea
             value={notes[obsActionKey] ?? ""}
             onChange={(event) => setNote(obsActionKey, event.target.value)}
             placeholder="Required follow-up action (optional)"
             className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-          />
+          /></label>
           <input
             type="date"
             value={dates[obsDueKey] ?? ""}
@@ -1364,18 +1374,18 @@ function TargetCard({
       {stream.isTeacher &&
         ["planned", "ready", "in_progress"].includes(target.state) && (
           <div className="mt-3 rounded-xl bg-brand-50 p-3">
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Preparation/delivery note or partial/missed cause</span><textarea
               value={notes[noteKey] ?? ""}
               onChange={(event) => setNote(noteKey, event.target.value)}
               placeholder="Preparation/delivery note or partial/missed cause"
               className="w-full rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>KSI lesson / delivery evidence reference</span><input
               value={refs[refKey] ?? ""}
               onChange={(event) => setRef(refKey, event.target.value)}
               placeholder="KSI lesson / delivery evidence reference"
               className="mt-2 w-full rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
             <div className="mt-2 flex flex-wrap gap-2">
               {target.state === "planned" && (
                 <SmallButton
@@ -1470,12 +1480,12 @@ function TargetCard({
         target.state === "delivered" &&
         target.verificationState === "unverified" && (
           <div className="mt-3 rounded-xl bg-violet-50 p-3">
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned verification note</span><textarea
               value={notes[verifyKey] ?? ""}
               onChange={(event) => setNote(verifyKey, event.target.value)}
               placeholder="Reasoned verification note"
               className="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
             <div className="mt-2 flex gap-2">
               <SmallButton
                 label="Verify delivery"
@@ -1526,12 +1536,12 @@ function TargetCard({
 
           {target.debt.status !== "closed" && (
             <>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Recovery plan / completion note</span><textarea
                 value={notes[debtNoteKey] ?? ""}
                 onChange={(event) => setNote(debtNoteKey, event.target.value)}
                 placeholder="Recovery plan / completion note"
                 className="mt-2 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs"
-              />
+              /></label>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 <input
                   type="date"
@@ -1539,12 +1549,12 @@ function TargetCard({
                   onChange={(event) => setDate(debtDateKey, event.target.value)}
                   className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs"
                 />
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Recovery evidence reference</span><input
                   value={refs[debtRefKey] ?? ""}
                   onChange={(event) => setRef(debtRefKey, event.target.value)}
                   placeholder="Recovery evidence reference"
                   className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs"
-                />
+                /></label>
               </div>
             </>
           )}

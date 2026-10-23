@@ -136,7 +136,7 @@ export function MyWorkWorkspace({
       if (!active) return;
 
       if (!workResponse.ok || !workBody.ok || !workBody.work) {
-        setError(workBody.error ?? "My Work could not be loaded.");
+        setError(workBody.error ?? "Today could not be loaded.");
         return;
       }
 
@@ -297,7 +297,7 @@ export function MyWorkWorkspace({
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
           <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading your institutional work…
+            Loading your school work…
           </p>
         </div>
       </main>
@@ -309,14 +309,14 @@ export function MyWorkWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <ClipboardCheck className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">My Work is unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">Today is unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -353,6 +353,7 @@ export function MyWorkWorkspace({
   const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
   const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
   const completedItems = visibleItems.filter((item) => item.status === "completed");
+  const otherActions = (attention?.items ?? []).filter(item => item.kind !== "work" && item.kind !== "verification");
   const processByCode = new Map(
     (library?.processes ?? []).map((process) => [process.code, process]),
   );
@@ -370,7 +371,7 @@ export function MyWorkWorkspace({
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
@@ -418,7 +419,7 @@ export function MyWorkWorkspace({
         <TodayAttendanceCard organisationId={organisationId} />
         <ReportsWorkspace organisationId={organisationId} compact />
 
-        {attention && attention.items.length > 0 && (
+        {attention && otherActions.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -426,7 +427,7 @@ export function MyWorkWorkspace({
                   Action required
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
-                  What needs you now
+                  Issues and decisions to follow up
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   See the actions waiting for you. Open an item to complete it or send it for review.
@@ -434,19 +435,19 @@ export function MyWorkWorkspace({
               </div>
               <div className="flex flex-wrap gap-2 text-xs font-black">
                 <span className="rounded-full bg-red-50 px-3 py-1.5 text-red-800">
-                  {attention.summary.critical} critical
+                  {otherActions.filter(item=>item.severity === "critical").length} critical
                 </span>
                 <span className="rounded-full bg-amber-50 px-3 py-1.5 text-amber-900">
-                  {attention.summary.overdue} overdue
+                  {otherActions.filter(item=>item.dueAt && Date.parse(item.dueAt) < Date.parse(attention.generatedAt)).length} overdue
                 </span>
                 <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">
-                  {attention.summary.actionRequired} actions
+                  {otherActions.length} actions
                 </span>
               </div>
             </div>
 
             <div className="mt-6 grid gap-3 lg:grid-cols-2">
-              {attention.items.slice(0, 8).map((item) => (
+              {otherActions.slice(0, 8).map((item) => (
                 <Link
                   key={item.id}
                   onClick={() => setRoleFilter("")}
@@ -504,20 +505,18 @@ export function MyWorkWorkspace({
         {roleFilter && !openItems.length && !awaitingItems.length && !completedItems.length && !workSearch.query.trim() && <p className="text-sm text-slate-600">No work has been assigned to this position yet.</p>}
         {workSearch.query.trim() && !visibleItems.length && !availableProcesses.length && !verificationItems.length && <p role="status" className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No items match your search. Clear the search or change position.</p>}
         {availableProcesses.length > 0 && (
-          <section className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
+          <details className="rounded-[30px] border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
+            <summary className="min-h-11 cursor-pointer text-base font-bold text-brand-800">Start a task when needed ({availableProcesses.length})</summary>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
                   Available to start
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
-                  On-demand responsibilities you own
+                  Tasks you can start
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  These approved processes are mapped to roles you currently hold.
-                  Start one only when its real trigger occurs; KHP-OS will create the
-                  governed work, route it to your operating scope and preserve its
-                  reports, evidence and verification controls.
+                  These tasks belong to your current positions. Start a task when it is actually needed. KHP-OS will ask for the reports, checklists and evidence needed to complete it.
                 </p>
               </div>
               <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-800">
@@ -589,13 +588,13 @@ export function MyWorkWorkspace({
                       ) : (
                         <Play className="size-4" />
                       )}
-                      Start Process
+                      Start task
                     </button>
                   </article>
                 );
               })}
             </div>
-          </section>
+          </details>
         )}
 
         {verificationItems.length > 0 && (
@@ -790,13 +789,13 @@ export function MyWorkWorkspace({
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
             <h2 className="mt-4 text-2xl font-black">Nothing needs your action right now.</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              KHP-OS does not create busywork. New responsibilities will appear here when your operating role, an active recurring rule, or a future issue/decision assigns work to you.
+              New tasks appear here when they are assigned to your position, become due on a schedule or follow from a reported issue or approved decision.
             </p>
             <Link
               href={`/khpos/${organisationId}/team`}
               className="mt-5 inline-flex text-sm font-black text-brand-700"
             >
-              Review Team & Roles →
+              Review Staff & roles →
             </Link>
           </section>
         ) : (
@@ -805,7 +804,7 @@ export function MyWorkWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
                 Action queue
               </p>
-              <h2 className="mt-2 text-2xl font-black">What needs your attention</h2>
+              <h2 className="mt-2 text-2xl font-black">Your tasks</h2>
             </div>
 
             {openItems.map((item) => {
@@ -956,7 +955,7 @@ export function MyWorkWorkspace({
                                       </button>
                                     </div>
                                   ) : (
-                                    <input
+                                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Enter response</span><input
                                       defaultValue={
                                         typeof check.response === "string"
                                           ? check.response
@@ -974,7 +973,7 @@ export function MyWorkWorkspace({
                                       }}
                                       className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
                                       placeholder="Enter response"
-                                    />
+                                    /></label>
                                   )}
                                 </div>
                               </div>
@@ -992,8 +991,7 @@ export function MyWorkWorkspace({
                           Reports & logs
                         </p>
                         <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Complete the controlled records required by this process.
-                          Submitted records become part of the institutional evidence trail.
+                          Complete the forms requested for this task. Your answers will be saved with the task for review.
                         </p>
                       </div>
                       {item.recordRequirements.map((requirement) => (
@@ -1027,7 +1025,9 @@ export function MyWorkWorkspace({
                       </span>
                     </div>
                     <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                      <input
+                      <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{item.evidenceRequired
+                            ? "Add required evidence note"
+                            : "Add a note or explain a blockage"}</span><input
                         value={note}
                         onChange={(event) =>
                           setNotes((current) => ({
@@ -1041,7 +1041,7 @@ export function MyWorkWorkspace({
                             : "Add a note or explain a blockage"
                         }
                         className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
-                      />
+                      /></label>
                       <button
                         type="button"
                         disabled={isBusy || !note.trim()}

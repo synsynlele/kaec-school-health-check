@@ -93,7 +93,7 @@ const standardUi = read(
   "src/components/khpos/ops/KaecStandardWorkspace.tsx",
 );
 for (const expected of [
-  "Scale the operating standard, not founder memory.",
+  "Use the KAEC school standard",
   "Adopt this KAEC Standard",
   "Safe activation boundary",
   "Standardisation does not erase school judgement.",

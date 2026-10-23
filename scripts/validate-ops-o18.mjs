@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/leadership-financial"', "workspace navigation");
-requireText(nav, 'label: "Leadership & Finance"', "workspace navigation");
+requireText(nav, 'label: "Leadership & money"', "workspace navigation");
 requireText(nav, 'suffix: "/skills-development"', "O17 navigation continuity");
 requireText(nav, 'suffix: "/potential-development"', "O16 navigation continuity");
 
@@ -53,8 +53,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/LeadershipFinancialWorkspace.tsx");
 for (const expected of [
-  "Operations · O18",
-  "Leadership & Financial Capability",
+  "School operations",
+  "Leadership & money skills",
   "Participation is not leadership",
   "Attendance is not financial capability",
   "PipuPath privacy stays intact",
@@ -62,7 +62,7 @@ for (const expected of [
   "Close the recovery obligation",
   "Record recovery",
   "Waive with reason",
-  "Linked to O16 Potential Development",
+  "Linked to Learner development",
 ]) {
   requireText(workspace, expected, "O18 workspace");
 }

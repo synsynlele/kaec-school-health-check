@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -32,9 +34,7 @@ function formatDate(value: string | null | undefined): string {
   }).format(date);
 }
 
-function readableStatus(value: string): string {
-  return value.replaceAll("_", " ");
-}
+function readableStatus(value: string): string { return plainLabel(value); }
 
 export function PlaybooksWorkspace({ organisationId }: { organisationId: string }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -104,7 +104,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -128,7 +128,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
             href={`/khpos/${organisationId}`}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
           >
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
         </div>
       </header>
@@ -142,7 +142,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
             Know what to do, how to do it and what proves it was done.
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            Universal playbooks give every partner school the same transformation discipline. Active intervention playbooks are generated from the school's approved KHP-OS plans, so execution remains specific to the institution.
+            Use the general guides to understand the steps. Your school-specific guides show the work, evidence and dates in your approved action plans.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold">
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2">
@@ -162,9 +162,9 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
         <section>
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Always available</p>
-            <h2 className="mt-2 text-2xl font-black sm:text-3xl">Universal School Transformation Playbooks</h2>
+            <h2 className="mt-2 text-2xl font-black sm:text-3xl">School improvement guides</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Use these playbooks throughout every KAEC-NG transformation engagement. They define the school's operating discipline; they do not replace institutional judgement.
+              These guides explain how to plan, carry out and review school improvements. School leaders still make the decisions.
             </p>
           </div>
 
@@ -256,9 +256,9 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
         <section>
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-800">Activated by approved priorities</p>
-            <h2 className="mt-2 text-2xl font-black sm:text-3xl">Active Intervention Playbooks</h2>
+            <h2 className="mt-2 text-2xl font-black sm:text-3xl">Current action guides</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              These are not generic manuals. They use the live intervention plan, actions, milestones, evidence standards and review dates already generated for this school.
+              These guides use your school’s current action plan, including its tasks, milestones, evidence and review dates.
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
               <Workflow className="size-8 text-brand-700" />
               <h3 className="mt-5 text-xl font-black">No intervention playbook is active yet.</h3>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Once an authorised priority is approved, KHP-OS creates the implementation plan and this workspace turns that plan into the school's live intervention playbook.
+                Approve a school priority to create its action plan and step-by-step guide.
               </p>
               <Link
                 href={`/khpos/${organisationId}/priorities`}
@@ -318,7 +318,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
 
                       {plan.outcomeContract && (
                         <section className="rounded-[26px] border border-mint-200 bg-mint-50 p-5 sm:p-6">
-                          <p className="text-xs font-black uppercase tracking-[0.16em] text-mint-800">Outcome contract</p>
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-mint-800">Expected result</p>
                           <div className="mt-4 grid gap-4 lg:grid-cols-2">
                             <div className="rounded-2xl bg-white p-4">
                               <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">Desired condition</p>
@@ -397,7 +397,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
                         <div className="rounded-[26px] border border-slate-200 p-5">
                           <div className="flex items-center gap-2">
                             <Clock3 className="size-5 text-brand-700" />
-                            <h4 className="font-black">Review cadence</h4>
+                            <h4 className="font-black">Review schedule</h4>
                           </div>
                           <ul className="mt-4 space-y-3">
                             {plan.reviews.map((review) => (

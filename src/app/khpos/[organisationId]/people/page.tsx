@@ -4,7 +4,7 @@ import { PeopleWorkspace } from "@/components/khpos/ops/PeopleWorkspace";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "People & Staff · KHP-OS",
+  title: "Staff · KHP-OS",
   robots: { index: false, follow: false },
 };
 

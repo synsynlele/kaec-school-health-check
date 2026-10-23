@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -26,9 +28,7 @@ import type {
   KhposOpsCoverageAssignment,
 } from "@/lib/khpos/ops/availability";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function formatDateTime(value: string | null) {
   if (!value) return "Not set";
@@ -408,7 +408,7 @@ export function AvailabilityWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -421,21 +421,21 @@ export function AvailabilityWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O8
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Availability & Coverage
+                Leave & cover
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
                 KHP-OS does not replace the school attendance system. This is
@@ -502,16 +502,14 @@ export function AvailabilityWorkspace({
               No active deployed staff exist yet.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              O8 starts only after O7 has certified a real staff member into an
-              active operating role. This prevents availability records being
-              created for invented or unready staff.
+              Complete the staff member’s joining steps and activate their position before recording leave or cover.
             </p>
             <Link
               href={`/khpos/${organisationId}/people`}
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white"
             >
               <UsersRound className="size-4" />
-              Open People & Staff
+              Open Staff
             </Link>
           </section>
         ) : (
@@ -829,7 +827,7 @@ export function AvailabilityWorkspace({
                       {(availabilityCase.isSelf ||
                         availabilityCase.canReview) && (
                         <div className="mt-5">
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Decision / return / closure note when required</span><textarea
                             value={note}
                             onChange={(event) =>
                               setCaseNotes((current) => ({
@@ -840,7 +838,7 @@ export function AvailabilityWorkspace({
                             maxLength={2000}
                             className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
                             placeholder="Decision / return / closure note when required"
-                          />
+                          /></label>
                         </div>
                       )}
 
@@ -1050,7 +1048,7 @@ export function AvailabilityWorkspace({
                                       ))}
                                     </select>
 
-                                    <input
+                                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Exact duties / learners / responsibilities to cover</span><input
                                       value={
                                         coverScope[availabilityCase.id] ?? ""
                                       }
@@ -1064,7 +1062,7 @@ export function AvailabilityWorkspace({
                                       maxLength={1500}
                                       className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs outline-none"
                                       placeholder="Exact duties / learners / responsibilities to cover"
-                                    />
+                                    /></label>
 
                                     <label className="text-xs font-bold text-brand-950">
                                       Coverage start
@@ -1179,7 +1177,7 @@ export function AvailabilityWorkspace({
                                       ["assigned", "accepted"].includes(
                                         coverage.status,
                                       ) && (
-                                        <input
+                                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Response / handback note</span><input
                                           value={coverageNote}
                                           onChange={(event) =>
                                             setCoverageNotes((current) => ({
@@ -1191,7 +1189,7 @@ export function AvailabilityWorkspace({
                                           maxLength={1500}
                                           className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-brand-400"
                                           placeholder="Response / handback note"
-                                        />
+                                        /></label>
                                       )}
 
                                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1331,11 +1329,7 @@ export function AvailabilityWorkspace({
             Repeated absence is not solved by repeated reminders
           </h2>
           <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-300">
-            O8 handles the immediate continuity exception. If a pattern becomes
-            repeated or materially affects performance, it should move into the
-            staff performance process and, where necessary, the Issue Engine.
-            Availability history is evidence; it is not itself a disciplinary
-            verdict.
+            Leave & cover handles the immediate continuity exception. If a pattern becomes repeated or materially affects performance, it should move into the staff performance process and, where necessary, the Issue Engine. Availability history is evidence; it is not itself a disciplinary verdict.
           </p>
         </section>
       </div>

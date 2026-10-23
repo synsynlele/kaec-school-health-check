@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/worldready"', "school workspace navigation");
-requireText(nav, 'label: "WorldReady"', "school workspace navigation");
+requireText(nav, 'label: "Life after school"', "school workspace navigation");
 requireText(nav, 'suffix: "/builder-projects"', "O20 navigation continuity");
 requireText(nav, 'suffix: "/young-ceo"', "O19 navigation continuity");
 
@@ -59,8 +59,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/WorldReadyWorkspace.tsx");
 for (const expected of [
-  "Operations · O21",
-  "WorldReady Transition",
+  "School operations",
+  "Life after school",
   "WorldReady is not an exam score",
   "Personal Project:",
   "Transition pathway",

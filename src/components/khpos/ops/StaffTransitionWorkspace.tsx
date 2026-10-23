@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -24,9 +26,7 @@ import type {
   KhposOpsTransitionItem,
 } from "@/lib/khpos/ops/staff-transition";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -390,13 +390,13 @@ export function StaffTransitionWorkspace({
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
-            People & Staff
+            Staff
           </Link>
           <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
-            Operations · O11
+            School operations
           </p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-            Progression, Succession & Exit
+            Staff changes & leaving
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             Develop future leaders, execute accepted promotions and transfer
@@ -492,15 +492,13 @@ export function StaffTransitionWorkspace({
                 No deployed staff yet
               </h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                O11 intentionally starts empty. Create, onboard and activate real
-                staff in People & Staff before succession, promotion or exit can
-                begin.
+                Staff changes intentionally starts empty. Create, onboard and activate real staff in Staff before succession, promotion or exit can begin.
               </p>
               <Link
                 href={`/khpos/${organisationId}/people`}
                 className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white"
               >
-                Open People & Staff
+                Open Staff
               </Link>
             </section>
           ) : null}
@@ -553,14 +551,14 @@ export function StaffTransitionWorkspace({
                     <option value="ready_now">Ready now</option>
                     <option value="not_ready">Not ready</option>
                   </select>
-                  <textarea
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What specific evidence supports this readiness state?</span><textarea
                     value={successionSummary}
                     onChange={(event) => setSuccessionSummary(event.target.value)}
                     placeholder="What specific evidence supports this readiness state?"
                     rows={3}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
-                  <textarea
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Development priorities</span><textarea
                     value={successionPriorities}
                     onChange={(event) =>
                       setSuccessionPriorities(event.target.value)
@@ -568,7 +566,7 @@ export function StaffTransitionWorkspace({
                     placeholder="Development priorities"
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
+                  /></label>
                   <input
                     type="date"
                     value={successionHorizon}
@@ -599,8 +597,7 @@ export function StaffTransitionWorkspace({
                   Propose greater responsibility
                 </h2>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
-                  No score promotes a person. Evidence, acceptance, authority and
-                  handover are required.
+                  A promotion needs evidence, acceptance, authorised approval and a handover. A score alone cannot promote someone.
                 </p>
                 <div className="mt-4 space-y-3">
                   <select
@@ -655,7 +652,7 @@ export function StaffTransitionWorkspace({
                     }
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                   />
-                  <textarea
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is this move institutionally needed?</span><textarea
                     value={promotionJustification}
                     onChange={(event) =>
                       setPromotionJustification(event.target.value)
@@ -663,14 +660,14 @@ export function StaffTransitionWorkspace({
                     placeholder="Why is this move institutionally needed?"
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
-                  <textarea
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is this person ready for the target role?</span><textarea
                     value={promotionReadiness}
                     onChange={(event) => setPromotionReadiness(event.target.value)}
                     placeholder="Why is this person ready for the target role?"
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
+                  /></label>
                   <button
                     type="button"
                     onClick={() => void createPromotion()}
@@ -692,7 +689,7 @@ export function StaffTransitionWorkspace({
                   Exit & handover
                 </p>
                 <h2 className="mt-1 text-lg font-black text-slate-950">
-                  Record an institutional exit
+                  Record an school exit
                 </h2>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
                   KHP-OS records the basis and clearance. It does not invent
@@ -730,35 +727,35 @@ export function StaffTransitionWorkspace({
                     onChange={(event) => setExitLastDay(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                   />
-                  <input
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Notice / contract / agreement basis reference</span><input
                     value={exitBasis}
                     onChange={(event) => setExitBasis(event.target.value)}
                     placeholder="Notice / contract / agreement basis reference"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
-                  <input
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Authority / legal review reference if required</span><input
                     value={exitAuthorityReference}
                     onChange={(event) =>
                       setExitAuthorityReference(event.target.value)
                     }
                     placeholder="Authority / legal review reference if required"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
-                  <input
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Conduct case ID (dismissal only)</span><input
                     value={exitSourceAccountabilityCaseId}
                     onChange={(event) =>
                       setExitSourceAccountabilityCaseId(event.target.value)
                     }
-                    placeholder="O10 case UUID for dismissal only"
+                    placeholder="Conduct case ID (dismissal only)"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
-                  <textarea
+                  /></label>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Context / reason note</span><textarea
                     value={exitReason}
                     onChange={(event) => setExitReason(event.target.value)}
                     placeholder="Context / reason note"
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
+                  /></label>
                   <button
                     type="button"
                     onClick={() =>
@@ -816,18 +813,18 @@ export function StaffTransitionWorkspace({
                   onChange={(event) => setSelfExitLastDay(event.target.value)}
                   className="rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm"
                 />
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Notice / contract reference</span><input
                   value={selfExitBasis}
                   onChange={(event) => setSelfExitBasis(event.target.value)}
                   placeholder="Notice / contract reference"
                   className="rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Extra details (optional)</span><input
                   value={selfExitReason}
                   onChange={(event) => setSelfExitReason(event.target.value)}
-                  placeholder="Optional context"
+                  placeholder="Extra details (optional)"
                   className="rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm"
-                />
+                /></label>
               </div>
               <button
                 type="button"
@@ -1078,29 +1075,29 @@ function SuccessionCard({
             <p className="text-xs font-black text-slate-800">
               Add specific readiness evidence
             </p>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
               value={references[evidenceTitleKey] ?? ""}
               onChange={(event) =>
                 onReference(evidenceTitleKey, event.target.value)
               }
               placeholder="Evidence title"
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What happened and what does it show?</span><textarea
               value={notes[evidenceNoteKey] ?? ""}
               onChange={(event) => onNote(evidenceNoteKey, event.target.value)}
               placeholder="What happened and what does it show?"
               rows={2}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional evidence reference</span><input
               value={references[evidenceReferenceKey] ?? ""}
               onChange={(event) =>
                 onReference(evidenceReferenceKey, event.target.value)
               }
               placeholder="Optional evidence reference"
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
             <button
               type="button"
               onClick={() =>
@@ -1140,13 +1137,13 @@ function SuccessionCard({
               <option value="ready_now">Ready now</option>
               <option value="not_ready">Not ready</option>
             </select>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Updated readiness summary / review note</span><textarea
               value={notes[reviewKey] ?? ""}
               onChange={(event) => onNote(reviewKey, event.target.value)}
               placeholder="Updated readiness summary / review note"
               rows={2}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-            />
+            /></label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1295,16 +1292,15 @@ function PromotionCard({
             Your acceptance is required
           </p>
           <p className="mt-1 text-xs leading-5 text-brand-900">
-            Acceptance means you accept consideration for the target role and
-            its governed transition. It does not bypass approval or handover.
+            Acceptance means you accept consideration for the target role and its approved transition. It does not bypass approval or handover.
           </p>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional response note</span><textarea
             value={notes[responseKey] ?? ""}
             onChange={(event) => onNote(responseKey, event.target.value)}
             placeholder="Optional response note"
             rows={2}
             className="mt-3 w-full rounded-xl border border-brand-200 bg-white px-3 py-2 text-sm"
-          />
+          /></label>
           <div className="mt-3 flex gap-2">
             <button
               type="button"
@@ -1351,29 +1347,29 @@ function PromotionCard({
             <p className="text-xs font-black text-slate-800">
               Promotion-specific evidence
             </p>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
               value={references[evidenceTitleKey] ?? ""}
               onChange={(event) =>
                 onReference(evidenceTitleKey, event.target.value)
               }
               placeholder="Evidence title"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific readiness evidence</span><textarea
               value={notes[evidenceNoteKey] ?? ""}
               onChange={(event) => onNote(evidenceNoteKey, event.target.value)}
               placeholder="Specific readiness evidence"
               rows={2}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional evidence reference</span><input
               value={references[evidenceReferenceKey] ?? ""}
               onChange={(event) =>
                 onReference(evidenceReferenceKey, event.target.value)
               }
               placeholder="Optional evidence reference"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <button
               type="button"
               onClick={() =>
@@ -1427,13 +1423,13 @@ function PromotionCard({
                   </option>
                 ))}
               </select>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned approval note</span><textarea
                 value={notes[approvalKey] ?? ""}
                 onChange={(event) => onNote(approvalKey, event.target.value)}
                 placeholder="Reasoned approval note"
                 rows={2}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -1659,7 +1655,7 @@ function ExitCard({
                 onChange={(event) => onReference(basisKey, event.target.value)}
                 className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs"
               />
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Authority/legal reference if applicable</span><input
                 value={
                   references[authorityKey] ??
                   exitCase.authorityReviewReference ??
@@ -1670,7 +1666,7 @@ function ExitCard({
                 }
                 placeholder="Authority/legal reference if applicable"
                 className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -1756,14 +1752,14 @@ function ExitCard({
         {exitCase.canManage &&
         ["open", "clearance_in_progress"].includes(exitCase.status) ? (
           <>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Cancellation agreement/authority ref</span><input
               value={references[cancellationReferenceKey] ?? ""}
               onChange={(event) =>
                 onReference(cancellationReferenceKey, event.target.value)
               }
               placeholder="Cancellation agreement/authority ref"
               className="min-w-56 rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <button
               type="button"
               onClick={() =>
@@ -1869,20 +1865,20 @@ function TransitionItems({
             item.isOwner &&
             ["pending", "in_progress"].includes(item.status) ? (
               <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion note</span><input
                   value={notes[noteKey] ?? ""}
                   onChange={(event) => onNote(noteKey, event.target.value)}
                   placeholder="Completion note"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                   value={references[referenceKey] ?? ""}
                   onChange={(event) =>
                     onReference(referenceKey, event.target.value)
                   }
                   placeholder="Evidence reference"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                />
+                /></label>
                 <button
                   type="button"
                   onClick={() =>

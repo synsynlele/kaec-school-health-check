@@ -4,7 +4,7 @@ import { DecisionsWorkspace } from "@/components/khpos/ops/DecisionsWorkspace";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Decisions & Approvals · KHP-OS",
+  title: "Approvals & decisions · KHP-OS",
   robots: { index: false, follow: false },
 };
 

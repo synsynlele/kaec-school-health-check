@@ -70,7 +70,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       if (!active) return;
       const accessToken = data.session?.access_token;
       if (!accessToken) {
-        setError("Your session has ended. Return to your KSHC report and activate KHP-OS again.");
+        setError("Your session has ended. Sign in again to open your school.");
         return;
       }
 
@@ -125,7 +125,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-400" />
-          <p className="mt-4 text-sm font-semibold text-slate-200">Opening institutional command centre…</p>
+          <p className="mt-4 text-sm font-semibold text-slate-200">Opening school command centre…</p>
         </div>
       </main>
     );
@@ -162,7 +162,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             </span>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Schools</p>
-              <p className="truncate text-sm font-extrabold text-white">Institutional Command Centre</p>
+              <p className="truncate text-sm font-extrabold text-white">School School overview</p>
             </div>
           </div>
           <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-xs font-bold text-slate-100 transition hover:bg-white/10">
@@ -209,7 +209,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  Institutional attention
+                  School attention
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
                   {attention.summary.actionRequired > 0
@@ -296,7 +296,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                 className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               >
                 {openingReport ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
-                {openingReport ? "Opening report…" : "View full KSHC report"}
+                {openingReport ? "Opening report…" : "View School Health Check report"}
                 <ArrowRight className="size-4" />
               </Link>
             )}
@@ -314,7 +314,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-mint-700" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">Institutional record</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">School record</p>
             <p className="mt-2 text-xl font-black text-slate-900">{workspace.canViewHealthReport ? "Baseline preserved" : "School workspace active"}</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">{workspace.canViewHealthReport ? `KSHC framework v${baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.` : "Use your assigned school duties and activities. School Health Reports are reserved for appointed leaders."}</p>
           </div>
@@ -398,11 +398,11 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               {priorityCount > 0 ? "Run the focused transformation agenda." : "Approve the few priorities that matter most."}
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-200">
-              KHP-OS ranks recorded KSHC gaps, maps each one to the intervention library, and asks authorised leaders to approve no more than three active priorities.
+              KHP-OS suggests improvements from your School Health Check. An authorised leader can approve up to three priorities at a time.
             </p>
             <div className="mt-7 rounded-2xl border border-white/15 bg-white/5 p-5">
               <p className="text-sm font-bold">Focus is a system rule, not a suggestion.</p>
-              <p className="mt-2 text-xs leading-5 text-slate-300">Evidence can surface many weaknesses. The institutional agenda is deliberately capped at three commitments per baseline.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-300">Choose up to three priorities from each School Health Check so your team can focus.</p>
             </div>
             <Link
               href={`/khpos/${organisationId}/priorities`}

@@ -4,7 +4,7 @@ import { PerformanceWorkspace } from "@/components/khpos/ops/PerformanceWorkspac
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Performance & Scorecards · KHP-OS",
+  title: "School results · KHP-OS",
   robots: { index: false, follow: false },
 };
 

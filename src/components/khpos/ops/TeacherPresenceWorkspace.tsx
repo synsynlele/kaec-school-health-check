@@ -271,7 +271,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
             <p className="mb-4 text-sm text-slate-600">Arrival and departure save server time and request one location reading, with your permission. Your supervisors can view the coordinates and accuracy. No background tracking. If GPS fails, explain why and still record attendance. Your classes are recorded separately.</p>
             <label className="mb-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
-            {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your School Guardian to complete People & Staff onboarding.</p>
+            {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your School Guardian to complete Staff onboarding.</p>
             :<div className="space-y-3">
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
               <p className="text-sm"><b>School day:</b> {data.localDay}</p>
@@ -331,9 +331,9 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                         <option value="completed">Completed as planned</option><option value="partial">Partially completed</option><option value="not_held">Could not hold</option>
                       </select></div>
                     <div><label className="text-xs font-bold">What topic did you teach?</label>
-                      <input className={field} value={lessonTopics[p.id]||""} maxLength={200} onChange={e=>setLessonTopics(old=>({...old,[p.id]:e.target.value}))} placeholder="Topic or learning focus"/></div>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Topic or learning focus</span><input className={field} value={lessonTopics[p.id]||""} maxLength={200} onChange={e=>setLessonTopics(old=>({...old,[p.id]:e.target.value}))} placeholder="Topic or learning focus"/></label></div>
                     <div className="sm:col-span-2"><label className="text-xs font-bold">Anything still to finish? (optional)</label>
-                      <textarea className={field} rows={2} maxLength={1000} value={lessonNotes[p.id]||""} onChange={e=>setLessonNotes(old=>({...old,[p.id]:e.target.value}))} placeholder="What needs attention?"/></div>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What needs attention?</span><textarea className={field} rows={2} maxLength={1000} value={lessonNotes[p.id]||""} onChange={e=>setLessonNotes(old=>({...old,[p.id]:e.target.value}))} placeholder="What needs attention?"/></label></div>
                     <button disabled={Boolean(busy)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                       onClick={()=>void act("class_out",{periodId:p.id,outcome:lessonOutcome[p.id]||"completed",topic:lessonTopics[p.id]||"",followUp:lessonNotes[p.id]||""},"Lesson checkout saved.")}>Record Class Check-out — Finish class</button>
                   </div>}
@@ -365,7 +365,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         {tab==="hqls"&&<div className="space-y-4">
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">KAEC HQLS classroom observation</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Original KAEC HQLS fidelity standard. Evidence must describe what learners and the teacher actually did, not opinions or planned activities. This measures HQLS fidelity, not teacher charisma. Observers must be independently authorised.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Use the KAEC HQLS standards. Record what learners and the teacher actually did. Observations must be completed by a different authorised observer.</p>
             <p className="mt-2 rounded-xl bg-brand-50 p-3 text-sm font-semibold text-brand-900">Strong = 3 · Partial = 2 · Weak = 1. Full observation: 22–24 Model; 17–21 Coaching; below 17 Retraining. Any automatic failure requires coaching regardless of total score.</p>
             {data.canEnableHqls&&<div className="mt-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
               <p className="text-sm font-bold text-brand-900">School HQLS adoption: {data.hqlsEnabled?"Enabled":"Not yet enabled"}</p>
@@ -409,9 +409,9 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   </div>
                   {r.score&&<div className="mt-3">
                     <label className="block text-xs font-bold">Specific observed evidence (required)</label>
-                    <textarea className={field} rows={2} maxLength={1000} value={r.evidence}
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Describe an actual learner or teacher action you observed.</span><textarea className={field} rows={2} maxLength={1000} value={r.evidence}
                       onChange={e=>setRatings(prev=>({...prev,[d.code]:{...(prev[d.code]??emptyRating),evidence:e.target.value}}))}
-                      placeholder="Describe an actual learner or teacher action you observed."/>
+                      placeholder="Describe an actual learner or teacher action you observed."/></label>
                     {d.automatic&&<label className="mt-2 flex items-start gap-2 text-sm font-semibold text-rose-900">
                       <input type="checkbox" className="mt-1" checked={r.automaticFailure}
                         onChange={e=>setRatings(prev=>({...prev,[d.code]:{...(prev[d.code]??emptyRating),automaticFailure:e.target.checked}}))}/>
@@ -444,7 +444,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   <ul className="mt-2 space-y-2">{o.domains.map(d=><li key={d.code} className="rounded-lg bg-slate-50 p-2"><b>{HQLS.find(x=>x.code===d.code)?.name??d.code}:</b> {ratingText(d.score)} {d.automaticFailure?"· Automatic failure":""}<p>{d.evidence}</p></li>)}</ul>
                 </details>
                 {o.acknowledgedAt?<p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><b>Teacher&apos;s reflection:</b> {o.teacherResponse}</p>:o.teacherUserId===data.userId?<><label className="mt-3 block text-xs font-bold">Teacher response</label>
-                  <textarea className={field} rows={2} maxLength={1500} value={responses[o.id]||""} onChange={e=>setResponses(old=>({...old,[o.id]:e.target.value}))} placeholder="Which stage tempted you to step in, and why?"/>
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Which stage tempted you to step in, and why?</span><textarea className={field} rows={2} maxLength={1500} value={responses[o.id]||""} onChange={e=>setResponses(old=>({...old,[o.id]:e.target.value}))} placeholder="Which stage tempted you to step in, and why?"/></label>
                   <button className="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white" disabled={Boolean(busy)||!responses[o.id]?.trim()}
                     onClick={()=>void act("hqls_acknowledge",{observationId:o.id,teacherResponse:responses[o.id]},"Teacher reflection saved.")}>Submit teacher reflection</button>
                 </>:<p className="mt-2 text-xs text-slate-500">Awaiting the observed teacher’s reflection.</p>}
@@ -520,7 +520,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <h3 className="font-black text-amber-900">Administrative correction — evidence required</h3>
             <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
             <label className="block text-xs font-bold">Correction reason and supporting reference (at least 15 characters)</label>
-            <textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason, verified information and issue reference.</span><textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/></label>
             {data.openClassSessions.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
               <span><b>{x.teacher}</b> · {x.class} · {x.subject} · School date: {x.date} · Class check-in: {dateTime(x.in)}</span>
               <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("class_reconcile",{classSessionId:x.id,reason:reconcileReason},"Class administratively closed as unverified.")}>Close as unverified</button>

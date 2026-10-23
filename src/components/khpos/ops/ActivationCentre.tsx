@@ -215,9 +215,7 @@ export function ActivationCentre({
               : "Do not confuse installed modules with an operating school."}
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            KHP-OS becomes operational when authority is assigned, safeguarding
-            coverage exists, critical policies are approved, and critical
-            processes are published. This page measures those facts directly.
+            Use this checklist to get your school ready: assign leaders, appoint safeguarding staff, approve required policies and publish school procedures.
           </p>
         </div>
       </section>
@@ -545,9 +543,7 @@ export function ActivationCentre({
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            These are usage signals, not activation blockers. A school can finish
-            its foundation before volume builds, but sustained use is what turns
-            KHP-OS from software into an operating system.
+            These counts show how much your school is using the app. They do not stop setup or activation.
           </p>
         </section>
       </div>

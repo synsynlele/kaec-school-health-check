@@ -4,7 +4,7 @@ import { OperationalRecordsWorkspace } from "@/components/khpos/ops/OperationalR
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Records & Evidence · KHP-OS",
+  title: "Forms & checklists · KHP-OS",
   robots: { index: false, follow: false },
 };
 

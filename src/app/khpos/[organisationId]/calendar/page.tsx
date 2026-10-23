@@ -4,7 +4,7 @@ import { InstitutionalCalendarWorkspace } from "@/components/khpos/ops/Instituti
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Institutional Calendar · KHP-OS",
+  title: "School calendar · KHP-OS",
   robots: { index: false, follow: false },
 };
 

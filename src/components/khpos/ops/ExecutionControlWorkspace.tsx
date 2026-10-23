@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -22,7 +24,7 @@ import {
   type KhposSafeExecutionMappingResult,
 } from "@/lib/khpos/ops/execution";
 
-const readable = (value: string) => value.replaceAll("_", " ");
+const readable = (value: string) => plainLabel(value);
 const numeric = (value: string) => value.trim() ? Number(value) : null;
 
 export function ExecutionControlWorkspace({ organisationId }: { organisationId: string }) {
@@ -55,11 +57,11 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
       const body = await response.json() as { ok?: boolean; execution?: KhposExecutionSnapshot; error?: string };
       if (!active) return;
       if (!response.ok || !body.ok || !body.execution) {
-        setError(body.error ?? "Execution control could not be loaded.");
+        setError(body.error ?? "Task setup could not load. Try again.");
         return;
       }
       setSnapshot(body.execution);
-    }).catch((cause) => active && setError(cause instanceof Error ? cause.message : "Execution control could not be loaded."));
+    }).catch((cause) => active && setError(cause instanceof Error ? cause.message : "Task setup could not load. Try again."));
     return () => { active = false; };
   }, [organisationId, supabase, token]);
 
@@ -95,11 +97,11 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
         body: JSON.stringify(form),
       });
       const body = await response.json() as { ok?: boolean; execution?: KhposExecutionSnapshot; error?: string };
-      if (!response.ok || !body.ok || !body.execution) throw new Error(body.error ?? "Execution mapping could not be saved.");
+      if (!response.ok || !body.ok || !body.execution) throw new Error(body.error ?? "Task settings could not be saved. Try again.");
       setSnapshot(body.execution);
-      setMessage("Execution mapping saved.");
+      setMessage("Task settings saved.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Execution mapping could not be saved.");
+      setError(cause instanceof Error ? cause.message : "Task settings could not be saved. Try again.");
     } finally { setBusy(false); }
   }
 
@@ -129,7 +131,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
       };
       if (!response.ok || !body.ok || !body.execution || !body.mapping) {
         throw new Error(
-          body.error ?? "Safe execution mappings could not be applied.",
+          body.error ?? "The suggested settings could not be saved. Try again.",
         );
       }
 
@@ -140,7 +142,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
         String(body.mapping.mapped) +
           " process" +
           (body.mapping.mapped === 1 ? " was" : "es were") +
-          " safely mapped to governed owner roles. " +
+          " linked to their responsible positions. " +
           String(body.mapping.blockedMissingAssignment) +
           " remain blocked by missing role assignments; " +
           String(body.mapping.multipleOwner + body.mapping.noOwner) +
@@ -150,7 +152,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
       setError(
         cause instanceof Error
           ? cause.message
-          : "Safe execution mappings could not be applied.",
+          : "The suggested settings could not be saved. Try again.",
       );
     } finally {
       setMappingBusy(false);
@@ -208,7 +210,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
   }
 
   if (!snapshot && !error) return <main className="grid min-h-screen place-items-center bg-slate-950"><Loader2 className="size-9 animate-spin text-mint-300" /></main>;
-  if (!snapshot) return <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white"><div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center"><CircleAlert className="mx-auto size-9 text-amber-300" /><h1 className="mt-4 text-2xl font-black">Execution control unavailable</h1><p className="mt-3 text-sm text-slate-300">{error}</p></div></main>;
+  if (!snapshot) return <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white"><div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center"><CircleAlert className="mx-auto size-9 text-amber-300" /><h1 className="mt-4 text-2xl font-black">Task setup is unavailable</h1><p className="mt-3 text-sm text-slate-300">{error}</p></div></main>;
 
   const visible = showAll ? snapshot.items : snapshot.items.filter((item) => item.status !== "configured");
 
@@ -216,11 +218,11 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
     <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="flex items-center justify-between gap-3">
-          <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">Execution Control</span>
+          <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">Task setup</span>
           <Link href={"/khpos/" + organisationId + "/activation"} className="rounded-full border border-white/20 px-4 py-2 text-xs font-black">Activation Centre</Link>
         </div>
-        <h1 className="mt-5 max-w-4xl text-3xl font-black sm:text-5xl">Every approved process must know how it becomes real work.</h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">Define the operating mode, accountable role, evidence, verification and escalation once.</p>
+        <h1 className="mt-5 max-w-4xl text-3xl font-black sm:text-5xl">Set up school tasks</h1>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">Choose when the task starts, who does it, what proof they must add, who checks it and when overdue work needs help.</p>
         <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           {[
             ["Approved", snapshot.summary.approvedProcesses],
@@ -247,13 +249,13 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
               </span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
-                  Safe execution closure
+                  Suggested task setup
                 </p>
                 <h2 className="mt-1 text-xl font-black">
-                  {snapshot.summary.safeMappingCandidates} processes already have one governed owner and an active role holder.
+                  {snapshot.summary.safeMappingCandidates} processes already have one approved owner and an active role holder.
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  KHP-OS can map these to manual/on-demand execution without inventing authority or starting any work.
+                  You can set these tasks to start when needed. Saving the setup does not start a task or change anyone’s permissions.
                   {snapshot.summary.blockedMissingAssignment > 0
                     ? " " + snapshot.summary.blockedMissingAssignment + " otherwise-clear process(es) remain blocked until the owner role is staffed."
                     : ""}
@@ -270,7 +272,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-50"
             >
               {mappingBusy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-              Apply safe mappings
+              Use suggested task settings
             </button>
           </div>
         </section>
@@ -278,47 +280,47 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Process coverage</p><h2 className="mt-2 text-xl font-black">{showAll ? "All approved processes" : "Processes needing mapping"}</h2></div><button type="button" onClick={() => setShowAll((value) => !value)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black">{showAll ? "Show gaps" : "Show all"}</button></div>
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Task setup progress</p><h2 className="mt-2 text-xl font-black">{showAll ? "All approved processes" : "Procedures needing task settings"}</h2></div><button type="button" onClick={() => setShowAll((value) => !value)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black">{showAll ? "Show gaps" : "Show all"}</button></div>
           <div className="mt-5 max-h-[70vh] space-y-2 overflow-y-auto">
             {visible.map((item) => <button key={item.processId} type="button" onClick={() => selectProcess(item.processId)} className={"w-full rounded-2xl border p-4 text-left " + (selectedId === item.processId ? "border-brand-400 bg-brand-50" : "border-slate-200 bg-slate-50")}>
               <div className="flex items-start justify-between gap-3"><div><div className="flex gap-2"><span className="text-xs font-black text-brand-700">{item.code}</span><span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black">{item.criticality}</span></div><p className="mt-2 text-sm font-black">{item.title}</p><p className="mt-1 text-xs text-slate-500">
                 {item.status === "configured"
                   ? readable(item.mode)
                   : item.safeMappingCandidate
-                    ? "safe owner mapping ready"
+                    ? "Responsible position found"
                     : item.blockedByMissingAssignment
-                      ? "owner role is not staffed"
+                      ? "No one holds the responsible position"
                       : item.ownerParticipationCount > 1
-                        ? "multiple governed owners · choose one"
-                        : "no governed owner · choose one"}
+                        ? "Choose one responsible position"
+                        : "Choose the responsible position"}
               </p></div>{item.status === "configured" ? <CheckCircle2 className="size-5 text-emerald-700" /> : <CircleAlert className="size-5 text-amber-700" />}</div>
             </button>)}
-            {!visible.length && <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50 p-6 text-center text-sm font-semibold text-emerald-900">Every approved process in this view is mapped.</div>}
+            {!visible.length && <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50 p-6 text-center text-sm font-semibold text-emerald-900">All approved procedures in this list have task settings.</div>}
           </div>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-          {!selected || !form ? <div className="grid min-h-[28rem] place-items-center text-center"><div><h2 className="text-xl font-black">Choose a process</h2><p className="mt-2 text-sm text-slate-600">Configure how this approved procedure becomes work.</p></div></div> : <div>
+          {!selected || !form ? <div className="grid min-h-[28rem] place-items-center text-center"><div><h2 className="text-xl font-black">Choose a process</h2><p className="mt-2 text-sm text-slate-600">Choose how the task starts and who does the work.</p></div></div> : <div>
             <p className="text-xs font-black text-brand-700">{selected.code}</p><h2 className="mt-1 text-2xl font-black">{selected.title}</h2>
-            <p className="mt-2 text-sm text-slate-500">Controlled records: {selected.controlledRecordCount}{selected.recurringRule ? " · " + selected.recurringRule.code + " (" + selected.recurringRule.cadence + ")" : ""}</p>
+            <p className="mt-2 text-sm text-slate-500">Required forms: {selected.controlledRecordCount}{selected.recurringRule ? " · " + selected.recurringRule.code + " (" + selected.recurringRule.cadence + ")" : ""}</p>
             {selected.safeMappingCandidate && (
               <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-950">
-                This process has one governed owner role with an active assignment. The accountable role has been prefilled for a safe individual mapping.
+                This process has one approved owner role with an active assignment. The accountable role has been prefilled for a safe individual mapping.
               </div>
             )}
             {selected.blockedByMissingAssignment && (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                The governed owner is clear, but no active person currently holds that role. Keep this process unmapped until the real appointment exists.
+                The approved owner is clear, but no active person currently holds that role. Keep this process unmapped until the real appointment exists.
               </div>
             )}
 
 
-            <section className="mt-5 rounded-2xl border border-brand-200 bg-brand-50 p-5" aria-label="Recommended execution settings">
-              <p className="text-xs font-black uppercase tracking-wide text-brand-700">Recommended execution settings</p>
+            <section className="mt-5 rounded-2xl border border-brand-200 bg-brand-50 p-5" aria-label="Suggested task settings">
+              <p className="text-xs font-black uppercase tracking-wide text-brand-700">Suggested task settings</p>
               <p className="mt-2 text-sm leading-6 text-slate-700">{selected.recommendation.rationale}</p>
               <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-                <div><dt className="font-bold text-slate-500">Execution mode</dt><dd className="mt-1 font-black capitalize">{readable(selected.recommendation.mode)}</dd></div>
-                <div><dt className="font-bold text-slate-500">Accountable role</dt><dd className="mt-1 font-black">{selected.recommendation.ownerRoleTitle ?? "Leadership must choose"}</dd></div>
+                <div><dt className="font-bold text-slate-500">How the task starts</dt><dd className="mt-1 font-black capitalize">{readable(selected.recommendation.mode)}</dd></div>
+                <div><dt className="font-bold text-slate-500">Responsible position</dt><dd className="mt-1 font-black">{selected.recommendation.ownerRoleTitle ?? "Leadership must choose"}</dd></div>
                 <div className="sm:col-span-2"><dt className="font-bold text-slate-500">Approved trigger · version {selected.recommendation.approvedVersion}</dt><dd className="mt-1 leading-6">{selected.recommendation.triggerSummary}</dd>
                   {(selected.recommendation.eventType || selected.recommendation.conditionKey) && <p className="mt-2 font-semibold text-brand-800">Automatic source: {readable(selected.recommendation.eventType ?? selected.recommendation.conditionKey ?? "")}</p>}
                 </div>
@@ -331,12 +333,12 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
                 setForm(draftKhposExecutionRecommendation(form, selected.recommendation));
                 setMessage("Recommendation copied into your draft. Review the fields, then save when ready.");
               }} className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2.5 text-xs font-black text-white disabled:opacity-40"><Sparkles className="size-4" />Use recommendation in draft</button>
-              <p className="mt-3 text-xs leading-5 text-slate-600">Your saved mapping stays active until you save this draft. Existing evidence, verification, deadlines and KPI controls are retained.</p>
+              <p className="mt-3 text-xs leading-5 text-slate-600">Your saved mapping stays active until you save this draft. Existing evidence, verification, deadlines and Measure controls are retained.</p>
             </section>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <label className="text-sm font-bold">Execution mode<select value={form.mode} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, mode: e.target.value as KhposExecutionMode })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="recurring">Recurring schedule</option><option value="event">Institutional event</option><option value="condition">Detected condition</option><option value="manual_on_demand">Manual / on demand</option><option value="continuous_control">Continuous control</option><option value="external_system">External system</option></select></label>
-              <label className="text-sm font-bold">Accountable role<select value={form.ownerRoleId ?? ""} disabled={!snapshot.canConfigure || form.mode === "recurring"} onChange={(e) => setForm({ ...form, ownerRoleId: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose role…</option>{snapshot.roles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select></label>
+              <label className="text-sm font-bold">How the task starts<select value={form.mode} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, mode: e.target.value as KhposExecutionMode })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="recurring">Repeated on a schedule</option><option value="event">School event</option><option value="condition">When a condition is met</option><option value="manual_on_demand">Start when needed</option><option value="continuous_control">Ongoing check</option><option value="external_system">Managed in another app</option></select></label>
+              <label className="text-sm font-bold">Responsible position<select value={form.ownerRoleId ?? ""} disabled={!snapshot.canConfigure || form.mode === "recurring"} onChange={(e) => setForm({ ...form, ownerRoleId: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose role…</option>{snapshot.roles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select></label>
               {form.mode === "event" && <label className="text-sm font-bold">Event<select value={form.eventType ?? ""} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, eventType: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose event…</option>{KHPOSEventTypes.map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label>}
               {form.mode === "condition" && <label className="text-sm font-bold">Condition<select value={form.conditionKey ?? ""} disabled={!snapshot.canConfigure} onChange={(e) => setForm({ ...form, conditionKey: e.target.value || null })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal"><option value="">Choose condition…</option>{KHPOSConditionKeys.map((value) => <option key={value} value={value}>{readable(value)}</option>)}</select></label>}
               <label className="text-sm font-bold">Due after trigger (minutes)<input type="number" min={0} max={525600} step={1} disabled={!snapshot.canConfigure} value={form.dueOffsetMinutes ?? ""} onChange={(e) => setForm({ ...form, dueOffsetMinutes: numeric(e.target.value) })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal" /></label>
@@ -345,7 +347,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
 
             <p className="mt-3 text-xs leading-5 text-slate-500">The escalation interval is recorded in this mapping. Saving it alone does not send a timed notification; follow the approved escalation route.</p>
 
-            <label className="mt-5 block text-sm font-bold">Trigger / execution summary<textarea rows={4} disabled={!snapshot.canConfigure} value={form.triggerSummary ?? ""} onChange={(e) => setForm({ ...form, triggerSummary: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal leading-6" /></label>
+            <label className="mt-5 block text-sm font-bold">When should this task start?<textarea rows={4} disabled={!snapshot.canConfigure} value={form.triggerSummary ?? ""} onChange={(e) => setForm({ ...form, triggerSummary: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal leading-6" /></label>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold"><input type="checkbox" disabled={!snapshot.canConfigure} checked={form.evidenceRequired ?? false} onChange={(e) => setForm({ ...form, evidenceRequired: e.target.checked })} /> Evidence required</label>
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold"><input type="checkbox" disabled={!snapshot.canConfigure} checked={form.verificationRequired ?? false} onChange={(e) => setForm({ ...form, verificationRequired: e.target.checked })} /> Independent verification</label>
@@ -361,7 +363,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
                     className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-black text-white disabled:opacity-50"
                   >
                     {startBusy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
-                    Start Process
+                    Start task
                   </button>
                 )}
               {snapshot.canConfigure && (
@@ -372,7 +374,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
                   className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-50"
                 >
                   {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                  Save execution mapping
+                  Save task settings
                 </button>
               )}
             </div>

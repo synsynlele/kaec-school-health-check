@@ -17,9 +17,9 @@ const guides: Record<string, ToolGuide> = {
   role_charter: guide(
     "You need to understand a role’s duties, authority and reporting line.",
     "/team",
-    "Open Team & Roles",
+    "Open Staff & roles",
     [
-      "Find the relevant role and read its charter.",
+      "Find the position and read its role guide.",
       "Check its responsibilities, expected results and who it reports to.",
       "Complete any role-specific onboarding assigned to you.",
     ],
@@ -30,7 +30,7 @@ const guides: Record<string, ToolGuide> = {
     "Open processes",
     [
       "Open the relevant process and its responsibility map.",
-      "Check the accountable role and supporting roles before starting work.",
+      "Check who is responsible and who helps before starting.",
       "Ask the authorised school leader to resolve an unclear assignment.",
     ],
   ),
@@ -40,7 +40,7 @@ const guides: Record<string, ToolGuide> = {
     "Open processes",
     [
       "Find the process and read its current approved version.",
-      "Check the trigger, owner, steps, evidence and escalation route.",
+      "Check when to start, who does the work, the steps, the proof needed and when to ask for help.",
       "Open your assigned work in Today to carry it out.",
     ],
   ),
@@ -57,10 +57,10 @@ const guides: Record<string, ToolGuide> = {
   recurring_rule: guide(
     "A school leader needs an approved process to run on a repeated schedule.",
     "/execution-control",
-    "Open Execution Control",
+    "Open Task setup",
     [
-      "Find the approved process and check its execution setup.",
-      "Check the configured recurring rule, schedule, trigger and accountable role with an authorised school leader.",
+      "Find the approved procedure and check its task settings.",
+      "Check the schedule, when it starts and the person responsible with an authorised school leader.",
       "Staff complete the work generated in Today; they do not recreate the schedule each time.",
     ],
   ),
@@ -77,7 +77,7 @@ const guides: Record<string, ToolGuide> = {
   issue: guide(
     "Something has gone wrong, work is blocked or a risk needs attention.",
     "/issues",
-    "Open Issues & Escalations",
+    "Open Issues & help",
     [
       "Describe the problem, affected area and immediate action taken.",
       "Set the appropriate urgency and route it to the responsible role.",
@@ -87,7 +87,7 @@ const guides: Record<string, ToolGuide> = {
   escalation: guide(
     "An issue needs higher authority or has not been resolved on time.",
     "/issues",
-    "Open Issues & Escalations",
+    "Open Issues & help",
     [
       "Open the existing issue so its history stays together.",
       "Record the unresolved problem and the decision or support needed.",
@@ -97,7 +97,7 @@ const guides: Record<string, ToolGuide> = {
   approval: guide(
     "You need an authorised decision before proceeding.",
     "/decisions",
-    "Open Decisions & Approvals",
+    "Open Approvals & decisions",
     [
       "State the request, context and recommended action.",
       "Submit it through the authority route shown in the form.",
@@ -107,7 +107,7 @@ const guides: Record<string, ToolGuide> = {
   decision: guide(
     "An authorised decision needs to be requested, recorded or followed through.",
     "/decisions",
-    "Open Decisions & Approvals",
+    "Open Approvals & decisions",
     [
       "Open or create the relevant decision request.",
       "Keep the reason, outcome and conditions with the decision.",
@@ -137,7 +137,7 @@ const guides: Record<string, ToolGuide> = {
   handover: guide(
     "Work or responsibility is changing hands.",
     "/staff-transition",
-    "Open Progression & Exit",
+    "Open Staff changes & leaving",
     [
       "Open the relevant transition or handover record available to your role.",
       "Record outstanding work, records, assets and the receiving person or role.",
@@ -167,7 +167,7 @@ const guides: Record<string, ToolGuide> = {
   incident: guide(
     "A significant event needs to be recorded and acted on.",
     "/issues",
-    "Open Issues & Escalations",
+    "Open Issues & help",
     [
       "Record the facts, time, affected area and immediate action.",
       "For child safeguarding or confidential personnel matters, use the protected specialist workflow instead of a general issue.",

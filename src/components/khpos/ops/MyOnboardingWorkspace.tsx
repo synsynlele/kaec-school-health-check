@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { StaffPositionsPanel } from "./StaffPositionsPanel";
@@ -22,9 +24,7 @@ import {
   type KhposMyOnboarding,
 } from "@/lib/khpos/ops/onboarding";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function statusClass(status: string) {
   if (["completed", "active", "ready"].includes(status)) {
@@ -70,7 +70,7 @@ export function MyOnboardingWorkspace({
       error?: string;
     };
     if (!response.ok || !body.ok || !body.onboarding) {
-      throw new Error(body.error ?? "My Onboarding could not be loaded.");
+      throw new Error(body.error ?? "My getting started could not be loaded.");
     }
     if (!signal?.aborted) setData(body.onboarding);
   }, [accessToken, organisationId, selectedRoleId]);
@@ -84,7 +84,7 @@ export function MyOnboardingWorkspace({
         setError(
           cause instanceof Error
             ? cause.message
-            : "My Onboarding could not be loaded.",
+            : "My getting started could not be loaded.",
         );
       }
     });
@@ -136,7 +136,7 @@ export function MyOnboardingWorkspace({
   async function completePracticeStep(code: string) {
     if (!data) return;
     if (code === "start_work" && answers[code] !== "today") {
-      setError("In KHP-OS, controlled work starts from Today / My Work—not from an informal message.");
+      setError("In KHP-OS, controlled work starts from Today / Today—not from an informal message.");
       return;
     }
     if (code === "complete_checklist" && answers[code] !== "before") {
@@ -195,7 +195,7 @@ export function MyOnboardingWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <CircleAlert className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">My Onboarding unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">My getting started unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
         </div>
       </main>
@@ -220,13 +220,12 @@ export function MyOnboardingWorkspace({
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
-          <h1 className="mt-5 text-3xl font-black sm:text-5xl">My Onboarding</h1>
+          <h1 className="mt-5 text-3xl font-black sm:text-5xl">My getting started</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">
-            Understand your role, required policies, operating processes and the
-            KHP-OS workflow before you are expected to execute independently.
+            Learn your responsibilities, read the required policies and practise the main steps before starting your work.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -291,8 +290,8 @@ export function MyOnboardingWorkspace({
               {[
                 ["Outcomes you own", data.charter.ownedOutcomes],
                 ["Responsibilities", data.charter.responsibilities],
-                ["Decision rights", data.charter.decisionRights],
-                ["Escalation rules", data.charter.escalationRules],
+                ["Decisions this role can make", data.charter.decisionRights],
+                ["When to ask for help", data.charter.escalationRules],
                 ["How your role is measured", data.charter.kpis],
               ].map(([title, values]) => (
                 <div key={String(title)} className="rounded-2xl border border-slate-200 p-4">
@@ -326,9 +325,7 @@ export function MyOnboardingWorkspace({
             </div>
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-            Nothing here creates production work, reports or evidence. Complete
-            the five-step simulation to demonstrate that you understand the
-            operating workflow.
+            This is practice. Complete the five steps to learn how to use KHP-OS. Practice answers do not create real tasks or reports.
           </p>
 
           <div className="mt-6 space-y-3">
@@ -390,7 +387,7 @@ export function MyOnboardingWorkspace({
                             >
                               <option value="">Where should controlled work start?</option>
                               <option value="message">A WhatsApp instruction</option>
-                              <option value="today">Today / My Work</option>
+                              <option value="today">Today / Today</option>
                               <option value="memory">From memory without a process</option>
                             </select>
                           )}
@@ -411,13 +408,13 @@ export function MyOnboardingWorkspace({
                             </select>
                           )}
                           {step.code === "attach_evidence" && (
-                            <textarea
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Write a sample evidence note. This stays in the simulation only.</span><textarea
                               rows={3}
                               value={sampleEvidence}
                               onChange={(event) => setSampleEvidence(event.target.value)}
                               placeholder="Write a sample evidence note. This stays in the simulation only."
                               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
-                            />
+                            /></label>
                           )}
                           {step.code === "handle_return" && (
                             <select
@@ -499,7 +496,7 @@ export function MyOnboardingWorkspace({
 
                   {item.status === "pending" && item.code !== "PEO-ONB-007" && (
                     <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                      <textarea
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What did you complete or understand?</span><textarea
                         rows={2}
                         value={notes[item.id] ?? ""}
                         onChange={(event) =>
@@ -510,9 +507,9 @@ export function MyOnboardingWorkspace({
                         }
                         placeholder="What did you complete or understand?"
                         className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                      />
+                      /></label>
                       {item.evidenceRequired && (
-                        <input
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                           value={evidence[item.id] ?? ""}
                           onChange={(event) =>
                             setEvidence((current) => ({
@@ -522,7 +519,7 @@ export function MyOnboardingWorkspace({
                           }
                           placeholder="Evidence reference"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                        />
+                        /></label>
                       )}
                       <button
                         type="button"

@@ -210,7 +210,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       </div>}
       {presence?.pilotEnabled && !presence.staff && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
         <strong>Your staff profile is not yet active.</strong> Ask your School Guardian to complete your staff setup before recording attendance.
-        <div className="mt-3"><Link href={`/khpos/${organisationId}/people`} className="font-black underline">Open People & Staff →</Link></div>
+        <div className="mt-3"><Link href={`/khpos/${organisationId}/people`} className="font-black underline">Open Staff →</Link></div>
       </div>}
       {presence?.pilotEnabled && presence.staff && (
         <>
