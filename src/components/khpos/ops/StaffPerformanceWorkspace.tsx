@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -31,9 +33,7 @@ import type {
   KhposOpsStaffReviewType,
 } from "@/lib/khpos/ops/staff-performance";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function formatDate(value: string | null) {
   if (!value) return "Not set";
@@ -322,7 +322,7 @@ export function StaffPerformanceWorkspace({
       return;
     }
     if (type === "kpi" && !measurementId) {
-      setError("Choose an exact governed KPI measurement for KPI evidence.");
+      setError("Choose an exact governed Measure measurement for Measure evidence.");
       return;
     }
 
@@ -510,7 +510,7 @@ export function StaffPerformanceWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -523,26 +523,24 @@ export function StaffPerformanceWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O9
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Staff Performance & Development
+                Staff support & development
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Reflect → Evidence → Leader Review → Development → Verification.
-                O9 does not produce a one-number staff rating and does not turn
-                one absence, complaint, issue or exam result into a verdict.
+                Reflect → Evidence → Leader Review → Development → Verification. Staff support does not produce a one-number staff rating and does not turn one absence, complaint, issue or exam result into a verdict.
               </p>
             </div>
 
@@ -607,16 +605,14 @@ export function StaffPerformanceWorkspace({
               No active deployed staff are available for review yet.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              O9 begins after O7 has certified real staff into active operating
-              roles. It will not create reviews for placeholder seats or
-              inferred staff.
+              Staff must complete their joining steps and have an active position before a performance review can be created.
             </p>
             <Link
               href={`/khpos/${organisationId}/people`}
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white"
             >
               <UserRoundCheck className="size-4" />
-              Open People & Staff
+              Open Staff
             </Link>
           </section>
         ) : (
@@ -724,9 +720,7 @@ export function StaffPerformanceWorkspace({
                   No staff performance reviews yet.
                 </h2>
                 <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  Normal work, issues and scorecards remain in their own
-                  operational engines. O9 begins when a structured performance
-                  conversation is actually due.
+                  Normal work, issues and scorecards remain in their own operational engines. Staff support begins when a structured performance conversation is actually due.
                 </p>
               </section>
             ) : (
@@ -814,8 +808,7 @@ export function StaffPerformanceWorkspace({
                             {review.evidence.length === 1 ? "" : "s"}
                           </p>
                           <p className="mt-1 text-xs font-semibold text-slate-500">
-                            {governedMeasurements.length} governed O6 role KPI
-                            measurement
+                            {governedMeasurements.length} recorded role results
                             {governedMeasurements.length === 1 ? "" : "s"}{" "}
                             currently available
                           </p>
@@ -860,7 +853,7 @@ export function StaffPerformanceWorkspace({
                               <ChevronDown className="size-4 text-slate-500" />
                             </summary>
                             <div className="grid gap-3 border-t border-slate-100 p-4">
-                              <textarea
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What happened during this review period? What outcomes did you own, and what did you learn?</span><textarea
                                 value={reflections[review.id] ?? ""}
                                 onChange={(event) =>
                                   setReflections((current) => ({
@@ -870,8 +863,8 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-28 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
                                 placeholder="What happened during this review period? What outcomes did you own, and what did you learn?"
-                              />
-                              <textarea
+                              /></label>
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What are your strongest contributions in this period?</span><textarea
                                 value={selfStrengths[review.id] ?? ""}
                                 onChange={(event) =>
                                   setSelfStrengths((current) => ({
@@ -881,8 +874,8 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
                                 placeholder="What are your strongest contributions in this period?"
-                              />
-                              <textarea
+                              /></label>
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What support, coaching, resource or clarity would help you improve?</span><textarea
                                 value={supportNeeded[review.id] ?? ""}
                                 onChange={(event) =>
                                   setSupportNeeded((current) => ({
@@ -892,7 +885,7 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
                                 placeholder="What support, coaching, resource or clarity would help you improve?"
-                              />
+                              /></label>
                               <button
                                 type="button"
                                 disabled={
@@ -944,7 +937,7 @@ export function StaffPerformanceWorkspace({
                                   ))}
                                 </select>
 
-                                <input
+                                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
                                   value={evidenceTitle[review.id] ?? ""}
                                   onChange={(event) =>
                                     setEvidenceTitle((current) => ({
@@ -954,7 +947,7 @@ export function StaffPerformanceWorkspace({
                                   }
                                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
                                   placeholder="Evidence title"
-                                />
+                                /></label>
 
                                 {selectedEvidenceType === "kpi" ? (
                                   <select
@@ -972,7 +965,7 @@ export function StaffPerformanceWorkspace({
                                     <option value="">
                                       {governedMeasurements.length
                                         ? "Choose exact governed O6 measurement"
-                                        : "No governed role KPI measurement exists yet"}
+                                        : "No governed role Measure measurement exists yet"}
                                     </option>
                                     {governedMeasurements.map((kpi) => (
                                       <option
@@ -991,7 +984,7 @@ export function StaffPerformanceWorkspace({
                                     ))}
                                   </select>
                                 ) : (
-                                  <input
+                                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Evidence reference / link / record ID (optional)</span><input
                                     value={
                                       evidenceReference[review.id] ?? ""
                                     }
@@ -1003,10 +996,10 @@ export function StaffPerformanceWorkspace({
                                     }
                                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400 lg:col-span-2"
                                     placeholder="Evidence reference / link / record ID (optional)"
-                                  />
+                                  /></label>
                                 )}
 
-                                <textarea
+                                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>What does this evidence actually show? Avoid personality labels and unsupported conclusions.</span><textarea
                                   value={evidenceNote[review.id] ?? ""}
                                   onChange={(event) =>
                                     setEvidenceNote((current) => ({
@@ -1016,7 +1009,7 @@ export function StaffPerformanceWorkspace({
                                   }
                                   className="min-h-24 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400 lg:col-span-2"
                                   placeholder="What does this evidence actually show? Avoid personality labels and unsupported conclusions."
-                                />
+                                /></label>
                               </div>
 
                               <button
@@ -1061,7 +1054,7 @@ export function StaffPerformanceWorkspace({
                                   </span>
                                   {evidence.kpiMeasurement && (
                                     <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-black text-brand-800">
-                                      Exact O6 measurement
+                                      Exact School results measurement
                                     </span>
                                   )}
                                 </div>
@@ -1139,7 +1132,7 @@ export function StaffPerformanceWorkspace({
                                 <strong>{review.evidence.length}</strong>
                               </div>
 
-                              <textarea
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Leader summary grounded in the evidence and conversation</span><textarea
                                 value={leaderSummary[review.id] ?? ""}
                                 onChange={(event) =>
                                   setLeaderSummary((current) => ({
@@ -1149,8 +1142,8 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-24 rounded-xl border border-mint-200 bg-white px-3 py-2.5 text-sm outline-none lg:col-span-2"
                                 placeholder="Leader summary grounded in the evidence and conversation"
-                              />
-                              <textarea
+                              /></label>
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Observed strengths</span><textarea
                                 value={leaderStrengths[review.id] ?? ""}
                                 onChange={(event) =>
                                   setLeaderStrengths((current) => ({
@@ -1160,8 +1153,8 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-20 rounded-xl border border-mint-200 bg-white px-3 py-2.5 text-sm outline-none"
                                 placeholder="Observed strengths"
-                              />
-                              <textarea
+                              /></label>
+                              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Growth areas / expected change</span><textarea
                                 value={growthAreas[review.id] ?? ""}
                                 onChange={(event) =>
                                   setGrowthAreas((current) => ({
@@ -1171,7 +1164,7 @@ export function StaffPerformanceWorkspace({
                                 }
                                 className="min-h-20 rounded-xl border border-mint-200 bg-white px-3 py-2.5 text-sm outline-none"
                                 placeholder="Growth areas / expected change"
-                              />
+                              /></label>
                             </div>
 
                             <button
@@ -1266,7 +1259,7 @@ export function StaffPerformanceWorkspace({
                                       }
                                       className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm outline-none"
                                     />
-                                    <input
+                                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Specific development commitment</span><input
                                       value={developmentTitle[review.id] ?? ""}
                                       onChange={(event) =>
                                         setDevelopmentTitle((current) => ({
@@ -1276,8 +1269,8 @@ export function StaffPerformanceWorkspace({
                                       }
                                       className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm outline-none lg:col-span-2"
                                       placeholder="Specific development commitment"
-                                    />
-                                    <textarea
+                                    /></label>
+                                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>What support/practice happens, and what evidence will show improvement?</span><textarea
                                       value={
                                         developmentDescription[review.id] ?? ""
                                       }
@@ -1291,7 +1284,7 @@ export function StaffPerformanceWorkspace({
                                       }
                                       className="min-h-20 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm outline-none lg:col-span-2"
                                       placeholder="What support/practice happens, and what evidence will show improvement?"
-                                    />
+                                    /></label>
                                   </div>
                                   <button
                                     type="button"
@@ -1384,7 +1377,7 @@ export function StaffPerformanceWorkspace({
                                           "in_progress",
                                         ].includes(action.status))) && (
                                       <div className="mt-3 grid gap-2 lg:grid-cols-2">
-                                        <input
+                                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion / verification / reopen reason</span><input
                                           value={
                                             developmentNotes[action.id] ?? ""
                                           }
@@ -1396,8 +1389,8 @@ export function StaffPerformanceWorkspace({
                                           }
                                           className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-brand-400"
                                           placeholder="Completion / verification / reopen reason"
-                                        />
-                                        <input
+                                        /></label>
+                                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                                           value={
                                             developmentEvidence[action.id] ?? ""
                                           }
@@ -1412,7 +1405,7 @@ export function StaffPerformanceWorkspace({
                                           }
                                           className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-brand-400"
                                           placeholder="Evidence reference"
-                                        />
+                                        /></label>
                                       </div>
                                     )}
 
@@ -1535,7 +1528,7 @@ export function StaffPerformanceWorkspace({
                           review.status,
                         ) && (
                           <div className="mt-5 rounded-2xl border border-slate-200 p-4">
-                            <textarea
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Closure/cancellation note when needed</span><textarea
                               value={reviewNotes[review.id] ?? ""}
                               onChange={(event) =>
                                 setReviewNotes((current) => ({
@@ -1545,7 +1538,7 @@ export function StaffPerformanceWorkspace({
                               }
                               className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
                               placeholder="Closure/cancellation note when needed"
-                            />
+                            /></label>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {review.status === "leader_reviewed" && (
                                 <>
@@ -1638,23 +1631,17 @@ export function StaffPerformanceWorkspace({
               Capability gap ≠ conduct problem
             </h2>
             <p className="mt-2 text-sm leading-7 text-slate-300">
-              If someone does not yet know how, O9 should train, coach,
-              practise and re-observe. Repeated refusal or serious misconduct
-              belongs in the later corrective/disciplinary process with due
-              process—not disguised as coaching.
+              If someone does not yet know how, Staff support should train, coach, practise and re-observe. Repeated refusal or serious misconduct belongs in the later corrective/disciplinary process with due process—not disguised as coaching.
             </p>
           </div>
 
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             <FileCheck2 className="size-6 text-brand-700" />
             <h2 className="mt-3 text-xl font-black">
-              No KPI is better than a fake KPI
+              Record real results before setting targets
             </h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              O6 role KPIs appear here only when they have been formally
-              governed and measured. If none exist yet, reviews proceed using
-              other specific evidence rather than inventing a score to fill the
-              screen.
+              Role results appear here after they are approved and measured. If no results are available, use other evidence for the review.
             </p>
           </div>
         </section>

@@ -15,10 +15,10 @@ export function ReportActivationCard({ assessmentId }: { assessmentId: string })
               <Orbit className="size-4" /> Continue with KAEC-NG
             </div>
             <h2 className="mt-4 max-w-2xl text-2xl font-black tracking-tight sm:text-3xl">
-              Ready to turn this diagnosis into institutional transformation?
+              Ready to turn this diagnosis into school transformation?
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Request a KAEC-NG partnership. Your verified KSHC report becomes the proposed baseline, but KHP-OS access begins only after KAEC-NG approves the institution.
+              Request a KAEC partnership using your verified School Health Check report. Your school can use KHP-OS after KAEC approves it.
             </p>
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-300">
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-mint-400" /> KSHC stays free</span>

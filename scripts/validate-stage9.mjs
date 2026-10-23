@@ -61,24 +61,24 @@ expectContains("src/app/api/khpos/portfolio/route.ts", [
 ]);
 
 expectContains("src/components/khpos/BenchmarkingWorkspace.tsx", [
-  "Context without competition.",
+  "Compare your school safely",
   "No league tables.",
   "minimumPeers",
-  "Only fresh KSHC reassessment can change Verified Institutional Improvement",
+  "A new School Health Check is required to confirm improvement or close a school priority.",
 ]);
 
 expectContains("src/components/khpos/PortfolioIntelligenceWorkspace.tsx", [
   "Named internal oversight",
   "School membership alone never grants cross-institution access.",
-  "Portfolio intelligence is stewardship, not surveillance.",
+  "Use the summary to decide which schools need support.",
   "Public ranking remains disabled.",
 ]);
 
 expectContains("src/components/khpos/SchoolWorkspaceNav.tsx", [
   "/benchmarking",
-  "Benchmarking",
+  "School comparisons",
 ]);
 
 expectContains("scripts/test-core.mjs", ["scripts/validate-stage9.mjs"]);
 
-console.log("Stage 9 Benchmarking & Portfolio Intelligence structural checks passed.");
+console.log("Stage 9 Benchmarking & Network summary structural checks passed.");

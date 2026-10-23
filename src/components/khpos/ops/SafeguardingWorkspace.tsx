@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -7,7 +9,7 @@ import type { SafeguardingWorkspace as Workspace } from "@/lib/khpos/ops/safegua
 
 const categories = ["disclosure", "suspected_harm", "peer_harm", "staff_allegation", "injury", "missing_learner", "other"];
 const stepTypes = ["protection", "referral", "family_contact", "follow_up", "support", "other"];
-const readable = (value: string) => value.replaceAll("_", " ");
+const readable = (value: string) => plainLabel(value);
 
 export function SafeguardingWorkspace({ organisationId }: { organisationId: string }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -65,7 +67,7 @@ export function SafeguardingWorkspace({ organisationId }: { organisationId: stri
   const contact = data?.contacts.find((person) => person.campusId === chosen?.id);
   const eligible = (campusId: string) => data?.eligibleAssignments.filter((a) => a.campusId === campusId || a.campusId === null).map((a) => ({ value: a.id, label: `${a.name} · ${a.role}` })) || [];
 
-  return <main className="mx-auto max-w-5xl space-y-6 p-5 text-slate-900"><div><h1 className="text-3xl font-bold">Safeguarding</h1><p className="mt-2 text-slate-600">School Custodian and School Guardian have governance oversight and can configure safeguarding coverage. Confidential case narratives remain restricted to the designated safeguarding lead and deputy unless the Custodian is formally one of those designated people.</p></div>
+  return <main className="mx-auto max-w-5xl space-y-6 p-5 text-slate-900"><div><h1 className="text-3xl font-bold">Safeguarding</h1><p className="mt-2 text-slate-600">The School Custodian and School Guardian can appoint safeguarding staff and oversee coverage. Only the appointed safeguarding lead and deputy can read confidential case details. A Custodian must also hold one of those safeguarding positions to read them.</p></div>
     <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-950"><strong>Immediate safety first.</strong> Protect the learner and contact the designated lead or deputy directly. If someone is in immediate danger, use the school’s emergency response. This form does not send an emergency alert. Listen, record facts, and leave investigation to the authorised safeguarding pathway.</div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {receipt && <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-emerald-950">Restricted report saved. Receipt: <strong className="break-all">{receipt}</strong>. Keep this reference and continue direct contact with the safeguarding lead or deputy.</p>}

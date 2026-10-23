@@ -59,7 +59,7 @@ assert.match(route, /action === "archive"/);
 const ui = readFileSync("src/components/khpos/PriorityInterventionWorkspace.tsx", "utf8");
 assert.match(ui, /Maximum 3 active priorities/);
 assert.match(ui, /Approve priority & intervention/);
-assert.match(ui, /Deterministic, not AI-guessed/);
+assert.match(ui, /Based on School Health Check results/);
 assert.match(ui, /Archive from active agenda/);
 
 const commandCentre = readFileSync("src/components/khpos/CommandCentre.tsx", "utf8");

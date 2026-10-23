@@ -65,7 +65,7 @@ export function EvidenceVerificationWorkspace({
       if (!active) return;
       const token = data.session?.access_token;
       if (!token) {
-        setError("Your session has ended. Return to the Command Centre and sign in again.");
+        setError("Your session has ended. Return to the School overview and sign in again.");
         return;
       }
 
@@ -195,7 +195,7 @@ export function EvidenceVerificationWorkspace({
           <h1 className="mt-4 text-2xl font-black">Evidence workspace unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -216,7 +216,7 @@ export function EvidenceVerificationWorkspace({
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Evidence & Verification</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">Provide reality. KHP-OS does the evidence work.</h1>
+              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">Add proof of the work completed</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
                 Upload the document, photo, PDF or record. Do not classify it. KHP-OS identifies what it apparently proves, tests sufficiency, updates implementation progress and prepares the next review.
               </p>
@@ -326,14 +326,14 @@ export function EvidenceVerificationWorkspace({
                       disabled={busy}
                       onChange={(event) => setFiles((current) => ({ ...current, [plan.id]: event.target.files?.[0] ?? null }))}
                     />
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional context: what happened, when, or anything KHP-OS should know. Do not classify the evidence.</span><textarea
                       className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-brand-500"
                       placeholder="Optional context: what happened, when, or anything KHP-OS should know. Do not classify the evidence."
                       value={notes[plan.id] ?? ""}
                       maxLength={2000}
                       disabled={busy}
                       onChange={(event) => setNotes((current) => ({ ...current, [plan.id]: event.target.value }))}
-                    />
+                    /></label>
                     <button
                       type="button"
                       onClick={() => void submitEvidence(plan.id)}
@@ -397,7 +397,7 @@ export function EvidenceVerificationWorkspace({
               <CheckCircle2 className="mt-1 size-6 shrink-0 text-mint-300" />
               <div>
                 <p className="text-lg font-black">Human workload stays narrow.</p>
-                <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">People execute the real intervention and provide real evidence. KHP-OS handles classification, sufficiency scoring, progress updates, evidence gaps and review preparation. Ambiguous evidence is flagged rather than silently accepted.</p>
+                <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">Do the agreed work, then add evidence of what happened. KHP-OS checks whether the evidence is enough and highlights anything that needs review.</p>
               </div>
             </div>
           </section>

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -20,9 +22,7 @@ import type {
   KhposOpsLearnerSupportCase,
 } from "@/lib/khpos/ops/learner-progress";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -259,7 +259,7 @@ export function LearnerProgressWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -272,7 +272,7 @@ export function LearnerProgressWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O14
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}/academic-delivery`}
@@ -284,12 +284,10 @@ export function LearnerProgressWorkspace({
           </div>
 
           <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl">
-            Learner Progress & Intervention
+            Learner support
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
-            Detect early. Diagnose before structured intervention. Assign a real
-            owner. Review evidence. Close only after recovery or governed
-            redirection.
+            Record a learner concern, check what support is needed and assign someone to help. Review progress before closing the case or changing the support plan.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -356,10 +354,7 @@ export function LearnerProgressWorkspace({
               Aggregate learner-risk visibility
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              This account receives institutional learner-risk patterns by
-              default, not routine individual learner identities or intervention
-              case files. Individual cases remain with the operating leadership
-              responsible for them.
+              Your role can view school summaries. Individual learner support cases are available only to staff responsible for those learners.
             </p>
           </section>
         ) : (
@@ -399,32 +394,32 @@ export function LearnerProgressWorkspace({
                       <option value="external">External</option>
                       <option value="manual">Manual</option>
                     </select>
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>External learner ID</span><input
                       value={anchorExternalRef}
                       onChange={(event) =>
                         setAnchorExternalRef(event.target.value)
                       }
                       placeholder="External learner ID"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Display name</span><input
                       value={anchorName}
                       onChange={(event) => setAnchorName(event.target.value)}
                       placeholder="Display name"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Class / group, e.g. Nursery 1, Primary 3 or JSS1</span><input
                       value={anchorClass}
                       onChange={(event) => setAnchorClass(event.target.value)}
                       placeholder="Class / group, e.g. Nursery 1, Primary 3 or JSS1"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Section, e.g. A</span><input
                       value={anchorSection}
                       onChange={(event) => setAnchorSection(event.target.value)}
                       placeholder="Section, e.g. A"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                   </div>
                   <button
                     type="button"
@@ -505,14 +500,14 @@ export function LearnerProgressWorkspace({
                         <option value="manual">Manual</option>
                       </select>
                     </div>
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Starting point summary</span><textarea
                       value={baselineStart}
                       onChange={(event) => setBaselineStart(event.target.value)}
                       rows={3}
                       placeholder="Starting point summary"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Strengths</span><textarea
                       value={baselineStrengths}
                       onChange={(event) =>
                         setBaselineStrengths(event.target.value)
@@ -520,22 +515,22 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Strengths"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Priority learning gaps</span><textarea
                       value={baselineGaps}
                       onChange={(event) => setBaselineGaps(event.target.value)}
                       rows={2}
                       placeholder="Priority learning gaps"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                       value={baselineEvidence}
                       onChange={(event) =>
                         setBaselineEvidence(event.target.value)
                       }
                       placeholder="Evidence reference"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                   </div>
                   <button
                     type="button"
@@ -642,12 +637,12 @@ export function LearnerProgressWorkspace({
                     <option value="KHP">KHP-OS</option>
                     <option value="external">External</option>
                   </select>
-                  <input
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence/source reference</span><input
                     value={signalSourceRef}
                     onChange={(event) => setSignalSourceRef(event.target.value)}
                     placeholder="Evidence/source reference"
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
+                  /></label>
                   <input
                     type="datetime-local"
                     value={signalObservedAt}
@@ -681,13 +676,13 @@ export function LearnerProgressWorkspace({
                   >
                     Record signal
                   </button>
-                  <textarea
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2 xl:col-span-4"><span>What specific pattern or concern did you observe?</span><textarea
                     value={signalNote}
                     onChange={(event) => setSignalNote(event.target.value)}
                     rows={3}
                     placeholder="What specific pattern or concern did you observe?"
                     className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:col-span-2 xl:col-span-4"
-                  />
+                  /></label>
                 </div>
               </section>
             ) : null}
@@ -788,14 +783,14 @@ export function LearnerProgressWorkspace({
                       ))}
                     </select>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <input
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Academic year</span><input
                         value={progressionYear}
                         onChange={(event) =>
                           setProgressionYear(event.target.value)
                         }
                         placeholder="Academic year"
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                      />
+                      /></label>
                       <select
                         value={progressionDecision}
                         onChange={(event) =>
@@ -816,32 +811,32 @@ export function LearnerProgressWorkspace({
                           </option>
                         ))}
                       </select>
-                      <input
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Current class</span><input
                         value={progressionFromClass}
                         onChange={(event) =>
                           setProgressionFromClass(event.target.value)
                         }
                         placeholder="Current class"
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                      />
-                      <input
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Proposed next class</span><input
                         value={progressionNextClass}
                         onChange={(event) =>
                           setProgressionNextClass(event.target.value)
                         }
                         placeholder="Proposed next class"
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                      />
+                      /></label>
                     </div>
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>SIS/assessment attainment reference</span><input
                       value={progressionAttainment}
                       onChange={(event) =>
                         setProgressionAttainment(event.target.value)
                       }
                       placeholder="SIS/assessment attainment reference"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Foundational-gap summary</span><textarea
                       value={progressionFoundation}
                       onChange={(event) =>
                         setProgressionFoundation(event.target.value)
@@ -849,17 +844,17 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Foundational-gap summary"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Progress and next steps</span><textarea
                       value={progressionTrajectory}
                       onChange={(event) =>
                         setProgressionTrajectory(event.target.value)
                       }
                       rows={2}
-                      placeholder="Trajectory summary"
+                      placeholder="Progress and next steps"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Intervention/reassessment summary</span><textarea
                       value={progressionIntervention}
                       onChange={(event) =>
                         setProgressionIntervention(event.target.value)
@@ -867,24 +862,24 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Intervention/reassessment summary"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <input
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Attendance evidence reference</span><input
                         value={progressionAttendance}
                         onChange={(event) =>
                           setProgressionAttendance(event.target.value)
                         }
                         placeholder="Attendance evidence reference"
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                      />
-                      <input
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Exam requirement summary</span><input
                         value={progressionExam}
                         onChange={(event) => setProgressionExam(event.target.value)}
                         placeholder="Exam requirement summary"
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                      />
+                      /></label>
                     </div>
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned decision</span><textarea
                       value={progressionRationale}
                       onChange={(event) =>
                         setProgressionRationale(event.target.value)
@@ -892,8 +887,8 @@ export function LearnerProgressWorkspace({
                       rows={3}
                       placeholder="Reasoned decision"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Required support carried forward</span><textarea
                       value={progressionSupport}
                       onChange={(event) =>
                         setProgressionSupport(event.target.value)
@@ -901,15 +896,15 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Required support carried forward"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Parent meeting reference for high-impact decision</span><input
                       value={progressionParentRef}
                       onChange={(event) =>
                         setProgressionParentRef(event.target.value)
                       }
                       placeholder="Parent meeting reference for high-impact decision"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                   </div>
                   <button
                     type="button"
@@ -992,7 +987,7 @@ export function LearnerProgressWorkspace({
                         <option value="critical">Critical</option>
                       </select>
                     </div>
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Progress summary</span><textarea
                       value={termReviewProgress}
                       onChange={(event) =>
                         setTermReviewProgress(event.target.value)
@@ -1000,15 +995,15 @@ export function LearnerProgressWorkspace({
                       rows={3}
                       placeholder="Progress summary"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Open risks</span><textarea
                       value={termReviewRisks}
                       onChange={(event) => setTermReviewRisks(event.target.value)}
                       rows={2}
                       placeholder="Open risks"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Intervention summary</span><textarea
                       value={termReviewIntervention}
                       onChange={(event) =>
                         setTermReviewIntervention(event.target.value)
@@ -1016,8 +1011,8 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Intervention summary"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <textarea
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Next-term actions</span><textarea
                       value={termReviewActions}
                       onChange={(event) =>
                         setTermReviewActions(event.target.value)
@@ -1025,15 +1020,15 @@ export function LearnerProgressWorkspace({
                       rows={2}
                       placeholder="Next-term actions"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                       value={termReviewEvidence}
                       onChange={(event) =>
                         setTermReviewEvidence(event.target.value)
                       }
                       placeholder="Evidence reference"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    /></label>
                   </div>
                   <button
                     type="button"
@@ -1098,7 +1093,7 @@ export function LearnerProgressWorkspace({
                       ) : null}
                       {workspace.canManage && decision.status === "proposed" ? (
                         <div className="mt-4 space-y-2">
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Confirmation/cancellation note</span><textarea
                             value={notes[`progression-${decision.id}`] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
@@ -1110,7 +1105,7 @@ export function LearnerProgressWorkspace({
                             rows={2}
                             placeholder="Confirmation/cancellation note"
                             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                          />
+                          /></label>
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -1253,7 +1248,7 @@ function RiskSignalCard({
           <p className="text-xs font-black text-amber-950">
             Amber quick response
           </p>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What did you do, and what changed?</span><textarea
             value={notes[responseKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -1264,8 +1259,8 @@ function RiskSignalCard({
             rows={2}
             placeholder="What did you do, and what changed?"
             className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
             value={references[responseRefKey] ?? ""}
             onChange={(event) =>
               setReferences((current) => ({
@@ -1275,7 +1270,7 @@ function RiskSignalCard({
             }
             placeholder="Evidence reference"
             className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs"
-          />
+          /></label>
           <button
             type="button"
             onClick={() =>
@@ -1491,7 +1486,7 @@ function SupportCaseCard({
             Record / revise diagnosis
           </summary>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Barrier categories, comma separated</span><input
               value={references[diagnosisBarrierKey] ?? ""}
               onChange={(event) =>
                 setReferences((current) => ({
@@ -1501,7 +1496,7 @@ function SupportCaseCard({
               }
               placeholder="Barrier categories, comma separated"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <select
               value={selects[`diag-source-${supportCase.id}`] ?? "manual"}
               onChange={(event) =>
@@ -1517,7 +1512,7 @@ function SupportCaseCard({
               <option value="SIS">SIS</option>
               <option value="external">External</option>
             </select>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Diagnosis summary</span><textarea
               value={notes[diagnosisSummaryKey] ?? ""}
               onChange={(event) =>
                 setNotes((current) => ({
@@ -1528,8 +1523,8 @@ function SupportCaseCard({
               rows={2}
               placeholder="Diagnosis summary"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs md:col-span-2"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What evidence supports this hypothesis?</span><textarea
               value={notes[diagnosisEvidenceKey] ?? ""}
               onChange={(event) =>
                 setNotes((current) => ({
@@ -1540,8 +1535,8 @@ function SupportCaseCard({
               rows={2}
               placeholder="What evidence supports this hypothesis?"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
               value={references[diagnosisRefKey] ?? ""}
               onChange={(event) =>
                 setReferences((current) => ({
@@ -1551,7 +1546,7 @@ function SupportCaseCard({
               }
               placeholder="Evidence reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -1622,7 +1617,7 @@ function SupportCaseCard({
               <option value="3">Tier 3 · leadership/specialist support</option>
               <option value="4">Tier 4 · enhanced/external support</option>
             </select>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Target outcome</span><textarea
               value={notes[interventionTargetKey] ?? ""}
               onChange={(event) =>
                 setNotes((current) => ({
@@ -1633,8 +1628,8 @@ function SupportCaseCard({
               rows={2}
               placeholder="Target outcome"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Response plan</span><textarea
               value={notes[interventionPlanKey] ?? ""}
               onChange={(event) =>
                 setNotes((current) => ({
@@ -1645,7 +1640,7 @@ function SupportCaseCard({
               rows={2}
               placeholder="Response plan"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <input
               type="date"
               value={dates[interventionStartKey] ?? ""}
@@ -1668,7 +1663,7 @@ function SupportCaseCard({
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Success criteria</span><textarea
               value={notes[interventionCriteriaKey] ?? ""}
               onChange={(event) =>
                 setNotes((current) => ({
@@ -1679,7 +1674,7 @@ function SupportCaseCard({
               rows={2}
               placeholder="Success criteria"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs md:col-span-2"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -1758,7 +1753,7 @@ function SupportCaseCard({
               {(intervention.isOwner || supportCase.canCoordinate) &&
               !["completed", "cancelled"].includes(intervention.status) ? (
                 <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                  <textarea
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Meaningful activity evidence</span><textarea
                     value={notes[`activity-${intervention.id}`] ?? ""}
                     onChange={(event) =>
                       setNotes((current) => ({
@@ -1769,7 +1764,7 @@ function SupportCaseCard({
                     rows={2}
                     placeholder="Meaningful activity evidence"
                     className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                  />
+                  /></label>
                   <div className="space-y-2">
                     <input
                       type="date"
@@ -1783,7 +1778,7 @@ function SupportCaseCard({
                       }
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
                     />
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence ref</span><input
                       value={references[`activity-${intervention.id}`] ?? ""}
                       onChange={(event) =>
                         setReferences((current) => ({
@@ -1794,7 +1789,7 @@ function SupportCaseCard({
                       }
                       placeholder="Evidence ref"
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                    />
+                    /></label>
                   </div>
                   <button
                     type="button"
@@ -1861,7 +1856,7 @@ function SupportCaseCard({
                 <option value="letter">Letter</option>
                 <option value="other">Other</option>
               </select>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Summary</span><textarea
                 value={notes[parentSummaryKey] ?? ""}
                 onChange={(event) =>
                   setNotes((current) => ({
@@ -1872,8 +1867,8 @@ function SupportCaseCard({
                 rows={2}
                 placeholder="Summary"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Agreed action</span><textarea
                 value={notes[parentActionKey] ?? ""}
                 onChange={(event) =>
                   setNotes((current) => ({
@@ -1884,8 +1879,8 @@ function SupportCaseCard({
                 rows={2}
                 placeholder="Agreed action"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <input
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence/reference</span><input
                 value={references[parentRefKey] ?? ""}
                 onChange={(event) =>
                   setReferences((current) => ({
@@ -1895,7 +1890,7 @@ function SupportCaseCard({
                 }
                 placeholder="Evidence/reference"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -1961,7 +1956,7 @@ function SupportCaseCard({
                 <option value="no_improvement">No improvement</option>
                 <option value="redirect">Redirect</option>
               </select>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence note</span><textarea
                 value={notes[reassessEvidenceKey] ?? ""}
                 onChange={(event) =>
                   setNotes((current) => ({
@@ -1972,8 +1967,8 @@ function SupportCaseCard({
                 rows={2}
                 placeholder="Evidence note"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <input
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                 value={references[reassessRefKey] ?? ""}
                 onChange={(event) =>
                   setReferences((current) => ({
@@ -1983,8 +1978,8 @@ function SupportCaseCard({
                 }
                 placeholder="Evidence reference"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Next action if needed</span><textarea
                 value={notes[reassessNextKey] ?? ""}
                 onChange={(event) =>
                   setNotes((current) => ({
@@ -1995,7 +1990,7 @@ function SupportCaseCard({
                 rows={2}
                 placeholder="Next action if needed"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -2056,7 +2051,7 @@ function SupportCaseCard({
                   </option>
                 ))}
               </select>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is current support insufficient?</span><textarea
                 value={notes[escalationNoteKey] ?? ""}
                 onChange={(event) =>
                   setNotes((current) => ({
@@ -2067,8 +2062,8 @@ function SupportCaseCard({
                 rows={2}
                 placeholder="Why is current support insufficient?"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <input
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Related issue ID (optional)</span><input
                 value={references[issueRefKey] ?? ""}
                 onChange={(event) =>
                   setReferences((current) => ({
@@ -2076,9 +2071,9 @@ function SupportCaseCard({
                     [issueRefKey]: event.target.value,
                   }))
                 }
-                placeholder="Optional O4 issue UUID"
+                placeholder="Related issue ID (optional)"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -2141,10 +2136,9 @@ function SupportCaseCard({
             Closure gate is available
           </p>
           <p className="mt-1 text-xs leading-5 text-emerald-900">
-            A case closes only because the latest reassessment evidenced recovery
-            or governed redirection—not because activities were completed.
+            A case closes only because the latest reassessment evidenced recovery or approved redirection—not because activities were completed.
           </p>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Closure note</span><textarea
             value={notes[closeKey] ?? ""}
             onChange={(event) =>
               setNotes((current) => ({
@@ -2155,7 +2149,7 @@ function SupportCaseCard({
             rows={2}
             placeholder="Closure note"
             className="mt-3 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs"
-          />
+          /></label>
           <button
             type="button"
             onClick={() =>

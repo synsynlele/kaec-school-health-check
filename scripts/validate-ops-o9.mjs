@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/staff-performance"', "school workspace navigation");
-requireText(nav, 'label: "Staff Performance"', "school workspace navigation");
+requireText(nav, 'label: "Staff support"', "school workspace navigation");
 requireText(nav, 'suffix: "/performance"', "O6 scorecard navigation");
 requireText(nav, 'suffix: "/people"', "O7 People navigation");
 
@@ -53,12 +53,12 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/StaffPerformanceWorkspace.tsx");
 for (const expected of [
-  "Operations · O9",
-  "Staff Performance & Development",
+  "School operations",
+  "Staff support & development",
   "Reflect → Evidence → Leader Review → Development → Verification.",
   "does not produce a one-number staff rating",
   "Capability gap ≠ conduct problem",
-  "No KPI is better than a fake KPI",
+  "Record real results before setting targets",
   "This review cannot close until a proportionate development commitment is added and verified.",
   "Verify or formally cancel",
 ]) {

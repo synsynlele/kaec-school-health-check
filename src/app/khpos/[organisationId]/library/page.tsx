@@ -5,7 +5,7 @@ import { libraryNavigationKey } from "@/lib/khpos/ops/library-navigation";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Institutional Library · KHP-OS",
+  title: "School library · KHP-OS",
   robots: { index: false, follow: false },
 };
 

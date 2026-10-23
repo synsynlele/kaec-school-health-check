@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/skills-development"', "workspace navigation");
-requireText(nav, 'label: "Skills Development"', "workspace navigation");
+requireText(nav, 'label: "Skills"', "workspace navigation");
 requireText(nav, 'suffix: "/potential-development"', "O16 navigation continuity");
 requireText(nav, 'suffix: "/learner-progress"', "O14 navigation continuity");
 
@@ -59,7 +59,7 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/SkillsDevelopmentWorkspace.tsx");
 for (const expected of [
-  "Operations · O17",
+  "School operations",
   "Skills Development",
   "Competence is demonstrated, not assumed",
   "PipuPath privacy stays intact",

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -30,9 +32,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   transition_planning: "Transition Planning",
 };
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function statusClass(status: string) {
   if (["ready", "demonstrated", "verified", "closed"].includes(status))
@@ -173,15 +173,14 @@ export function WorldReadyWorkspace({
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500"
         >
           <ArrowLeft className="size-3.5" />
-          Command Centre
+          School overview
         </Link>
         <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
-          Operations · O21
+          School operations
         </p>
-        <h1 className="mt-1 text-3xl font-black text-slate-950">WorldReady Transition</h1>
+        <h1 className="mt-1 text-3xl font-black text-slate-950">Life after school</h1>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-          This final-year secondary transition programme is for SS3 learners. For preschool and primary development, use Learner Progress and Potential Development. Verify what each SS3 learner can already demonstrate, define the next-step pathway,
-          and keep remaining transition gaps owned. WorldReady is not an exam score and does not replace WAEC/NECO preparation.
+          This final-year secondary transition programme is for SS3 learners. For preschool and primary development, use Learner Progress and Learner development. Verify what each SS3 learner can already demonstrate, define the next-step pathway, and keep remaining transition gaps owned. WorldReady is not an exam score and does not replace WAEC/NECO preparation.
         </p>
       </header>
 
@@ -377,19 +376,19 @@ function WorldReadyRecordCard({
               <option value="service_gap_year">Service / gap year</option>
               <option value="undecided">Undecided / exploring</option>
             </select>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Optional pathway reference</span><input
               value={refs[pathKey] ?? record.pathwayReference ?? ""}
               onChange={(event) => setRef(pathKey, event.target.value)}
               placeholder="Optional pathway reference"
               className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>What is the learner's current next-step plan?</span><textarea
               value={notes[pathSummaryKey] ?? record.pathwaySummary ?? ""}
               onChange={(event) => setNote(pathSummaryKey, event.target.value)}
               placeholder="What is the learner's current next-step plan?"
               rows={2}
               className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm md:col-span-2"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -453,18 +452,18 @@ function WorldReadyRecordCard({
                 </div>
                 {action.isOwner && ["open", "in_progress"].includes(action.status) ? (
                   <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion note</span><input
                       value={notes[noteKey] ?? ""}
                       onChange={(event) => setNote(noteKey, event.target.value)}
                       placeholder="Completion note"
                       className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                    />
-                    <input
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                       value={refs[refKey] ?? ""}
                       onChange={(event) => setRef(refKey, event.target.value)}
                       placeholder="Evidence reference"
                       className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                    />
+                    /></label>
                     <button
                       type="button"
                       onClick={() =>
@@ -531,18 +530,18 @@ function WorldReadyRecordCard({
                 <option value="ready_with_actions">Ready with actions</option>
                 <option value="not_ready">Not ready</option>
               </select>
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Readiness summary</span><input
                 value={notes[reviewSummaryKey] ?? ""}
                 onChange={(event) => setNote(reviewSummaryKey, event.target.value)}
                 placeholder="Readiness summary"
                 className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-sm"
-              />
-              <input
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned review note</span><input
                 value={notes[reviewNoteKey] ?? ""}
                 onChange={(event) => setNote(reviewNoteKey, event.target.value)}
                 placeholder="Reasoned review note"
                 className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-sm"
-              />
+              /></label>
             </div>
             <button
               type="button"
@@ -694,9 +693,9 @@ function DomainCard({
         <details className="mt-3">
           <summary className="cursor-pointer text-xs font-black text-brand-700">Add evidence</summary>
           <div className="mt-2 space-y-2">
-            <input value={refs[titleKey] ?? ""} onChange={(event) => setRef(titleKey, event.target.value)} placeholder="Evidence title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
-            <textarea value={notes[noteKey] ?? ""} onChange={(event) => setNote(noteKey, event.target.value)} placeholder="Specific evidence note" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
-            <input value={refs[refKey] ?? ""} onChange={(event) => setRef(refKey, event.target.value)} placeholder="Evidence reference" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input value={refs[titleKey] ?? ""} onChange={(event) => setRef(titleKey, event.target.value)} placeholder="Evidence title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific evidence note</span><textarea value={notes[noteKey] ?? ""} onChange={(event) => setNote(noteKey, event.target.value)} placeholder="Specific evidence note" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input value={refs[refKey] ?? ""} onChange={(event) => setRef(refKey, event.target.value)} placeholder="Evidence reference" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
             <button
               type="button"
               onClick={() =>
@@ -730,8 +729,8 @@ function DomainCard({
               <option value="emerging">Emerging</option>
               <option value="demonstrated">Demonstrated</option>
             </select>
-            <input value={notes[reviewNoteKey] ?? ""} onChange={(event) => setNote(reviewNoteKey, event.target.value)} placeholder="Review note" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
-            <textarea value={notes[summaryKey] ?? ""} onChange={(event) => setNote(summaryKey, event.target.value)} placeholder="Evidence summary" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Review note</span><input value={notes[reviewNoteKey] ?? ""} onChange={(event) => setNote(reviewNoteKey, event.target.value)} placeholder="Review note" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence summary</span><textarea value={notes[summaryKey] ?? ""} onChange={(event) => setNote(summaryKey, event.target.value)} placeholder="Evidence summary" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
             <button
               type="button"
               onClick={() =>
@@ -759,8 +758,8 @@ function DomainCard({
         <details className="mt-3">
           <summary className="cursor-pointer text-xs font-black text-amber-800">Create transition action</summary>
           <div className="mt-2 space-y-2">
-            <input value={refs[actionTitleKey] ?? ""} onChange={(event) => setRef(actionTitleKey, event.target.value)} placeholder="Action title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
-            <textarea value={notes[actionChangeKey] ?? ""} onChange={(event) => setNote(actionChangeKey, event.target.value)} placeholder="Expected change" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" />
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Action title</span><input value={refs[actionTitleKey] ?? ""} onChange={(event) => setRef(actionTitleKey, event.target.value)} placeholder="Action title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Expected change</span><textarea value={notes[actionChangeKey] ?? ""} onChange={(event) => setNote(actionChangeKey, event.target.value)} placeholder="Expected change" rows={2} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /></label>
             <select value={selects[actionOwnerKey] ?? ""} onChange={(event) => setSelect(actionOwnerKey, event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs">
               <option value="">Choose owner</option>
               {workspace.assignments.map((assignment) => (

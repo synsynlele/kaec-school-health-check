@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -18,9 +20,7 @@ type Field = {
   options: string[];
 };
 
-function readable(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function fieldsFor(schema: Record<string, unknown>): Field[] {
   const raw = schema.fields;
@@ -328,8 +328,7 @@ export function WorkRecordRequirementCard({
             </div>
           ) : (
             <p className="text-sm text-slate-600">
-              This tool is registered but its submission fields are not yet
-              defined in the Institutional Library.
+              This form has no questions yet. Ask a school leader to add its fields in the School library.
             </p>
           )}
 

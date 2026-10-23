@@ -4,7 +4,7 @@ import { AcademicDeliveryWorkspace } from "@/components/khpos/ops/AcademicDelive
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Academic Planning & Delivery · KHP-OS",
+  title: "Teaching plans · KHP-OS",
   robots: { index: false, follow: false },
 };
 

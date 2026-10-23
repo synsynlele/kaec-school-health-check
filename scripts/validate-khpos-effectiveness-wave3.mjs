@@ -47,7 +47,7 @@ for (const expected of [
   "Execution control",
   "Participating roles",
   "Controlled reports & logs",
-  "Records & Evidence",
+  "Forms & checklists",
 ]) {
   requireText(processDocument, expected, "process operating map");
 }
@@ -61,7 +61,7 @@ for (const expected of [
   "requiredPolicies",
   "relevantProcesses",
 ]) {
-  requireText(onboarding, expected, "My Onboarding");
+  requireText(onboarding, expected, "My getting started");
 }
 
 const practiceMigration = read(
@@ -103,7 +103,7 @@ for (const expected of [
   "outcome_stale",
   "duplicate_assignment",
 ]) {
-  requireText(integrity, expected, "System Integrity");
+  requireText(integrity, expected, "System checks");
 }
 
 const join = read("src/components/khpos/ops/StaffJoinWorkspace.tsx");
@@ -118,9 +118,9 @@ for (const expected of [
   'suffix: "/ask"',
   'label: "Ask KHP-OS"',
   'suffix: "/onboarding"',
-  'label: "My Onboarding"',
+  'label: "My getting started"',
   'suffix: "/system-integrity"',
-  'label: "System Integrity"',
+  'label: "System checks"',
 ]) {
   requireText(nav, expected, "Wave 3 navigation");
 }

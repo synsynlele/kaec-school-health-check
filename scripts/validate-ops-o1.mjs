@@ -42,11 +42,11 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/OperationsTeamWorkspace.tsx");
 for (const expected of [
-  "Institutional Structure & Roles",
+  "Staff roles & reporting lines",
   "Operating hierarchy",
   "Reports to",
-  "Owned outcomes",
-  "Decision rights",
+  "Expected results",
+  "Decisions this role can make",
   "/api/khpos/ops/structure/",
 ]) {
   requireText(workspace, expected, "Operations team workspace");

@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/recruitment"', "school workspace navigation");
-requireText(nav, 'label: "Workforce & Recruitment"', "school workspace navigation");
+requireText(nav, 'label: "Hiring"', "school workspace navigation");
 requireText(nav, 'suffix: "/people"', "People navigation continuity");
 requireText(nav, 'suffix: "/academic-delivery"', "O12 navigation continuity");
 
@@ -59,9 +59,9 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/RecruitmentWorkspace.tsx");
 for (const expected of [
-  "Operations · O13",
-  "Workforce & Recruitment",
-  "Approved need → governed vacancy",
+  "School operations",
+  "Hiring",
+  "Approved need → approved vacancy",
   "functional evaluator",
 ]) {
   requireText(workspace, expected, "O13 workspace");
@@ -70,7 +70,7 @@ for (const expected of [
   "Candidate-data boundary",
   "Conditional selection",
   "Start safer clearance",
-  "Create O7 appointment record",
+  "Add staff appointment",
 ]) {
   requireText(workspace, expected, "O13 workspace");
 }

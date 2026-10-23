@@ -4,7 +4,7 @@ import { RecruitmentWorkspace } from "@/components/khpos/ops/RecruitmentWorkspac
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Workforce & Recruitment · KHP-OS",
+  title: "Hiring · KHP-OS",
   robots: { index: false, follow: false },
 };
 

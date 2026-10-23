@@ -4,7 +4,7 @@ import { MyOnboardingWorkspace } from "@/components/khpos/ops/MyOnboardingWorksp
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "My Onboarding · KHP-OS",
+  title: "My getting started · KHP-OS",
   robots: { index: false, follow: false },
 };
 

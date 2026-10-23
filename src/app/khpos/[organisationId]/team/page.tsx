@@ -4,7 +4,7 @@ import { OperationsTeamWorkspace } from "@/components/khpos/ops/OperationsTeamWo
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Team & Roles · KHP-OS",
+  title: "Staff & roles · KHP-OS",
   robots: { index: false, follow: false },
 };
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -21,9 +23,7 @@ import type {
   KhposOpsResultCorrection,
 } from "@/lib/khpos/ops/academic-assurance";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function statusClass(status: string) {
   if (["approved", "verified", "closed", "ready"].includes(status))
@@ -189,12 +189,12 @@ export function AcademicAssuranceWorkspace({
           Academic Delivery
         </Link>
         <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
-          Operations · O15
+          School operations
         </p>
         <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-              Assessment, Examination & Academic Assurance
+              Assessments & exams
             </h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
               Moderation, readiness, integrity, correction audit and academic
@@ -271,9 +271,7 @@ export function AcademicAssuranceWorkspace({
             Executive summary only
           </p>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-brand-900">
-            Routine assessment packages, learner/staff integrity subjects and
-            result-correction records stay with the operational academic roles.
-            Strategic executives see the aggregate assurance position by default.
+            Staff with the assigned academic roles manage assessments, exam concerns and result corrections. Other school leaders see summaries unless their role allows more detail.
           </p>
         </section>
       ) : (
@@ -482,12 +480,12 @@ function CreateCyclePanel({
             </option>
           ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit xl:col-span-2"><span>Name for this period</span><input
           value={values["cycle-title"] || ""}
           onChange={(event) => setValue("cycle-title", event.target.value)}
-          placeholder="Cycle title"
+          placeholder="Name for this period"
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm xl:col-span-2"
-        />
+        /></label>
         <input
           type="date"
           value={values["cycle-start"] || ""}
@@ -506,12 +504,12 @@ function CreateCyclePanel({
           onChange={(event) => setValue("cycle-results", event.target.value)}
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
         />
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>School system, CBT or exam reference</span><input
           value={values["cycle-external"] || ""}
           onChange={(event) => setValue("cycle-external", event.target.value)}
-          placeholder="SIS/CBT/exam-body reference"
+          placeholder="School system, CBT or exam reference"
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-        />
+        /></label>
       </div>
       <label className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-600">
         <input
@@ -524,7 +522,7 @@ function CreateCyclePanel({
             }))
           }
         />
-        Scope to the term campus where available
+        Choose the campus for this term, if available
       </label>
       <button
         type="button"
@@ -552,7 +550,7 @@ function CreateCyclePanel({
         }}
         className="mt-4 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white disabled:opacity-60"
       >
-        Create governed cycle
+        Create approved cycle
       </button>
     </details>
   );
@@ -722,22 +720,22 @@ function CycleCard({
                 </option>
               ))}
             </select>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Assessment source reference</span><input
               value={values[`pkg-ref-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`pkg-ref-${cycle.id}`, event.target.value)
               }
               placeholder="Assessment source reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Assessment plan reference</span><input
               value={values[`pkg-blueprint-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`pkg-blueprint-${cycle.id}`, event.target.value)
               }
-              placeholder="Blueprint/specification reference"
+              placeholder="Assessment plan reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <label className="mt-3 flex items-center gap-2 text-xs font-bold">
             <input
@@ -854,14 +852,14 @@ function CycleCard({
                 </option>
               ))}
             </select>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Name of the readiness check</span><input
               value={values[`ready-title-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`ready-title-${cycle.id}`, event.target.value)
               }
-              placeholder="Readiness control title"
+              placeholder="Name of the readiness check"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <input
               type="date"
               value={values[`ready-date-${cycle.id}`] || ""}
@@ -870,14 +868,14 @@ function CycleCard({
               }
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             />
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What must be proven?</span><input
               value={values[`ready-desc-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`ready-desc-${cycle.id}`, event.target.value)
               }
               placeholder="What must be proven?"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <button
             type="button"
@@ -999,13 +997,13 @@ function PackageRow({
           if (saved) setEditing(false);
         })()} className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white disabled:opacity-50">Save package changes</button>
       </div>}
-      <textarea
+      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Moderation / action note</span><textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
         placeholder="Moderation / action note"
         rows={2}
         className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-      />
+      /></label>
       <div className="mt-2 flex flex-wrap gap-2">
         {["draft", "changes_required"].includes(pkg.moderationState) ? (
           <MiniButton
@@ -1095,18 +1093,18 @@ function ReadinessRow({
       {(item.isOwner || item.canVerify) &&
       !["verified", "exception_accepted"].includes(item.status) ? (
         <div className="mt-3 grid gap-2 md:grid-cols-2">
-          <input
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Completion / review note</span><input
             value={values[noteKey] || ""}
             onChange={(event) => setValue(noteKey, event.target.value)}
             placeholder="Completion / review note"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence / authority reference</span><input
             value={values[refKey] || ""}
             onChange={(event) => setValue(refKey, event.target.value)}
             placeholder="Evidence / authority reference"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-          />
+          /></label>
         </div>
       ) : null}
 
@@ -1270,19 +1268,19 @@ function IntegrityReportPanel({
           <option value="high">High</option>
           <option value="critical">Critical</option>
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Source/evidence reference</span><input
           value={values["int-source"] || ""}
           onChange={(event) => setValue("int-source", event.target.value)}
           placeholder="Source/evidence reference"
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-        />
-        <textarea
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit xl:col-span-4"><span>Specific allegation/incident summary — allegation is not a finding.</span><textarea
           value={values["int-summary"] || ""}
           onChange={(event) => setValue("int-summary", event.target.value)}
           placeholder="Specific allegation/incident summary — allegation is not a finding."
           rows={2}
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs xl:col-span-4"
-        />
+        /></label>
       </div>
       <button
         type="button"
@@ -1404,15 +1402,15 @@ function IntegrityCard({
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 p-3">
             <p className="text-xs font-black">Add evidence</p>
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
               value={values[`evidence-title-${item.id}`] || ""}
               onChange={(event) =>
                 setValue(`evidence-title-${item.id}`, event.target.value)
               }
               placeholder="Evidence title"
               className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-            />
-            <textarea
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What does it establish?</span><textarea
               value={values[`evidence-note-${item.id}`] || ""}
               onChange={(event) =>
                 setValue(`evidence-note-${item.id}`, event.target.value)
@@ -1420,7 +1418,7 @@ function IntegrityCard({
               placeholder="What does it establish?"
               rows={2}
               className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
             <MiniButton
               label="Add evidence"
               busy={busyId === `int-evidence-${item.id}`}
@@ -1446,7 +1444,7 @@ function IntegrityCard({
           !item.isReporter ? (
             <div className="rounded-2xl border border-slate-200 p-3">
               <p className="text-xs font-black">Record subject explanation</p>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Their explanation, or documented decline/inability to respond</span><textarea
                 value={values[`representation-${item.id}`] || ""}
                 onChange={(event) =>
                   setValue(`representation-${item.id}`, event.target.value)
@@ -1454,7 +1452,7 @@ function IntegrityCard({
                 placeholder="Their explanation, or documented decline/inability to respond"
                 rows={3}
                 className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <MiniButton
                 label="Record representation"
                 busy={busyId === `int-representation-${item.id}`}
@@ -1512,19 +1510,19 @@ function IntegrityCard({
                   </option>
                 ))}
               </select>
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason for the decision</span><textarea
                 value={values[noteKey] || ""}
                 onChange={(event) => setValue(noteKey, event.target.value)}
-                placeholder="Decision rationale"
+                placeholder="Reason for the decision"
                 rows={2}
                 className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-              />
-              <input
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Conduct or external case reference, if required</span><input
                 value={values[refKey] || ""}
                 onChange={(event) => setValue(refKey, event.target.value)}
-                placeholder="O10/external process reference if required"
+                placeholder="Conduct or external case reference, if required"
                 className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <MiniButton
                 label="Record decision"
                 busy={busyId === `int-decision-${item.id}`}
@@ -1558,7 +1556,7 @@ function IntegrityCard({
           }
           className="mt-4 rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white"
         >
-          Close governed case
+          Close approved case
         </button>
       ) : null}
     </article>
@@ -1634,19 +1632,19 @@ function CorrectionRequestPanel({
             </option>
           ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>SIS/CBT result reference</span><input
           value={values["corr-external"] || ""}
           onChange={(event) => setValue("corr-external", event.target.value)}
           placeholder="SIS/CBT result reference"
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-        />
-        <textarea
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2 xl:col-span-4"><span>Why is correction required?</span><textarea
           value={values["corr-note"] || ""}
           onChange={(event) => setValue("corr-note", event.target.value)}
           placeholder="Why is correction required?"
           rows={2}
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs md:col-span-2 xl:col-span-4"
-        />
+        /></label>
       </div>
       <button
         type="button"
@@ -1712,18 +1710,18 @@ function CorrectionCard({
       </div>
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Decision / implementation note</span><input
           value={values[noteKey] || ""}
           onChange={(event) => setValue(noteKey, event.target.value)}
           placeholder="Decision / implementation note"
           className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-        />
-        <input
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>SIS/CBT implementation reference</span><input
           value={values[refKey] || ""}
           onChange={(event) => setValue(refKey, event.target.value)}
           placeholder="SIS/CBT implementation reference"
           className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
-        />
+        /></label>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -1836,12 +1834,12 @@ function CloseoutCreatePanel({
               </option>
             ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Close-out evidence reference</span><input
           value={values["close-evidence"] || ""}
           onChange={(event) => setValue("close-evidence", event.target.value)}
           placeholder="Close-out evidence reference"
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-        />
+        /></label>
         {[
           ["close-curriculum", "Curriculum delivery summary"],
           ["close-assessment", "Assessment/exam summary"],
@@ -1850,21 +1848,21 @@ function CloseoutCreatePanel({
           ["close-lessons", "Institutional learning / lessons"],
           ["close-external", "External-exam summary (optional)"],
         ].map(([key, placeholder]) => (
-          <textarea
-            key={key}
+          <label key={key} className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{placeholder}</span><textarea
+
             value={values[key] || ""}
             onChange={(event) => setValue(key, event.target.value)}
             placeholder={placeholder}
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          />
+          /></label>
         ))}
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Carry-over/escalation reference if anything remains open</span><input
           value={values["close-carryover"] || ""}
           onChange={(event) => setValue("close-carryover", event.target.value)}
           placeholder="Carry-over/escalation reference if anything remains open"
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs md:col-span-2"
-        />
+        /></label>
       </div>
       <button
         type="button"
@@ -1998,13 +1996,13 @@ function CloseoutCard({
           </button>
         </div>}
       </div>}
-      <textarea
+      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Approval / revision note</span><textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
         placeholder="Approval / revision note"
         rows={2}
         className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-      />
+      /></label>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {item.status === "draft" ? (

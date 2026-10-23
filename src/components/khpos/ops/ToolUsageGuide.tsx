@@ -74,8 +74,7 @@ export function ToolUsageGuide({
               : "Processes using this tool"}
           </h4>
           <p className="text-sm text-slate-600">
-            Choose a process to open its current document and operating
-            instructions.
+            Choose a procedure to read its approved steps.
           </p>
           <div className="space-y-2">
             {related.map((process) => (

@@ -87,14 +87,14 @@ export function CorporateReportingCentre(){
  }
  if(loading)return <main className="grid min-h-screen place-items-center bg-slate-950 text-white">Loading corporate reporting centre…</main>;
  if(!desk)return <main className="min-h-screen bg-slate-950 p-8 text-white">
-  <h1 className="text-xl font-black">KAEC HQ — Reporting Centre</h1>
+  <h1 className="text-xl font-black">KAEC HQ reports</h1>
   <p className="mt-4 text-sm">{error}</p>
   <Link href="/account" className="mt-4 inline-block rounded-lg bg-white px-4 py-2 text-slate-950">Sign in</Link></main>;
  return <div className="min-h-screen bg-slate-50 text-slate-950">
   <header className="bg-slate-950 px-4 py-6 text-white">
    <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
     <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">KAEC-NG · Execution Accountability</p>
-     <h1 className="mt-1 text-2xl font-black">Corporate Reporting Centre</h1>
+     <h1 className="mt-1 text-2xl font-black">HQ reports</h1>
      <p className="mt-1 text-xs text-slate-300">Reporter → scheduled period → recipient → decision → next report</p></div>
     <div className="flex gap-2"><Link href="/khpos/hq" className="rounded-lg border border-white/30 px-3 py-2 text-xs font-bold"><ArrowLeft className="mr-1 inline size-3"/> HQ</Link>
      <button onClick={()=>void load()} className="rounded-lg border border-white/30 px-3 py-2 text-xs font-bold"><RefreshCw className="mr-1 inline size-3"/> Refresh</button></div>
@@ -127,7 +127,7 @@ export function CorporateReportingCentre(){
     },"Reporting line activated.").then(ok=>{if(ok){setShowLine(false);setTitle("");setPurpose("");}});}}>
     <p className="sm:col-span-2 font-black">New reporting responsibility</p>
     <label className={label}>Report title<input className={input} required minLength={4} maxLength={160} value={title} onChange={e=>setTitle(e.target.value)}/></label>
-    <label className={label}>Cadence<select className={input} value={cadence} onChange={e=>setCadence(e.target.value)}>
+    <label className={label}>How often<select className={input} value={cadence} onChange={e=>setCadence(e.target.value)}>
      {["daily","weekly","monthly","quarterly","yearly"].map(c=><option key={c} value={c}>{caps(c)}</option>)}</select></label>
     <label className={label}>Reporting officer<select required className={input} value={reporter} onChange={e=>setReporter(e.target.value)}>
      <option value="">Choose officer</option>{candidates.map(m=><option key={m.user_id} value={m.user_id}>{m.display_name} — {caps(m.role)}</option>)}

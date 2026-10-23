@@ -172,7 +172,7 @@ export function SchoolPathfinderDesk() {
         School commitments are activated only after an authorised leader checks the signed agreement, enters its actual scope, and assigns a Pathfinder.
         This desk records follow-ups; it does not automatically send WhatsApp messages, inspect child records or book visits.
       </div>
-      {desk.capped&&<p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">This workspace currently displays a capped set of recent school execution records. Older activity requires paginated reporting.</p>}
+      {desk.capped&&<p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">This page shows recent school records. Use the report filters and pages to find older activity.</p>}
       {error&&<p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900">{error}</p>}
       {notice&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
       <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
@@ -238,7 +238,7 @@ export function SchoolPathfinderDesk() {
                 },"School agreement setup updated.").then(done=>{if(done)setAgreement(null);});}}>
                 <h3 className="text-sm font-black">Agreement verification and assigned Pathfinder</h3>
                 <label className={label}>Signed agreement reference<input className={control} value={agreement.agreement_reference} maxLength={240} onChange={e=>setAgreement({...agreement,agreement_reference:e.target.value})} placeholder="Document number, date or signed agreement ID"/></label>
-                <label className={label}>Scope agreed with school<textarea className={control} rows={4} maxLength={3000} value={agreement.agreed_scope} onChange={e=>setAgreement({...agreement,agreed_scope:e.target.value})} placeholder="Specific services and supervision boundaries actually agreed"/></label>
+                <label className={label}>Work agreed with the school<textarea className={control} rows={4} maxLength={3000} value={agreement.agreed_scope} onChange={e=>setAgreement({...agreement,agreed_scope:e.target.value})} placeholder="Specific services and supervision boundaries actually agreed"/></label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className={label}>KAEC School Pathfinder<select className={control} value={agreement.representative_user_id} onChange={e=>setAgreement({...agreement,representative_user_id:e.target.value})}>
                     <option value="">Unassigned</option>

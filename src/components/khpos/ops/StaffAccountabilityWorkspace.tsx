@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -25,9 +27,7 @@ import type {
   KhposOpsStaffAccountabilityWorkspace,
 } from "@/lib/khpos/ops/accountability";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -162,7 +162,7 @@ export function StaffAccountabilityWorkspace({
 
       if (!active) return;
       if (!response.ok || !body.ok || !body.accountability) {
-        setError(body.error ?? "Recognition & Accountability could not be loaded.");
+        setError(body.error ?? "Staff concerns & praise could not be loaded.");
         return;
       }
 
@@ -366,7 +366,7 @@ export function StaffAccountabilityWorkspace({
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <CircleAlert className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">
-            Recognition & Accountability is unavailable
+            Staff concerns & praise is unavailable
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
@@ -374,7 +374,7 @@ export function StaffAccountabilityWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -387,25 +387,22 @@ export function StaffAccountabilityWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O10
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl">
-            Recognition & Accountability
+            Staff concerns & praise
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
-            Reinforce what your school wants repeated. Correct known conduct fairly.
-            Give staff a real grievance route. Formal discipline uses specific
-            notice, evidence, response opportunity and competent authority—not
-            personality, rumours or automatic scoring.
+            Recognise good work and handle staff concerns fairly. A formal conduct case needs a clear concern, evidence, a chance to respond and an authorised decision-maker.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -461,9 +458,7 @@ export function StaffAccountabilityWorkspace({
                   Capability gap ≠ misconduct
                 </p>
                 <p className="mt-1 text-sm leading-6 text-amber-900/80">
-                  If the person does not yet know how to perform, use O9
-                  coaching/development. O10 requires a known expectation plus
-                  specific conduct/accountability evidence.
+                  If the person does not yet know how to perform, use Staff support coaching/development. Staff concerns requires a known expectation plus specific conduct/accountability evidence.
                 </p>
               </div>
             </div>
@@ -523,27 +518,27 @@ export function StaffAccountabilityWorkspace({
                     </option>
                   ))}
                 </select>
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What are you recognising?</span><input
                   value={recognitionTitle}
                   onChange={(event) => setRecognitionTitle(event.target.value)}
                   placeholder="What are you recognising?"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <textarea
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Specific evidence—what happened and why should it be repeated?</span><textarea
                   value={recognitionEvidence}
                   onChange={(event) => setRecognitionEvidence(event.target.value)}
                   rows={3}
                   placeholder="Specific evidence—what happened and why should it be repeated?"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference (optional)</span><input
                   value={recognitionReference}
                   onChange={(event) =>
                     setRecognitionReference(event.target.value)
                   }
                   placeholder="Evidence reference (optional)"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
               </div>
 
               <button
@@ -611,7 +606,9 @@ export function StaffAccountabilityWorkspace({
                       ))}
                     </select>
                   )}
-                <input
+                <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{conductType === "formal_discipline"
+                      ? "Specific allegation title"
+                      : "Specific corrective concern"}</span><input
                   value={conductTitle}
                   onChange={(event) => setConductTitle(event.target.value)}
                   placeholder={
@@ -620,30 +617,30 @@ export function StaffAccountabilityWorkspace({
                       : "Specific corrective concern"
                   }
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <textarea
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>State the specific facts/allegation—not a label or conclusion.</span><textarea
                   value={conductStatement}
                   onChange={(event) => setConductStatement(event.target.value)}
                   rows={3}
                   placeholder="State the specific facts/allegation—not a label or conclusion."
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <textarea
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Which policy, standard, commitment or known expectation applies?</span><textarea
                   value={conductStandard}
                   onChange={(event) => setConductStandard(event.target.value)}
                   rows={2}
                   placeholder="Which policy, standard, commitment or known expectation applies?"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <textarea
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is this conduct/accountability rather than a capability gap for Staff support?</span><textarea
                   value={conductClassification}
                   onChange={(event) =>
                     setConductClassification(event.target.value)
                   }
                   rows={2}
-                  placeholder="Why is this conduct/accountability rather than a capability gap for O9?"
+                  placeholder="Why is this conduct/accountability rather than a capability gap for Staff support?"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
                 <label className="block text-xs font-black text-slate-600">
                   Response deadline
                   <input
@@ -725,26 +722,26 @@ export function StaffAccountabilityWorkspace({
                   ))}
                 </select>
               )}
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Grievance title</span><input
                 value={grievanceTitle}
                 onChange={(event) => setGrievanceTitle(event.target.value)}
                 placeholder="Grievance title"
                 className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm lg:col-span-2"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What happened? State facts, dates/context and what you believe needs review.</span><textarea
                 value={grievanceStatement}
                 onChange={(event) => setGrievanceStatement(event.target.value)}
                 rows={3}
                 placeholder="What happened? State facts, dates/context and what you believe needs review."
                 className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What resolution or change are you seeking?</span><textarea
                 value={grievanceResolution}
                 onChange={(event) => setGrievanceResolution(event.target.value)}
                 rows={3}
                 placeholder="What resolution or change are you seeking?"
                 className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-              />
+              /></label>
             </div>
 
             <button
@@ -823,7 +820,7 @@ export function StaffAccountabilityWorkspace({
                         Correct erroneous recognition record
                       </summary>
                       <div className="mt-3 flex gap-2">
-                        <input
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit  flex-1"><span>Why is withdrawal necessary?</span><input
                           value={notes[`recognition-${item.id}`] ?? ""}
                           onChange={(event) =>
                             setNotes((current) => ({
@@ -833,7 +830,7 @@ export function StaffAccountabilityWorkspace({
                           }
                           placeholder="Why is withdrawal necessary?"
                           className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                        />
+                        /></label>
                         <button
                           type="button"
                           disabled={busyId === `withdraw-${item.id}`}
@@ -870,9 +867,7 @@ export function StaffAccountabilityWorkspace({
             Corrective, grievance & formal discipline
           </h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            Case visibility follows the actual parties and reporting authority.
-            A grievance subject is not shown the case as a concluded allegation
-            until a formal response is requested.
+            Only the people involved and authorised reviewers can see a case. A complaint is not treated as a proven allegation. The person concerned can respond when a formal response is requested.
           </p>
 
           <RecordQueueTabs view={accountabilityQueue.view} setView={accountabilityQueue.setView} activeCount={accountabilityQueue.activeCount} historyCount={accountabilityQueue.historyCount} activeLabel="Needs attention" />
@@ -997,8 +992,7 @@ export function StaffAccountabilityWorkspace({
                               Independent external governance required
                             </p>
                             <p className="mt-1 text-sm leading-6 text-amber-900/80">
-                              The highest internal authority is a party to this
-                              matter. KHP-OS will not allow internal self-decision.
+                              The most senior internal reviewer is involved in this case. Use the required external review; they cannot decide their own case.
                             </p>
                           </div>
                         </div>
@@ -1021,7 +1015,7 @@ export function StaffAccountabilityWorkspace({
                                 </option>
                               ))}
                             </select>
-                            <input
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Independent review reference</span><input
                               value={references[`external-${review.id}`] ?? ""}
                               onChange={(event) =>
                                 setReferences((current) => ({
@@ -1032,8 +1026,8 @@ export function StaffAccountabilityWorkspace({
                               }
                               placeholder="Independent review reference"
                               className="rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm"
-                            />
-                            <textarea
+                            /></label>
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Record the independent reviewer’s supplied outcome—not your own decision.</span><textarea
                               value={notes[`external-${review.id}`] ?? ""}
                               onChange={(event) =>
                                 setNotes((current) => ({
@@ -1045,7 +1039,7 @@ export function StaffAccountabilityWorkspace({
                               rows={3}
                               placeholder="Record the independent reviewer’s supplied outcome—not your own decision."
                               className="rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm lg:col-span-2"
-                            />
+                            /></label>
                             <button
                               type="button"
                               disabled={busyId === `external-${review.id}`}
@@ -1085,11 +1079,9 @@ export function StaffAccountabilityWorkspace({
                             Your response opportunity
                           </summary>
                           <p className="mt-2 text-xs leading-5 text-violet-800">
-                            Respond to the specific concern/allegation before
-                            institutional decision. You may add an evidence
-                            reference.
+                            Respond to the concern before a decision is made. You can include a reference to supporting evidence.
                           </p>
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Your response</span><textarea
                             value={notes[`response-${review.id}`] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
@@ -1100,8 +1092,8 @@ export function StaffAccountabilityWorkspace({
                             rows={4}
                             className="mt-3 w-full rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm"
                             placeholder="Your response"
-                          />
-                          <input
+                          /></label>
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference (optional)</span><input
                             value={references[`response-${review.id}`] ?? ""}
                             onChange={(event) =>
                               setReferences((current) => ({
@@ -1112,7 +1104,7 @@ export function StaffAccountabilityWorkspace({
                             }
                             className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm"
                             placeholder="Evidence reference (optional)"
-                          />
+                          /></label>
                           <button
                             type="button"
                             disabled={busyId === `response-${review.id}`}
@@ -1221,7 +1213,7 @@ export function StaffAccountabilityWorkspace({
                             </option>
                           ))}
                         </select>
-                        <input
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence title</span><input
                           value={titles[`evidence-${review.id}`] ?? ""}
                           onChange={(event) =>
                             setTitles((current) => ({
@@ -1232,8 +1224,8 @@ export function StaffAccountabilityWorkspace({
                           }
                           placeholder="Evidence title"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                        />
-                        <textarea
+                        /></label>
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What does this evidence establish?</span><textarea
                           value={notes[`evidence-${review.id}`] ?? ""}
                           onChange={(event) =>
                             setNotes((current) => ({
@@ -1245,8 +1237,8 @@ export function StaffAccountabilityWorkspace({
                           rows={2}
                           placeholder="What does this evidence establish?"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                        />
-                        <input
+                        /></label>
+                        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
                           value={references[`evidence-${review.id}`] ?? ""}
                           onChange={(event) =>
                             setReferences((current) => ({
@@ -1257,7 +1249,7 @@ export function StaffAccountabilityWorkspace({
                           }
                           placeholder="Evidence reference"
                           className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-                        />
+                        /></label>
                       </div>
                       <button
                         type="button"
@@ -1380,7 +1372,7 @@ export function StaffAccountabilityWorkspace({
                           <summary className="cursor-pointer text-sm font-black">
                             Record required hearing / panel step
                           </summary>
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What was considered and what opportunity was given?</span><textarea
                             value={notes[`hearing-${review.id}`] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
@@ -1392,8 +1384,8 @@ export function StaffAccountabilityWorkspace({
                             rows={3}
                             placeholder="What was considered and what opportunity was given?"
                             className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                          />
-                          <input
+                          /></label>
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Hearing/panel evidence reference</span><input
                             value={references[`hearing-${review.id}`] ?? ""}
                             onChange={(event) =>
                               setReferences((current) => ({
@@ -1404,7 +1396,7 @@ export function StaffAccountabilityWorkspace({
                             }
                             placeholder="Hearing/panel evidence reference"
                             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                          />
+                          /></label>
                           <button
                             type="button"
                             onClick={() =>
@@ -1453,7 +1445,7 @@ export function StaffAccountabilityWorkspace({
                             ))}
                           </select>
                           {requiresAuthorityReference && (
-                            <input
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Contract/legal/authority review reference</span><input
                               value={
                                 references[`authority-${review.id}`] ?? ""
                               }
@@ -1466,9 +1458,9 @@ export function StaffAccountabilityWorkspace({
                               }
                               placeholder="Contract/legal/authority review reference"
                               className="rounded-xl border border-brand-200 bg-white px-3 py-2.5 text-sm"
-                            />
+                            /></label>
                           )}
-                          <textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Reasoned outcome based on the response and evidence</span><textarea
                             value={notes[`decision-${review.id}`] ?? ""}
                             onChange={(event) =>
                               setNotes((current) => ({
@@ -1480,7 +1472,7 @@ export function StaffAccountabilityWorkspace({
                             rows={3}
                             placeholder="Reasoned outcome based on the response and evidence"
                             className="rounded-xl border border-brand-200 bg-white px-3 py-2.5 text-sm lg:col-span-2"
-                          />
+                          /></label>
                           <button
                             type="button"
                             onClick={() =>
@@ -1559,7 +1551,7 @@ export function StaffAccountabilityWorkspace({
                               }
                               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                             />
-                            <input
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>Commitment title</span><input
                               value={titles[`action-${review.id}`] ?? ""}
                               onChange={(event) =>
                                 setTitles((current) => ({
@@ -1570,8 +1562,8 @@ export function StaffAccountabilityWorkspace({
                               }
                               placeholder="Commitment title"
                               className="rounded-xl border border-slate-200 px-3 py-2 text-sm lg:col-span-2"
-                            />
-                            <textarea
+                            /></label>
+                            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit lg:col-span-2"><span>What change must be demonstrated?</span><textarea
                               value={notes[`action-${review.id}`] ?? ""}
                               onChange={(event) =>
                                 setNotes((current) => ({
@@ -1583,7 +1575,7 @@ export function StaffAccountabilityWorkspace({
                               rows={2}
                               placeholder="What change must be demonstrated?"
                               className="rounded-xl border border-slate-200 px-3 py-2 text-sm lg:col-span-2"
-                            />
+                            /></label>
                           </div>
                           <button
                             type="button"
@@ -1863,18 +1855,18 @@ function CorrectiveActionCard({
       {(action.isOwner || action.canVerify) &&
         !["verified", "cancelled"].includes(action.status) && (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Action / verification note</span><input
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Action / verification note"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
               value={evidenceReference}
               onChange={(event) => setEvidenceReference(event.target.value)}
               placeholder="Evidence reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
         )}
 

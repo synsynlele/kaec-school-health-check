@@ -85,7 +85,7 @@ const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 for (const expected of [
   'suffix: "/leadership-brief"',
   'suffix: "/calendar"',
-  'label: "Leadership Brief"',
+  'label: "Meeting brief"',
   'label: "Calendar"',
 ]) {
   requireText(nav, expected, "workspace navigation");

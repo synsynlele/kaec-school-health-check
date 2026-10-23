@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
@@ -9,7 +11,7 @@ import type { ParentCase, ParentWorkspace } from "@/lib/khpos/ops/parents";
 
 const categories = ["academic", "culture", "fees", "admission", "general"];
 const channels = ["in_person", "phone", "whatsapp", "email", "other"];
-const label = (value: string) => value.replaceAll("_", " ");
+const label = (value: string) => plainLabel(value);
 const openStatuses = ["acknowledged", "in_action", "escalated"];
 
 export function ParentPartnershipWorkspace({ organisationId }: { organisationId: string }) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -23,9 +25,7 @@ import type {
   KhposOpsYoungCeoWorkspace,
 } from "@/lib/khpos/ops/young-ceo";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -314,10 +314,10 @@ export function YoungCeoWorkspace({
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
-            Potential Development
+            Learner development
           </Link>
           <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
-            Operations · O19
+            School operations
           </p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
             Young CEO Hub
@@ -404,9 +404,7 @@ export function YoungCeoWorkspace({
                 Aggregate strategic view only
               </h2>
               <p className="mt-2 text-sm leading-6 text-brand-900">
-                School Custodian sees Young CEO programme health and exceptions,
-                not routine learner-level evidence merely because of executive
-                authority.
+                School Custodians can view the programme summary and problems that need attention. Individual learner records require the assigned learner-support role.
               </p>
             </section>
           ) : null}
@@ -450,8 +448,8 @@ export function YoungCeoWorkspace({
                     placeholder="Purpose and intended value-creation outcome"
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <Input type="date" value={cycleStart} onChange={setCycleStart} />
-                    <Input type="date" value={cycleEnd} onChange={setCycleEnd} />
+                    <Input placeholder="Start date" type="date" value={cycleStart} onChange={setCycleStart} />
+                    <Input placeholder="End date" type="date" value={cycleEnd} onChange={setCycleEnd} />
                   </div>
                   <PrimaryButton
                     busy={busyId === "create-cycle"}
@@ -483,7 +481,7 @@ export function YoungCeoWorkspace({
                   ])}
                   placeholder="Session owner"
                 />
-                <Input type="date" value={sessionDate} onChange={setSessionDate} />
+                <Input placeholder="Session date" type="date" value={sessionDate} onChange={setSessionDate} />
                 <Input
                   value={sessionTheme}
                   onChange={setSessionTheme}
@@ -693,7 +691,7 @@ export function YoungCeoWorkspace({
 
               <section className="space-y-4">
                 <SectionHeading
-                  eyebrow="O16 handoff"
+                  eyebrow="Learner development handoff"
                   title="Verified individual value-creation evidence"
                 />
                 {workspace.memberEvidence.length === 0 ? (
@@ -775,7 +773,7 @@ function Select({
   placeholder: string;
 }) {
   return (
-    <select
+    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>{placeholder}</span><select
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
@@ -786,7 +784,7 @@ function Select({
           {label}
         </option>
       ))}
-    </select>
+    </select></label>
   );
 }
 
@@ -802,13 +800,13 @@ function Input({
   type?: string;
 }) {
   return (
-    <input
+    <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{placeholder ?? (type === "date" ? "Date" : "Value")}</span><input
       type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-    />
+    /></label>
   );
 }
 
@@ -822,13 +820,13 @@ function TextArea({
   placeholder: string;
 }) {
   return (
-    <textarea
+    <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{placeholder}</span><textarea
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       rows={3}
       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-    />
+    /></label>
   );
 }
 
@@ -1633,7 +1631,7 @@ function EvidenceCard({
           </p>
           {evidence.potentialEvidenceId ? (
             <p className="mt-1 text-xs font-black text-emerald-700">
-              Linked to O16 Potential Evidence
+              Linked to Learner development evidence
             </p>
           ) : null}
         </div>
@@ -1670,7 +1668,7 @@ function EvidenceCard({
             }
             className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
           >
-            Verify → O16
+            Verify & add to learner development
           </button>
           <button
             type="button"

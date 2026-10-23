@@ -74,11 +74,11 @@ assert.ok(
   "Stage 3 must not expose manual plan creation or editing",
 );
 assert.ok(
-  component.includes("The intervention stays disciplined. The execution becomes specific."),
+  component.includes("Put your improvement plan into action"),
   "Implementation UI must communicate system-governed, institution-specific execution",
 );
 assert.ok(
-  component.includes("Humans execute the real-world work and provide proof"),
+  component.includes("carry out the work and add proof"),
   "Implementation UI must preserve the human execution/evidence boundary",
 );
 assert.ok(

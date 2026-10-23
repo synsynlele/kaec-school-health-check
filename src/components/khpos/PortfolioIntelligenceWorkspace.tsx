@@ -54,7 +54,7 @@ export function PortfolioIntelligenceWorkspace() {
         };
         if (!active) return;
         if (!response.ok || !body.ok || !body.portfolio) {
-          setError(body.error ?? "Portfolio Intelligence could not be loaded.");
+          setError(body.error ?? "Network summary could not be loaded.");
           return;
         }
         setPortfolio(body.portfolio);
@@ -65,7 +65,7 @@ export function PortfolioIntelligenceWorkspace() {
         setError(
           caught instanceof Error
             ? caught.message
-            : "Portfolio Intelligence could not be loaded.",
+            : "Network summary could not be loaded.",
         );
       });
 
@@ -87,7 +87,7 @@ export function PortfolioIntelligenceWorkspace() {
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <ShieldCheck className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">Portfolio Intelligence unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">Network summary unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <p className="mt-3 text-xs leading-5 text-slate-400">
             This view is reserved for explicitly authorised KHP-OS platform custodians. School membership alone never grants cross-institution access.
@@ -112,10 +112,10 @@ export function PortfolioIntelligenceWorkspace() {
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] text-mint-300">
-                KHP-OS | KAEC-NG Portfolio Intelligence
+                KHP-OS | KAEC-NG Network summary
               </p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                Where does the transformation portfolio need attention?
+                Schools that need support
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
                 Internal platform-custodian oversight across participating institutions. This is not a public leaderboard and contains no learner-level data or evidence content.
@@ -156,9 +156,7 @@ export function PortfolioIntelligenceWorkspace() {
                 Is the operating network healthy enough to scale?
               </h2>
               <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-500">
-                This privileged layer watches standard adoption, automation failures,
-                overdue execution, verification bottlenecks and unmapped critical processes.
-                It contains no learner-level data or raw evidence content.
+                See schools that need help with setup, failed automatic tasks, overdue work, delayed reviews or procedures without task settings. Private learner records and evidence content are not shown.
               </p>
             </div>
             <div className="rounded-2xl bg-slate-950 p-4 text-white">
@@ -325,9 +323,9 @@ export function PortfolioIntelligenceWorkspace() {
 
         <section className="rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
           <ShieldCheck className="size-8 text-mint-300" />
-          <h2 className="mt-4 text-xl font-black">Portfolio intelligence is stewardship, not surveillance.</h2>
+          <h2 className="mt-4 text-xl font-black">Use the summary to decide which schools need support.</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-            This view excludes learner-level data, teacher rankings, raw evidence, uploaded files and private narrative content. It exists to help KAEC-NG identify where institutional transformation support is required. Public ranking remains disabled.
+            This view excludes learner-level data, teacher rankings, raw evidence, uploaded files and private narrative content. It exists to help KAEC-NG identify where school transformation support is required. Public ranking remains disabled.
           </p>
         </section>
       </div>

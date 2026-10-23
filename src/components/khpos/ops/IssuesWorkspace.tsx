@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -52,9 +54,7 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function severityClasses(severity: KhposOpsIssueSeverity) {
   if (severity === "P1") return "bg-red-50 text-red-800 border-red-200";
@@ -265,7 +265,7 @@ export function IssuesWorkspace({
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
           <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading institutional issues…
+            Loading school issues…
           </p>
         </div>
       </main>
@@ -284,7 +284,7 @@ export function IssuesWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -297,24 +297,24 @@ export function IssuesWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O4
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Issues & Escalations
+                Issues & help
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                A deviation does not disappear into WhatsApp or memory. It gets an owner, severity, status, evidence, escalation route and verified closure.
+                Report a problem, assign someone to fix it and track it until an authorised reviewer confirms it is resolved.
               </p>
             </div>
             <button
@@ -379,7 +379,7 @@ export function IssuesWorkspace({
             </div>
 
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-              Use this for operational issues. Do not place confidential safeguarding disclosure details in the standard issue queue.
+              Use this page for day-to-day problems. Report child safety concerns in Safeguarding; do not enter confidential case details here.
             </p>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -537,9 +537,7 @@ export function IssuesWorkspace({
 
                       {issue.status === "resolved" && issue.isOwner && (
                         <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium leading-6 text-blue-900">
-                          Your resolution has been submitted. No further action is
-                          required from you unless it is returned. An independent
-                          authorised reviewer must verify it before closure.
+                          Your proposed fix has been sent for review. Wait for a different authorised reviewer to check it. You only need to act again if it is returned.
                         </p>
                       )}
                       {issue.status === "verified" && (

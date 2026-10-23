@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -26,9 +28,7 @@ import type {
 
 type Tab = "policies" | "processes" | "tools";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function SectionList({
   title,
@@ -91,7 +91,7 @@ function PolicyDocument({
               )}
             </div>
             <h3 className="mt-3 text-xl font-black text-slate-950">{policy.name}</h3>
-            <p className="mt-2 text-sm text-slate-500">Steward: {policy.ownerLabel}</p>
+            <p className="mt-2 text-sm text-slate-500">Person responsible: {policy.ownerLabel}</p>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -122,7 +122,7 @@ function PolicyDocument({
           <article className="space-y-7">
             <header className="rounded-3xl bg-slate-950 p-6 text-white">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-300">
-                Controlled Institutional Policy
+                Controlled School Policy
               </p>
               <h3 className="mt-3 text-2xl font-black">{policy.name}</h3>
               <div className="mt-4 grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
@@ -139,7 +139,7 @@ function PolicyDocument({
                 <p className="mt-3 text-sm leading-7 text-slate-700">{version.purpose}</p>
               </section>
               <section>
-                <h4 className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Scope</h4>
+                <h4 className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Where this applies</h4>
                 <p className="mt-3 text-sm leading-7 text-slate-700">{version.scope}</p>
               </section>
             </div>
@@ -301,7 +301,7 @@ export function InstitutionalLibrary({
         <div className="text-center">
           <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
           <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading the Institutional Control Library…
+            Loading the School library…
           </p>
         </div>
       </main>
@@ -313,14 +313,14 @@ export function InstitutionalLibrary({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <LibraryBig className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">Institutional Library unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">School library unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -368,19 +368,19 @@ export function InstitutionalLibrary({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O2
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <h1 className="mt-5 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-            Institutional Control Library
+            School library
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
             One controlled source for what your school requires, how work should happen and the tools people use to execute it. Registered items are visible without being falsely treated as adopted documents.
@@ -451,7 +451,7 @@ export function InstitutionalLibrary({
                     : "border-slate-200 bg-white text-slate-600 hover:border-brand-300"
                 }`}
               >
-                {criticalOnly ? "Critical missing only" : "Show critical missing"}
+                {criticalOnly ? "Required items still missing" : "Show required items still missing"}
               </button>
             )}
             <label className="relative block min-w-0 sm:w-80 lg:w-96">
@@ -599,7 +599,7 @@ export function InstitutionalLibrary({
             <div>
               <h2 className="text-xl font-black">Transformation Playbooks remain intact</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                The existing KHP-OS transformation playbooks still guide institutional change. This new Library governs normal institutional operations; it does not replace the transformation workspace.
+                Find your school’s approved policies, step-by-step procedures and forms here. Improvement guides are under School improvement.
               </p>
               <Link
                 href={`/khpos/${organisationId}/playbooks`}

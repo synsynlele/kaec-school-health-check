@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -31,9 +33,7 @@ import type {
 } from "@/lib/khpos/ops/people";
 import type { KhposPartnerSnapshot } from "@/lib/khpos/partnership";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function formatDate(value: string | null) {
   if (!value) return "Not set";
@@ -389,7 +389,7 @@ export function PeopleWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -409,14 +409,14 @@ export function PeopleWorkspace({
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                People & Staff
+                Staff
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
                 Appoint and onboard a person before giving them an active school
@@ -473,12 +473,9 @@ export function PeopleWorkspace({
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand-700" />
             <div>
-              <p className="text-sm font-black">Minimal personnel data by design</p>
+              <p className="text-sm font-black">What to keep in staff records</p>
               <p className="mt-1 text-sm leading-6 text-brand-900/80">
-                This workspace tracks operational identity, appointment,
-                onboarding and deployment readiness. It is not a vault for
-                salaries, health information, identity-document images, CVs or
-                sensitive safer-recruitment case detail.
+                Keep staff details, appointments and joining steps here. Do not upload salary details, medical records, identity documents, CVs or confidential recruitment case notes.
               </p>
             </div>
           </div>
@@ -495,8 +492,7 @@ export function PeopleWorkspace({
                   Create operational staff record
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  The account email may exist already or may be created later.
-                  A login alone never activates the operating role.
+                  You can link the staff member’s account now or later. Their position still needs approval before they can use it.
                 </p>
               </div>
               <button
@@ -710,7 +706,7 @@ export function PeopleWorkspace({
                 staff.accountLinked && !staff.accessMembershipActive
                   ? "Active organisation access missing"
                   : null,
-                !staff.roleCharterActive ? "Active Role Charter missing" : null,
+                !staff.roleCharterActive ? "Active Role guide missing" : null,
                 staff.mandatoryOutstanding > 0
                   ? `${staff.mandatoryOutstanding} mandatory onboarding item${
                       staff.mandatoryOutstanding === 1 ? "" : "s"
@@ -848,7 +844,7 @@ export function PeopleWorkspace({
                         staff.accessMembershipActive,
                       ],
                       [
-                        "Role Charter",
+                        "Role guide",
                         staff.roleCharterActive ? "Active" : "Missing",
                         staff.roleCharterActive,
                       ],
@@ -1066,7 +1062,7 @@ export function PeopleWorkspace({
                               item.status !== "completed" &&
                               item.status !== "waived" && (
                                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                  <input
+                                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Note for the reviewer</span><input
                                     value={itemNotes[item.id] ?? ""}
                                     onChange={(event) =>
                                       setItemNotes((current) => ({
@@ -1075,9 +1071,11 @@ export function PeopleWorkspace({
                                       }))
                                     }
                                     className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-brand-400"
-                                    placeholder="Note / verification context"
-                                  />
-                                  <input
+                                    placeholder="Note for the reviewer"
+                                  /></label>
+                                  <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{item.evidenceRequired
+                                        ? "Evidence reference required"
+                                        : "Evidence reference (optional)"}</span><input
                                     value={currentEvidence}
                                     onChange={(event) =>
                                       setItemEvidence((current) => ({
@@ -1091,7 +1089,7 @@ export function PeopleWorkspace({
                                         ? "Evidence reference required"
                                         : "Evidence reference (optional)"
                                     }
-                                  />
+                                  /></label>
                                 </div>
                               )}
 

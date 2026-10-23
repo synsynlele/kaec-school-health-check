@@ -56,7 +56,7 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
   const button = (label: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : label}</button>;
   const assignments = data?.assignments.map((a) => ({ value: a.id, label: a.title + (a.isMine ? " (me)" : "") })) || [];
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900"><div><h1 className="text-3xl font-bold">Student Culture</h1><p className="mt-2 text-slate-600">Record ordinary concerns, student voice and recognition. Assign a response and verify its outcome.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, protect and report immediately through the safeguarding pathway. Do not write disclosure details here.</p></div>
+  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900"><div><h1 className="text-3xl font-bold">Student Culture</h1><p className="mt-2 text-slate-600">Record ordinary concerns, student voice and recognition. Assign a response and verify its outcome.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, protect them and report it in Safeguarding immediately. Do not enter confidential disclosure details here.</p></div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <p>Loading cases…</p>}
     {data && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Report or recognise</h2><div className="grid gap-3 md:grid-cols-3">

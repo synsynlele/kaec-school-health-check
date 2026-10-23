@@ -67,8 +67,8 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/BuilderProjectsWorkspace.tsx");
 for (const expected of [
-  "Operations · O20",
-  "Builder Projects & Defence",
+  "School operations",
+  "Builder projects",
   "Problem → Build → Test → Reflect → Defend",
   "Team completion never creates automatic learner evidence.",
   "PipuPath boundary",
@@ -77,7 +77,7 @@ for (const expected of [
   "workspace.defenceBoundary",
   "Seven evidence milestones",
   "Individual contribution evidence",
-  "Verify → O16",
+  "Verify & add to learner development",
   "Learner deliberately shared this reference for school evidence.",
 ]) {
   requireText(workspace, expected, "O20 workspace");

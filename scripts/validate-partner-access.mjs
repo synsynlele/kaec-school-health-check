@@ -73,7 +73,7 @@ expectNotContains("src/components/khpos/ReportActivationCard.tsx", [
 expectContains("src/components/khpos/ActivationFlow.tsx", [
   "requestPartnership",
   "/khpos/partnership/${body.organisationId}",
-  "Creating an account does not automatically activate KHP-OS.",
+  "KAEC must approve the request before your school can use KHP-OS.",
   "KAEC-NG approves access",
 ]);
 expectNotContains("src/components/khpos/ActivationFlow.tsx", [

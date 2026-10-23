@@ -13,7 +13,7 @@ import type { SchoolDeskSnapshot } from "@/lib/khpos/hq-schools";
 import type { HqReportingDesk } from "@/lib/khpos/hq-reports";
 
 const areas: { id: HqModule; label: string; subtitle: string; icon: LucideIcon }[] = [
-  { id: "command", label: "Command Centre", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
+  { id: "command", label: "School overview", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
   { id: "governance", label: "Governance & Playbooks", subtitle: "Company constitution and controlled ways of working", icon: BookOpen },
   { id: "people", label: "People & Roles", subtitle: "Accountability, appointments and succession", icon: Users },
   { id: "work", label: "Work & Execution", subtitle: "Assigned work, reports and approvals", icon: ClipboardCheck },
@@ -466,13 +466,13 @@ export function KaecHqWorkspace() {
                 {Object.entries(roleNames).filter(([key]) => key !== "vision_custodian").map(([key,value]) => <option key={key} value={key}>{value}</option>)}
               </select></label>
               <button disabled={busy || snapshot.viewer.aal !== "aal2"} className="self-end rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-40">Approve appointment</button>
-              <p className="sm:col-span-2 text-xs text-slate-500">Requires Vision Custodian permission and verified MFA. Suspensions and succession approvals must remain governed actions.</p>
+              <p className="sm:col-span-2 text-xs text-slate-500">Requires Vision Custodian permission and verified MFA. Suspensions and succession approvals must remain approved actions.</p>
             </form>}
           </section>}
 
           {isDataModule(tab) && <>
             {tab === "partnerships" && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-              Use <Link className="font-bold underline" href="/khpos/hq/schools">School Pathfinders</Link> to assign KAEC representatives, map signed supervision commitments, record virtual-first follow-ups and track visits. Institutional access approvals stay in the separate <Link className="font-bold underline" href="/khpos/admin/partnerships">KHP-OS Partnership Registry</Link> with its own permissions.
+              Use <Link className="font-bold underline" href="/khpos/hq/schools">School Pathfinders</Link> to assign KAEC representatives, map signed supervision commitments, record virtual-first follow-ups and track visits. School access approvals stay in the separate <Link className="font-bold underline" href="/khpos/admin/partnerships">KHP-OS Partnership Registry</Link> with its own permissions.
             </div>}
             {tab === "finance" && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
               This is a controlled budget and obligation register, not yet a banking, payment processing or accounting reconciliation system. Approval and money movement remain separate.
@@ -532,7 +532,7 @@ export function KaecHqWorkspace() {
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-600">
                     <span>Owner: <strong>{memberLabel(record.owner_user_id)}</strong></span><span>Backup: <strong>{memberLabel(record.backup_user_id)}</strong></span>
                     <span>Due: <strong>{dateOnly(record.due_on)}</strong></span>
-                    {record.cadence !== "once" && <span>Cadence: <strong>{pretty(record.cadence)}</strong>{record.module === "work" && record.cadence !== "termly" ? " · Cycle " + (record.cycle_index ?? 1) : ""}</span>}
+                    {record.cadence !== "once" && <span>How often: <strong>{pretty(record.cadence)}</strong>{record.module === "work" && record.cadence !== "termly" ? " · Cycle " + (record.cycle_index ?? 1) : ""}</span>}
                     {record.module === "finance" && record.amount !== null && <span>Amount: <strong>{record.currency} {Number(record.amount).toLocaleString()}</strong></span>}
                     <span>Updated: {new Date(record.updated_at).toLocaleDateString()}</span>
                   </div>

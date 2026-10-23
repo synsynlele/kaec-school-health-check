@@ -4,7 +4,7 @@ import { MyWorkWorkspace } from "@/components/khpos/ops/MyWorkWorkspace";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "My Work · KHP-OS",
+  title: "Today · KHP-OS",
   robots: { index: false, follow: false },
 };
 

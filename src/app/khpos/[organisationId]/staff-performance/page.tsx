@@ -4,7 +4,7 @@ import { StaffPerformanceWorkspace } from "@/components/khpos/ops/StaffPerforman
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Staff Performance & Development · KHP-OS",
+  title: "Staff support & development · KHP-OS",
   robots: { index: false, follow: false },
 };
 

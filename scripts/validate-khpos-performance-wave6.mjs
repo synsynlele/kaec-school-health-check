@@ -89,10 +89,10 @@ for (const expected of [
 
 const ui = read("src/components/khpos/ops/PerformanceWorkspace.tsx");
 for (const expected of [
-  "Core Operating Baseline",
+  "Core school measures",
   "Adopt Core Baseline",
   "Suggested from approved processes",
-  "Adopt KPI",
+  "Adopt Measure",
   "No invented targets",
   "System-measured",
   'kpi.sourceType !== "operational_engine"',

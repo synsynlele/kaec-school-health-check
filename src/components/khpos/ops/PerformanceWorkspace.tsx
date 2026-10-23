@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -44,10 +46,10 @@ const domainOptions = [
 
 const systemOptions = [
   ["governance_decision", "01 · Governance & Decision"],
-  ["people_staff", "02 · People & Staff"],
+  ["people_staff", "02 · Staff"],
   ["academic_execution", "03 · Academic Execution"],
-  ["learner_progress_intervention", "04 · Learner Progress & Intervention"],
-  ["human_potential_development", "05 · Human Potential Development"],
+  ["learner_progress_intervention", "04 · Learner support"],
+  ["human_potential_development", "05 · Human Learner development"],
   ["student_culture_leadership", "06 · Student Culture, Behaviour & Leadership"],
   ["safeguarding_welfare_emergency", "07 · Safeguarding, Welfare & Emergency"],
   ["parent_experience_partnership", "08 · Parent Experience & Partnership"],
@@ -57,9 +59,7 @@ const systemOptions = [
   ["institutional_performance_accountability", "12 · Institutional Performance & Accountability"],
 ] as const;
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function statusClasses(status: KhposOpsKpiStatus | null) {
   if (status === "green") return "border-emerald-200 bg-emerald-50 text-emerald-800";
@@ -262,7 +262,7 @@ export function PerformanceWorkspace({
     );
     if (ok) {
       setMessage(
-        "Core Operating Baseline adopted. KHP-OS will maintain its system-derived weekly measurements; no target thresholds were created.",
+        "Core school measures adopted. KHP-OS will maintain its system-derived weekly measurements; no target thresholds were created.",
       );
     }
   }
@@ -293,7 +293,7 @@ export function PerformanceWorkspace({
       !definition.trim() ||
       !ownerRoleId
     ) {
-      setError("KPI code, name, definition and owner role are required.");
+      setError("Measure code, name, definition and owner role are required.");
       return;
     }
 
@@ -460,7 +460,7 @@ export function PerformanceWorkspace({
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -477,26 +477,24 @@ export function PerformanceWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Operations · O6
+              School operations
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Performance & Scorecards
+                School results
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                See operating reality first, then compare governed KPIs against
-                evidence-based targets. KHP-OS never invents a single overall
-                school score that can hide a critical failure.
+                Check the results of school tasks and compare them with agreed targets. Review each measure so serious problems are not hidden by an overall score.
               </p>
             </div>
             {workspace.canGovernKpis && (
@@ -506,7 +504,7 @@ export function PerformanceWorkspace({
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-mint-300 px-5 py-3 text-sm font-black text-slate-950"
               >
                 <Plus className="size-4" />
-                Define KPI
+                Define Measure
               </button>
             )}
           </div>
@@ -535,8 +533,7 @@ export function PerformanceWorkspace({
               <h2 className="mt-2 text-2xl font-black">What is true right now</h2>
             </div>
             <p className="hidden max-w-xl text-right text-xs leading-5 text-slate-500 md:block">
-              These are factual counts from Operations, not scored KPIs. They
-              require no invented target.
+              These are factual counts from Operations, not scored Measures. They require no invented target.
             </p>
           </div>
 
@@ -681,18 +678,13 @@ export function PerformanceWorkspace({
               </span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  Core Operating Baseline
+                  Core school measures
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
-                  Turn the indicators KHP-OS already calculates into governed history.
+                  Turn the indicators KHP-OS already calculates into approved history.
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  Six operating KPIs use the same evidence-derived measures above:
-                  execution coverage, work reliability, on-time completion,
-                  first-pass verification, issue closure and decision-action closure.
-                  They begin in baseline-only mode. KHP-OS records the current
-                  weekly snapshot automatically; leadership adds targets only after
-                  evidence justifies them.
+                  Six measures track task setup, reliable completion, deadlines, first-time approval, resolved issues and completed decisions. Weekly results are recorded automatically. Use these results to agree realistic targets later.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
                   <span className="rounded-full bg-white px-3 py-1.5 text-brand-800">
@@ -738,12 +730,10 @@ export function PerformanceWorkspace({
                 Suggested from approved processes
               </p>
               <h2 className="mt-2 text-2xl font-black">
-                Add only the outcome and control KPIs that matter next.
+                Add only the outcome and control Measures that matter next.
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                These suggestions come from approved, executable KHP-OS processes
-                with a staffed accountable role. Adopting one creates a baseline KPI
-                only; it does not invent a target or score.
+                These suggested measures come from approved procedures with someone assigned to do the work. Adding a measure starts recording results; it does not set a target.
               </p>
             </div>
 
@@ -774,7 +764,7 @@ export function PerformanceWorkspace({
                       {suggestion.definition}
                     </p>
                     <p className="mt-3 text-xs leading-5 text-slate-500">
-                      Process KPI lineage: {suggestion.sourceKpi}
+                      Process Measure lineage: {suggestion.sourceKpi}
                     </p>
 
                     {workspace.canGovernKpis && (
@@ -794,7 +784,7 @@ export function PerformanceWorkspace({
                         ) : (
                           <Plus className="size-4" />
                         )}
-                        Adopt KPI
+                        Adopt Measure
                       </button>
                     )}
                   </article>
@@ -808,21 +798,19 @@ export function PerformanceWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                Governed scorecards
+                approved scorecards
               </p>
               <h2 className="mt-2 text-2xl font-black">
                 Never average away a critical control
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                KPI status is shown individually. A strong result elsewhere
-                cannot cancel a critical safety, safeguarding or other
-                designated control failure.
+                Measure status is shown individually. A strong result elsewhere cannot cancel a critical safety, safeguarding or other designated control failure.
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-6">
               {[
-                ["KPIs", summary.activeKpis],
+                ["Measures", summary.activeKpis],
                 ["Baseline", summary.unbaselined],
                 ["Green", summary.green],
                 ["Amber", summary.amber],
@@ -856,20 +844,18 @@ export function PerformanceWorkspace({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  KPI governance
+                  Measure governance
                 </p>
-                <h2 className="mt-2 text-2xl font-black">Define a KPI</h2>
+                <h2 className="mt-2 text-2xl font-black">Define a Measure</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  New KPIs start in baseline mode. Record real evidence first;
-                  configure performance thresholds later only when your school has a
-                  defensible basis for them.
+                  New measures record current results first. Set targets later, once you have enough evidence to choose realistic levels.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
                 className="rounded-full border border-slate-200 p-2 text-slate-500"
-                aria-label="Close KPI form"
+                aria-label="Close Measure form"
               >
                 <XCircle className="size-5" />
               </button>
@@ -877,7 +863,7 @@ export function PerformanceWorkspace({
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <label className="text-sm font-bold">
-                KPI code
+                Measure code
                 <input
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
@@ -888,7 +874,7 @@ export function PerformanceWorkspace({
               </label>
 
               <label className="text-sm font-bold">
-                KPI name
+                Measure name
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -1052,7 +1038,7 @@ export function PerformanceWorkspace({
               </label>
 
               <label className="text-sm font-bold">
-                Review cadence
+                Review schedule
                 <select
                   value={cadence}
                   onChange={(event) =>
@@ -1121,7 +1107,7 @@ export function PerformanceWorkspace({
               ) : (
                 <BarChart3 className="size-4" />
               )}
-              Create baseline KPI
+              Create baseline Measure
             </button>
           </section>
         )}
@@ -1129,11 +1115,9 @@ export function PerformanceWorkspace({
         {workspace.items.length === 0 ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <Gauge className="mx-auto size-10 text-brand-700" />
-            <h2 className="mt-4 text-2xl font-black">No governed KPIs yet.</h2>
+            <h2 className="mt-4 text-2xl font-black">No measures added yet.</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              The factual operating pulse above is already live. Adopt the Core
-              Operating Baseline to begin governed history without inventing
-              targets, then add only the process-origin KPIs that matter next.
+              The summary above uses your recorded work. Add the core measures to save weekly results, then add any extra measures your school needs.
             </p>
           </section>
         ) : (
@@ -1337,12 +1321,10 @@ export function PerformanceWorkspace({
                   {workspace.canGovernKpis && (
                     <details className="mt-4 rounded-2xl border border-slate-200 p-4">
                       <summary className="cursor-pointer text-sm font-black text-slate-800">
-                        Govern KPI target
+                        Govern Measure target
                       </summary>
                       <p className="mt-3 text-xs leading-5 text-slate-500">
-                        Configure thresholds only after baseline evidence makes
-                        them defensible. Saving creates a new KPI definition
-                        version; earlier measurements stay historically intact.
+                        Use recorded results to choose realistic targets. Saving keeps the earlier targets and results in the history.
                       </p>
 
                       <div className="mt-4 grid gap-3 lg:grid-cols-4">
@@ -1472,7 +1454,7 @@ export function PerformanceWorkspace({
                               }))
                             }
                             className="mt-2 w-full rounded-xl border border-red-200 px-3 py-2.5 font-normal text-slate-900 outline-none focus:border-red-400"
-                            placeholder="Why should this KPI stop being active?"
+                            placeholder="Why should this Measure stop being active?"
                           />
                         </label>
                         <button
@@ -1481,7 +1463,7 @@ export function PerformanceWorkspace({
                           onClick={() => void retireKpi(kpi)}
                           className="mt-3 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-800 disabled:opacity-50"
                         >
-                          Retire KPI
+                          Retire Measure
                         </button>
                       </div>
                     </details>
@@ -1494,13 +1476,9 @@ export function PerformanceWorkspace({
 
         <section className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white sm:p-7">
           <CheckCircle2 className="size-6 text-mint-300" />
-          <h2 className="mt-3 text-xl font-black">How O6 feeds leadership</h2>
+          <h2 className="mt-3 text-xl font-black">Use results in leadership meetings</h2>
           <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-300">
-            O3 supplies work execution, O4 supplies exceptions, O5 supplies
-            decisions, and O6 supplies governed performance evidence. The
-            existing weekly School Performance Review and monthly Institutional
-            Review can now focus on red/amber trends, critical controls and
-            decisions instead of rebuilding reports by hand.
+            Use task progress, issues, decisions and results to prepare your weekly and monthly school reviews. Focus on overdue work, risks and decisions that need attention.
           </p>
         </section>
       </div>

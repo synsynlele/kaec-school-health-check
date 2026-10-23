@@ -4,7 +4,7 @@ import { AvailabilityWorkspace } from "@/components/khpos/ops/AvailabilityWorksp
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Availability & Coverage · KHP-OS",
+  title: "Leave & cover · KHP-OS",
   robots: { index: false, follow: false },
 };
 

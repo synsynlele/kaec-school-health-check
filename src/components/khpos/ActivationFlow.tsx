@@ -116,10 +116,10 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
           <Handshake className="size-4" /> KAEC-NG partnership
         </div>
         <h1 className="mt-5 max-w-2xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-          Your school health report is the diagnosis. Partnership unlocks the transformation system.
+          Use your school health report to start improving your school.
         </h1>
         <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
-          Verify ownership of this KSHC report and submit the institution for KAEC-NG partnership review. Creating an account does not automatically activate KHP-OS.
+          Confirm that this report belongs to your school, then request a KAEC partnership. KAEC must approve the request before your school can use KHP-OS.
         </p>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           {[

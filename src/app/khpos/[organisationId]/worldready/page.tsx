@@ -4,7 +4,7 @@ import { WorldReadyWorkspace } from "@/components/khpos/ops/WorldReadyWorkspace"
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "WorldReady Transition · KHP-OS",
+  title: "Life after school · KHP-OS",
   robots: { index: false, follow: false },
 };
 

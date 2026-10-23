@@ -29,7 +29,7 @@ export function SchoolsCampusesWorkspace({ organisationId }: { organisationId?: 
   finally { setBusy(false); }
  }
  return <main className="mx-auto max-w-6xl space-y-6 p-4 text-slate-950 sm:p-6">
-  <div><h1 className="text-3xl font-bold">Schools & Campuses</h1><p className="mt-2 text-slate-600">KAEC-NG network governance · separate school organisations · campuses within each school.</p></div>
+  <div><h1 className="text-3xl font-bold">Schools & Campuses</h1><p className="mt-2 text-slate-600">Each school keeps its own records. A school can have several campuses. KAEC oversees the network.</p></div>
   <div className="flex flex-wrap gap-3 text-sm font-semibold"><Link href={organisationId ? "/account" : "/khpos/admin/partnerships"} className="rounded-xl border p-3">{organisationId ? "School partnerships & school access" : "Independent school partnerships"}</Link>{organisationId && <><Link href={`/khpos/${organisationId}/people`} className="rounded-xl border p-3">Assign campus leaders</Link><Link href={`/khpos/${organisationId}/campus-readiness`} className="rounded-xl border p-3">Daily campus readiness</Link></>}</div>
   <p className="text-sm text-slate-600">New independent schools join through the existing KSHC partnership process. New campuses require a separate readiness review and KAEC approval. Approval alone does not activate a campus.</p>
   {error && <div role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}<button type="button" disabled={busy} className="ml-3 underline" onClick={() => { setError(""); void fetchDirectory().then(setDirectory).catch(cause => setError(cause.message)); }}>Retry</button></div>}

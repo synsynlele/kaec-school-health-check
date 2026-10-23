@@ -147,7 +147,7 @@ checks+=3;
 const account=fs.readFileSync("src/app/api/account/route.ts","utf8");
 assert.match(account,/filterKshcOwnedAssessments\(user.id, partnerships, assessments\)/);checks++;
 const command=fs.readFileSync("src/components/khpos/CommandCentre.tsx","utf8");
-assert.match(command,/workspace.canViewHealthReport && <div[^>]+>[\s\S]*?View full KSHC report/);
+assert.match(command,/workspace.canViewHealthReport && <div[^>]+>[\s\S]*?View School Health Check report/);
 assert.match(command,/workspace.canViewHealthReport && <section className="grid gap-6/);
 checks+=2;
 const pdf=fs.readFileSync("src/app/api/report/[id]/pdf/route.ts","utf8");

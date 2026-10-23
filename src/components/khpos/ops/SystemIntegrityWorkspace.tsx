@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -23,9 +25,7 @@ function severityClasses(severity: KhposIntegrityFinding["severity"]) {
   return "border-brand-200 bg-brand-50 text-brand-950";
 }
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 export function SystemIntegrityWorkspace({
   organisationId,
@@ -63,7 +63,7 @@ export function SystemIntegrityWorkspace({
 
       if (!active) return;
       if (!response.ok || !body.ok || !body.integrity) {
-        setError(body.error ?? "System Integrity could not be loaded.");
+        setError(body.error ?? "System checks could not be loaded.");
         return;
       }
 
@@ -89,7 +89,7 @@ export function SystemIntegrityWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <CircleAlert className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">System Integrity unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">System checks unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
         </div>
       </main>
@@ -104,14 +104,14 @@ export function SystemIntegrityWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Leadership-only institutional control
+              Leadership-only school control
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
 
@@ -120,11 +120,9 @@ export function SystemIntegrityWorkspace({
               <ShieldCheck className="size-6" />
             </span>
             <div>
-              <h1 className="text-3xl font-black sm:text-5xl">System Integrity</h1>
+              <h1 className="text-3xl font-black sm:text-5xl">System checks</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">
-                Detect contradictions before they become institutional failure:
-                broken access, orphan authority, overdue controls, automation
-                ownership gaps, stale verification and governance debt.
+                Find setup problems: missing role holders, access problems, overdue checks, tasks with no responsible person and approvals that still need action.
               </p>
             </div>
           </div>
@@ -209,9 +207,7 @@ export function SystemIntegrityWorkspace({
         <section className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600 shadow-sm">
           <p className="font-black text-slate-950">Control boundary</p>
           <p className="mt-1">
-            System Integrity detects and routes structural gaps; it does not
-            silently mutate staff authority, governance documents or institutional
-            records. Corrections remain in their controlled source workflows.
+            This page finds setup problems and shows where to fix them. Changes still need to be made and approved in the correct part of the app.
           </p>
         </section>
       </div>

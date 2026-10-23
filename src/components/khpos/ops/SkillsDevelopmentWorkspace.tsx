@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -28,9 +30,7 @@ import type {
   KhposOpsSkillsWorkspace,
 } from "@/lib/khpos/ops/skills-development";
 
-function readable(value: string | null | undefined) {
-  return (value ?? "—").replaceAll("_", " ");
-}
+function readable(value: string | null | undefined) { return plainLabel(value); }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not set";
@@ -346,7 +346,7 @@ export function SkillsDevelopmentWorkspace({
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            Command Centre
+            School overview
           </Link>
         </div>
       </main>
@@ -359,7 +359,7 @@ export function SkillsDevelopmentWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Operations · O17
+              School operations
             </span>
             <div className="flex gap-2">
               <button
@@ -375,7 +375,7 @@ export function SkillsDevelopmentWorkspace({
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
               >
                 <ArrowLeft className="size-4" />
-                Potential Development
+                Learner development
               </Link>
             </div>
           </div>
@@ -474,9 +474,7 @@ export function SkillsDevelopmentWorkspace({
               Aggregate view only
             </p>
             <p className="mt-2 text-sm leading-6 text-amber-900">
-              Your current account is an executive observer without a Skills
-              operating assignment. Individual learner skill records remain
-              hidden until an appropriate operating role is assigned.
+              You can view the programme summary. Individual skill records are available only to staff with the assigned Skills role.
             </p>
           </section>
         ) : null}
@@ -519,12 +517,12 @@ export function SkillsDevelopmentWorkspace({
                       </option>
                     ))}
                 </select>
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Campus ID</span><input
                   value={campusId}
                   onChange={(event) => setCampusId(event.target.value)}
                   placeholder="Campus ID"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
                 <select
                   value={facilitatorAssignmentId}
                   onChange={(event) =>
@@ -539,7 +537,7 @@ export function SkillsDevelopmentWorkspace({
                     </option>
                   ))}
                 </select>
-                <input
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Weekly target</span><input
                   type="number"
                   min="1"
                   max="12"
@@ -547,15 +545,15 @@ export function SkillsDevelopmentWorkspace({
                   onChange={(event) => setWeeklyTarget(event.target.value)}
                   placeholder="Weekly target"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
-                <input
+                /></label>
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Capacity</span><input
                   type="number"
                   min="1"
                   value={capacity}
                   onChange={(event) => setCapacity(event.target.value)}
                   placeholder="Capacity"
                   className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
               </div>
               <button
                 type="button"
@@ -623,13 +621,13 @@ export function SkillsDevelopmentWorkspace({
                   <option value="continuation">Continuation</option>
                   <option value="other">Other</option>
                 </select>
-                <textarea
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Why is this pathway appropriate now? Record learner voice; do not label the learner permanently.</span><textarea
                   value={selectionNote}
                   onChange={(event) => setSelectionNote(event.target.value)}
                   rows={3}
                   placeholder="Why is this pathway appropriate now? Record learner voice; do not label the learner permanently."
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                />
+                /></label>
               </div>
               <button
                 type="button"
@@ -882,21 +880,21 @@ function OfferingCard({
               <option value="partial">Resources partial</option>
               <option value="blocked">Resources blocked</option>
             </select>
-            <textarea
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Readiness evidence note</span><textarea
               value={notes[readinessNoteKey] ?? ""}
               onChange={(event) => onNote(readinessNoteKey, event.target.value)}
               placeholder="Readiness evidence note"
               rows={2}
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
-            <input
+            /></label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Readiness evidence reference</span><input
               value={references[readinessRefKey] ?? ""}
               onChange={(event) =>
                 onReference(readinessRefKey, event.target.value)
               }
               placeholder="Readiness evidence reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
-            />
+            /></label>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -952,12 +950,12 @@ function OfferingCard({
                 onChange={(event) => onDate(sessionDateKey, event.target.value)}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
               />
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Session focus</span><input
                 value={notes[sessionFocusKey] ?? ""}
                 onChange={(event) => onNote(sessionFocusKey, event.target.value)}
                 placeholder="Session focus"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -1024,27 +1022,27 @@ function OfferingCard({
                 onChange={(event) => onDate(reviewWeekKey, event.target.value)}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
               />
-              <textarea
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Safety/resource summary</span><textarea
                 value={notes[reviewSafetyKey] ?? ""}
                 onChange={(event) => onNote(reviewSafetyKey, event.target.value)}
                 placeholder="Safety/resource summary"
                 rows={2}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Recovery actions where needed</span><textarea
                 value={notes[reviewRecoveryKey] ?? ""}
                 onChange={(event) => onNote(reviewRecoveryKey, event.target.value)}
                 placeholder="Recovery actions where needed"
                 rows={2}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
-              <textarea
+              /></label>
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Value-creation / Young CEO linkage where relevant</span><textarea
                 value={notes[reviewValueKey] ?? ""}
                 onChange={(event) => onNote(reviewValueKey, event.target.value)}
                 placeholder="Value-creation / Young CEO linkage where relevant"
                 rows={2}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
-              />
+              /></label>
               <button
                 type="button"
                 onClick={() =>
@@ -1175,7 +1173,7 @@ function SessionCard({
           className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-800"
         >
           <TriangleAlert className="size-3.5" />
-          O4 issue linked: {session.issueId.slice(0, 8)}
+          Issues issue linked: {session.issueId.slice(0, 8)}
         </Link>
       ) : null}
 
@@ -1198,19 +1196,19 @@ function SessionCard({
             <option value="partial">Resources partial</option>
             <option value="blocked">Resources blocked</option>
           </select>
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Outcome / exception note</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) => onNote(noteKey, event.target.value)}
             placeholder="Outcome / exception note"
             rows={2}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-          />
-          <input
+          /></label>
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Delivery evidence reference</span><input
             value={references[refKey] ?? ""}
             onChange={(event) => onReference(refKey, event.target.value)}
             placeholder="Delivery evidence reference"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-          />
+          /></label>
           <input
             type="date"
             value={dates[recoveryKey] ?? ""}
@@ -1323,13 +1321,13 @@ function WeeklyReviewCard({
         ))}
       </div>
 
-      <textarea
+      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Approval / return note</span><textarea
         value={notes[noteKey] ?? ""}
         onChange={(event) => onNote(noteKey, event.target.value)}
         placeholder="Approval / return note"
         rows={2}
         className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-      />
+      /></label>
 
       <div className="mt-2 flex flex-wrap gap-2">
         {review.status === "draft" && review.isPreparer ? (
@@ -1569,25 +1567,25 @@ function CompetencyEntry({
             </option>
           ))}
         </select>
-        <input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Skill or area of knowledge</span><input
           value={notes[areaKey] ?? ""}
           onChange={(event) => onNote(areaKey, event.target.value)}
-          placeholder="Competency area"
+          placeholder="Skill or area of knowledge"
           className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs"
-        />
-        <textarea
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What was demonstrated?</span><textarea
           value={notes[noteKey] ?? ""}
           onChange={(event) => onNote(noteKey, event.target.value)}
           placeholder="What was demonstrated?"
           rows={2}
           className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs"
-        />
-        <input
+        /></label>
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
           value={references[refKey] ?? ""}
           onChange={(event) => onReference(refKey, event.target.value)}
           placeholder="Evidence reference"
           className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs"
-        />
+        /></label>
         <input
           type="datetime-local"
           value={dates[dateKey] ?? ""}
@@ -1663,7 +1661,7 @@ function CompetencyEvidenceCard({
       </p>
       {evidence.potentialEvidenceId ? (
         <p className="mt-2 text-[11px] font-bold text-emerald-700">
-          Linked into O16 Potential evidence
+          Linked into Learner development evidence
         </p>
       ) : null}
       {canManage && evidence.isRecorder && evidence.status === "submitted" ? (
@@ -1674,13 +1672,13 @@ function CompetencyEvidenceCard({
 
       {canManage && !evidence.isRecorder && ["submitted", "returned"].includes(evidence.status) ? (
         <div className="mt-3">
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Verification / return note</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) => onNote(noteKey, event.target.value)}
             placeholder="Verification / return note"
             rows={2}
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-          />
+          /></label>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
@@ -1791,13 +1789,13 @@ function PathwayChange({
             onChange={(event) => onDate(dateKey, event.target.value)}
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
           />
-          <textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit sm:col-span-2"><span>Why should the change be reviewed?</span><textarea
             value={notes[reasonKey] ?? ""}
             onChange={(event) => onNote(reasonKey, event.target.value)}
             placeholder="Why should the change be reviewed?"
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs sm:col-span-2"
-          />
+          /></label>
           <button
             type="button"
             onClick={() =>
@@ -1849,7 +1847,7 @@ function PathwayChange({
 
                 {canManage && request.status === "pending" ? (
                   <div className="mt-2">
-                    <textarea
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Decision note</span><textarea
                       value={notes[decisionKey] ?? ""}
                       onChange={(event) =>
                         onNote(decisionKey, event.target.value)
@@ -1857,7 +1855,7 @@ function PathwayChange({
                       placeholder="Decision note"
                       rows={2}
                       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
-                    />
+                    /></label>
                     <div className="mt-2 flex gap-2">
                       <button
                         type="button"

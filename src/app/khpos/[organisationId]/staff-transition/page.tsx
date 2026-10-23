@@ -4,7 +4,7 @@ import { StaffTransitionWorkspace } from "@/components/khpos/ops/StaffTransition
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Progression, Succession & Exit · KHP-OS",
+  title: "Staff changes & leaving · KHP-OS",
   robots: { index: false, follow: false },
 };
 

@@ -4,7 +4,7 @@ import { PotentialDevelopmentWorkspace } from "@/components/khpos/ops/PotentialD
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Potential Development · KHP-OS",
+  title: "Learner development · KHP-OS",
   robots: { index: false, follow: false },
 };
 

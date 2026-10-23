@@ -20,7 +20,7 @@ const quickQuestions = [
   "What needs my attention today?",
   "What is our process for missed lessons?",
   "Which decisions are waiting for action?",
-  "How is our execution performance doing?",
+  "Are school tasks being completed on time?",
   "What is coming up in the next 30 days?",
 ];
 
@@ -73,14 +73,14 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Grounded institutional intelligence
+              Help with school work
             </span>
             <Link
               href={`/khpos/${organisationId}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              Command Centre
+              School overview
             </Link>
           </div>
           <div className="mt-6 flex items-start gap-4">
@@ -90,9 +90,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Ask KHP-OS</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Ask about approved processes, policies, your current work, authorised decisions,
-                performance and the institutional calendar. Answers are grounded only in the
-                KHP-OS evidence your role is allowed to see.
+                Ask what to do, where to find something or what needs your attention. Answers use only the school information your role is allowed to see.
               </p>
             </div>
           </div>

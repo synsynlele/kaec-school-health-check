@@ -9,7 +9,7 @@ const links = [
   { href: "/khpos/admin/schools-campuses", label: "Schools & Campuses" },
   { href: "/khpos/admin", label: "Admin Dashboard" },
   { href: "/khpos/admin/partnerships", label: "School Partnerships" },
-  { href: "/khpos/portfolio", label: "Portfolio Intelligence" },
+  { href: "/khpos/portfolio", label: "Network summary" },
   { href: "/khpos/hq", label: "KAEC HQ" },
 ];
 
@@ -27,7 +27,7 @@ export function AdminNav() {
             KAEC-NG Platform Administration
           </p>
           <p className="mt-0.5 text-xs font-semibold text-slate-400">
-            Govern partner access and institutional transformation.
+            Manage school access and progress.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

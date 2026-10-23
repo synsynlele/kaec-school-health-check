@@ -4,7 +4,7 @@ import { SystemIntegrityWorkspace } from "@/components/khpos/ops/SystemIntegrity
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "System Integrity · KHP-OS",
+  title: "System checks · KHP-OS",
   robots: { index: false, follow: false },
 };
 

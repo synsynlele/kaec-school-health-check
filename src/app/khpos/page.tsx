@@ -15,7 +15,7 @@ export default function KhposAccessPage() {
           <ShieldCheck className="size-4" /> KHP-OS by KAEC-NG
         </div>
         <h1 className="mt-8 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-          Your school. Your network. One clear entrance.
+          Where would you like to go?
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
           Know what needs attention today, carry out your assigned responsibilities and keep completed work in its proper History.

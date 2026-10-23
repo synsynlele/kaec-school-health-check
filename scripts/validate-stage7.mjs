@@ -41,7 +41,7 @@ assert.doesNotMatch(receiver, /student|teacher.*rank/i);
 assert.match(route, /verifyKhposAccessToken/);
 assert.match(route, /createKhposKsiPairing/);
 assert.match(ui, /KSI context does not resolve KSHC priorities/);
-assert.match(ui, /No student records, teacher rankings/);
+assert.match(ui, /Private student records, teacher rankings/);
 assert.match(page, /LearningIntelligenceWorkspace/);
 
 console.log("KHP-OS Stage 7 KSI integration validation passed: hashed token pairing, atomic bounded signal ingestion, privacy controls, governed signal states and reassessment authority boundary are present.");

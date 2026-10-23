@@ -57,7 +57,7 @@ export function PriorityInterventionWorkspace({
       if (!active) return;
       const accessToken = data.session?.access_token;
       if (!accessToken) {
-        setError("Your session has ended. Return to the Command Centre and sign in again.");
+        setError("Your session has ended. Return to the School overview and sign in again.");
         return;
       }
 
@@ -146,7 +146,7 @@ export function PriorityInterventionWorkspace({
           <h1 className="mt-4 text-2xl font-black">Transformation agenda unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <button onClick={() => router.push(`/khpos/${organisationId}`)} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to Command Centre
+            Return to School overview
           </button>
         </div>
       </main>
@@ -172,7 +172,7 @@ export function PriorityInterventionWorkspace({
             </div>
           </div>
           <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10">
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
         </div>
       </header>
@@ -184,10 +184,10 @@ export function PriorityInterventionWorkspace({
               Priorities & Interventions
             </div>
             <h1 className="mt-5 max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">
-              Turn diagnosis into a focused transformation agenda.
+              Choose what your school will improve first
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-brand-100 sm:text-base">
-              KSHC evidence can surface many weaknesses. KHP-OS ranks the material gaps, maps each one to a reusable intervention, and keeps leadership focused on the few commitments that matter most.
+              Use your School Health Check results to choose up to three priorities. Each approved priority gets an action plan.
             </p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/10 p-6 backdrop-blur">
@@ -277,8 +277,8 @@ export function PriorityInterventionWorkspace({
           ) : (
             <div className="mt-7 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
               <Target className="mx-auto size-8 text-slate-300" />
-              <p className="mt-3 font-extrabold text-slate-800">No institutional priority has been approved yet.</p>
-              <p className="mt-2 text-sm text-slate-500">The evidence below is still diagnostic intelligence—not an institutional commitment.</p>
+              <p className="mt-3 font-extrabold text-slate-800">No school priority has been approved yet.</p>
+              <p className="mt-2 text-sm text-slate-500">These are suggestions. An authorised school leader must approve a priority before work starts.</p>
             </div>
           )}
         </section>
@@ -288,10 +288,10 @@ export function PriorityInterventionWorkspace({
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Evidence-ranked shortlist</p>
-                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-extrabold text-brand-700">Deterministic, not AI-guessed</span>
+                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-extrabold text-brand-700">Based on School Health Check results</span>
               </div>
               <h2 className="mt-2 max-w-3xl text-2xl font-black tracking-tight">The strongest candidates for this transformation cycle</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Only recorded indicators scoring 1–3 are eligible. The engine ranks severity, surrounding area weakness and institutional risk, then limits chapter concentration so one problem area does not drown out the whole school.</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Only recorded indicators scoring 1–3 are eligible. The engine ranks severity, surrounding area weakness and school risk, then limits chapter concentration so one problem area does not drown out the whole school.</p>
             </div>
             {atLimit && <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700">Agenda full — archive one to change focus</span>}
           </div>
@@ -316,7 +316,7 @@ export function PriorityInterventionWorkspace({
                     </div>
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl bg-slate-50 p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Institutional system</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">School system</p>
                         <p className="mt-1.5 text-sm font-extrabold text-slate-800">{candidate.systemName}</p>
                       </div>
                       <div className="rounded-2xl bg-brand-50 p-4">
@@ -350,7 +350,7 @@ export function PriorityInterventionWorkspace({
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
                 <Sparkles className="mx-auto size-8 text-mint-500" />
                 <p className="mt-3 font-extrabold text-slate-800">No additional material gap is currently eligible.</p>
-                <p className="mt-2 text-sm text-slate-500">This baseline has no unapproved KSHC indicator scoring 1–3 in the current shortlist.</p>
+                <p className="mt-2 text-sm text-slate-500">There are no remaining suggested priorities with a School Health Check score of 1–3 in this list.</p>
               </div>
             )}
           </div>
@@ -361,9 +361,9 @@ export function PriorityInterventionWorkspace({
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-mint-300">Governance rule</p>
               <h2 className="mt-2 text-2xl font-black">A recommendation is not a commitment.</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">The engine may rank evidence and map an intervention. Only an authorised human can commit the school. Every approval and agenda change is recorded in institutional history.</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">KHP-OS suggests priorities and plans. An authorised school leader decides what to approve. Approvals and changes are saved in the school history.</p>
             </div>
-            <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 text-sm font-extrabold text-mint-300">Return to Command Centre <ArrowRight className="size-4" /></Link>
+            <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 text-sm font-extrabold text-mint-300">Return to School overview <ArrowRight className="size-4" /></Link>
           </div>
         </section>
       </div>

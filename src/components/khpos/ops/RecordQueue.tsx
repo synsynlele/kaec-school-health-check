@@ -86,7 +86,7 @@ export function RecordQueueTabs({
           </button>
         ))}
       </div>
-      <p className="text-xs text-slate-500">Completed records stay accessible without cluttering your working queue.</p>
+      <p className="text-xs text-slate-500">Finished records are saved in History.</p>
     </div>
   );
 }

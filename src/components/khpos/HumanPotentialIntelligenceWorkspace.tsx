@@ -158,7 +158,7 @@ export function HumanPotentialIntelligenceWorkspace({
             href={`/khpos/${organisationId}`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to Command Centre
+            Return to School overview
           </Link>
         </div>
       </main>
@@ -176,7 +176,7 @@ export function HumanPotentialIntelligenceWorkspace({
             href={`/khpos/${organisationId}`}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
           >
-            <ArrowLeft className="size-4" /> Command Centre
+            <ArrowLeft className="size-4" /> School overview
           </Link>
           <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -184,12 +184,10 @@ export function HumanPotentialIntelligenceWorkspace({
                 KHP-OS | PipuPath Human Potential Intelligence
               </p>
               <h1 className="mt-2 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
-                Is human potential actually moving into capability and value?
+                Learner development summary
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                PipuPath remains private and learner-facing. KHP-OS receives only
-                privacy-thresholded school-cohort signals that help leadership see
-                institutional patterns.
+                PipuPath remains private and learner-facing. KHP-OS receives only privacy-thresholded school-cohort signals that help leadership see school patterns.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -216,7 +214,7 @@ export function HumanPotentialIntelligenceWorkspace({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  Institutional cohort bridge
+                  School cohort bridge
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
                   {connected
@@ -300,7 +298,7 @@ export function HumanPotentialIntelligenceWorkspace({
                 ) : (
                   <RefreshCw className="size-4" />
                 )}
-                Refresh governed signals
+                Refresh approved signals
               </button>
             )}
           </div>
@@ -311,7 +309,7 @@ export function HumanPotentialIntelligenceWorkspace({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  Four institutional signals
+                  Four school signals
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
                   No composite score. No learner ranking.
@@ -364,13 +362,10 @@ export function HumanPotentialIntelligenceWorkspace({
             Authority boundary
           </p>
           <h2 className="mt-2 text-xl font-black text-amber-950">
-            PipuPath context can inform institutional judgement; it cannot certify
-            institutional improvement.
+            PipuPath context can inform school judgement; it cannot certify school improvement.
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-amber-900">
-            These signals may strengthen interpretation and review. They cannot close
-            a KSHC priority, change a reassessment result or declare Verified
-            Institutional Improvement. Fresh KSHC reassessment remains authoritative.
+            These signals may strengthen interpretation and review. They cannot close a KSHC priority, change a reassessment result or declare Verified School Improvement. Fresh KSHC reassessment remains authoritative.
           </p>
         </section>
       </div>

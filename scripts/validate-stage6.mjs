@@ -52,8 +52,8 @@ assert.match(route, /start_reassessment/);
 
 assert.match(workspace, /kaec_assessment_id/);
 assert.match(workspace, /window\.location\.assign\("\/assessment"\)/);
-assert.match(workspace, /55 KSHC indicators/);
-assert.match(workspace, /Seven institutional systems/);
+assert.match(workspace, /55 School Health Check questions/);
+assert.match(workspace, /Seven school systems/);
 assert.match(workspace, /Implementation is not improvement/);
 assert.doesNotMatch(workspace, /type="number"/);
 assert.doesNotMatch(workspace, /manual score/i);

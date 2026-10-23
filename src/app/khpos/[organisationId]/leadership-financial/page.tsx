@@ -4,7 +4,7 @@ import { LeadershipFinancialWorkspace } from "@/components/khpos/ops/LeadershipF
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "Leadership & Financial Capability · KHP-OS",
+  title: "Leadership & money skills · KHP-OS",
   robots: { index: false, follow: false },
 };
 

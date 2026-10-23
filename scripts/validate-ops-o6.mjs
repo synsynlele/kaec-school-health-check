@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/performance"', "school workspace navigation");
-requireText(nav, 'label: "Performance & Scorecards"', "school workspace navigation");
+requireText(nav, 'label: "School results"', "school workspace navigation");
 
 const page = read("src/app/khpos/[organisationId]/performance/page.tsx");
 requireText(page, "PerformanceWorkspace", "performance route");
@@ -45,14 +45,14 @@ for (const expected of [
 
 const workspace = read("src/components/khpos/ops/PerformanceWorkspace.tsx");
 for (const expected of [
-  "Operations · O6",
-  "Performance & Scorecards",
+  "School operations",
+  "School results",
   "Live operating pulse",
   "What is true right now",
   "Never average away a critical control",
-  "New KPIs start in baseline mode.",
-  "No governed KPIs yet.",
-  "How O6 feeds leadership",
+  "New measures record current results first.",
+  "No measures added yet.",
+  "Use results in leadership meetings",
 ]) {
   requireText(workspace, expected, "O6 performance workspace");
 }

@@ -285,14 +285,14 @@ export function AdminConsoleWorkspace() {
             </div>
           ) : (
             <form onSubmit={signInEmail} className="flex flex-col gap-3 sm:flex-row">
-              <input
+              <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit  flex-1"><span>Email address</span><input
                 type="email"
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="authorised@email.com"
+                placeholder="Email address"
                 className="min-w-0 flex-1 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm outline-none"
-              />
+              /></label>
               <button
                 type="submit"
                 disabled={busy === "email"}
@@ -363,10 +363,10 @@ export function AdminConsoleWorkspace() {
                 KHP-OS | KAEC-NG Admin Console
               </p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">
-                Institutional transformation at portfolio level.
+                Manage schools in the KAEC network
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-                Monitor institutional health, transformation queues, integrations and governance without entering learner-level or evidence-file surveillance.
+                Check school progress, partnership requests and connected services. Private learner records and evidence files are not shown here.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -418,7 +418,7 @@ export function AdminConsoleWorkspace() {
                   <CheckCircle2 className="size-5" /> MFA verified for this session
                 </div>
                 <p className="mt-2 text-sm leading-6 text-emerald-800">
-                  AAL2 is active. Super Admin governance changes are unlocked for this session.
+                  Two-step verification is complete. You can now make the admin changes your role allows.
                 </p>
               </div>
             ) : (
@@ -455,14 +455,14 @@ export function AdminConsoleWorkspace() {
                 )}
                 {(console.admin.mfaEnrolled || mfaSetup) && (
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit  flex-1"><span>6-digit authenticator code</span><input
                       inputMode="numeric"
                       autoComplete="one-time-code"
                       value={mfaCode}
                       onChange={(event) => setMfaCode(event.target.value)}
                       placeholder="6-digit authenticator code"
                       className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm"
-                    />
+                    /></label>
                     <button
                       type="button"
                       disabled={busy === "mfa-verify" || !mfaCode.trim()}
@@ -482,13 +482,13 @@ export function AdminConsoleWorkspace() {
             <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-mint-300">Portfolio intelligence</p>
             <h2 className="mt-2 text-2xl font-black">{portfolio.summary.activeInstitutions} institutions under transformation oversight</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Portfolio Intelligence identifies where support is needed without exposing schools to one another or creating public rankings.
+              Network summary identifies where support is needed without exposing schools to one another or creating public rankings.
             </p>
             <Link
               href="/khpos/portfolio"
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950"
             >
-              <Building2 className="size-4" /> Open Portfolio Intelligence
+              <Building2 className="size-4" /> Open Network summary
             </Link>
           </div>
         </section>
@@ -548,14 +548,14 @@ export function AdminConsoleWorkspace() {
               <form onSubmit={applyGovernanceChange} className="mt-6 space-y-3 rounded-2xl border border-slate-200 p-5">
                 <p className="text-sm font-black">Approve a platform-access change</p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Staff account email</span><input
                     type="email"
                     required
                     value={targetEmail}
                     onChange={(event) => setTargetEmail(event.target.value)}
-                    placeholder="Existing KHP-OS user email"
+                    placeholder="Staff account email"
                     className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-                  />
+                  /></label>
                   <select
                     value={targetRole}
                     onChange={(event) => setTargetRole(event.target.value as KhposPlatformRole)}
@@ -574,14 +574,14 @@ export function AdminConsoleWorkspace() {
                     <option value="reactivate">Reactivate access</option>
                     <option value="suspend">Suspend access</option>
                   </select>
-                  <input
+                  <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason for this change (at least 12 characters)</span><input
                     required
                     minLength={12}
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
-                    placeholder="Governance reason (12+ characters)"
+                    placeholder="Reason for this change (at least 12 characters)"
                     className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-                  />
+                  /></label>
                 </div>
                 <button
                   type="submit"
@@ -625,7 +625,7 @@ export function AdminConsoleWorkspace() {
           <ShieldCheck className="size-8 text-mint-300" />
           <h2 className="mt-4 text-xl font-black">Platform governance is separate from school authority.</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-            Platform administrators can monitor institutional transformation and govern KHP-OS access. They do not automatically become school executives, approve a school&apos;s priorities, alter reassessments, or access learner-level PipuPath data.
+            Platform administrators can monitor school transformation and govern KHP-OS access. They do not automatically become school executives, approve a school&apos;s priorities, alter reassessments, or access learner-level PipuPath data.
           </p>
           <button
             type="button"

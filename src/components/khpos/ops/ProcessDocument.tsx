@@ -1,5 +1,7 @@
 "use client";
 
+import { plainLabel } from "@/lib/khpos/plain-language";
+
 import Link from "next/link";
 import {
   Activity,
@@ -13,9 +15,7 @@ import {
 } from "lucide-react";
 import type { KhposOpsProcess } from "@/lib/khpos/ops/library";
 
-function readable(value: string) {
-  return value.replaceAll("_", " ");
-}
+function readable(value: string) { return plainLabel(value); }
 
 function ListSection({
   title,
@@ -109,7 +109,7 @@ export function ProcessDocument({
       <div className={`border-t border-slate-100 ${compact ? "px-4 pb-5 pt-4" : "px-5 pb-7 pt-5 sm:px-6"}`}>
         {!version ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-            This process is registered but has no approved published version yet. It must not be treated as the school&apos;s operating procedure until governance is complete.
+            This procedure has not yet been approved and published. Do not use it as an official school procedure.
           </div>
         ) : (
           <article className="space-y-6">
@@ -163,7 +163,7 @@ export function ProcessDocument({
             <ListSection title="Required evidence / records" items={version.evidence} />
             <ListSection title="Exceptions / exception conditions" items={version.exceptionConditions} />
             <ListSection title="Escalation" items={version.escalation} />
-            <ListSection title="KPIs / verification measures" items={version.kpis} />
+            <ListSection title="Measures / verification measures" items={version.kpis} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="rounded-2xl border border-slate-200 p-4">
@@ -194,8 +194,7 @@ export function ProcessDocument({
                       </h4>
                     </div>
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-                      This connects the controlled procedure to the roles, execution control,
-                      checklists, records and live work produced by the same process.
+                      See who is responsible, how the task starts and which forms, checklists and evidence it uses.
                     </p>
                   </div>
                   <span className="rounded-full border border-brand-200 bg-white px-3 py-1 text-[10px] font-black uppercase text-brand-800">
@@ -218,7 +217,7 @@ export function ProcessDocument({
                           {readable(process.operatingMap.execution.status)}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-slate-600">
-                          Accountable role:{" "}
+                          Responsible position:{" "}
                           {process.operatingMap.execution.ownerRoleTitle ??
                             process.ownerLabel}
                         </p>
@@ -372,13 +371,13 @@ export function ProcessDocument({
                       href={`/khpos/${organisationId}/records`}
                       className="rounded-full border border-brand-200 bg-white px-4 py-2 text-xs font-black text-brand-800"
                     >
-                      Records & Evidence
+                      Forms & checklists
                     </Link>
                     <Link
                       href={`/khpos/${organisationId}/execution-control`}
                       className="rounded-full border border-brand-200 bg-white px-4 py-2 text-xs font-black text-brand-800"
                     >
-                      Execution Control
+                      Task setup
                     </Link>
                   </div>
                 )}

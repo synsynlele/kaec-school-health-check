@@ -193,7 +193,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
     <p className="mt-2 text-sm text-slate-600">Edit your own saved draft here, or start a new version of an approved policy. Published policy text is preserved until a different authorised leader approves the revision.</p>
-    <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the School Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the School Custodian approves. Approval happens here in the Institutional Library.</p>
+    <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the School Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the School Custodian approves. Approval happens here in the School library.</p>
     <label className="mt-5 block text-sm font-bold">Policy to work on
       <select className="mt-2 w-full rounded-xl border p-3" value={selected} onChange={(event) => choose(event.target.value)}>
         <option value="">Select a registered policy</option>
@@ -208,11 +208,11 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
       <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : policy.activeVersion ? "Approved policy: create a new revision without overwriting the published version" : "Start a new school draft"}</p>
       {baselineLoaded && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-brand-900">KAEC baseline loaded</p>
-        <p className="mt-1">This registered policy did not yet have a school-owned version. Review and customise this baseline for your school before saving; it does not become policy until a different authorised leader approves it.</p>
+        <p className="mt-1">Check and adapt this draft for your school before saving. A different authorised leader must approve it before it becomes an official policy.</p>
       </div>}
       {current?.draft_source === "kaec_baseline" && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-brand-900">KAEC baseline draft</p>
-        <p className="mt-1">KHP-OS prepared this starting point from the controlled KAEC baseline. The named author must review and customise it; independent approval remains mandatory.</p>
+        <p className="mt-1">This draft starts from the KAEC standard. Its author must check and adapt it for the school. A different authorised leader must approve it.</p>
       </div>}
       {current?.draft_source === "ai_starter" && <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-violet-900">AI-assisted starter draft</p>
@@ -222,7 +222,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
           <p className="font-bold">Awaiting independent approval</p>
           <p className="mt-1">
-            You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same policy in <b>Institutional Library → Policy drafting and approval</b>, review the frozen draft, then approve or return it.
+            You authored this revision, so you cannot approve it yourself. <b>{approvalRoute()}</b> must open this same policy in <b>School library → Policy drafting and approval</b>, review the frozen draft, then approve or return it.
           </p>
         </div>
       )}
@@ -235,7 +235,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
       {current?.review_note && <p className="rounded-xl bg-amber-50 p-3 text-sm">Review note: {current.review_note}</p>}
       {(!current || (current.status === "draft" && current.author_id === userId)) && <div className="space-y-4">
         <label className="block text-sm font-bold">Purpose<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} /></label>
-        <label className="block text-sm font-bold">Scope<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={scope} onChange={(e) => setScope(e.target.value)} /></label>
+        <label className="block text-sm font-bold">Where this applies<textarea className="mt-1 w-full rounded-xl border p-3" rows={3} value={scope} onChange={(e) => setScope(e.target.value)} /></label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-bold">Effective date<input type="date" className="mt-1 w-full rounded-xl border p-3" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} /></label>
           <label className="text-sm font-bold">Review date<input type="date" className="mt-1 w-full rounded-xl border p-3" value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} /></label>
@@ -248,7 +248,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
       </div>}
       {canReviewCurrent && current && <div className="space-y-3 rounded-xl border border-amber-200 p-4">
         <p className="text-sm">Review the full draft above or in the fields below before approving. The author cannot approve their own version.</p>
-        <div className="space-y-2 text-sm"><p><b>Purpose:</b> {current.purpose}</p><p><b>Scope:</b> {current.scope}</p>
+        <div className="space-y-2 text-sm"><p><b>Purpose:</b> {current.purpose}</p><p><b>Applies to:</b> {current.scope}</p>
           {fields.map(({ key, label }) => <div key={key}><b>{label}:</b><ul className="list-disc pl-5">{current[key].map((line, index) => <li key={index}>{line}</li>)}</ul></div>)}
           <p><b>Effective:</b> {current.effective_date} · <b>Review:</b> {current.review_date}</p></div>
         <label className="block text-sm font-bold">Review note<textarea className="mt-1 w-full rounded-xl border p-3" value={note} onChange={(e) => setNote(e.target.value)} /></label>
