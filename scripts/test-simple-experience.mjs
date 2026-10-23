@@ -51,3 +51,13 @@ function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:t
 }}
 auditFields('src/components/khpos');assert.deepEqual(missing,[],'Placeholder text must never be the only field label');
 console.log('Form accessibility passed: every placeholder field retains a visible label or an explicit accessible name.');
+
+const assistant={};
+vm.runInNewContext(compile('src/lib/khpos/ops/assistant.ts')+'\nexports.detectIntent=detectIntent; exports.fallbackAnswer=deterministicAnswer;',{exports:assistant,process:{env:{}},require:()=>({})});
+assert.equal(assistant.detectIntent('Are school tasks being completed on time?'),'performance','Plain-English results question must reach the scoped performance service');
+assert.equal(assistant.detectIntent('Show school results'),'performance');
+assert.equal(assistant.detectIntent('What tasks do I have today?'),'work');
+assert.equal(assistant.detectIntent('Which policy applies?'),'policy');
+assert.equal(assistant.detectIntent('Which approvals are waiting?'),'decision');
+assert.match(assistant.fallbackAnswer('Help','general',[]),/information your role can access/);
+console.log('Ask KHP-OS language passed: familiar results wording reaches the correct scoped service; task, policy and approval routing remain intact.');

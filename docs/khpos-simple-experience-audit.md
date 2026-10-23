@@ -32,7 +32,7 @@ Today no longer repeats work and verification cards already shown in its task/re
 
 Hundreds of headings, actions, instructions and empty states were rewritten. Development codes such as Operations O7 and O16 were removed from product instructions. Examples: Institutional Control Library → School library; Execution Control → Task setup; Cadence → How often; Outcome contract → Expected result; People & Staff → Staff.
 
-A shared display-label function makes stored workflow states readable without changing their database values. At least 281 formerly placeholder-only fields now retain visible labels, with conditional/shared inputs covered too. Week targets now explicitly label the week, scheme reference, learning target, start date and end date, and explain that lesson times belong in Attendance & lessons.
+A shared display-label function makes stored workflow states readable without changing their database values. Ask KHP-OS now uses plain-language answer instructions and fallback messages; its school-results question still reaches the scoped results service. At least 281 formerly placeholder-only fields now retain visible labels, with conditional/shared inputs covered too. Week targets now explicitly label the week, scheme reference, learning target, start date and end date, and explain that lesson times belong in Attendance & lessons.
 
 Desktop page headings and instructions were restored: the old global rule hid some entire page headers. Search labels, keyboard focus handling, an escape action, a skip link and larger menu-close controls improve navigation accessibility. Label colour inherits its context so dark admin panels remain readable.
 
