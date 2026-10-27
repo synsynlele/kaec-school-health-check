@@ -1,3 +1,4 @@
+import {hqQuickContents, type HqQuickAnswers} from "@/lib/khpos/hq-quick-report";
 import {createClient,type SupabaseClient} from "@supabase/supabase-js";
 import type {VerifiedKhposUser} from "@/lib/khpos/auth";
 import {getHqSnapshot,type HqMember,HqError} from "@/lib/khpos/hq";
@@ -10,7 +11,7 @@ export type HqReportingLine={
 };
 export type HqReportSubmission={
  id:string;line_id:string;cycle_index:number;due_on:string;
- status:"submitted"|"accepted"|"returned";achievements:string;challenges:string;
+ status:"submitted"|"accepted"|"returned";quick_answers?:HqQuickAnswers|null;achievements:string;challenges:string;
  next_actions:string;evidence_reference:string;submitted_by:string;submitted_at:string;
  reviewed_by:string|null;reviewed_at:string|null;review_note:string;updated_at:string;
 };
@@ -172,10 +173,16 @@ export async function submitHqScheduledReport(user:VerifiedKhposUser,raw:unknown
  await getHqSnapshot(user);
  if(line.reporter_user_id!==user.id)throw new HqError("Only the appointed reporting officer can submit this report.",403);
  if(line.status!=="active")throw new HqError("The reporting line is paused.",409);
+ let quick;
+ if(x.quick_answers !== undefined && x.quick_answers !== null) {
+  try {quick=hqQuickContents(x.quick_answers,field(x.notes??"","Final notes",0,1500),field(x.challenges??"","Help details",0,2500),field(x.next_actions??"","Next actions",0,2500));}
+  catch(e){throw new HqError(e instanceof Error?e.message:"Check your report answers.");}
+ }
  const contents={
-  achievements:field(x.achievements,"Actual achievements and evidence",20,3000),
-  challenges:field(x.challenges??"","Challenges and blockers",0,2500),
-  next_actions:field(x.next_actions,"Next actions",10,2500),
+  quick_answers:quick?.quick_answers??null,
+  achievements:quick?.achievements??field(x.achievements,"Actual achievements and evidence",20,3000),
+  challenges:quick?.challenges??field(x.challenges??"","Challenges and blockers",0,2500),
+  next_actions:quick?.next_actions??field(x.next_actions,"Next actions",10,2500),
   evidence_reference:field(x.evidence_reference??"","Evidence reference",0,700)
  };
  let error;

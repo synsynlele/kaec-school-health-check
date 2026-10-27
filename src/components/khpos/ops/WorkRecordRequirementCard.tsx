@@ -1,5 +1,6 @@
 "use client";
 
+import { TapChoices } from "../TapChoices";
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useMemo, useState } from "react";
@@ -251,52 +252,10 @@ export function WorkRecordRequirementCard({
                   );
                 }
 
-                if (field.type === "select") {
-                  return (
-                    <label key={field.key} className="text-sm font-bold">
-                      {field.label}
-                      {field.required && <span className="text-red-600"> *</span>}
-                      <select
-                        value={typeof value === "string" ? value : ""}
-                        onChange={(event) =>
-                          setValues((current) => ({
-                            ...current,
-                            [field.key]: event.target.value,
-                          }))
-                        }
-                        className={shared}
-                      >
-                        <option value="">Choose…</option>
-                        {field.options.map((option) => (
-                          <option key={option} value={option}>
-                            {readable(option)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  );
-                }
-
-                if (field.type === "boolean") {
-                  return (
-                    <label
-                      key={field.key}
-                      className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={value === true}
-                        onChange={(event) =>
-                          setValues((current) => ({
-                            ...current,
-                            [field.key]: event.target.checked,
-                          }))
-                        }
-                      />
-                      {field.label}
-                    </label>
-                  );
-                }
+                if (field.type === "select" || field.type === "boolean") return <TapChoices key={field.key} label={field.label} required={field.required} disabled={!enabled || busy}
+                  options={field.type === "boolean" ? ["Yes", "No"] : field.options}
+                  value={field.type === "boolean" ? value === true ? "Yes" : value === false ? "No" : "" : value}
+                  onChange={answer => setValues(current => ({...current,[field.key]:field.type === "boolean" ? answer === "" ? null : answer === "Yes" : answer}))} />;
 
                 return (
                   <label key={field.key} className="text-sm font-bold">

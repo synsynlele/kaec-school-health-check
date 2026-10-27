@@ -14,6 +14,8 @@ class CustomEvent {constructor(type,init){this.type=type;this.detail=init.detail
 vm.runInNewContext(compiled,{exports,Date,URLSearchParams,window,document,CustomEvent,fetch:async()=>{requests++;return {ok:true,json:async()=>({workspace})};},require(name){
  if(name==='react/jsx-runtime')return jsx;
  if(name==='react')return {useState(initial){const i=cursor++;if(!(i in state))state[i]=typeof initial==='function'?initial():initial;return [state[i],v=>state[i]=typeof v==='function'?v(state[i]):v];},useRef:x=>({current:x}),useCallback:f=>f,useEffect:fn=>effects.push(fn)};
+ if(name==='./TapChoices')return {TapChoices:()=>null};
+ if(name==='@/lib/khpos/quick-forms'){const mod={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/khpos/quick-forms.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:mod});return mod;}
  if(name==='next/link')return {default:'a'};
  if(name==='@/lib/supabase/client')return {createBrowserSupabaseClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'fixture'}}})}})};
  if(name==='@/lib/khpos/ops/action-events')return {KHPOS_ACTIVITY_CHANGED:'changed'};
