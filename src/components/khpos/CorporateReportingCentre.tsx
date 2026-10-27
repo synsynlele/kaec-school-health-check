@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import {TapChoices} from "./TapChoices";
+import {hqProgressOptions,hqWorkOptions,type HqQuickAnswers} from "@/lib/khpos/hq-quick-report";
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {CalendarDays,FileCheck2,ClipboardList,ArrowLeft,RefreshCw} from "lucide-react";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
@@ -19,6 +21,9 @@ export function CorporateReportingCentre(){
  const [action,setAction]=useState<Action|null>(null);
  const [achievements,setAchievements]=useState(""),[challenges,setChallenges]=useState("");
  const [nextActions,setNextActions]=useState(""),[evidence,setEvidence]=useState("");
+ const [quickMode,setQuickMode]=useState(true);
+ const [quick,setQuick]=useState<HqQuickAnswers>({progress:"",areas:[],help:"",followUp:""});
+ const [notes,setNotes]=useState("");
  const [decision,setDecision]=useState("accept"),[reviewNote,setReviewNote]=useState("");
  const [filter,setFilter]=useState("all");
  const load=useCallback(async()=>{
@@ -83,6 +88,10 @@ export function CorporateReportingCentre(){
   setAction({id:line.id,kind:"submit",returnedId:returnedReport?.id});
   setAchievements(returnedReport?.achievements??"");setChallenges(returnedReport?.challenges??"");
   setNextActions(returnedReport?.next_actions??"");setEvidence(returnedReport?.evidence_reference??"");
+  setQuickMode(!returnedReport || !!returnedReport.quick_answers);
+  setQuick(returnedReport?.quick_answers??{progress:"",areas:[],help:"",followUp:""});
+  setNotes(returnedReport?.quick_answers ? (returnedReport.quick_answers.notes??"") : "");
+  if(returnedReport?.quick_answers){setChallenges(returnedReport.quick_answers.help === "Yes" ? returnedReport.challenges : "");setNextActions(returnedReport.quick_answers.followUp === "Yes" ? returnedReport.next_actions : "");}
   setError("");
  }
  if(loading)return <main className="grid min-h-screen place-items-center bg-slate-950 text-white">Loading corporate reporting centre…</main>;
@@ -174,12 +183,23 @@ export function CorporateReportingCentre(){
       </div>
       {action?.id===line.id&&action.kind==="submit"&&<form className="mt-4 space-y-3 rounded-xl bg-emerald-50 p-4" onSubmit={e=>{e.preventDefault();void act("submit_report",{
        line_id:line.id,...(action.returnedId?{returned_submission_id:action.returnedId}:{}),
-       achievements,challenges,next_actions:nextActions,evidence_reference:evidence
+       achievements,challenges,next_actions:nextActions,evidence_reference:evidence,...(quickMode?{quick_answers:quick,notes}:{})
       },"Report submitted to its named recipient.");}}>
        <h3 className="text-sm font-bold">{action.returnedId?"Revise returned report":"Report for period "+line.next_cycle_index}</h3>
+       {!action.returnedId&&<label className="flex min-h-12 items-center gap-3 text-sm"><input type="checkbox" checked={quickMode} onChange={e=>setQuickMode(e.target.checked)}/>Use quick choices</label>}
+       {quickMode ? <>
+        <TapChoices label="How did your planned work go?" options={hqProgressOptions} value={quick.progress} required disabled={busy} onChange={v=>setQuick(q=>({...q,progress:String(v)}))}/>
+        <TapChoices label="Which work areas apply?" options={hqWorkOptions} value={quick.areas} multiple required disabled={busy} onChange={v=>setQuick(q=>({...q,areas:v as string[]}))}/>
+        <TapChoices label="Do you need help or a decision?" options={["Yes","No"]} value={quick.help} required disabled={busy} onChange={v=>setQuick(q=>({...q,help:String(v)}))}/>
+        {quick.help==="Yes"&&<label className={label}>What help do you need, and by when?<textarea required minLength={10} maxLength={2500} className={input} value={challenges} onChange={e=>setChallenges(e.target.value)}/></label>}
+        <TapChoices label="Is there a next action to follow up?" options={["Yes","No"]} value={quick.followUp} required disabled={busy} onChange={v=>setQuick(q=>({...q,followUp:String(v)}))}/>
+        {quick.followUp==="Yes"&&<label className={label}>Next action, responsible person and date<textarea required minLength={10} maxLength={2500} className={input} value={nextActions} onChange={e=>setNextActions(e.target.value)}/></label>}
+        <label className={label}>Anything else your reviewer should know? {quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?"(explain the other or unfinished work)":"(optional)"}<textarea required={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)} minLength={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?10:undefined} maxLength={1500} rows={2} className={input} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
+       </> : <>
        <label className={label}>Achievements and actual work completed<textarea required minLength={20} maxLength={3000} rows={3} className={input} value={achievements} onChange={e=>setAchievements(e.target.value)}/></label>
        <label className={label}>Problems, delays or help required<textarea maxLength={2500} rows={2} className={input} value={challenges} onChange={e=>setChallenges(e.target.value)}/></label>
        <label className={label}>Next actions, responsible persons and dates<textarea required minLength={10} maxLength={2500} rows={2} className={input} value={nextActions} onChange={e=>setNextActions(e.target.value)}/></label>
+       </>}
        <label className={label}>Evidence references (no child/private school records)<input className={input} maxLength={700} value={evidence} onChange={e=>setEvidence(e.target.value)}/></label>
        <div className="flex gap-2"><button disabled={busy} className="rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white">Send report</button><button type="button" onClick={()=>setAction(null)} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs">Cancel</button></div>
       </form>}

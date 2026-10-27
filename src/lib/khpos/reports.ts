@@ -2,9 +2,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 export type ReportField = {
   key: string;
   label: string;
-  type: "text" | "textarea" | "number" | "date" | "boolean" | "select" | "url";
+  type: "text" | "textarea" | "number" | "date" | "boolean" | "select" | "multiselect" | "url";
   required: boolean;
   options?: string[];
+  showWhen?: { key: string; value: string | boolean };
 };
 export type ReportType = {
   id: string;

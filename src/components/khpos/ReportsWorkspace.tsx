@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { TapChoices } from "./TapChoices";
+import { quickReportTemplates, visibleReportFields, visibleReportPayload } from "@/lib/khpos/quick-forms";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import type {
@@ -37,44 +39,7 @@ const today = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-const standardFields: ReportField[] = [
-  {
-    key: "summary",
-    label: "What happened / work completed",
-    type: "textarea",
-    required: true,
-  },
-  {
-    key: "results",
-    label: "Results and evidence",
-    type: "textarea",
-    required: true,
-  },
-  {
-    key: "challenges",
-    label: "Challenges or exceptions (write None if none)",
-    type: "textarea",
-    required: true,
-  },
-  {
-    key: "nextActions",
-    label: "Next actions, owner and target date",
-    type: "textarea",
-    required: true,
-  },
-  {
-    key: "support",
-    label: "Decision or support needed",
-    type: "textarea",
-    required: false,
-  },
-  {
-    key: "evidenceLink",
-    label: "Supporting document link",
-    type: "url",
-    required: false,
-  },
-];
+const standardFields: ReportField[] = quickReportTemplates[0].fields;
 const frequencies = [
   ["one_off", "One-off / repeatable log"],
   ["daily", "Daily"],
@@ -718,6 +683,10 @@ function AnswerField({
 }) {
   const string =
     typeof value === "string" || typeof value === "number" ? String(value) : "";
+  if (["select", "multiselect", "boolean"].includes(f.type)) return <TapChoices label={f.label} required={f.required} disabled={disabled}
+    multiple={f.type === "multiselect"} options={f.type === "boolean" ? ["Yes", "No"] : f.options ?? []}
+    value={f.type === "boolean" ? value === true ? "Yes" : value === false ? "No" : "" : value}
+    onChange={v => onChange(f.type === "boolean" ? v === "" ? null : v === "Yes" : v)} />;
   return (
     <label className="block text-sm font-bold">
       {f.label}
@@ -731,33 +700,6 @@ function AnswerField({
           value={string}
           onChange={(e) => onChange(e.target.value)}
         />
-      ) : f.type === "boolean" ? (
-        <select
-          disabled={disabled}
-          className={field}
-          value={value === true ? "yes" : value === false ? "no" : ""}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? null : e.target.value === "yes")
-          }
-        >
-          <option value="">Select…</option>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </select>
-      ) : f.type === "select" ? (
-        <select
-          disabled={disabled}
-          className={field}
-          value={string}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          <option value="">Select…</option>
-          {f.options?.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
       ) : (
         <input
           disabled={disabled}
@@ -806,7 +748,7 @@ function ReportEditor({
     );
   const editable = n.canEdit && ["draft", "returned"].includes(n.status);
   const act = (mode: string) =>
-    onAction({ mode, id: n.id, lockVersion: n.lock_version, payload, note });
+    onAction({ mode, id: n.id, lockVersion: n.lock_version, payload: visibleReportPayload(n.fields, payload), note });
   return (
     <div className="space-y-5">
       <div>
@@ -843,7 +785,7 @@ function ReportEditor({
           <strong>Reviewer / withdrawal note:</strong> {n.review_note}
         </p>
       )}
-      {n.fields.map((f) => (
+      {visibleReportFields(n.fields, payload).map((f) => (
         <AnswerField
           key={f.key}
           field={f}
@@ -1338,10 +1280,12 @@ function TypeEditor({
       <div className="space-y-3">
         <h4 className="font-bold">Report fields</h4>
         <p className="text-sm text-slate-600">
-          Use up to 30 fields: short answers, narrative, numbers, dates, Yes/No,
-          choices and evidence links. This saves links to documents, rather than
+          Use up to 30 questions. Prefer Yes/No or choices, with a short explanation only when needed. Numbers, dates and evidence links are also available. This saves links to documents, rather than
           uploading files.
         </p>
+        <div className="flex flex-wrap gap-2">{quickReportTemplates.map(template => <button key={template.id} type="button" className={button}
+          onClick={() => { if (window.confirm("Replace these form questions with the quick template? Existing report records keep their saved questions and answers.")) setFields(structuredClone(template.fields)); }}>Use {template.label.toLowerCase()}</button>)}</div>
+        <p className="text-sm text-slate-600">Templates change future report requests. Review the questions before saving. Existing requests keep their original form.</p>
         {fields.map((f, i) => (
           <fieldset
             key={i}
@@ -1367,7 +1311,7 @@ function TypeEditor({
                   onChange={(e) =>
                     update(i, {
                       type: e.target.value as ReportField["type"],
-                      ...(e.target.value === "select"
+                      ...(["select", "multiselect"].includes(e.target.value)
                         ? {
                             options: f.options?.length
                               ? f.options
@@ -1383,7 +1327,8 @@ function TypeEditor({
                     ["number", "Number"],
                     ["date", "Date"],
                     ["boolean", "Yes / No"],
-                    ["select", "Choice"],
+                    ["select", "Choose one"],
+                    ["multiselect", "Choose several (checkboxes)"],
                     ["url", "HTTPS document link"],
                   ].map(([v, l]) => (
                     <option key={v} value={v}>
@@ -1393,7 +1338,7 @@ function TypeEditor({
                 </select>
               </label>
             </div>
-            {f.type === "select" && (
+            {["select", "multiselect"].includes(f.type) && (
               <label className="block text-sm font-bold">
                 Choices (one per line)
                 <textarea
@@ -1405,6 +1350,17 @@ function TypeEditor({
                 />
               </label>
             )}
+            <label className="block text-sm font-bold">When should this question appear?
+              <select className={field} value={f.showWhen?.key ?? ""} onChange={e => {
+                const parent = fields.find(p => p.key === e.target.value);
+                update(i, {showWhen: parent ? {key: parent.key, value: parent.type === "boolean" ? true : parent.options?.[0] ?? ""} : undefined});
+              }}><option value="">Always</option>{fields.slice(0,i).filter(p => ["select","multiselect","boolean"].includes(p.type)).map(p => <option key={p.key} value={p.key}>{p.label || "Earlier choice question"}</option>)}</select>
+            </label>
+            {f.showWhen && <label className="block text-sm font-bold">Show when the answer is
+              <select className={field} value={String(f.showWhen.value)} onChange={e => update(i,{showWhen:{key:f.showWhen!.key,value:fields.find(p=>p.key===f.showWhen!.key)?.type === "boolean" ? e.target.value === "true" : e.target.value}})}>
+                {(fields.find(p=>p.key===f.showWhen?.key)?.type === "boolean" ? ["true","false"] : fields.find(p=>p.key===f.showWhen?.key)?.options ?? []).map(v=><option key={v} value={v}>{v==="true"?"Yes":v==="false"?"No":v}</option>)}
+              </select>
+            </label>}
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex min-h-11 items-center gap-2 text-sm">
                 <input
@@ -1419,7 +1375,7 @@ function TypeEditor({
                 disabled={fields.length <= 1}
                 className={button}
                 onClick={() =>
-                  setFields((old) => old.filter((_, x) => x !== i))
+                  setFields((old) => old.filter((_, x) => x !== i).map(item => item.showWhen?.key === f.key ? {...item, showWhen: undefined} : item))
                 }
               >
                 Remove field
@@ -1437,7 +1393,8 @@ function TypeEditor({
               {
                 key: `field_${crypto.randomUUID().replaceAll("-", "")}`,
                 label: "",
-                type: "textarea",
+                type: "select",
+                options: ["Done", "Partly done", "Not done", "Not applicable"],
                 required: false,
               },
             ])
