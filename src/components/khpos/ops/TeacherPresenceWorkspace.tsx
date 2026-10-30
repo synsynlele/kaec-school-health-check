@@ -17,6 +17,9 @@ import { needsLocationReview } from "@/lib/khpos/attendance-location";
 import { createAttendanceRefreshGate } from "@/lib/khpos/ops/attendance-refresh";
 
 type Panel = "day" | "lessons" | "hqls" | "leaders";
+type HistoryCategory = "school" | "class";
+type HistorySort = "newest" | "oldest" | "name";
+type HistoryFilter = { query:string; sort:HistorySort; page:number };
 type Domain = { code:string; name:string; test:string; automatic?:string };
 const HQLS: Domain[] = [
  {code:"awakening",name:"1. AWAKENING",test:"Students are pulled into a problem, scenario or tension before definitions and explanation.",automatic:'Teacher starts with “Today we are learning…”'},
@@ -77,14 +80,18 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [lessonNotes,setLessonNotes]=useState<Record<string,string>>({});
   const [responses,setResponses]=useState<Record<string,string>>({});
   const [reconcileReason,setReconcileReason]=useState("");
-  const [presenceQuery,setPresenceQuery]=useState("");
-  const [presenceHistory,setPresenceHistory]=useState<KhposPresenceHistory|null>(null);
+  const [historyCategory,setHistoryCategory]=useState<HistoryCategory>("school");
+  const [historyPageSize,setHistoryPageSize]=useState<20|50>(20);
+  const [historyFilters,setHistoryFilters]=useState<Record<HistoryCategory,HistoryFilter>>({
+    school:{query:"",sort:"newest",page:0},class:{query:"",sort:"newest",page:0}
+  });
+  const [presenceHistory,setPresenceHistory]=useState<KhposPresenceHistory & {
+    category:HistoryCategory; search:string; sort:HistorySort; total:number
+  }|null>(null);
   const [historyFrom,setHistoryFrom]=useState("");
   const [historyTo,setHistoryTo]=useState("");
-  const [historyPage,setHistoryPage]=useState(0);
   const [historyBusy,setHistoryBusy]=useState(false);
   const [historyError,setHistoryError]=useState("");
-  const [presenceSort,setPresenceSort]=useState<"newest"|"oldest"|"name">("newest");
   const [lessonQuery,setLessonQuery]=useState("");
   const requestKey=useRef<string|null>(null);
 
@@ -198,6 +205,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const defaultStart=localDay ? (()=>{const date=new Date(localDay+"T12:00:00Z");date.setUTCDate(date.getUTCDate()-29);return date.toISOString().slice(0,10);})() : "";
   const selectedFrom=historyFrom||defaultStart;
   const selectedTo=historyTo||localDay;
+  const currentHistoryFilter=historyFilters[historyCategory];
   useEffect(()=>{
     if (tab!=="leaders"||!localDay||!selectedFrom||!selectedTo) return;
     let cancelled=false;
@@ -205,17 +213,23 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       setHistoryBusy(true);setHistoryError("");
       try{
         const token=await authToken();
-        const params=new URLSearchParams({history:"1",from:selectedFrom,to:selectedTo,page:String(historyPage)});
+        const params=new URLSearchParams({
+          history:"1",from:selectedFrom,to:selectedTo,category:historyCategory,
+          search:currentHistoryFilter.query.trim(),sort:currentHistoryFilter.sort,
+          page:String(currentHistoryFilter.page),pageSize:String(historyPageSize)
+        });
         const response=await fetch("/api/khpos/ops/presence/"+organisationId+"?"+params,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-        const body=await response.json() as {ok?:boolean;history?:KhposPresenceHistory;error?:string};
+        const body=await response.json() as {ok?:boolean;history?:KhposPresenceHistory & {
+          category:HistoryCategory;search:string;sort:HistorySort;total:number
+        };error?:string};
         if(!response.ok||!body.ok||!body.history)throw new Error(body.error??"Attendance history is unavailable.");
         if(!cancelled)setPresenceHistory(body.history);
       }catch(e){if(!cancelled){setPresenceHistory(null);setHistoryError(e instanceof Error?e.message:"Cannot load attendance history.");}}
       finally{if(!cancelled)setHistoryBusy(false);}
     }
-    void loadHistory();
-    return ()=>{cancelled=true;};
-  },[tab,localDay,selectedFrom,selectedTo,historyPage,organisationId,authToken,attendanceRevision]);
+    const timer=window.setTimeout(()=>void loadHistory(),currentHistoryFilter.query.trim()?250:0);
+    return ()=>{cancelled=true;window.clearTimeout(timer);};
+  },[tab,localDay,selectedFrom,selectedTo,historyCategory,currentHistoryFilter.page,currentHistoryFilter.query,currentHistoryFilter.sort,historyPageSize,organisationId,authToken,attendanceRevision]);
 
   const canManage=Boolean(data?.canManage);
   const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
@@ -223,9 +237,13 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const todays=(data?.periods??[]).filter(p=>possibleToday(data?.localDay??"",p.weekday));
   const observed=(data?.observations??[]);
   const own=(data?.periods??[]).filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()));
-  const presenceMatches=(value:string)=>presenceQuery.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term=>value.toLowerCase().includes(term));
-  const schoolRows=(presenceHistory?.schoolRecords??[]).filter(d=>!exceptionsOnly||needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).filter(d=>presenceMatches([d.name,data?.campuses.find(c=>c.id===d.campusId)?.name??"",d.in,d.out??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.name.localeCompare(b.name):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
-  const classRows=(presenceHistory?.classRecords??[]).filter(d=>presenceMatches([d.teacher,d.class,d.subject,d.topic??"",d.outcome??"",d.date].join(" "))).sort((a,b)=>presenceSort==="name"?a.teacher.localeCompare(b.teacher):(Date.parse(a.in)-Date.parse(b.in))*(presenceSort==="oldest"?1:-1));
+  const activeHistory=presenceHistory?.category===historyCategory &&
+    presenceHistory.page===currentHistoryFilter.page && presenceHistory.pageSize===historyPageSize &&
+    presenceHistory.search===currentHistoryFilter.query.trim().toLowerCase() &&
+    presenceHistory.sort===currentHistoryFilter.sort && presenceHistory.from===selectedFrom &&
+    presenceHistory.to===selectedTo ? presenceHistory : null;
+  const schoolRows=(activeHistory?.schoolRecords??[]).filter(d=>!exceptionsOnly||needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation));
+  const classRows=activeHistory?.classRecords??[];
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     {locationCapture.dialog}
     <div className="mx-auto max-w-6xl space-y-5">
