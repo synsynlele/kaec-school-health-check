@@ -48,11 +48,13 @@ begin
     select coalesce(jsonb_agg(jsonb_build_object(
       'id',x.id,'name',x.name,'campusId',x.campus_id,'date',x.local_day,
       'in',x.checked_in_at,'out',x.checked_out_at,
+      'checkInLocation',x.check_in_location,'checkOutLocation',x.check_out_location,
       'administrativelyClosed',x.closed_by is not null
     ) order by x.ordinal),'[]'::jsonb) into v_rows
     from (
       select d.id,d.campus_id,d.local_day,d.checked_in_at,d.checked_out_at,
-        d.closed_by,coalesce(st.display_name,'Staff') as name,
+        d.check_in_location,d.check_out_location,d.closed_by,
+        coalesce(st.display_name,'Staff') as name,
         row_number() over (
           order by
             case when p_sort='name' then lower(coalesce(st.display_name,'Staff')) end asc nulls last,
