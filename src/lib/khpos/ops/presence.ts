@@ -37,6 +37,23 @@ export interface KhposPresenceHistory {
   classRecords: Array<{ id:string; date:string; teacher:string; class:string; subject:string; in:string; out:string|null; topic:string|null; outcome:string|null; administrativelyClosed:boolean }>;
 }
 
+export interface KhposFilteredPresenceHistory extends KhposPresenceHistory {
+  category: "school" | "class"; search: string; sort: "newest" | "oldest" | "name"; total: number;
+}
+
+export async function getFilteredPresenceHistory(
+  org:string, actor:string, from:string, to:string,
+  category:"school"|"class", search:string, sort:"newest"|"oldest"|"name", page:number, pageSize:20|50
+):Promise<KhposFilteredPresenceHistory> {
+  const {data,error}=await service().rpc("khpos_ops_presence_history_filtered_server",{
+    p_actor:actor,p_org:org,p_from:from,p_to:to,p_category:category,
+    p_query:search,p_sort:sort,p_page:page,p_page_size:pageSize
+  });
+  if(error) fail(error.message);
+  if(!data || typeof data!=="object" || Array.isArray(data)) fail("Attendance history could not be loaded.");
+  return data as KhposFilteredPresenceHistory;
+}
+
 export async function getPresenceHistory(org:string, actor:string, from:string, to:string, page:number):Promise<KhposPresenceHistory> {
   const {data,error}=await service().rpc("khpos_ops_presence_history_server",{
     p_actor:actor,p_org:org,p_from:from,p_to:to,p_page:page,p_page_size:50

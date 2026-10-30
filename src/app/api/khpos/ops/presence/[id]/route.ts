@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
-import { actOnPresence, getPresenceWorkspace, getPresenceHistory, KhposPresenceError } from "@/lib/khpos/ops/presence";
+import { actOnPresence, getPresenceWorkspace, getPresenceHistory, getFilteredPresenceHistory, KhposPresenceError } from "@/lib/khpos/ops/presence";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,6 +50,19 @@ export async function GET(request: Request, context: { params: Promise<{ id:stri
         && !Number.isNaN(Date.parse(value+"T00:00:00Z"));
       if (!isDate(from) || !isDate(to) || !/^(0|[1-9]\d{0,4})$/.test(pageRaw))
         throw new KhposPresenceError("Choose valid start/end dates and a valid page.");
+      if (params.get("category")) {
+        const category=params.get("category")??"";
+        const search=(params.get("search")??"").trim();
+        const sort=params.get("sort")??"newest";
+        const sizeRaw=params.get("pageSize")??"20";
+        if ((category!=="school"&&category!=="class") || !["newest","oldest","name"].includes(sort)
+          || !["20","50"].includes(sizeRaw) || search.length>120)
+          throw new KhposPresenceError("Choose valid attendance search, sorting and page size options.");
+        return NextResponse.json({ok:true,history:await getFilteredPresenceHistory(
+          id,user.id,from,to,category,search,sort as "newest"|"oldest"|"name",
+          Number(pageRaw),Number(sizeRaw) as 20|50
+        )},{headers:{"Cache-Control":"private, no-store"}});
+      }
       return NextResponse.json({ok:true,history:await getPresenceHistory(id,user.id,from,to,Number(pageRaw))},
         {headers:{"Cache-Control":"private, no-store"}});
     }
