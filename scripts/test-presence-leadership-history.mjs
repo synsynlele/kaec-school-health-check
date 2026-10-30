@@ -41,6 +41,8 @@ assert.match(filtered,/position\(v_search in lower/);
 assert.match(filtered,/when p_sort='oldest'/);
 assert.match(filtered,/when p_sort='name'/);
 assert.match(filtered,/limit p_page_size offset v_offset/);
+assert.match(filtered,/'checkInLocation',x\.check_in_location/);
+assert.match(filtered,/'checkOutLocation',x\.check_out_location/);
 assert.match(filtered,/grant execute on function public\.khpos_ops_presence_history_filtered_server/);
 assert.doesNotMatch(filtered,/\bdelete\s+from\b|\bdrop\s+table\b|\btruncate\b/i);
 assert.match(api,/getFilteredPresenceHistory\(/);
