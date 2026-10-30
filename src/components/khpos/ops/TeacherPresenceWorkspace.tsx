@@ -477,24 +477,41 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <p className="mt-2 text-sm font-bold text-slate-800">Today: {data.localDay} · Attendance history is retained by school date.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm font-semibold text-slate-700">From date
-                <input type="date" className={field} value={selectedFrom} max={selectedTo} onChange={e=>{setHistoryFrom(e.target.value);setHistoryPage(0);}} />
+                <input type="date" className={field} value={selectedFrom} max={selectedTo} onChange={e=>{setHistoryFrom(e.target.value);setHistoryFilters(f=>({school:{...f.school,page:0},class:{...f.class,page:0}}));setPresenceHistory(null);}} />
               </label>
               <label className="text-sm font-semibold text-slate-700">To date
-                <input type="date" className={field} value={selectedTo} min={selectedFrom} max={localDay} onChange={e=>{setHistoryTo(e.target.value);setHistoryPage(0);}} />
+                <input type="date" className={field} value={selectedTo} min={selectedFrom} max={localDay} onChange={e=>{setHistoryTo(e.target.value);setHistoryFilters(f=>({school:{...f.school,page:0},class:{...f.class,page:0}}));setPresenceHistory(null);}} />
               </label>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search) to review historical attendance. 50 school records and 50 class records per page.</p>
+            <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search). Each tab has its own search, sorting and pages.</p>
             {historyError&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{historyError}</p>}
             {historyBusy&&<p role="status" className="mt-2 text-xs font-semibold text-slate-600">Loading attendance history…</p>}
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <label className="text-sm font-semibold text-slate-700">Search records
-                <input type="search" className={field} value={presenceQuery} onChange={e=>setPresenceQuery(e.target.value)} placeholder="Search staff, subject or date on this page"/>
+            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Attendance record type">
+              {([["school","School sign-in records"],["class","Class sign-in records"]] as const).map(([category,label])=>
+                <button key={category} type="button" role="tab" aria-selected={historyCategory===category}
+                  onClick={()=>{setHistoryCategory(category);setPresenceHistory(null);setHistoryError("");}}
+                  className={"rounded-xl border px-4 py-3 text-sm font-bold "+(historyCategory===category?"border-slate-900 bg-slate-900 text-white":"border-slate-300 bg-white text-slate-700")}>{label}</button>
+              )}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <label className="text-sm font-semibold text-slate-700">Search {historyCategory==="school"?"school":"class"} records
+                <input type="search" className={field} maxLength={120} value={currentHistoryFilter.query}
+                  onChange={e=>{const query=e.target.value;setHistoryFilters(f=>({...f,[historyCategory]:{...f[historyCategory],query,page:0}}));setPresenceHistory(null);}}
+                  placeholder={historyCategory==="school"?"Search staff or date":"Search teacher, class, subject or date"}/>
               </label>
               <label className="text-sm font-semibold text-slate-700">Sort records
-                <select className={field} value={presenceSort} onChange={e=>setPresenceSort(e.target.value as typeof presenceSort)}>
+                <select className={field} value={currentHistoryFilter.sort}
+                  onChange={e=>{const sort=e.target.value as HistorySort;setHistoryFilters(f=>({...f,[historyCategory]:{...f[historyCategory],sort,page:0}}));setPresenceHistory(null);}}>
                   <option value="newest">Latest check-in first</option>
                   <option value="oldest">Earliest check-in first</option>
-                  <option value="name">Staff name A–Z</option>
+                  <option value="name">{historyCategory==="school"?"Staff":"Teacher"} name A–Z</option>
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">Records per page
+                <select className={field} value={historyPageSize}
+                  onChange={e=>{setHistoryPageSize(Number(e.target.value) as 20|50);setHistoryFilters(f=>({school:{...f.school,page:0},class:{...f.class,page:0}}));setPresenceHistory(null);}}>
+                  <option value={20}>20 records</option>
+                  <option value={50}>50 records</option>
                 </select>
               </label>
             </div>
@@ -503,37 +520,44 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></div>
             </div>
           </section>
-          <section className={box} aria-label="School attendance records">
-            <h3 className="text-lg font-black text-slate-900">1. School check-in and check-out</h3>
+          {historyCategory==="school"&&<section className={box} aria-label="School attendance records">
+            <h3 className="text-lg font-black text-slate-900">School check-in and check-out</h3>
             <p className="mt-1 text-sm text-slate-600">Staff arrival and departure across the selected dates. A school check-in does not prove a class was taught.</p>
-            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions on this page ({(presenceHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
-            {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
+            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions on this page ({(activeHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
+            {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{currentHistoryFilter.query?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
               <><div className="mt-3 space-y-3 md:hidden">{schoolRows.map(d=><article key={d.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                 <h4 className="font-black text-slate-950">{d.name||"Staff member"}</h4><p className="mt-1 text-xs text-slate-600">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"} · {d.date}</p>
                 <p className="mt-2"><strong>Check-in:</strong> {dateTime(d.in)}</p><p><strong>Check-out:</strong> {dateTime(d.out)}{d.administrativelyClosed?" (administratively closed)":""}</p>
                 <AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/>{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}
               </article>)}</div><div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full min-w-[650px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Staff</th><th className="p-2">Campus</th><th className="p-2">School date</th><th className="p-2">School check-in recorded</th><th className="p-2">School check-out recorded</th></tr></thead>
                 <tbody>{schoolRows.map((d,i)=><tr key={i} className="border-b"><td className="p-2">{d.name}</td><td className="p-2">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"}</td><td className="p-2">{d.date}</td><td className="p-2">{dateTime(d.in)}<AttendanceLocationEvidence location={d.checkInLocation} label="Arrival location"/></td><td className="p-2">{dateTime(d.out)}{d.out&&<AttendanceLocationEvidence location={d.checkOutLocation} label="Departure location"/>}{d.administrativelyClosed?" (administratively closed)":""}</td></tr>)}</tbody></table></div></>}
-          </section>
-          <section className={box} aria-label="Class attendance records">
-            <h3 className="text-lg font-black text-slate-900">2. Class lesson check-in and check-out</h3>
+          </section>}
+          {historyCategory==="class"&&<section className={box} aria-label="Class attendance records">
+            <h3 className="text-lg font-black text-slate-900">Class lesson check-in and check-out</h3>
             <p className="mt-1 text-sm text-slate-600">Recorded attendance for individual subject lessons across the selected dates. Only actual class check-ins appear; unchecked lessons are not counted as delivered.</p>
-            {classRows.length===0?<p className="mt-3 text-sm text-slate-500">{presenceQuery?"No class check-ins match this search.":"No class lesson check-ins have been recorded in the selected dates within your scope."}</p>:
+            {classRows.length===0?<p className="mt-3 text-sm text-slate-500">{currentHistoryFilter.query?"No class check-ins match this search.":"No class lesson check-ins have been recorded in the selected dates within your scope."}</p>:
               <><div className="mt-3 space-y-3 md:hidden">{classRows.map(p=><article key={p.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                 <h4 className="font-black text-slate-950">{p.teacher||"Assigned teacher"}</h4><p className="mt-1 text-xs text-slate-600">{p.class} · {p.subject} · {p.date}</p>
                 <p className="mt-2"><strong>Class check-in:</strong> {dateTime(p.in)}</p><p><strong>Class check-out:</strong> {dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</p><p><strong>Outcome:</strong> {p.outcome||"In progress"}</p>
               </article>)}</div><div className="mt-3 hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b text-slate-600"><th className="p-2">Teacher</th><th className="p-2">Class / subject</th><th className="p-2">School date</th><th className="p-2">Class check-in recorded</th><th className="p-2">Class check-out recorded</th><th className="p-2">Lesson outcome</th></tr></thead>
                 <tbody>{classRows.map(p=><tr key={p.id} className="border-b"><td className="p-2">{p.teacher}</td><td className="p-2">{p.class} · {p.subject}</td><td className="p-2">{p.date}</td><td className="p-2">{dateTime(p.in)}</td><td className="p-2">{dateTime(p.out)}{p.administrativelyClosed?" (admin)":""}</td><td className="p-2">{p.outcome||"In progress"}</td></tr>)}</tbody></table></div></>}
-          </section>
+          </section>}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm">
-            <span className="text-slate-600">School records: {presenceHistory?.schoolTotal??0} · Class records: {presenceHistory?.classTotal??0} · Page {historyPage+1}</span>
+            <span className="text-slate-600">
+              {historyCategory==="school"?"School records":"Class records"}: {activeHistory?.total??"—"} · Page {currentHistoryFilter.page+1}
+              {activeHistory&&activeHistory.total>0?" of "+Math.ceil(activeHistory.total/historyPageSize):""}
+            </span>
             <div className="flex gap-2">
-              <button type="button" disabled={historyBusy||historyPage===0} onClick={()=>setHistoryPage(p=>Math.max(0,p-1))} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Previous</button>
-              <button type="button" disabled={historyBusy||!presenceHistory||Math.max(presenceHistory.schoolTotal,presenceHistory.classTotal)<=(historyPage+1)*presenceHistory.pageSize} onClick={()=>setHistoryPage(p=>p+1)} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
+              <button type="button" disabled={historyBusy||currentHistoryFilter.page===0}
+                onClick={()=>{setHistoryFilters(f=>({...f,[historyCategory]:{...f[historyCategory],page:Math.max(0,f[historyCategory].page-1)}}));setPresenceHistory(null);}}
+                className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Previous</button>
+              <button type="button" disabled={historyBusy||!activeHistory||activeHistory.total<=(currentHistoryFilter.page+1)*historyPageSize}
+                onClick={()=>{setHistoryFilters(f=>({...f,[historyCategory]:{...f[historyCategory],page:f[historyCategory].page+1}}));setPresenceHistory(null);}}
+                className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
             </div>
           </div>
-          <section className={box}>
-            <h3 className="text-lg font-black text-slate-900">Administrative corrections</h3>
+          <details className={box}>
+            <summary className="cursor-pointer text-lg font-black text-slate-900">Administrative corrections ({data.openClassSessions.length+data.openSchoolAttendance.length} open)</summary>
           {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 className="font-black text-amber-900">Administrative correction — evidence required</h3>
             <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
@@ -549,7 +573,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             </div>)}
           </div>}
 
-          </section>
+          </details>
         </div>}
         </>}
       </>}
