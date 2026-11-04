@@ -21,7 +21,7 @@ export function MeetingInvitees({ people, userId, hq, selected, onChange, disabl
   <legend className="font-semibold">Invite people</legend>
   <p className="text-sm text-slate-600">Only selected people can view this meeting or join its call.</p>
   <div className="flex flex-wrap gap-2" aria-label="Invitation groups">
-   <button type="button" aria-pressed={group==="hq"} onClick={()=>{setGroup("hq");setSearch("");}} className={`rounded-xl border px-4 py-2 ${group==="hq"?"bg-blue-700 text-white":"bg-white text-slate-800"}`}>KAEC HQ colleagues</button>
+   {hq && <button type="button" aria-pressed={group==="hq"} onClick={()=>{setGroup("hq");setSearch("");}} className={`rounded-xl border px-4 py-2 ${group==="hq"?"bg-blue-700 text-white":"bg-white text-slate-800"}`}>KAEC HQ colleagues</button>}
    <button type="button" aria-pressed={group==="school"} onClick={()=>{setGroup("school");setSearch("");}} className={`rounded-xl border px-4 py-2 ${group==="school"?"bg-blue-700 text-white":"bg-white text-slate-800"}`}>{hq?"School leaders":"School staff"}</button>
   </div>
   {hq&&group==="school"&&<label className="block text-sm font-semibold">Choose a school first<select value={school} onChange={e=>{setSchool(e.target.value);setSearch("");}} className="mt-2 w-full rounded-xl border bg-white p-3 text-slate-900"><option value="">Select school</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
