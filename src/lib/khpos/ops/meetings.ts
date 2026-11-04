@@ -1,10 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
 export type Meeting = { id: string; title: string; agenda: string; starts_at: string; ends_at: string; call_url: string | null; status: "scheduled" | "live" | "closed" | "cancelled"; created_by: string; call_parts: string[]; active_call_part: number; call_part_started_at: string | null };
+export type MeetingPerson = { id: string; name: string; email: string; isHq: boolean; schools: { id: string; name: string; personName: string }[] };
 export type MeetingWorkspace = {
   serverNow?: string; userId: string; canCreate: boolean; meetings: Meeting[];
-  people: { id: string; name: string }[];
-  room: null | { meeting: Meeting; participants: { user_id: string; name: string; is_hq?: boolean }[];
+  people: MeetingPerson[];
+  room: null | { meeting: Meeting; participants: { user_id: string; name: string; email?: string; is_hq?: boolean }[];
     messages: { id: string; author_id: string; author_name: string; body: string; created_at: string }[];
     decisions: { id: string; body: string; created_at: string }[];
     actions: { id: string; title: string; due_at: string; work_item_id: string; status: string; owner_name: string }[] };

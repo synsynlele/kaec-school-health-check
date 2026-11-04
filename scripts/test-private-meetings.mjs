@@ -9,7 +9,8 @@ const call=(actor,mode,input={})=>q('select public.khpos_meetings_server($1,$2,$
 try {
  await db.exec(`create schema auth; create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; create schema khpos_private; create role anon; create role authenticated; create role service_role;
  create table auth.users(id uuid primary key,email text);
- create table organisations(id uuid primary key,status text,partner_status text,partner_entitlements text[]);
+ create table organisations(id uuid primary key,status text,partner_status text,partner_entitlements text[],name text default 'Test School');
+ create table khpos_ops_staff(id uuid primary key default gen_random_uuid(),user_id uuid,organisation_id uuid,status text,display_name text);
  create table organisation_memberships(organisation_id uuid,user_id uuid,status text,role text);
  create table kaec_hq_members(user_id uuid primary key,display_name text,status text);
  create table kaec_hq_records(id uuid primary key default gen_random_uuid(),module text,record_type text,title text,description text,status text,owner_user_id uuid,due_on date,created_by uuid,updated_by uuid);
@@ -24,8 +25,9 @@ try {
  await db.exec(fs.readFileSync('supabase/migrations/20261104130054_meeting_call_parts.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104215808_meeting_leadership_access.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104222329_independent_hq_meetings.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261104224214_meeting_invitee_directory.sql','utf8'));
  for(const [id,email] of [[host,'host@test.invalid'],[guest,'guest@test.invalid'],[other,'other@test.invalid'],[hq,'hq@test.invalid']])await q('insert into auth.users values($1,$2)',[id,email]);
- for(const id of [org,org2])await q("insert into organisations values($1,'active','active',array['khpos_core'])",[id]);
+ for(const id of [org,org2])await q("insert into organisations(id,status,partner_status,partner_entitlements) values($1,'active','active',array['khpos_core'])",[id]);
  await q("insert into organisation_memberships values($1,$2,'active','executive'),($1,$3,'active','contributor'),($4,$5,'active','executive')",[org,host,guest,org2,other]);
  await q("insert into kaec_hq_members values($1,'Pathfinder','active')",[hq]);
  await q("insert into khpos_ops_roles(id,organisation_id,status,code) values($1,$2,'active','TEACHER')",[role,org]);
@@ -46,6 +48,21 @@ try {
  await q('insert into auth.users values($1,$2),($3,$4)',[hq2,'hq2@test.invalid',hq3,'hq3@test.invalid']);
  await q("insert into kaec_hq_members values($1,'Colleague','active'),($2,'Uninvited HQ','active')",[hq2,hq3]);
  const corporate=(actor,mode,input={})=>q('select public.khpos_meetings_server($1,null,$2,$3::jsonb) result',[actor,mode,JSON.stringify(input)]).then(r=>r[0].result);
+ await q("insert into khpos_ops_staff(user_id,organisation_id,status,display_name) values($1,$2,'active','School Custodian Name')",[host,org]);
+ await q("insert into khpos_ops_staff(user_id,organisation_id,status,display_name) values($1,$2,'active','Teacher Full Name')",[guest,org]);
+ const staffDirectory=(await call(host,'list')).people;
+ assert.equal(staffDirectory.find(p=>p.id===guest).name,'Teacher Full Name');
+ assert.equal(staffDirectory.find(p=>p.id===guest).email,'guest@test.invalid');
+ assert.equal(staffDirectory.find(p=>p.id===guest).schools[0].id,org);
+ const directory=(await corporate(hq,'list')).people;
+ const schoolLeader=directory.find(p=>p.id===host);
+ assert.equal(schoolLeader.name,'School Custodian Name');
+ assert.equal(schoolLeader.email,'host@test.invalid');
+ assert.equal(schoolLeader.isHq,false);
+ assert.equal(schoolLeader.schools[0].name,'Test School');
+ assert.equal(schoolLeader.schools[0].id,org);
+ assert.equal(directory.find(p=>p.id===hq2).isHq,true);
+ assert.equal(directory.some(p=>p.id===guest),false,'Ordinary school teachers are not listed in HQ leadership picker');
  const internal=await corporate(hq,'create',{title:'Corporate review',agenda:'HQ responsibilities',startsAt:'2026-11-05T10:00:00Z',endsAt:'2026-11-05T11:00:00Z',participants:[hq2]});
  assert.equal(internal.room.meeting.organisation_id,null);
  assert.equal(internal.people.length,0);
