@@ -1,6 +1,6 @@
 # Private meetings: pilot release
 
-Status: Phase 1 implementation on `feat/private-meeting-rooms`; production migrations, deployment and live pilot are pending.
+Status: Phase 1 is released through PR #115, with setup diagnostics in PR #116. Automatic Google link creation remains under signed-in pilot verification.
 
 ## User journey
 
@@ -31,7 +31,7 @@ HQ members join by invitation to a school-hosted room. Standalone corporate HQ r
 
 ## Google setup
 
-Automatic creation requires the Google Meet API enabled in the existing Supabase Google sign-in project, and the host consenting to `https://www.googleapis.com/auth/meetings.space.created`. Google classifies this as a sensitive scope; the OAuth app’s audience/testing/verification settings must permit the intended hosts. The existing Google/Supabase sign-in callback is reused. The new endpoint accepts a short-lived provider token in a header, validates KHP-OS leadership first and creates at most six restricted meeting spaces per request. It stores no Google refresh token. An expired or unscoped Google token requires renewed consent. Manual prepared links remain available if automatic creation is unavailable. Live Google consent and actual API creation have not been verified in the owner’s project.
+Automatic creation requires the Google Meet API enabled in the existing Supabase Google sign-in project, and the host consenting to `https://www.googleapis.com/auth/meetings.space.created`. Google classifies this as a sensitive scope; the OAuth app’s audience/testing/verification settings must permit the intended hosts. The existing Google/Supabase sign-in callback is reused. The new endpoint accepts a short-lived provider token in a header, validates KHP-OS leadership first and creates at most six meeting spaces per request using Google’s documented empty request body. New calls inherit the host’s Google Meet admission settings; KHP-OS does not override those settings or change existing calls. KHP-OS room invitations govern access to app records, while Google Meet controls admission to the external call. It stores no Google refresh token. An expired or unscoped Google token requires renewed consent. Manual prepared links remain available if automatic creation is unavailable. Live Google consent and actual API creation have not been verified in the owner’s project.
 
 Reference: https://developers.google.com/workspace/meet/api/guides/authenticate-authorize
 
