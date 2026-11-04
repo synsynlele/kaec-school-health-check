@@ -43,7 +43,7 @@
     "test:tool-guides": "node scripts/test-tool-guides.mjs",
     "test:library-tool-navigation": "node scripts/test-library-tool-navigation.mjs",
     "test:attendance-location": "node scripts/test-attendance-location-browser.mjs && node scripts/test-attendance-location-sql.mjs && node scripts/test-attendance-location-actions.mjs",
-    "test:meetings": "node scripts/test-private-meetings.mjs && node scripts/test-meeting-call-plan.mjs"
+    "test:meetings": "node scripts/test-private-meetings.mjs && node scripts/test-meeting-call-plan.mjs && node scripts/test-jaas.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

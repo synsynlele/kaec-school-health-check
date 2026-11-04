@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
         // App Router navigation reuses the opening document's policy. Allow
         // same-origin requests throughout the app; only attendance taps ask.
         headers: privateSecurityHeaders.map(header => header.key === "Permissions-Policy"
-          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)") }
+          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)").replace("camera=()", 'camera=(self "https://8x8.vc")').replace("microphone=()", 'microphone=(self "https://8x8.vc")') }
           : header),
       },
       {
