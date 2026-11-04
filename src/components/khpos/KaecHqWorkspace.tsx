@@ -314,6 +314,7 @@ export function KaecHqWorkspace() {
             <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
             <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
             <Link href="/khpos/hq/schools" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/60 bg-emerald-900/40 px-3 py-2 text-emerald-100">School Pathfinders</Link>
+            <Link href="/khpos/hq/meetings" className="rounded-full border border-white/30 px-3 py-2">Meetings</Link>
             <Link href="/khpos/hq/reports" className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2">Reporting Centre</Link>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
             <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
@@ -388,7 +389,8 @@ export function KaecHqWorkspace() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><h3 className="text-lg font-black">Corporate Reporting Lines</h3>
                 <p className="mt-1 text-xs text-slate-600">Your assigned daily, weekly, monthly, quarterly and yearly reporting obligations and review queue.</p></div>
-              <Link href="/khpos/hq/reports" className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white">Open Reporting Centre →</Link>
+              <Link href="/khpos/hq/meetings" className="rounded-full border border-white/30 px-3 py-2">Meetings</Link>
+            <Link href="/khpos/hq/reports" className="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white">Open Reporting Centre →</Link>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {([
