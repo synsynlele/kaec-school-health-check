@@ -10,7 +10,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
  try {
   const { id } = await context.params;
   const meetingId = new URL(request.url).searchParams.get("meeting");
-  if (!UUID_RE.test(id) || !meetingId || !UUID_RE.test(meetingId)) return NextResponse.json({ error: "Meeting not found." }, { status: 404, headers });
+  if ((id !== "hq" && !UUID_RE.test(id)) || !meetingId || !UUID_RE.test(meetingId)) return NextResponse.json({ error: "Meeting not found." }, { status: 404, headers });
   const token = bearerTokenFromRequest(request);
   if (!token) throw new KhposAuthError("Sign in to join the call.");
   const user = await verifyKhposAccessToken(token);

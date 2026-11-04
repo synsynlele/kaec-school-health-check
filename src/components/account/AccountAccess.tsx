@@ -184,6 +184,8 @@ export function AccountAccess() {
           <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"><LogOut className="size-4" /> Sign out</button>
         </div>
 
+        {partnerships.some(item=>item.partnerStatus === "active") && <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5"><h2 className="text-xl font-bold text-slate-950">Continue your work</h2><div className="mt-3 grid gap-3">{partnerships.filter(item=>item.partnerStatus === "active").map(item=><div key={item.organisationId} className="rounded-xl bg-white p-4"><p className="font-bold text-slate-950">{item.name}</p><div className="mt-3 flex flex-wrap gap-3"><Link className="rounded-xl bg-blue-700 px-4 py-3 font-bold text-white" href={`/khpos/${item.organisationId}/work`}>Open Today</Link><Link className="rounded-xl border px-4 py-3 text-blue-800" href={`/khpos/${item.organisationId}/onboarding`}>Get started / finish setup</Link></div></div>)}</div></section>}
+
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <Link href="/assessment" className="rounded-[26px] bg-brand-700 p-6 text-white shadow-lift"><CheckCircle2 className="size-7" /><h2 className="mt-4 text-xl font-black">Start free School Health Check</h2><p className="mt-2 text-sm leading-6 text-brand-100">KSHC remains open whether or not your school is a KHP-OS partner.</p></Link>
           <Link href="/" className="rounded-[26px] border border-slate-200 bg-white p-6"><UserPlus className="size-7 text-slate-700" /><h2 className="mt-4 text-xl font-black text-slate-950">Explore KAEC-NG</h2><p className="mt-2 text-sm leading-6 text-slate-500">Return to the diagnostic platform and Human Potential Development resources.</p></Link>
@@ -204,7 +206,7 @@ export function AccountAccess() {
         <section className="mt-10">
           <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Institutional access</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your school partnerships</h2></div></div>
           {partnerships.length === 0 ? (
-            <div className="mt-4 rounded-[26px] border border-dashed border-slate-300 bg-white p-7"><Building2 className="size-7 text-slate-500" /><p className="mt-3 font-extrabold text-slate-950">No school partnership is linked yet.</p><p className="mt-2 text-sm leading-6 text-slate-500">Complete KSHC and use the partnership request on the report. KAEC-NG approval is required before KHP-OS becomes available.</p></div>
+            <div className="mt-4 rounded-[26px] border border-dashed border-slate-300 bg-white p-7"><Building2 className="size-7 text-slate-500" /><p className="mt-3 font-extrabold text-slate-950">No school workspace is linked yet.</p><p className="mt-2 text-sm leading-6 text-slate-500">If you are a staff member, ask your school leader to add this email to your school. Sign in with that same email. If you represent a new school, complete the School Health Check and request a partnership.</p></div>
           ) : (
             <div className="mt-4 grid gap-4">
               {partnerships.map((item) => {

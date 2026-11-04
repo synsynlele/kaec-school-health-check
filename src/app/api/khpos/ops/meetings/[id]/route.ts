@@ -17,7 +17,7 @@ const schema = z.discriminatedUnion("mode", [
 async function handle(request: Request, context: { params: Promise<{id: string}> }, post: boolean) {
   try {
     const { id } = await context.params;
-    if (!UUID_RE.test(id)) return NextResponse.json({error: "School not found."}, {status:404});
+    if (id !== "hq" && !UUID_RE.test(id)) return NextResponse.json({error: "School not found."}, {status:404});
     const token = bearerTokenFromRequest(request);
     if (!token) throw new KhposAuthError("Sign in to continue.");
     const user = await verifyKhposAccessToken(token);
