@@ -12,4 +12,4 @@ Validation covers standalone HQ rooms, explicit school leader invitations, uninv
 
 ## Invitation directory
 
-HQ invitations have separate HQ-colleague and school-leader groups. Choose a school by name before its leaders appear. Selections persist across schools/groups, with one invitation per person. School-hosted meetings show that school’s staff separately from HQ colleagues. Every entry and the invited-person list shows the saved name and account email. Hosts receive school affiliations only for eligible active members; membership, leadership and private-room checks remain server-enforced.
+HQ invitations have separate HQ-colleague and school-leader groups. Choose a school by name before its leaders appear. Selections persist across schools/groups, with one invitation per person. School-hosted meetings show only their own school staff; there is no HQ colleague search. HQ hosts retain their HQ and school-leader invitation groups. Every entry and the invited-person list shows the saved name and account email. Hosts receive school affiliations only for eligible active members; membership, leadership and private-room checks remain server-enforced.

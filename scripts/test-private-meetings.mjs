@@ -26,6 +26,7 @@ try {
  await db.exec(fs.readFileSync('supabase/migrations/20261104215808_meeting_leadership_access.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104222329_independent_hq_meetings.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104224214_meeting_invitee_directory.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261104225619_school_meeting_staff_directory_only.sql','utf8'));
  for(const [id,email] of [[host,'host@test.invalid'],[guest,'guest@test.invalid'],[other,'other@test.invalid'],[hq,'hq@test.invalid']])await q('insert into auth.users values($1,$2)',[id,email]);
  for(const id of [org,org2])await q("insert into organisations(id,status,partner_status,partner_entitlements) values($1,'active','active',array['khpos_core'])",[id]);
  await q("insert into organisation_memberships values($1,$2,'active','executive'),($1,$3,'active','contributor'),($4,$5,'active','executive')",[org,host,guest,org2,other]);
@@ -54,6 +55,7 @@ try {
  assert.equal(staffDirectory.find(p=>p.id===guest).name,'Teacher Full Name');
  assert.equal(staffDirectory.find(p=>p.id===guest).email,'guest@test.invalid');
  assert.equal(staffDirectory.find(p=>p.id===guest).schools[0].id,org);
+ assert.equal(staffDirectory.some(p=>p.id===hq2),false,'HQ-only accounts must not be exposed to school invite search');
  const directory=(await corporate(hq,'list')).people;
  const schoolLeader=directory.find(p=>p.id===host);
  assert.equal(schoolLeader.name,'School Custodian Name');
