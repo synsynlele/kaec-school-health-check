@@ -48,6 +48,7 @@ export function MyOnboardingWorkspace({
   const [evidence, setEvidence] = useState<Record<string, string>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [sampleEvidence, setSampleEvidence] = useState("");
+  const [section, setSection] = useState("");
 
   const accessToken = useCallback(async () => {
     if (!supabase) throw new Error("KHP-OS sign-in is not configured.");
@@ -136,7 +137,7 @@ export function MyOnboardingWorkspace({
   async function completePracticeStep(code: string) {
     if (!data) return;
     if (code === "start_work" && answers[code] !== "today") {
-      setError("In KHP-OS, controlled work starts from Today / Today—not from an informal message.");
+      setError("In KHP-OS, controlled work starts from Today—not from an informal message.");
       return;
     }
     if (code === "complete_checklist" && answers[code] !== "before") {
@@ -195,7 +196,7 @@ export function MyOnboardingWorkspace({
       <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <CircleAlert className="mx-auto size-9 text-amber-300" />
-          <h1 className="mt-4 text-2xl font-black">My getting started unavailable</h1>
+          <h1 className="mt-4 text-2xl font-black">Getting started unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
         </div>
       </main>
@@ -206,6 +207,11 @@ export function MyOnboardingWorkspace({
     ["completed", "waived"].includes(item.status),
   ).length;
   const practiceComplete = data.practice.status === "completed";
+  const unreadPolicies = data.requiredPolicies.filter(policy => !policy.acknowledged);
+  const outstanding = data.onboarding.filter(item => !["completed", "waived"].includes(item.status));
+  const nextSection = !data.role ? "role" : unreadPolicies.length ? "policies" : !practiceComplete ? "practice" : outstanding.length ? "checklist" : "ready";
+  const currentSection = section || nextSection;
+  const steps = [["role", "Your position"], ["policies", "Read policies"], ["practice", "Try the basics"], ["checklist", "Finish setup"]];
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -213,7 +219,7 @@ export function MyOnboardingWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
-              Learn the role before carrying the role
+              A clear start, one step at a time
             </span>
             <Link
               href={`/khpos/${organisationId}`}
@@ -223,7 +229,7 @@ export function MyOnboardingWorkspace({
               School overview
             </Link>
           </div>
-          <h1 className="mt-5 text-3xl font-black sm:text-5xl">My getting started</h1>
+          <h1 className="mt-5 text-3xl font-black sm:text-5xl">Get started</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100">
             Learn your responsibilities, read the required policies and practise the main steps before starting your work.
           </p>
@@ -258,7 +264,14 @@ export function MyOnboardingWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6">
-        <StaffPositionsPanel organisationId={organisationId} />
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <h2 className="text-xl font-bold">{nextSection === "ready" ? "Your setup checklist is complete" : "Your next step"}</h2>
+          <p className="mt-2 text-sm">{nextSection === "ready" ? "Use Today to see your work. School approval and active-role permissions still apply." : nextSection === "policies" ? `${unreadPolicies.length} required policies remain. Open each policy, read it and acknowledge it.` : nextSection === "practice" ? "Complete the short practice below. Only your current step is shown." : nextSection === "checklist" ? "Finish your remaining setup items. Submitted items are waiting for your school to review." : "Review your position and responsibilities. Your school assigns and approves your access."}</p>
+          <div className="mt-3 flex flex-wrap gap-3"><button onClick={()=>setSection(nextSection)} className="rounded-xl bg-blue-700 px-4 py-3 text-white">{nextSection === "ready" ? "View completion" : "Continue setup"}</button><Link href={`/khpos/${organisationId}/work`} className="rounded-xl border bg-white px-4 py-3 text-blue-800">Open Today</Link><button onClick={()=>void load().catch(e=>setError(e.message))} className="rounded-xl border bg-white px-4 py-3 text-slate-800">Refresh progress</button></div>
+        </section>
+        <nav aria-label="Getting started steps" className="flex flex-wrap gap-2">{steps.map(([code,label])=><button key={code} aria-current={currentSection===code?"step":undefined} onClick={()=>setSection(code)} className={`rounded-xl border px-4 py-3 text-sm font-bold ${currentSection===code?"bg-blue-700 text-white":"bg-white text-slate-800"}`}>{label}</button>)}</nav>
+        {currentSection === "ready" && <p className="rounded-xl bg-emerald-50 p-4">No setup items remain on this checklist. Your school still controls appointment activation. Open Today for your available work.</p>}
+        {currentSection === "role" && <StaffPositionsPanel organisationId={organisationId} />}
         {data.roleChoices.length > 1 && <label className="block rounded-2xl border bg-white p-4 text-sm font-semibold">View responsibilities for
           <select className="mt-2 block w-full rounded-xl border p-3" disabled={!!busy} value={selectedRoleId || data.role?.id || ""} onChange={(event) => { setSelectedRoleId(event.target.value); setData(null); setError(""); }}>
             {data.roleChoices.map((role) => <option key={role.id} value={role.id}>{role.title}{role.primary ? " · Primary" : role.pending ? " · Awaiting activation" : ""}</option>)}
@@ -270,7 +283,7 @@ export function MyOnboardingWorkspace({
           </div>
         )}
 
-        {data.charter && (
+        {currentSection === "role" && data.charter && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-center gap-3">
               <UsersRound className="size-6 text-brand-700" />
@@ -312,7 +325,7 @@ export function MyOnboardingWorkspace({
           </section>
         )}
 
-        <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-7">
+        {currentSection === "practice" && <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-7">
           <div className="flex items-center gap-3">
             <Workflow className="size-6 text-brand-700" />
             <div>
@@ -337,6 +350,7 @@ export function MyOnboardingWorkspace({
                   KHPOS_PRACTICE_STEPS[index - 1].code,
                 );
               const disabled = done || !priorDone || busy.startsWith("practice-");
+              if (done || !priorDone) return null;
 
               return (
                 <div
@@ -387,7 +401,7 @@ export function MyOnboardingWorkspace({
                             >
                               <option value="">Where should controlled work start?</option>
                               <option value="message">A WhatsApp instruction</option>
-                              <option value="today">Today / Today</option>
+                              <option value="today">Today</option>
                               <option value="memory">From memory without a process</option>
                             </select>
                           )}
@@ -457,14 +471,13 @@ export function MyOnboardingWorkspace({
             <div className="mt-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-100 p-4 text-sm text-emerald-950">
               <BadgeCheck className="mt-0.5 size-5 shrink-0" />
               <p>
-                Guided practice completed. If you have a linked staff onboarding
-                record, PEO-ONB-007 has been system-verified automatically.
+                Practice completed and saved. Continue to Finish setup to see any remaining requirements.
               </p>
             </div>
           )}
-        </section>
+        </section>}
 
-        {data.onboarding.length > 0 && (
+        {currentSection === "checklist" && data.onboarding.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-center gap-3">
               <ClipboardCheck className="size-6 text-brand-700" />
@@ -472,7 +485,7 @@ export function MyOnboardingWorkspace({
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
                   Appointment readiness
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Your onboarding controls</h2>
+                <h2 className="mt-1 text-2xl font-black">Finish your setup</h2>
               </div>
             </div>
 
@@ -544,7 +557,7 @@ export function MyOnboardingWorkspace({
         )}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+          {currentSection === "policies" && <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <ShieldCheck className="size-5 text-brand-700" />
               <h2 className="text-xl font-black">Policies required for your role</h2>
@@ -574,9 +587,9 @@ export function MyOnboardingWorkspace({
                 <p className="text-sm text-slate-500">No role-specific policy list is active yet.</p>
               )}
             </div>
-          </div>
+          </div>}
 
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+          <details className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"><summary className="cursor-pointer font-bold">Reference: processes for your role</summary>
             <div className="flex items-center gap-2">
               <FileCheck2 className="size-5 text-brand-700" />
               <h2 className="text-xl font-black">Processes you participate in</h2>
@@ -603,7 +616,7 @@ export function MyOnboardingWorkspace({
                 </Link>
               ))}
             </div>
-          </div>
+          </details>
         </section>
       </div>
     </main>
