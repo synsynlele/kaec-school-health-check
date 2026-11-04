@@ -18,16 +18,20 @@ export function MeetingCallPanel({ meeting, organisationId }: { meeting: Meeting
  const closed = ["closed", "cancelled"].includes(meeting.status);
  useEffect(() => {
   if (!session || !ready || closed || !container.current) return;
-  const Constructor = (window as Window & { JitsiMeetExternalAPI?: CallConstructor }).JitsiMeetExternalAPI;
-  if (!Constructor) { setError("The call could not load. Leave and try joining again."); return; }
-  try {
-   const call = new Constructor("8x8.vc", { ...session, parentNode: container.current, width: "100%", height: "100%",
-    configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true, prejoinConfig: { enabled: true }, disableDeepLinking: true,
-     toolbarButtons: ["microphone", "camera", "desktop", "tileview", "participants-pane", "settings", "hangup"], subject: meeting.title } });
-   api.current = call;
-   call.addListener("readyToClose", () => setSession(null));
-   return () => { call.dispose(); if (api.current === call) api.current = null; };
-  } catch { setError("The call could not open. Leave and try joining again."); }
+  // Defer SDK startup until the container is committed, and cancel on unmount.
+  let call: CallApi | null = null;
+  const startup = window.setTimeout(() => {
+   const Constructor = (window as Window & { JitsiMeetExternalAPI?: CallConstructor }).JitsiMeetExternalAPI;
+   if (!Constructor) { setError("The call could not load. Leave and try joining again."); return; }
+   try {
+    call = new Constructor("8x8.vc", { ...session, parentNode: container.current, width: "100%", height: "100%",
+     configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true, prejoinConfig: { enabled: true }, disableDeepLinking: true,
+      toolbarButtons: ["microphone", "camera", "desktop", "tileview", "participants-pane", "settings", "hangup"], subject: meeting.title } });
+    api.current = call;
+    call.addListener("readyToClose", () => setSession(null));
+   } catch { setError("The call could not open. Leave and try joining again."); }
+  }, 0);
+  return () => { window.clearTimeout(startup); call?.dispose(); if (api.current === call) api.current = null; };
  }, [session, ready, closed, meeting.title]);
  const generation = useRef(0);
  useEffect(() => () => { generation.current++; }, []);
