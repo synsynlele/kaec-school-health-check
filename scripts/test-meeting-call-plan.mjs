@@ -18,8 +18,8 @@ const links=['https://meet.google.com/abc-defg-hij','https://meet.google.com/klm
 let index=0;
 const generated=await createGoogleMeetParts('test-token',3,async(url,init)=>{
  assert.equal(url,'https://meet.googleapis.com/v2/spaces');assert.equal(init.method,'POST');assert.equal(init.headers.Authorization,'Bearer test-token');
- assert.equal(JSON.parse(init.body).config.accessType,'RESTRICTED');
- return Response.json({meetingUri:links[index++]});
+ assert.deepEqual(JSON.parse(init.body),{},'Creation must match the documented request that succeeded in Google APIs Explorer');
+ return Response.json({meetingUri:links[index++],config:{accessType:"TRUSTED"}});
 });
 assert.deepEqual(Array.from(generated),links);
 await assert.rejects(createGoogleMeetParts('test',7),/one and six/);
@@ -32,7 +32,7 @@ try{await createGoogleMeetParts('test',3,async()=>{if(index++===0)return Respons
 catch(e){assert.equal(e.status,504);assert.deepEqual(Array.from(e.links),[links[0]]);}
 await assert.rejects(createGoogleMeetParts('test',1,async()=>Response.json({meetingUri:'https://evil.invalid'})),/invalid/);
 await assert.rejects(createGoogleMeetParts('test',2,async()=>Response.json({meetingUri:links[0]})),/duplicate/);
-console.log('Call plans: hour splitting, warning boundaries, estimated clock, Google request scope, restricted rooms, partial failures, timeout retention and invalid-link rejection passed.');
+console.log('Call plans: hour splitting, warning boundaries, estimated clock, Google request scope, host-default call settings, partial failures, timeout retention and invalid-link rejection passed.');
 const failure = async (status, details) => {
  try { await createGoogleMeetParts('test',1,async()=>Response.json({error:{message:'SECRET_DO_NOT_RETURN',details}},{status}));assert.fail('Expected provider failure'); }
  catch(error){assert(!error.message.includes('SECRET_DO_NOT_RETURN'));return error;}

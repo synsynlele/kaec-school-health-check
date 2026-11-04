@@ -54,7 +54,8 @@ export async function createGoogleMeetParts(token: string, count: number, reques
     try {
       response = await request("https://meet.googleapis.com/v2/spaces", {
         method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ config: { accessType: "RESTRICTED" } }), cache: "no-store", signal: AbortSignal.timeout(15000),
+        // Use Google’s documented minimal request and inherit the host’s call admission settings.
+        body: "{}", cache: "no-store", signal: AbortSignal.timeout(15000),
       });
     } catch {
       throw new GoogleMeetPreparationError("Google did not respond in time. Completed links are retained below; add the rest or try again.", 504, "google_unavailable", links);
