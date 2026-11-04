@@ -1,3 +1,4 @@
+import { getMeetingAlerts } from "@/lib/khpos/ops/meetings";
 import { getReportAlerts } from "@/lib/khpos/reports";
 import { getAnnouncementAlerts } from "@/lib/khpos/announcements";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
@@ -41,7 +42,7 @@ export async function getKhposAlerts(
   // Attendance uses the existing authenticated, school-scoped presence service.
   // A disabled pilot, missing staff identity, or a completed check-in/out
   // produces no attendance reminder. Other operational alerts are unaffected.
-  const [attention, attendanceAlerts, announcementAlerts, reportAlerts] = await Promise.all([
+  const [attention, attendanceAlerts, announcementAlerts, reportAlerts, meetingAlerts] = await Promise.all([
     retryClockSkew(() => getKhposAttention(organisationId, userId, nowMs)),
     retryClockSkew(() =>
     getPresenceWorkspace(organisationId, userId)
@@ -59,6 +60,7 @@ export async function getKhposAlerts(
   ).catch(() => [] as KhposAlert[]),
     getAnnouncementAlerts(organisationId, userId).catch(() => []),
     getReportAlerts(organisationId, userId).catch(() => []),
+    getMeetingAlerts(organisationId, userId, nowMs).catch(() => []),
   ]);
   const workAlerts: KhposAlert[] = attention.items
     .filter((item) => {
@@ -98,7 +100,7 @@ export async function getKhposAlerts(
         (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
-  return [...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
+  return [...meetingAlerts, ...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
     Number(b.urgent) - Number(a.urgent) ||
     (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
 }

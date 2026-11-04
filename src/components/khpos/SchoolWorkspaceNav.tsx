@@ -101,6 +101,7 @@ const standardLink = {
 } as const;
 
 const operationsLinks = [
+  { suffix: "/meetings", label: "Private meetings", icon: UsersRound },
   { suffix: "/reports", label: "Reports", icon: FileCheck2 },
   { suffix: "/announcements", label: "Announcements", icon: MessageCircle },
   { suffix: "/work", label: "Today", icon: ListTodo },
@@ -174,6 +175,7 @@ function operation(suffix: (typeof operationsLinks)[number]["suffix"]) {
 // Related pages share one entrance. Existing URLs remain valid, including saved links.
 const byRoute = (suffix: string) => workspaceLinks.find(link => link.suffix === suffix)!;
 const schoolAreas = [
+  { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings"] },
   { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
   { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
   { title: "Teaching & learning", help: "Check attendance, plan lessons, manage assessments and support learners.", routes: ["/teaching-presence", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
@@ -190,7 +192,7 @@ const navigationGroups = [
   { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/builders-council")] },
   { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"Teaching & learning","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"Teaching & learning","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
