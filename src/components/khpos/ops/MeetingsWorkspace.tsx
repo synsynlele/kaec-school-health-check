@@ -13,11 +13,11 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const supabase = useMemo(()=>createBrowserSupabaseClient(),[]);
  const [data,setData] = useState<MeetingWorkspace|null>(null);
  const [selected,setSelected] = useState(initialMeeting); const selectedRef = useRef(initialMeeting);
- const [error,setError] = useState(""); const [busy,setBusy] = useState(false);
+ const [error,setError] = useState(""); const [readError,setReadError]=useState(""); const [busy,setBusy] = useState(false);
  const [showCreate,setShowCreate] = useState(false); const [search,setSearch] = useState("");
  const [title,setTitle]=useState(""); const [agenda,setAgenda]=useState("");
  const [starts,setStarts]=useState(""); const [hours,setHours]=useState(1); const [callParts,setCallParts]=useState<string[]>([""]);
- const [preparing,setPreparing]=useState(false); const [serverOffsetMs,setServerOffsetMs]=useState(0);
+ const [preparing,setPreparing]=useState(false); const [googleSetupUrl,setGoogleSetupUrl]=useState<string|null>(null); const [serverOffsetMs,setServerOffsetMs]=useState(0);
  const [invitees,setInvitees]=useState<string[]>([]); const [message,setMessage]=useState("");
  const [decision,setDecision]=useState(""); const [action,setAction]=useState(""); const [owner,setOwner]=useState(""); const [due,setDue]=useState("");
  const pendingRef = useRef(false); const mounted = useRef(true);
@@ -38,15 +38,15 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   let stopped=false; let timer:ReturnType<typeof setTimeout>;
   async function refresh() {
    if (!stopped&&!pendingRef.current&&document.visibilityState==="visible") {
-    try { await request(undefined,selected); if(!stopped)setError(""); }
-    catch(e) { if(!stopped) { setError(e instanceof Error?e.message:"Could not refresh meetings."); setData(null); } }
+    try { await request(undefined,selected); if(!stopped)setReadError(""); }
+    catch(e) { if(!stopped) { setReadError(e instanceof Error?e.message:"Could not refresh meetings."); setData(null); } }
    }
    if(!stopped)timer=setTimeout(refresh,30000);
   }
   let resumeTimer:ReturnType<typeof setTimeout>;
   const resume=()=>{
    clearTimeout(resumeTimer);
-   resumeTimer=setTimeout(()=>{if(!stopped&&!pendingRef.current&&document.visibilityState==="visible")void request(undefined,selected).catch(e=>setError(e.message));},50);
+   resumeTimer=setTimeout(()=>{if(!stopped&&!pendingRef.current&&document.visibilityState==="visible")void request(undefined,selected).catch(e=>setReadError(e.message));},50);
   };
   document.addEventListener("visibilitychange",resume);window.addEventListener("focus",resume);
   void refresh();
@@ -55,9 +55,9 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  useEffect(()=>{
   if(!supabase||!selected)return;
   const channel=supabase.channel(`meeting:${selected}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"khpos_meeting_messages",filter:`meeting_id=eq.${selected}`},()=>{
-   if(document.visibilityState==="visible"&&!pendingRef.current)void request().catch(e=>setError(e.message));
+   if(document.visibilityState==="visible"&&!pendingRef.current)void request().catch(e=>setReadError(e.message));
   }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"khpos_meetings",filter:`id=eq.${selected}`},()=>{
-   if(document.visibilityState==="visible"&&!pendingRef.current)void request().catch(e=>setError(e.message));
+   if(document.visibilityState==="visible"&&!pendingRef.current)void request().catch(e=>setReadError(e.message));
   }).subscribe();
   return ()=>{void supabase.removeChannel(channel);};
  },[supabase,selected,request]);
@@ -68,7 +68,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   return ()=>subscription?.data.subscription.unsubscribe();
  },[supabase]);
  async function save(input:Record<string,unknown>, done:()=>void) {
-  if(pendingRef.current)return; pendingRef.current=true;setBusy(true);setError("");
+  if(pendingRef.current)return; pendingRef.current=true;setBusy(true);setError("");setGoogleSetupUrl(null);
   try { const updated=await request(input); if(input.mode==="create"&&updated.room){selectedRef.current=updated.room.meeting.id;setSelected(updated.room.meeting.id);setData(previous=>({...updated,people:previous?.people??[]}));} done(); }
   catch(e){setError(e instanceof Error?e.message:"Could not save.");}
   finally{pendingRef.current=false;setBusy(false);}
@@ -92,7 +92,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   return ()=>{active=false;};
  },[organisationId,supabase]);
  async function connectGoogle() {
-  if(!supabase)return;setError("");
+  if(!supabase)return;setError("");setGoogleSetupUrl(null);
   try {
    const session=await supabase.auth.getSession();
    if(!session.data.session)throw new Error("Sign in first.");
@@ -103,7 +103,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   }catch(e){setError(e instanceof Error?e.message:"Could not connect Google.");}
  }
  async function prepareCalls() {
-  if(preparing)return;setPreparing(true);setError("");
+  if(preparing)return;setPreparing(true);setError("");setGoogleSetupUrl(null);
   const requestedHours=hours;
   const existingParts=callParts.slice();
   const missing=existingParts.filter(url=>!MEET_JOIN_URL.test(url)).length;
@@ -114,18 +114,22 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    const response=await fetch(`/api/khpos/ops/meetings/${organisationId}/prepare`,{method:"POST",headers:{Authorization:`Bearer ${current.access_token}`,"X-Google-Access-Token":current.provider_token,"Content-Type":"application/json"},body:JSON.stringify({count:missing}),cache:"no-store"});
    const result=await response.json();
    if(Array.isArray(result.links)&&result.links.length){let next=0;setCallParts(Array.from({length:requestedHours},(_,i)=>MEET_JOIN_URL.test(existingParts[i])?existingParts[i]:result.links[next++]??existingParts[i]??""));}
-   if(!response.ok)throw new Error(result.error||"Could not prepare calls.");
+   if(!response.ok){
+    if(result.code==="meet_api_disabled"&&typeof result.setupUrl==="string"&&/^https:\/\/console\.cloud\.google\.com\/apis\/library\/meet\.googleapis\.com(?:\?project=[0-9]{6,20})?$/.test(result.setupUrl))setGoogleSetupUrl(result.setupUrl);
+    throw new Error(result.error||"Could not prepare calls.");
+   }
   }catch(e){setError(e instanceof Error?e.message:"Could not prepare calls.");}
   finally{setPreparing(false);}
  }
+ const visibleError=error||readError;
  const room=data?.room; const host=!!room&&room.meeting.created_by===data?.userId&&data.canCreate;
  const writable=!!room&&!["closed","cancelled"].includes(room.meeting.status);
  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
   <Link href={`/khpos/${organisationId}/work`} className="text-blue-700">← Today</Link>
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">Private meetings</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
   {data?.canCreate&&<button className={button} onClick={()=>setShowCreate(!showCreate)}>Schedule a meeting</button>}</header>
-  {error&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error} <button className="underline" onClick={()=>void request().then(()=>setError("")).catch(e=>setError(e.message))}>Try again</button></p>}
-  {!data&&!error&&<p role="status">Loading your meetings…</p>}
+  {visibleError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{visibleError}{error&&googleSetupUrl&&<> <a href={googleSetupUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Enable Google Meet API ↗</a></>}</p>}
+  {!data&&!visibleError&&<p role="status">Loading your meetings…</p>}
   {showCreate&&<form className="space-y-4 rounded-2xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void save({mode:"create",title,agenda,startsAt:new Date(starts).toISOString(),endsAt:meetingEnd(starts,hours),callUrl:callParts[0]??"",callParts:callParts.some(Boolean)?callParts:[],participants:invitees},()=>{setShowCreate(false);setTitle("");setAgenda("");setInvitees([]);setCallParts([""]);setHours(1);});}}>
    <h2 className="text-xl font-semibold">Plan a private meeting</h2>
    <label className="block">Meeting title<input required maxLength={160} className={field} value={title} onChange={e=>setTitle(e.target.value)}/></label>

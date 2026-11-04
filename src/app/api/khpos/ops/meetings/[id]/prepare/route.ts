@@ -3,7 +3,7 @@ import { z } from "zod";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
 import { meetingOperation } from "@/lib/khpos/ops/meetings";
-import { createGoogleMeetParts } from "@/lib/khpos/ops/google-meet";
+import { createGoogleMeetParts, GoogleMeetPreparationError } from "@/lib/khpos/ops/google-meet";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -24,7 +24,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   return NextResponse.json({ links: await createGoogleMeetParts(googleToken, count) }, { headers: { "Cache-Control": "private, no-store" } });
  } catch (error) {
   const status = error instanceof KhposAuthError ? error.status : error && typeof error === "object" && "status" in error ? Number(error.status) : 400;
-  const links = error && typeof error === "object" && "links" in error ? error.links : [];
-  return NextResponse.json({ error: error instanceof Error ? error.message : "Could not prepare the calls.", links }, { status, headers: { "Cache-Control": "private, no-store" } });
+  const googleError=error instanceof GoogleMeetPreparationError?error:null;
+  const links=googleError?.links??[];
+  return NextResponse.json({ error: error instanceof Error ? error.message : "Could not prepare the calls.", links, code:googleError?.code, setupUrl:googleError?.setupUrl }, { status, headers: { "Cache-Control": "private, no-store" } });
  }
 }
