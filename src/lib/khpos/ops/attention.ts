@@ -1,3 +1,4 @@
+import { getMeetingAlerts } from "@/lib/khpos/ops/meetings";
 import { khposRecordHref } from "@/lib/khpos/ops/record-links";
 import { needsOwnerWorkAction, issueAttentionAction, decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
 import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
@@ -10,7 +11,8 @@ export type KhposAttentionKind =
   | "verification"
   | "issue"
   | "decision"
-  | "implementation";
+  | "implementation"
+  | "meeting";
 
 export interface KhposAttentionItem {
   id: string;
@@ -59,10 +61,11 @@ export async function getKhposAttention(
   userId: string,
   nowMs = Date.now(),
 ): Promise<KhposAttentionSnapshot> {
-  const [work, issues, decisions] = await Promise.all([
+  const [work, issues, decisions, meetings] = await Promise.all([
     getKhposOpsMyWork(organisationId, userId),
     getKhposOpsIssues(organisationId, userId),
     getKhposOpsDecisions(organisationId, userId),
+    getMeetingAlerts(organisationId, userId, nowMs),
   ]);
 
   const items: KhposAttentionItem[] = [];
@@ -201,6 +204,12 @@ export async function getKhposAttention(
       dueAt,
       actionLabel: implementation ? "Execute action" : "Review decision",
     });
+  }
+
+  for (const meeting of meetings) {
+    if (!meeting.live && Date.parse(meeting.dueAt) > nowMs + 86400000) continue;
+    items.push({ id: meeting.id, kind: "meeting", severity: meeting.live ? "high" : "medium", title: meeting.title,
+      detail: meeting.live ? "Meeting is active. Join the call." : meeting.detail, href: meeting.href, dueAt: null, actionLabel: "Open meeting" });
   }
 
   const sorted = items.sort(

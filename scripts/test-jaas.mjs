@@ -55,3 +55,21 @@ const success = await routes.POST(new Request(url, { method: 'POST', headers: { 
 assert.equal(success.data.jwt, 'test-only');
 assert.equal(success.headers['Cache-Control'], 'private, no-store');
 console.log('JaaS HTTP: signed-out and uninvited access rejected before token issuance; successful response is not cacheable.');
+// Live meetings remain discoverable after their planned end until explicitly closed.
+const meetingExports = {};
+const now = Date.parse('2026-11-05T12:00:00Z');
+const meetings = [
+ { id: 'live', title: 'Live review', status: 'live', starts_at: '2026-11-05T08:00:00Z', ends_at: '2026-11-05T09:00:00Z' },
+ { id: 'closed', title: 'Finished', status: 'closed', starts_at: '2026-11-05T11:00:00Z', ends_at: '2026-11-05T14:00:00Z' },
+ { id: 'cancelled', title: 'Cancelled', status: 'cancelled', starts_at: '2026-11-05T11:00:00Z', ends_at: '2026-11-05T14:00:00Z' },
+ { id: 'scheduled', title: 'Next meeting', status: 'scheduled', starts_at: '2026-11-05T13:00:00Z', ends_at: '2026-11-05T14:00:00Z' }
+];
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/khpos/ops/meetings.ts','utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+ exports: meetingExports, process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'test', SUPABASE_SERVICE_ROLE_KEY: 'test' } },
+ require: () => ({ createClient: () => ({ rpc: async () => ({ data: { meetings }, error: null }) }) })
+});
+const alerts = await meetingExports.getMeetingAlerts('school', 'host', now);
+assert.deepEqual(Array.from(alerts, a => a.id), ['meeting:live', 'meeting:scheduled']);
+assert.equal(alerts[0].live, true);
+assert.equal(alerts[1].live, false);
+console.log('Meeting discovery: live calls survive planned-end time; closed/cancelled calls disappear; upcoming invitations remain.');

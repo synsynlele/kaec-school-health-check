@@ -27,8 +27,8 @@ export async function meetingOperation(actor: string, org: string, mode: string,
 
 export async function getMeetingAlerts(org: string, actor: string, nowMs = Date.now()) {
   const workspace = await meetingOperation(actor, org, "list", { omitRoster: true });
-  return workspace.meetings.filter(m => ["scheduled", "live"].includes(m.status) && Date.parse(m.ends_at) >= nowMs && Date.parse(m.starts_at) <= nowMs + 7 * 86400000).map(m => ({
-    id: `meeting:${m.id}`, title: m.title, detail: `Private meeting · ${new Date(m.starts_at).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} (Lagos)`,
+  return workspace.meetings.filter(m => m.status === "live" || (m.status === "scheduled" && Date.parse(m.ends_at) >= nowMs && Date.parse(m.starts_at) <= nowMs + 7 * 86400000)).map(m => ({
+    id: `meeting:${m.id}`, live: m.status === "live", title: m.title, detail: `Private meeting · ${new Date(m.starts_at).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} (Lagos)`,
     href: `/khpos/${org}/meetings?meeting=${m.id}`, dueAt: m.starts_at, urgent: false, level: "action" as const, category: "meeting",
   }));
 }

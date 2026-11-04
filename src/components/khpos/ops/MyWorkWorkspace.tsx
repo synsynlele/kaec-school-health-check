@@ -164,6 +164,29 @@ export function MyWorkWorkspace({
     };
   }, [organisationId, supabase]);
 
+  useEffect(() => {
+    let stopped = false;
+    let pending = false;
+    const refresh = async () => {
+      if (pending || document.visibilityState !== "visible") return;
+      pending = true;
+      try {
+        const session = await supabase?.auth.getSession();
+        const token = session?.data.session?.access_token;
+        if (!token) return;
+        const response = await fetch(`/api/khpos/ops/attention/${organisationId}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        const body = await response.json();
+        if (!stopped && response.ok && body.ok) setAttention(body.attention);
+      } catch { /* Existing attention remains until the next refresh. */ }
+      finally { pending = false; }
+    };
+    const resume = () => { void refresh(); };
+    const timer = window.setInterval(resume, 30000);
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => { stopped = true; window.clearInterval(timer); window.removeEventListener("focus", resume); document.removeEventListener("visibilitychange", resume); };
+  }, [organisationId, supabase]);
+
   async function reloadAttention() {
     try {
       const token = await accessToken();
