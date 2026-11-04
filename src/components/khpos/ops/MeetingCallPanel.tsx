@@ -88,7 +88,7 @@ export function MeetingCallPanel({ meeting, organisationId, onJoined }: { meetin
    {!ready && <p role="status">Loading the call…</p>}
    <div ref={container} className={expanded ? "min-h-0 flex-1 w-full overflow-hidden rounded-xl bg-slate-950" : "h-[70dvh] min-h-[400px] w-full overflow-hidden rounded-xl bg-slate-950"} />
    <button type="button" aria-pressed={expanded} onClick={() => void toggleFullScreen()} className="rounded-xl border bg-white px-4 py-3 text-slate-900">{expanded ? "Exit full screen" : "Full screen"}</button>
-   <button type="button" onClick={() => { setSession(null); setExpanded(false); setError(""); }} className="rounded-xl border bg-white px-4 py-3">Leave call</button>
+   <button type="button" onClick={() => { setSession(null); setExpanded(false); setError(""); }} className="rounded-xl border bg-white px-4 py-3 text-slate-900">Leave call</button>
   </> : <button type="button" disabled={busy} onClick={() => void join()} className="rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Preparing call…" : "Join call"}</button>}
  </section>;
 }
