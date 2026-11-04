@@ -9,3 +9,7 @@ Getting started now offers four small views: Your position, Read policies, Try t
 Existing school staff see Continue your work with Today and Get started before diagnostic/assessment links on the account page. Staff without a linked school are directed to ask their school to add the same sign-in email rather than being told to create a school partnership.
 
 Validation covers standalone HQ rooms, explicit school leader invitations, uninvited HQ and school denial, suspended-user denial, transactional HQ action creation, retry safety and existing school isolation. Mobile onboarding and real calling remain device-dependent checks.
+
+## Invitation directory
+
+HQ invitations have separate HQ-colleague and school-leader groups. Choose a school by name before its leaders appear. Selections persist across schools/groups, with one invitation per person. School-hosted meetings show that school’s staff separately from HQ colleagues. Every entry and the invited-person list shows the saved name and account email. Hosts receive school affiliations only for eligible active members; membership, leadership and private-room checks remain server-enforced.

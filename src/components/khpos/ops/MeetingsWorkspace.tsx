@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { MeetingInvitees } from "./MeetingInvitees";
 import { MeetingCallPanel } from "./MeetingCallPanel";
 import { meetingEnd } from "@/lib/khpos/ops/call-plan";
 import type { MeetingWorkspace } from "@/lib/khpos/ops/meetings";
@@ -15,7 +16,6 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const [data,setData] = useState<MeetingWorkspace|null>(null);
  const [selected,setSelected] = useState(initialMeeting); const selectedRef = useRef(initialMeeting);
  const [error,setError] = useState(""); const [readError,setReadError]=useState(""); const [busy,setBusy] = useState(false);
- const [peopleSearch,setPeopleSearch]=useState("");
  const [history,setHistory]=useState(false);
  const [showCreate,setShowCreate] = useState(false); const [search,setSearch] = useState("");
  const [title,setTitle]=useState(""); const [agenda,setAgenda]=useState("");
@@ -91,7 +91,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <div className="grid gap-4 sm:grid-cols-2"><label>Starts (your local time)<input required type="datetime-local" className={field} value={starts} onChange={e=>setStarts(e.target.value)}/></label><label>Meeting length<select className={field} value={hours} onChange={e=>setHours(Number(e.target.value))}>{[1,2,3,4,5,6].map(h=><option key={h} value={h}>{h} {h===1?"hour":"hours"}</option>)}</select></label></div>
    {starts&&<p className="text-sm">Planned end: {date(meetingEnd(starts,hours))}</p>}
    <p className="rounded-xl bg-blue-50 p-4 text-sm">Voice and video calls open inside this meeting room. You can join with your camera off for an audio meeting. Text discussions and follow-ups remain available here.</p>
-   <fieldset><legend className="font-semibold">Invite people — only these people can view this room</legend><label className="mt-2 block">Find a person<input type="search" className={field} value={peopleSearch} onChange={e=>setPeopleSearch(e.target.value)} placeholder={hq?"Search HQ colleagues or school leaders":"Search by name or email"}/></label><p className="mt-2 text-sm">{invitees.length} selected</p><div className="mt-2 max-h-60 overflow-y-auto rounded-xl border p-3">{data?.people.filter(p=>p.id!==data.userId&&p.name.toLowerCase().includes(peopleSearch.toLowerCase())).map(p=><label key={p.id} className="flex gap-3 py-2"><input type="checkbox" checked={invitees.includes(p.id)} onChange={e=>setInvitees(e.target.checked?[...invitees,p.id]:invitees.filter(id=>id!==p.id))}/>{p.name}</label>)}</div></fieldset>
+   <MeetingInvitees people={data?.people??[]} userId={data?.userId??""} hq={hq} selected={invitees} onChange={setInvitees} disabled={busy} />
    <button disabled={busy||!invitees.length} className={button}>Save meeting</button>
   </form>}
   <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="space-y-3"><div className="flex gap-2"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
@@ -101,7 +101,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   {room?<section className="space-y-5 rounded-2xl border bg-white p-5">
    <div><p className="text-sm capitalize text-blue-700">{room.meeting.status}</p><h2 className="text-2xl font-bold">{room.meeting.title}</h2><p>{date(room.meeting.starts_at)} – {date(room.meeting.ends_at)}</p><p className="mt-3 whitespace-pre-wrap">{room.meeting.agenda}</p></div>
    <button className="text-blue-700 underline" onClick={()=>void navigator.clipboard.writeText(`${window.location.origin}/khpos/${organisationId}/meetings?meeting=${selected}`).catch(()=>setError("Could not copy the link. Open this meeting using its invitation."))}>Copy meeting link</button>
-   <details><summary>Invited people ({room.participants.length})</summary><ul className="mt-2 space-y-1">{room.participants.map(p=><li key={p.user_id}>{p.name}</li>)}</ul></details>
+   <details><summary>Invited people ({room.participants.length})</summary><ul className="mt-2 space-y-1">{room.participants.map(p=><li key={p.user_id} className="rounded-lg bg-slate-50 p-2"><span className="block font-semibold">{p.name}</span>{p.email&&<span className="block break-all text-sm text-slate-600">{p.email}</span>}</li>)}</ul></details>
    <MeetingCallPanel key={room.meeting.id} meeting={room.meeting} organisationId={organisationId} onJoined={host&&room.meeting.status==="scheduled"?()=>void save({mode:"status",meetingId:selected,status:"live"},()=>{}):undefined} />
    {host&&writable&&<div className="flex flex-wrap gap-2">{room.meeting.status==="scheduled"&&<button disabled={busy} className={button} onClick={()=>void save({mode:"status",meetingId:selected,status:"live"},()=>{})}>Start meeting</button>}<button disabled={busy} className="rounded-xl border p-3" onClick={()=>{if(window.confirm("Close this meeting? Its discussion and outcomes will become read-only. Today tasks remain active."))void save({mode:"status",meetingId:selected,status:"closed"},()=>{});}}>Close meeting</button><button disabled={busy} className="rounded-xl border p-3" onClick={()=>{if(window.confirm("Cancel this meeting? Existing Today tasks will remain active."))void save({mode:"status",meetingId:selected,status:"cancelled"},()=>{});}}>Cancel meeting</button></div>}
    <div><h3 className="text-lg font-bold">Discussion</h3><p className="text-sm text-slate-500">Latest 100 messages. Live updates while connected; checks again every 30 seconds.</p><div className="my-3 max-h-96 space-y-3 overflow-y-auto" role="log" aria-label="Meeting discussion">{room.messages.map(m=><article key={m.id} className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">{m.author_name} · {date(m.created_at)}</p><p className="whitespace-pre-wrap break-words">{m.body}</p></article>)}{!room.messages.length&&<p>No messages yet.</p>}</div>
