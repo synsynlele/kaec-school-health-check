@@ -7,7 +7,7 @@ const privateSecurityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    value: "camera=(), microphone=(), display-capture=(), geolocation=(), payment=(), usb=()",
   },
 ];
 
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
         // App Router navigation reuses the opening document's policy. Allow
         // same-origin requests throughout the app; only attendance taps ask.
         headers: privateSecurityHeaders.map(header => header.key === "Permissions-Policy"
-          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)").replace("camera=()", 'camera=(self "https://8x8.vc")').replace("microphone=()", 'microphone=(self "https://8x8.vc")') }
+          ? { ...header, value: header.value.replace("geolocation=()", "geolocation=(self)").replace("camera=()", 'camera=(self "https://8x8.vc")').replace("microphone=()", 'microphone=(self "https://8x8.vc")').replace("display-capture=()", 'display-capture=(self "https://8x8.vc")') }
           : header),
       },
       {
