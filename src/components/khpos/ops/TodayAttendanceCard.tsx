@@ -1,8 +1,10 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock3, School, BookOpenCheck, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock3, School, BookOpenCheck, Loader2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import { attendanceSteps, type AttendanceStep } from "@/lib/khpos/ops/attendance-guidance";
@@ -227,10 +229,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       {loading && <p role="status" className="mt-5 flex items-center gap-2 text-sm text-slate-600">
         <Loader2 className="size-4 animate-spin" /> Checking your attendance…
       </p>}
-      {error && <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
-        <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
-      </p>}
-      {notice && <p role="status" className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">{notice}</p>}
+      <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       {presence && !presence.pilotEnabled && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
         <strong>Attendance is not yet switched on for your school.</strong>{" "}
         {presence.canEnablePilot ? "Open the attendance page and choose Turn on school attendance to begin." :

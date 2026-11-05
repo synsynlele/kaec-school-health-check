@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
@@ -289,8 +291,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Record when you arrive at school, when each class starts and finishes, and when you leave school. Keep class teaching records separate from your school attendance. teaching through evidence-led observations.</p>
         <p className="mt-2 text-xs text-slate-300">Recorded using Nigerian local school time (Africa/Lagos). Staff attendance and subject lesson delivery are separate records.</p>
       </div>
-      {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-900">{error}</div>}
-      {notice&&<div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">{notice}</div>}
+      <ActionFeedback busy={Boolean(busy)} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       {!data&&<div className={box}><Loader2 className="mr-2 inline size-5 animate-spin"/> Loading school attendance…</div>}
       {data&&<>
         {!data.pilotEnabled&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
