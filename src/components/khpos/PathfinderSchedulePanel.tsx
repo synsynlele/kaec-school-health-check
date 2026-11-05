@@ -1,4 +1,6 @@
 "use client";
+
+import { ActionFeedback } from "./ops/ActionFeedback";
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {CalendarCheck2,CheckCircle2,ClipboardCheck,Clock3,MapPin,Video,AlertTriangle} from "lucide-react";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
@@ -73,6 +75,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
   setNextAction(s.next_action??"");setReviewNote("");setCancelReason("");setError("");
  }
  return <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
   <div className="flex flex-wrap items-start justify-between gap-3">
    <div><h2 className="text-lg font-black">Pathfinder schedule, attendance & outcomes</h2>
     <p className="mt-1 text-xs leading-5 text-slate-600">Planned visits and remote checks, self-attested presence, delivered work, problems resolved and independent review.</p></div>

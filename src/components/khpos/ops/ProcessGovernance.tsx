@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import { canReviewSchoolControl, schoolControlReviewer } from "@/lib/khpos/ops/school-governance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -289,6 +291,7 @@ export function ProcessGovernance({
 
   return (
     <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <h3 className="text-xl font-black">Process drafting and approval</h3>
       <p className="mt-2 text-sm text-slate-600">Edit your existing draft here. A published process is never overwritten: choose it to prepare a new controlled revision for independent approval.</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">

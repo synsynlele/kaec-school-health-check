@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PositionLifecycleControls } from "./PositionLifecycleControls";
@@ -136,6 +138,7 @@ export function StaffPositionsPanel({ organisationId, people, selectedStaffId, o
 
   const field = "w-full rounded-xl border border-slate-300 bg-white p-3 text-sm";
   return <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5" aria-busy={busy}>
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
     <div><h2 className="text-lg font-bold">{people ? "Staff positions · assignment controls" : "My positions"}</h2>
       <p className="mt-1 text-sm text-slate-600">One staff profile can hold several positions. Active and pending additional roles appear on that person's Staff profile below. Use these controls only to propose, review, activate or end an assignment. The staff member accepts a new position and its policies in their own account; a different authorised leader then activates it.</p></div>
     {people && <div className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50 p-4">

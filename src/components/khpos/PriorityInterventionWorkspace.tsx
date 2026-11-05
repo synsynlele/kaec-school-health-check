@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -160,6 +162,7 @@ export function PriorityInterventionWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busyKey)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="border-b border-white/10 bg-slate-950 text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">

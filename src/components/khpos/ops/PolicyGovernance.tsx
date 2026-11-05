@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import { canReviewSchoolControl, schoolControlReviewer } from "@/lib/khpos/ops/school-governance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -191,6 +193,7 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
   }
 
   return <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <h3 className="text-xl font-black">Policy drafting and approval</h3>
     <p className="mt-2 text-sm text-slate-600">Edit your own saved draft here, or start a new version of an approved policy. Published policy text is preserved until a different authorised leader approves the revision.</p>
     <p className="mt-2 text-sm text-slate-600">School leaders draft and a different authorised leader reviews. If the School Custodian authors a critical C0 policy, the School Guardian becomes the independent co-approver; if another leader authors it, the School Custodian approves. Approval happens here in the School library.</p>

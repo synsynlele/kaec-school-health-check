@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import Link from "next/link";
 import { useCallback,useEffect,useMemo,useState } from "react";
 import {
@@ -143,6 +145,7 @@ export function SchoolPathfinderDesk() {
     </div>
   </main>;
   return <div className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
     <header className="border-b border-slate-800 bg-slate-950 text-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5">
         <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">KAEC-NG · School Execution</p>

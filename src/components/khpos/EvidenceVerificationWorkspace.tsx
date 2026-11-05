@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -208,6 +210,7 @@ export function EvidenceVerificationWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busyPlanId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           <Link href={`/khpos/${organisationId}/implementation`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">

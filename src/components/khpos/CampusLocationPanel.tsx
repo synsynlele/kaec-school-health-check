@@ -1,4 +1,6 @@
 "use client";
+
+import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { captureAttendanceLocation, locationCaptureHelp, type CampusLocation } from "@/lib/khpos/attendance-location";
@@ -35,6 +37,7 @@ export function CampusLocationPanel({ school, hq = false, onLoaded }: { school: 
   const campus = campuses.find(c => c.id === selected);
   const hasPin = latitude.trim() !== "" && longitude.trim() !== "" && Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude)) && Math.abs(Number(latitude)) <= 90 && Math.abs(Number(longitude)) <= 180;
   return <details className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
     <summary className="cursor-pointer font-black">Campus attendance locations</summary>
     <p className="mt-3 text-sm leading-6">An authorised Custodian, campus Guardian or HQ supervisor sets each campus pin once. Use your current position only while physically at that campus, or enter its known coordinates. A 200 m starting boundary can be adjusted to suit the site. Pin changes affect future check-ins; saved evidence keeps its original boundary.</p>
     {error && <p role="alert" className="mt-2 text-sm text-red-800">{error}</p>}

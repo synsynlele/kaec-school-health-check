@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Building2, CheckCircle2, CircleAlert, Clock3, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
@@ -112,6 +114,7 @@ export function PartnerRegistryWorkspace() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-12 text-white">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div><Link href="/khpos/admin" className="text-sm font-bold text-mint-300">← Admin Console</Link><p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-mint-300">KAEC-NG governance</p><h1 className="mt-2 text-4xl font-black tracking-tight">School Partnership Registry</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">Accounts are open. KHP-OS is not. Only institutions explicitly approved here can hold active KHP-OS memberships.</p></div>

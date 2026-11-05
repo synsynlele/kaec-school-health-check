@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { CouncilWorkspace } from "@/lib/khpos/ops/council";
@@ -52,6 +54,7 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
   const learners = data?.learners.map((l) => ({ value: l.id, label: `${l.name} · ${l.classLabel}` })) || [];
 
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <div><h1 className="text-3xl font-bold">Builders Council</h1><p className="mt-2 text-slate-600">Student representation, service and accountable leadership. Student voice is recorded with evidence; this is not an online ballot.</p></div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <p>Loading council…</p>}

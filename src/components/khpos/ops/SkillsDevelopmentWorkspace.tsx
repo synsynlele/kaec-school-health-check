@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -355,6 +357,7 @@ export function SkillsDevelopmentWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-emerald-950 to-brand-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">

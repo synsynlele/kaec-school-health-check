@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -335,6 +337,7 @@ export function BuilderProjectsWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
