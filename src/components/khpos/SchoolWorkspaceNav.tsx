@@ -101,6 +101,7 @@ const standardLink = {
 } as const;
 
 const operationsLinks = [
+  { suffix: "/ideas", label: "Ideas & discussions", icon: UsersRound },
   { suffix: "/meetings", label: "Private meetings", icon: UsersRound },
   { suffix: "/reports", label: "Reports", icon: FileCheck2 },
   { suffix: "/announcements", label: "Announcements", icon: MessageCircle },
@@ -175,7 +176,7 @@ function operation(suffix: (typeof operationsLinks)[number]["suffix"]) {
 // Related pages share one entrance. Existing URLs remain valid, including saved links.
 const byRoute = (suffix: string) => workspaceLinks.find(link => link.suffix === suffix)!;
 const schoolAreas = [
-  { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings"] },
+  { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings", "/ideas"] },
   { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
   { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
   { title: "Teaching & learning", help: "Check attendance, plan lessons, manage assessments and support learners.", routes: ["/teaching-presence", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
