@@ -61,6 +61,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [data,setData]=useState<KhposPresenceWorkspace|null>(null);
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
   const [tab,setTab]=useState<Panel>("day");
+  const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
@@ -397,8 +398,9 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               {own.map(p=>{
                 const today=possibleToday(data.localDay,p.weekday);
                 const mine=p.teacherUserId===data.userId;
-                const attendance = today ? p.session : week?.records.find(record=>record.periodId===p.id);
                 const lessonDate = week ? new Date(Date.parse(week.from+"T12:00:00Z") + (p.weekday-1)*86400000).toISOString().slice(0,10) : null;
+                const periodRecords = week?.records.filter(record => record.periodId === p.id) ?? [];
+                const attendance = today ? p.session : periodRecords.find(record => record.date === lessonDate);
                 const passed = lessonDate !== null && (lessonDate < data.localDay || (today && attendanceNow > Date.parse(lessonDate+"T"+p.end+":00+01:00") + 1800000));
                 return <div key={p.id} id={"class-" + p.id} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -423,7 +425,37 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                       onClick={()=>void act("class_out",{periodId:p.id,outcome:lessonOutcome[p.id]||"completed",topic:lessonTopics[p.id]||"",followUp:lessonNotes[p.id]||""},"Lesson checkout saved.")}>Record Class Check-out — Finish class</button>
                   </div>}
                   {!today && attendance && <p className="mt-2 text-sm">Check-in {dateTime(attendance.in)} · Check-out {dateTime(attendance.out)} · {attendance.outcome || "No outcome recorded"}</p>}
+                  {periodRecords.filter(record => record.date !== lessonDate).map(record => (
+                    <p key={record.date} className="mt-2 text-sm text-slate-600">
+                      Earlier occurrence on {record.date} · Check-in {dateTime(record.in)} · Check-out {dateTime(record.out)}
+                    </p>
+                  ))}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
+                  {canManage && roleStreams.some(stream => stream.id === p.streamId) && (
+                    <div className="mt-3">
+                      <button type="button" disabled={Boolean(busy)} aria-expanded={editingPeriod === p.id}
+                        className="text-sm font-bold text-brand-700" onClick={() => setEditingPeriod(editingPeriod === p.id ? "" : p.id)}>
+                        {editingPeriod === p.id ? "Cancel edit" : "Edit weekly lesson"}
+                      </button>
+                      {editingPeriod === p.id && <form className="mt-2 grid gap-2 sm:grid-cols-2" onSubmit={async event => {
+                        event.preventDefault();
+                        const form = new FormData(event.currentTarget);
+                        const saved = await act("period_edit", {
+                          periodId: p.id, weekday: Number(form.get("weekday")),
+                          start: form.get("start"), end: form.get("end"), room: form.get("room"),
+                        }, "Weekly lesson updated.");
+                        if (saved) setEditingPeriod("");
+                      }}>
+                        <label>Weekday<select className={field} name="weekday" defaultValue={p.weekday}>
+                          {WEEKDAYS.slice(1).map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
+                        </select></label>
+                        <label>Room (optional)<input className={field} name="room" maxLength={100} defaultValue={p.room ?? ""} /></label>
+                        <label>Start<input className={field} name="start" type="time" required defaultValue={p.start} /></label>
+                        <label>End<input className={field} name="end" type="time" required defaultValue={p.end} /></label>
+                        <button type="submit" disabled={Boolean(busy)} className="rounded-lg bg-brand-700 px-4 py-2 font-bold text-white">Save changes</button>
+                      </form>}
+                    </div>
+                  )}
                   {!mine&&canManage&&<button className="mt-3 text-xs font-bold text-rose-700 underline" disabled={Boolean(busy)}
                     onClick={()=>{if(window.confirm("Disable this scheduled period? Historical class records will be retained."))void act("period_disable",{periodId:p.id},"Period disabled.");}}>Disable future periods</button>}
                 </div>;

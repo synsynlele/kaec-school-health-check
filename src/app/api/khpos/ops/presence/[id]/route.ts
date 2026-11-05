@@ -5,7 +5,7 @@ import { actOnPresence, getPresenceWorkspace, getWeeklyClassRecords, getPresence
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const MODES = new Set(["pilot_enable","school_in","school_out","period_add","period_disable","class_in","class_out","hqls_create","hqls_acknowledge","hqls_enable","school_reconcile","class_reconcile"]);
+const MODES = new Set(["pilot_enable","school_in","school_out","period_add","period_edit","period_disable","class_in","class_out","hqls_create","hqls_acknowledge","hqls_enable","school_reconcile","class_reconcile"]);
 function responseError(cause: unknown) {
   if (cause instanceof KhposAuthError || cause instanceof KhposPresenceError) {
     return NextResponse.json({ ok:false, error:cause.message }, { status:cause.status, headers:{ "Cache-Control":"private, no-store" } });

@@ -7,7 +7,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type Assignment = { id: string; classLabel: string; subjectLabel: string; teacherDisplay: string };
 type Entry = {
-  id: string; kind: string; title: string; starts_at: string; ends_at: string;
+  id: string; stream_id: string; can_edit: boolean; kind: string; title: string; starts_at: string; ends_at: string;
   checked_in_at: string | null; checked_out_at: string | null; marked_at: string | null;
   submitted_at: string | null; submitted_to: string | null; mine: boolean;
   class_label: string; subject_label: string; teacher: string;
@@ -29,6 +29,7 @@ function stamp(value: string) {
 export function AssessmentTimetable({ school, today, assignments }: { school: string; today: string; assignments: Assignment[] }) {
   const [from, setFrom] = useState(() => monday(today));
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [editing, setEditing] = useState<Entry | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,7 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
     try {
       setEntries(await request(input));
       setNotice("Assessment timetable updated.");
+      setEditing(null);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the timetable.");
     } finally {
@@ -87,38 +89,41 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
     const day = String(fields.get("day"));
     const start = String(fields.get("start"));
     const end = String(fields.get("end"));
-    if (monday(day) !== from || end <= start) {
-      setError("Choose a date in the displayed week and an end time after the start.");
+    if ((!editing && monday(day) !== from) || end <= start) {
+      setError(end <= start ? "Choose an end time after the start." : "Choose a date in the displayed week.");
       return;
     }
-    void save({ mode: "add", title: fields.get("title"), streamId: fields.get("streamId"), kind: fields.get("kind"),
+    void save({ mode: editing ? "edit" : "add", id: editing?.id, title: fields.get("title"), streamId: fields.get("streamId"), kind: fields.get("kind"),
       startsAt: `${day}T${start}:00+01:00`, endsAt: `${day}T${end}:00+01:00` });
   }
 
+  const editStart = editing ? new Date(Date.parse(editing.starts_at) + 3600000).toISOString() : "";
+  const editEnd = editing ? new Date(Date.parse(editing.ends_at) + 3600000).toISOString() : "";
   return <section className="space-y-4 rounded-2xl border bg-white p-4 text-slate-900">
     <h2 className="text-xl font-bold">Tests and exams timetable</h2>
     <label className="block max-w-xs text-sm font-bold">Choose a date to view its week
       <input type="date" value={from} disabled={busy} className={field} onChange={event => {
         if (event.target.value) {
           const selectedWeek = monday(event.target.value);
-          if (selectedWeek !== from) { setEntries(null); setError(""); setFrom(selectedWeek); }
+          if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); setFrom(selectedWeek); }
         }
       }} />
     </label>
-    {assignments.length > 0 && <details className="rounded-xl border p-3">
-      <summary className="cursor-pointer font-bold">Add a test, assessment or exam</summary>
-      <form onSubmit={add} className="mt-3">
+    {assignments.length > 0 && <details className="rounded-xl border p-3" open={editing ? true : undefined}>
+      <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
+      <form id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">
         <fieldset disabled={busy || entries === null} className="grid gap-3 sm:grid-cols-2">
-          <label>Class, subject and teacher<select name="streamId" className={field} required>
+          <label>Class, subject and teacher<select name="streamId" className={field} required defaultValue={editing?.stream_id ?? ""}>
             <option value="">Choose teaching assignment</option>
             {assignments.map(item => <option key={item.id} value={item.id}>{item.classLabel} · {item.subjectLabel} · {item.teacherDisplay}</option>)}
           </select></label>
-          <label>Type<select name="kind" className={field}><option value="test">Test</option><option value="assessment">Assessment</option><option value="exam">Exam</option></select></label>
-          <label>Title<input name="title" className={field} required maxLength={120} /></label>
-          <label>Date<input type="date" name="day" className={field} required defaultValue={from} key={from} /></label>
-          <label>Starts (WAT)<input type="time" name="start" className={field} required /></label>
-          <label>Ends (WAT)<input type="time" name="end" className={field} required /></label>
-          <button className={button} type="submit">Save to timetable</button>
+          <label>Type<select name="kind" className={field} defaultValue={editing?.kind ?? "test"}><option value="test">Test</option><option value="assessment">Assessment</option><option value="exam">Exam</option></select></label>
+          <label>Title<input name="title" className={field} defaultValue={editing?.title} required maxLength={120} /></label>
+          <label>Date<input type="date" name="day" className={field} required defaultValue={editStart.slice(0, 10) || from} /></label>
+          <label>Starts (WAT)<input type="time" name="start" className={field} defaultValue={editStart.slice(11, 16)} required /></label>
+          <label>Ends (WAT)<input type="time" name="end" className={field} defaultValue={editEnd.slice(11, 16)} required /></label>
+          <button className={button} type="submit">{editing ? "Save changes" : "Save to timetable"}</button>
+          {editing && <button type="button" onClick={() => setEditing(null)}>Cancel edit</button>}
         </fieldset>
       </form>
     </details>}
@@ -134,6 +139,10 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
         <p>Check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>
         {item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
         {item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
+        {item.can_edit && assignments.length > 0 && <button type="button" disabled={busy} className={button} onClick={() => {
+          setEditing(item);
+          document.getElementById("assessment-schedule-form")?.parentElement?.scrollIntoView({ block: "nearest" });
+        }}>Edit schedule</button>}
         {item.mine && !item.checked_in_at && canStart && <button disabled={busy} className={button} onClick={() => void save({ mode: "start", id: item.id })}>Check in</button>}
         {item.mine && item.checked_in_at && !item.checked_out_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "finish", id: item.id })}>Check out</button>}
         {item.mine && item.checked_out_at && !item.marked_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "mark", id: item.id })}>Marking finished</button>}

@@ -7,9 +7,13 @@ import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "
 import { KhposPresenceError, verifyTeachingPreviewIsolation } from "@/lib/khpos/ops/presence";
 
 const date = z.iso.date();
+const schedule = {
+  from: date, streamId: z.uuid(), kind: z.enum(["test", "assessment", "exam"]),
+  title: z.string().trim().min(1).max(120), startsAt: z.iso.datetime({ offset: true }), endsAt: z.iso.datetime({ offset: true }),
+};
 const payload = z.discriminatedUnion("mode", [
-  z.object({ mode: z.literal("add"), from: date, streamId: z.uuid(), kind: z.enum(["test", "assessment", "exam"]),
-    title: z.string().trim().min(1).max(120), startsAt: z.iso.datetime({ offset: true }), endsAt: z.iso.datetime({ offset: true }) }),
+  z.object({ mode: z.literal("add"), ...schedule }),
+  z.object({ mode: z.literal("edit"), id: z.uuid(), ...schedule }),
   z.object({ mode: z.enum(["start", "finish", "mark"]), from: date, id: z.uuid() }),
   z.object({ mode: z.literal("submit"), from: date, id: z.uuid(), recipient: z.string().trim().min(1).max(120) }),
 ]);
