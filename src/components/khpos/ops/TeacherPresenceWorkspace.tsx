@@ -93,6 +93,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [historyBusy,setHistoryBusy]=useState(false);
   const [historyError,setHistoryError]=useState("");
   const [lessonQuery,setLessonQuery]=useState("");
+  const [lessonDay,setLessonDay]=useState("");
   const requestKey=useRef<string|null>(null);
 
   const authToken=useCallback(async()=>{
@@ -234,9 +235,14 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const canManage=Boolean(data?.canManage);
   const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
   const roleStreams=(academic?.streams??[]).filter(s=>["approved","active"].includes(s.status));
-  const todays=(data?.periods??[]).filter(p=>possibleToday(data?.localDay??"",p.weekday));
+  const todays=(data?.periods??[])
+    .filter(p=>p.teacherUserId===data?.userId && p.termActive && possibleToday(data?.localDay??"",p.weekday))
+    .sort((a,b)=>a.start.localeCompare(b.start));
   const observed=(data?.observations??[]);
-  const own=(data?.periods??[]).filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()));
+  const own=(data?.periods??[])
+    .filter(p=>!lessonDay || p.weekday===Number(lessonDay))
+    .filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()))
+    .sort((a,b)=>a.weekday-b.weekday || a.start.localeCompare(b.start));
   const activeHistory=presenceHistory?.category===historyCategory &&
     presenceHistory.page===currentHistoryFilter.page && presenceHistory.pageSize===historyPageSize &&
     presenceHistory.search===currentHistoryFilter.query.trim().toLowerCase() &&
@@ -277,7 +283,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         </div>}
         {data.pilotEnabled&&<>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Teaching attendance sections">
-          {([["day","School attendance",School],["lessons","Class lessons",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
+          {([["day","School attendance",School],["lessons","Timetable",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
           .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage || data.canEnableHqls)
           .map(([id,title,Icon])=><button key={id} type="button" role="tab" aria-selected={tab===id}
             onClick={()=>{setTab(id);setError("");setNotice("");}}
@@ -310,22 +316,44 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           </section>
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Today&apos;s classes</h2>
-            <p className="mb-3 text-sm text-slate-600">Scheduled periods visible to your teaching role or authorised leadership position.</p>
-            {todays.length===0?<p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No scheduled class records for today. Leaders can set up periods under Class lessons after activating an Academic Delivery stream.</p>
+            <p className="mb-3 text-sm text-slate-600">Your assigned lessons, in start-time order.</p>
+            {todays.length===0?<p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">You have no lessons scheduled today.</p>
               :<div className="space-y-2">{todays.map(p=><div key={p.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                 <b>{p.subject} · {p.class}</b><p>{p.start}–{p.end} · {p.room||"Room not set"}</p>
                 <p className="text-xs text-slate-500">{p.teacher} · {p.session?.out?"Reported":p.session?"In progress":"Not checked in"}</p>
               </div>)}</div>}
-            <button className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-800" onClick={()=>setTab("lessons")}>Open class lessons</button>
+            <button className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-800" onClick={()=>setTab("lessons")}>Open timetable</button>
           </section>
         </div>}
 
         {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
+          {canManage&&<details className={box}>
+            <summary className="cursor-pointer text-xl font-black text-slate-900">Add a weekly lesson</summary>
+            <p className="my-2 text-sm text-slate-600">Choose the teaching assignment, day and time. KHP-OS checks for overlaps.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2"><label className="text-xs font-bold">Class, subject and teacher</label><select className={field} value={scheduleStream} onChange={e=>setScheduleStream(e.target.value)}>
+                <option value="">Choose an approved teaching assignment</option>{roleStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
+              </select></div>
+              <div><label className="text-xs font-bold">Weekday</label><select className={field} value={weekday} onChange={e=>setWeekday(e.target.value)}>{WEEKDAYS.slice(1).map((d,i)=><option value={i+1} key={d}>{d}</option>)}</select></div>
+              <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
+              <div><label className="text-xs font-bold">Start</label><input type="time" className={field} value={start} onChange={e=>setStart(e.target.value)}/></div>
+              <div><label className="text-xs font-bold">End</label><input type="time" className={field} value={end} onChange={e=>setEnd(e.target.value)}/></div>
+            </div>
+            <button disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              onClick={()=>void act("period_add",{streamId:scheduleStream,weekday:Number(weekday),start,end,room},"Weekly class period added.")}>Save lesson</button>
+            {roleStreams.length===0&&<Link className="mt-3 block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/academic-delivery"}>Set up a teaching assignment</Link>}
+          </details>}
           <section className={box}>
-            <h2 className="text-xl font-black text-slate-900">Scheduled subject lessons</h2>
+            <h2 className="text-xl font-black text-slate-900">Weekly timetable</h2>
             <p className="my-2 text-sm text-slate-600">A class check-in is available from 30 minutes before the lesson starts until 30 minutes after it finishes. The assigned teacher must record the actual start time. After teaching, record the class check-out and what happened. Finish an open class before checking out of school.</p>
             {own.length===0?<p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">No period has been entered for the current term. An Academic Inspector or School Guardian should add the schedule below. <Link href={"/khpos/"+organisationId+"/academic-delivery"} className="font-bold underline">Open Academic Delivery</Link>.</p>:null}
+            <label className="mt-4 block text-sm font-semibold text-slate-700">Day
+              <select className={field} value={lessonDay} onChange={e=>setLessonDay(e.target.value)}>
+                <option value="">All days</option>
+                {WEEKDAYS.slice(1).map((day,index)=><option key={day} value={index+1}>{day}</option>)}
+              </select>
+            </label>
             <label className="mt-4 block text-sm font-semibold text-slate-700">Find a scheduled class
               <input type="search" className={field} placeholder="Search class, teacher, subject or room" value={lessonQuery} onChange={e=>setLessonQuery(e.target.value)}/>
             </label>
@@ -362,22 +390,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               })}
             </div>
           </section>
-          {canManage&&<section className={box}>
-            <h2 className="text-xl font-black text-slate-900">Add a weekly subject period</h2>
-            <p className="my-2 text-sm text-slate-600">Use an existing approved/active Academic Delivery stream. The stream already contains class, subject and assigned teacher. The application checks for overlapping teaching periods.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2"><label className="text-xs font-bold">Approved subject stream</label><select className={field} value={scheduleStream} onChange={e=>setScheduleStream(e.target.value)}>
-                <option value="">Select stream</option>{roleStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
-              </select></div>
-              <div><label className="text-xs font-bold">Weekday</label><select className={field} value={weekday} onChange={e=>setWeekday(e.target.value)}>{WEEKDAYS.slice(1).map((d,i)=><option value={i+1} key={d}>{d}</option>)}</select></div>
-              <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
-              <div><label className="text-xs font-bold">Start</label><input type="time" className={field} value={start} onChange={e=>setStart(e.target.value)}/></div>
-              <div><label className="text-xs font-bold">End</label><input type="time" className={field} value={end} onChange={e=>setEnd(e.target.value)}/></div>
-            </div>
-            <button disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-              onClick={()=>void act("period_add",{streamId:scheduleStream,weekday:Number(weekday),start,end,room},"Weekly class period added.")}>Add subject period</button>
-            {roleStreams.length===0&&<Link className="mt-3 block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/academic-delivery"}>Create and activate a subject stream in Academic Delivery</Link>}
-          </section>}
+
         </div>}
 
         {tab==="hqls"&&<div className="space-y-4">
