@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -62,6 +63,7 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
     {data && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Report or recognise</h2><div className="grid gap-3 md:grid-cols-3">
       {select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}
       {select("category", "Category", categories.map(([value, label]) => ({ value, label })))}
+      {fields.campus && !data.learners.some(learner => learner.campusId === fields.campus) && <p className="text-sm md:col-span-2">No learners are available for this campus. Ask your learner support lead to <Link className="underline" href={`/khpos/${organisationId}/learner-progress#add-learner`}>add them in the learner register</Link>.</p>}
       {select("learner", "Learner (required for behaviour and attendance)", data.learners.filter((l) => l.campusId === fields.campus).map((l) => ({ value: l.id, label: `${l.name} · ${l.classLabel}` })))}
       {input("summary", "What happened or what was raised?")}{input("evidence", "Evidence or source reference")}
       {select("owner", "Response owner", assignments.filter((a) => { const assignment = data.assignments.find((x) => x.id === a.value); return assignment?.campusId === fields.campus || assignment?.campusId === null; }))}

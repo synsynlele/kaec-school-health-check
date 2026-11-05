@@ -88,3 +88,66 @@ export async function actOnPresence(org: string, actor: string, mode: string, in
   });
   if (error) fail(error.message);
 }
+
+export type WeeklyClassRecord = { periodId: string; date: string; in: string; out: string | null; outcome: string | null; administrativelyClosed: boolean };
+
+export async function getWeeklyClassRecords(org: string, actor: string) {
+  const workspace = await getPresenceWorkspace(org, actor);
+  const monday = new Date(workspace.localDay + "T12:00:00Z");
+  monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(sunday.getUTCDate() + 6);
+  const from = monday.toISOString().slice(0, 10);
+  const to = sunday.toISOString().slice(0, 10);
+  const visible = new Map(workspace.periods.map(period => [period.id, period.teacherUserId]));
+  const ids = [...visible.keys()];
+  const records: WeeklyClassRecord[] = [];
+  // Keep each request below REST URL and row limits.
+  for (let index = 0; index < ids.length; index += 100) {
+    const { data, error } = await service().from("khpos_ops_class_sessions")
+      .select("period_id,teacher_user_id,local_day,checked_in_at,checked_out_at,outcome,closed_by")
+      .eq("organisation_id", org).in("period_id", ids.slice(index, index + 100))
+      .gte("local_day", from).lte("local_day", to);
+    if (error) fail(error.message);
+    for (const row of data ?? []) {
+      if (visible.get(row.period_id) !== row.teacher_user_id) continue;
+      records.push({ periodId: row.period_id, date: row.local_day, in: row.checked_in_at,
+        out: row.checked_out_at, outcome: row.outcome, administrativelyClosed: Boolean(row.closed_by) });
+    }
+  }
+  return { from, to, records };
+}
+
+export async function getAssessmentAlerts(org: string, actor: string, day: string, nowMs: number) {
+  const { data, error } = await service().rpc("khpos_assessment_timetable_server", {
+    p_actor: actor, p_org: org, p_mode: "list", p_input: { from: day },
+  });
+  if (error) fail(error.message);
+  const endOfDay = Date.parse(day + "T00:00:00+01:00") + 86400000;
+  const entries = data as { id: string; mine: boolean; title: string; class_label: string;
+    starts_at: string; ends_at: string; checked_in_at: string | null }[];
+  return entries.filter(entry => entry.mine && !entry.checked_in_at &&
+    Date.parse(entry.starts_at) < endOfDay && nowMs <= Date.parse(entry.ends_at) + 1800000)
+    .map(entry => ({
+      id: "assessment:" + entry.id, title: entry.title + " · " + entry.class_label,
+      detail: "Open Tests & exams to check the time and record attendance.",
+      href: `/khpos/${org}/teaching-presence?tab=exams`, dueAt: entry.starts_at,
+      urgent: false, level: "action" as const, category: "assessment",
+    }));
+}
+
+// Preview must be bound to an isolated Supabase branch before this feature is usable.
+export function verifyTeachingPreviewIsolation() {
+  if (process.env.VERCEL_ENV !== "preview") return;
+  const ref = process.env.KHPOS_TEACHING_PREVIEW_DB_REF?.trim();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!ref || !/^[a-z0-9]{20}$/.test(ref) || !url) {
+    throw new KhposPresenceError("Teaching preview requires an isolated Supabase branch.", 503);
+  }
+  let hostname = "";
+  try { hostname = new URL(url).hostname.toLowerCase(); }
+  catch { throw new KhposPresenceError("Invalid preview Supabase URL.", 503); }
+  if (ref === "rlpciatblisxnuuiekkf" || hostname !== ref + ".supabase.co") {
+    throw new KhposPresenceError("Teaching preview cannot use the live KHP-OS database.", 503);
+  }
+}
