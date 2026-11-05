@@ -361,16 +361,15 @@ export function LearnerProgressWorkspace({
           <>
             {workspace.canCoordinate ? (
               <section className="grid gap-5 xl:grid-cols-2">
-                <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div id="add-learner" className="scroll-mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
-                    Minimal learner anchor
+                    Learner register
                   </p>
                   <h2 className="mt-2 text-xl font-black">
-                    Link KHP-OS to the authoritative learner record
+                    Add a learner
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Store only the identity/context needed to run support work.
-                    The SIS remains authoritative.
+                    Enter the learner’s name, campus, class and school ID. Only record the details needed for school support. Use the same record source and school ID when updating a learner.
                   </p>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <select
@@ -394,18 +393,18 @@ export function LearnerProgressWorkspace({
                       <option value="external">External</option>
                       <option value="manual">Manual</option>
                     </select>
-                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>External learner ID</span><input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Learner school ID</span><input
                       value={anchorExternalRef}
                       onChange={(event) =>
                         setAnchorExternalRef(event.target.value)
                       }
-                      placeholder="External learner ID"
+                      placeholder="Learner school ID"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
-                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Display name</span><input
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Learner name</span><input
                       value={anchorName}
                       onChange={(event) => setAnchorName(event.target.value)}
-                      placeholder="Display name"
+                      placeholder="Learner name"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
                     <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Class / group, e.g. Nursery 1, Primary 3 or JSS1</span><input
@@ -445,7 +444,7 @@ export function LearnerProgressWorkspace({
                     ) : (
                       <UsersRound className="size-3.5" />
                     )}
-                    Save learner anchor
+                    Save learner
                   </button>
                 </div>
 

@@ -30,10 +30,11 @@ function statusLabel(step: AttendanceStep) {
 }
 
 function AttendanceRow({
-  step, organisationId, busy, onRecord,
+  step, organisationId, busy, onRecord, onFinish,
 }: {
   step: AttendanceStep; organisationId: string; busy: boolean;
   onRecord: (kind: "school_in" | "school_out" | "class_in", periodId: string | null) => void;
+  onFinish?: (periodId: string, outcome: string, topic: string) => void;
 }) {
   const lessonUrl = `/khpos/${organisationId}/teaching-presence?tab=lessons${step.periodId ? "&period=" + encodeURIComponent(step.periodId) : ""}`;
   const schoolUrl = `/khpos/${organisationId}/teaching-presence?tab=day`;
@@ -74,9 +75,32 @@ function AttendanceRow({
               className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
               {busy ? "Saving attendance…" : "Record school departure"}
             </button>}
-          <Link href={destination} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-800">
-            {step.kind === "class_out" ? "Record lesson outcome" : step.status === "missed" ? "Open attendance help" : "Open attendance"}
-          </Link>
+          {step.kind === "class_out" && step.periodId && onFinish ? (
+            <details className="w-full">
+              <summary className="cursor-pointer text-sm font-bold text-brand-800">Finish lesson</summary>
+              <form className="mt-3 grid gap-2" onSubmit={event => {
+                event.preventDefault();
+                const fields = new FormData(event.currentTarget);
+                onFinish(step.periodId!, String(fields.get("outcome")), String(fields.get("topic")).trim());
+              }}>
+                <label className="grid gap-1 text-sm">Topic taught
+                  <input name="topic" maxLength={200} className="rounded-lg border px-3 py-2" />
+                </label>
+                <label className="grid gap-1 text-sm">Lesson outcome
+                  <select name="outcome" className="rounded-lg border bg-white px-3 py-2">
+                    <option value="completed">Completed</option>
+                    <option value="partial">Partly completed</option>
+                    <option value="not_held">Could not hold</option>
+                  </select>
+                </label>
+                <button type="submit" disabled={busy} className="justify-self-start rounded-full bg-brand-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                  Save class check-out
+                </button>
+              </form>
+            </details>
+          ) : <Link href={destination} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-800">
+            {step.kind === "class_out" ? "Finish lesson" : step.status === "missed" ? "Open attendance help" : "Open attendance"}
+          </Link>}
         </div>
       )}
     </div>
@@ -139,7 +163,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
     };
   }, [load, organisationId]);
 
-  async function record(kind: "school_in" | "school_out" | "class_in", periodId: string | null) {
+  async function record(kind: "school_in" | "school_out" | "class_in" | "class_out", periodId: string | null, lesson?: { outcome: string; topic: string }) {
     if (!supabase || !presence || busy) return;
     if (kind === "school_out" && !window.confirm("Are you leaving school now? Your departure time will be recorded.")) return;
     if (!refreshGate.current.beginWrite()) return;
@@ -154,14 +178,14 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ mode: kind, ...(location ? { location } : {}), ...(kind === "school_in" ? { campusId } : {}),
-          ...(kind === "class_in" ? { periodId } : {}) }),
+          ...(periodId ? { periodId } : {}), ...lesson }),
       });
       const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string };
       if (!response.ok || !body.ok || !body.workspace) throw new Error(body.error || "Attendance could not be recorded.");
       setPresence(body.workspace);
       setNowMs(Date.now());
       setNotice(kind === "school_in" ? "School arrival saved with date and time." :
-        kind === "school_out" ? "School departure saved with date and time." : "Class start saved with date and time.");
+        kind === "school_out" ? "School departure saved with date and time." : kind === "class_out" ? "Class finish saved." : "Class start saved with date and time.");
       announceKhposActivityChanged(organisationId);
     } catch (cause) {
       setNotice("");
@@ -171,10 +195,15 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
 
   const steps = presence ? attendanceSteps(presence, nowMs) : [];
   const schoolSteps = steps.filter((step) => step.kind === (presence?.todayPresence?.in ? "school_out" : "school_in") && step.status !== "done");
-  const classSteps = steps.filter((step) => step.kind.startsWith("class"));
+  const finishByPeriod = new Map(steps.filter(step => step.kind === "class_out").map(step => [step.periodId, step]));
+  const classSteps = steps.filter(step => step.kind === "class_in").map(start => {
+    const finish = finishByPeriod.get(start.periodId);
+    const current = start.status === "done" && finish ? finish : start;
+    return { ...current, title: current.classLabel ?? current.title };
+  });
   const due = steps.filter((step) => step.status === "due").length;
   const done = steps.filter((step) => step.status === "done").length;
-  const classCount = classSteps.length / 2;
+  const classCount = classSteps.length;
   const schoolUrl = `/khpos/${organisationId}/teaching-presence`;
 
   return (
@@ -183,7 +212,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-brand-700">Daily attendance</p>
-          <h2 className="mt-2 text-2xl font-black text-slate-950">School and class check-in / check-out</h2>
+          <h2 className="mt-2 text-2xl font-black text-slate-950">My school day</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             Record your arrival at school separately from each class you teach. Finish each class before recording your departure from school.
           </p>
@@ -242,14 +271,15 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
             </div>}
           <div className="mt-6">
             <h3 className="mb-3 flex items-center gap-2 text-lg font-black text-slate-900">
-              <BookOpenCheck className="size-5 text-brand-700" /> 2. Your scheduled classes
+              <BookOpenCheck className="size-5 text-brand-700" /> 2. My lessons today
             </h3>
             {classCount === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-              No classes are scheduled for your teaching assignment today. This does not mean that classes have been recorded as taught.
+              You have no lessons on your timetable today.
               If you expected a class, ask your School Guardian or Academic Inspector to check the timetable.
             </p> : <div className="grid gap-3 lg:grid-cols-2">
               {classSteps.map((step) => <AttendanceRow key={step.id} step={step}
-                organisationId={organisationId} busy={busy} onRecord={record} />)}
+                organisationId={organisationId} busy={busy} onRecord={record}
+                onFinish={(periodId, outcome, topic) => void record("class_out", periodId, { outcome, topic })} />)}
             </div>}
           </div>
           <p className="mt-5 rounded-xl bg-brand-50 p-3 text-sm leading-6 text-brand-950">

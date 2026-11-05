@@ -106,5 +106,30 @@ try {
  await act(guardian,"pilot_enable",{enabled:false});checks++;
  await fail("select public.khpos_ops_presence_action_server($1,$2,'hqls_create',$3)",[observer,org,{streamId:stream,observationMode:"walk",requestKey:id(103),domains:strong.slice(0,1),strengths:"Observed limited evidence."}],/pilot is disabled/i);
  assert.equal((await read(other,otherOrg)).pilotEnabled,true);checks++;
+ await db.exec(fs.readFileSync("supabase/migrations/20261105122000_assessment_timetable.sql","utf8"));
+ const current = Date.now();
+ const examDay = new Date(current + 3600000).toISOString().slice(0,10);
+ const assessment = (actor, mode, input = {}, school = org) => q(
+   "select public.khpos_assessment_timetable_server($1,$2,$3,$4) as result",
+   [actor,school,mode,{from:examDay,...input}]
+ ).then(rows => rows[0].result);
+ const schedule = {streamId:stream,kind:"exam",title:"Maths examination",
+   startsAt:new Date(current).toISOString(),endsAt:new Date(current+3600000).toISOString()};
+ await assert.rejects(assessment(teacher,"add",schedule), /academic leaders/i);
+ const exam = (await assessment(guardian,"add",schedule))[0];
+ assert.equal(exam.mine,false);
+ assert.equal((await assessment(teacher,"list"))[0].mine,true);
+ assert.deepEqual(await assessment(other,"list",{},otherOrg),[]);
+ await assert.rejects(assessment(other,"list"), /membership/i);
+ await assert.rejects(assessment(guardian,"start",{id:exam.id}), /assigned teacher/i);
+ await assert.rejects(assessment(teacher,"submit",{id:exam.id,recipient:"Academic Inspector"}), /earlier steps/i);
+ await assessment(teacher,"start",{id:exam.id});
+ await assessment(teacher,"finish",{id:exam.id});
+ await assessment(teacher,"mark",{id:exam.id});
+ await assessment(teacher,"submit",{id:exam.id,recipient:"Academic Inspector"});
+ const result = (await assessment(guardian,"list"))[0];
+ assert.ok(result.checked_in_at && result.checked_out_at && result.marked_at && result.submitted_at);
+ assert.equal(result.submitted_to,"Academic Inspector");
+ console.log("Assessment timetable: permissions, school isolation and full attendance-to-submission workflow passed.");
  console.log("Teaching presence/HQLS multi-school integration: "+checks+" checks passed.");
 } finally {await db.close();}

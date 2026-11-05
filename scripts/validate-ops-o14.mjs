@@ -72,7 +72,7 @@ for (const expected of [
   "Learner support",
   "No learner should quietly fall through the cracks",
   "Aggregate learner-risk visibility",
-  "Store only the identity/context needed to run support work",
+  "Only record the details needed for school support",
   "A signal is a reason to investigate—not a permanent label",
   "Diagnose → intervene → reassess → recover or redirect",
   "No single score, AI diagnosis, attendance signal or fee status",
