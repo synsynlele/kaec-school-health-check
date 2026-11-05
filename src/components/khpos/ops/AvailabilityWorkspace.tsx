@@ -97,6 +97,9 @@ export function AvailabilityWorkspace({
   const [reasonCategory, setReasonCategory] = useState("not_disclosed");
   const [reasonNote, setReasonNote] = useState("");
   const [sourceReference, setSourceReference] = useState("");
+  const [plannedCover, setPlannedCover] = useState("");
+  const [handover, setHandover] = useState("");
+  const [suggestedCover, setSuggestedCover] = useState("");
   const [coverageRequired, setCoverageRequired] = useState(false);
 
   const [caseNotes, setCaseNotes] = useState<Record<string, string>>({});
@@ -235,6 +238,11 @@ export function AvailabilityWorkspace({
       return;
     }
 
+    if (caseType === "planned_leave" && (!plannedCover || (plannedCover === "yes" && !handover.trim()))) {
+      setError("Say whether any duties need cover and list those duties if they do.");
+      return;
+    }
+
     const actualSource = selectedStaff?.isSelf ? "self_report" : sourceType;
 
     const ok = await submit(
@@ -251,7 +259,8 @@ export function AvailabilityWorkspace({
           actualSource === "third_party_exception"
             ? sourceReference.trim() || null
             : null,
-        coverageRequired,
+        coverageRequired: caseType === "planned_leave" ? plannedCover === "yes" : coverageRequired,
+        ...(caseType === "planned_leave" && plannedCover === "yes" ? { handover, suggestedCover } : {}),
       },
       "create",
     );
@@ -264,6 +273,9 @@ export function AvailabilityWorkspace({
       setReasonNote("");
       setSourceReference("");
       setCoverageRequired(false);
+      setPlannedCover("");
+      setHandover("");
+      setSuggestedCover("");
       setShowCreate(false);
     }
   }
@@ -668,6 +680,29 @@ export function AvailabilityWorkspace({
                   </label>
                 </div>
 
+                {caseType === "planned_leave" ? (
+                  <fieldset className="mt-4 grid gap-3 rounded-2xl border border-slate-200 p-4">
+                    <legend className="px-1 font-bold">Cover while you are away</legend>
+                    <label className="grid gap-1 text-sm font-bold">Will any classes or duties need cover?
+                      <select className="rounded-xl border border-slate-200 p-3" value={plannedCover} onChange={event => setPlannedCover(event.target.value)}>
+                        <option value="">Choose yes or no</option>
+                        <option value="yes">Yes, cover is needed</option>
+                        <option value="no">No duties need cover</option>
+                      </select>
+                    </label>
+                    {plannedCover === "yes" && <>
+                      <label className="grid gap-1 text-sm font-bold">Classes, duties or deadlines that need cover
+                        <textarea className="rounded-xl border border-slate-200 p-3" value={handover} maxLength={1000}
+                          onChange={event => setHandover(event.target.value)} placeholder="For example, Monday JSS2 Mathematics at 9:00" required />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">Suggested colleague (optional)
+                        <input className="rounded-xl border border-slate-200 p-3" value={suggestedCover} maxLength={120}
+                          onChange={event => setSuggestedCover(event.target.value)} />
+                      </label>
+                    </>}
+                    <p className="text-sm text-slate-600">Your school leader assigns cover and confirms the plan after the colleague accepts.</p>
+                  </fieldset>
+                ) : (
                 <label className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-200 p-4">
                   <input
                     type="checkbox"
@@ -686,6 +721,7 @@ export function AvailabilityWorkspace({
                     </span>
                   </span>
                 </label>
+                )}
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   <button
@@ -697,7 +733,7 @@ export function AvailabilityWorkspace({
                     {busyId === "create" && (
                       <Loader2 className="size-4 animate-spin" />
                     )}
-                    Save availability case
+                    Save leave or absence record
                   </button>
                   <button
                     type="button"
@@ -805,7 +841,7 @@ export function AvailabilityWorkspace({
                             {readable(availabilityCase.reasonCategory)}
                           </p>
                           {availabilityCase.reasonNote && (
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
                               {availabilityCase.reasonNote}
                             </p>
                           )}
