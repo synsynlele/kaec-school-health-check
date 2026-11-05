@@ -178,7 +178,31 @@ export function SchoolPathfinderDesk() {
       {desk.capped&&<p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">This page shows recent school records. Use the report filters and pages to find older activity.</p>}
       {error&&<p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900">{error}</p>}
       {notice&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
-      <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
+      <details className="rounded-2xl border border-slate-200 bg-white p-4" open>
+        <summary className="text-lg font-black">School rollout queue</summary>
+        <p className="my-2 text-sm text-slate-600">Open a school to update its agreement, owner or follow-up. This queue uses the supervision records you can access.</p>
+        <div className="space-y-2">
+          {[...visibleSchools].sort((a, b) => {
+            const priority = (e: SchoolEngagement) => !e.representative_user_id ? 0 : blocked.some(c => c.engagement_id === e.id) ? 1 : overdue.some(c => c.engagement_id === e.id) ? 2 : 3;
+            return priority(a) - priority(b) || partnerName(a.organisation_id).localeCompare(partnerName(b.organisation_id));
+          }).map(e => {
+            const open = outstanding.filter(c => c.engagement_id === e.id);
+            const next = [...open].sort((a, b) => (a.due_on ?? "9999").localeCompare(b.due_on ?? "9999"))[0];
+            return <button key={e.id} type="button" className="block w-full rounded-xl border p-3 text-left"
+              onClick={() => {
+                setSelectedSchool(e.id); setAgreement(null); setCommitment(null); setCurrentAction(null);
+                document.getElementById("school-rollout-details")?.scrollIntoView({ block: "start" });
+              }}>
+              <strong>{partnerName(e.organisation_id)}</strong>
+              <span className="mt-1 block text-sm text-slate-700">{labelOf(e.engagement_status)} · Pathfinder: {memberName(e.representative_user_id)} · School contact: {e.school_liaison || "Not set"}</span>
+              <span className="block text-sm text-slate-700">{blocked.filter(c => c.engagement_id === e.id).length} blocked · {overdue.filter(c => c.engagement_id === e.id).length} overdue · Next virtual check: {dateOf(e.next_virtual_check_on)}</span>
+              {next && <span className="block text-sm text-slate-700">Earliest open commitment: {next.title} · Due {dateOf(next.due_on)}</span>}
+            </button>;
+          })}
+          {!visibleSchools.length && <p className="text-sm text-slate-600">No linked schools match.</p>}
+        </div>
+      </details>
+      <div id="school-rollout-details" className="grid scroll-mt-24 items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
         <aside className="space-y-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="flex items-center gap-2 text-lg font-black"><MapPinned className="size-5 text-emerald-700"/> Partner schools</h2>
