@@ -1,5 +1,6 @@
 "use client";
 
+import { SchoolSetupGuide } from "./SchoolSetupGuide";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -215,7 +216,7 @@ export function ActivationCentre({
           <h1 className="mt-5 max-w-4xl text-3xl font-black tracking-tight sm:text-5xl">
             {activation.foundationComplete
               ? "The school has the minimum governed operating foundation."
-              : "Do not confuse installed modules with an operating school."}
+              : "Set up your school for its first working day."}
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
             Use this checklist to get your school ready: assign leaders, appoint safeguarding staff, approve required policies and publish school procedures.
@@ -224,6 +225,7 @@ export function ActivationCentre({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6 sm:py-10">
+        {activation.canPrepareDrafts && <SchoolSetupGuide school={organisationId} activation={activation} />}
         {actionMessage && (
           <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
             {actionMessage}

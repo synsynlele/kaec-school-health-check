@@ -441,9 +441,15 @@ export function MyWorkWorkspace({
           </div>
         )}
 
+        <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
+          <a className="rounded-xl border bg-white px-4 py-3" href="#today-attendance">Attendance &amp; lessons</a>
+          <a className="rounded-xl border bg-white px-4 py-3" href="#today-reports">My reports</a>
+          <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
+          {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
+        </nav>
+        <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
+        <div id="today-reports" className="scroll-mt-24"><ReportsWorkspace organisationId={organisationId} compact /></div>
         <AnnouncementsWorkspace organisationId={organisationId} compact />
-        <TodayAttendanceCard organisationId={organisationId} />
-        <ReportsWorkspace organisationId={organisationId} compact />
 
         {attention && otherActions.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -624,7 +630,7 @@ export function MyWorkWorkspace({
         )}
 
         {verificationItems.length > 0 && (
-          <section className="space-y-4">
+          <section id="today-reviews" className="scroll-mt-24 space-y-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
                 Independent verification
