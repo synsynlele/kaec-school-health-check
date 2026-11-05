@@ -44,12 +44,17 @@ export function MeetingCallPanel({ meeting, organisationId, onJoined }: { meetin
  const [error, setError] = useState("");
  const closed = ["closed", "cancelled"].includes(meeting.status);
  useEffect(() => {
+  if ((!session || closed) && panel.current && document.fullscreenElement === panel.current) {
+   void document.exitFullscreen().catch(() => {});
+  }
+ }, [session, closed]);
+ useEffect(() => {
   if (!session || !ready || closed || !container.current) return;
   // Defer SDK startup until the container is committed, and cancel on unmount.
   let call: CallApi | null = null;
   const startup = window.setTimeout(() => {
    const Constructor = (window as Window & { JitsiMeetExternalAPI?: CallConstructor }).JitsiMeetExternalAPI;
-   if (!Constructor) { setError("The call could not load. Leave and try joining again."); return; }
+   if (!Constructor) { setSession(null); setExpanded(false); setError("The call could not load. Try joining again."); return; }
    try {
     call = new Constructor("8x8.vc", { ...session, parentNode: container.current, width: "100%", height: "100%",
      configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true, prejoinConfig: { enabled: true }, disableDeepLinking: true,
@@ -57,7 +62,7 @@ export function MeetingCallPanel({ meeting, organisationId, onJoined }: { meetin
     api.current = call;
     call.addListener("readyToClose", () => { setSession(null); setExpanded(false); });
     call.addListener("videoConferenceJoined", () => joined.current?.());
-   } catch { setError("The call could not open. Leave and try joining again."); }
+   } catch { setSession(null); setExpanded(false); setError("The call could not open. Try joining again."); }
   }, 0);
   return () => { window.clearTimeout(startup); call?.dispose(); if (api.current === call) api.current = null; };
  }, [session, ready, closed, meeting.title]);
@@ -79,16 +84,19 @@ export function MeetingCallPanel({ meeting, organisationId, onJoined }: { meetin
   finally { pending.current = false; if (attempt === generation.current) setBusy(false); }
  }
  if (closed) return null;
- return <section ref={panel} aria-label="Voice and video call" className={expanded ? "fixed inset-0 z-[100] flex flex-col gap-3 overflow-auto bg-slate-950 p-3 text-white" : "space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4"}>
-  <h3 className="text-lg font-bold">Voice and video</h3>
-  <p className="text-sm">Join here, then allow your microphone and camera when asked. Keep your camera off for an audio meeting. Decisions and follow-ups stay below.</p>
+ return <section ref={panel} aria-label="Voice and video call" className={expanded ? "fixed inset-0 z-[100] flex h-[100dvh] flex-col overflow-hidden bg-slate-950 text-white" : "space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4"}>
+  {!session && <>
+   <h3 className="text-lg font-bold">Voice and video</h3>
+   <p className="text-sm">Allow microphone and camera access when asked. Keep your camera off for an audio meeting.</p>
+  </>}
   {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-800">{error}</p>}
   {session ? <>
-   <Script src="https://8x8.vc/external_api.js" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => setError("The calling service could not load. Check your connection, then leave and try again.")} />
+   <Script src="https://8x8.vc/external_api.js" strategy="afterInteractive" onReady={() => setReady(true)} onError={() => { setSession(null); setExpanded(false); setError("The calling service could not load. Check your connection and try again."); }} />
+   <div className={expanded ? "flex shrink-0 justify-end bg-slate-950 px-2 pt-[env(safe-area-inset-top)]" : "flex justify-end"}>
+    <button type="button" aria-pressed={expanded} onClick={() => void toggleFullScreen()} className={expanded ? "px-3 py-2 text-xs font-semibold text-white" : "rounded-lg border bg-white px-3 py-2 text-sm text-slate-900"}>{expanded ? "Exit full screen" : "Full screen"}</button>
+   </div>
    {!ready && <p role="status">Loading the call…</p>}
-   <div ref={container} className={expanded ? "min-h-0 flex-1 w-full overflow-hidden rounded-xl bg-slate-950" : "h-[70dvh] min-h-[400px] w-full overflow-hidden rounded-xl bg-slate-950"} />
-   <button type="button" aria-pressed={expanded} onClick={() => void toggleFullScreen()} className="rounded-xl border bg-white px-4 py-3 text-slate-900">{expanded ? "Exit full screen" : "Full screen"}</button>
-   <button type="button" onClick={() => { setSession(null); setExpanded(false); setError(""); }} className="rounded-xl border bg-white px-4 py-3 text-slate-900">Leave call</button>
+   <div ref={container} className={expanded ? "min-h-0 flex-1 w-full overflow-hidden bg-slate-950 pb-[env(safe-area-inset-bottom)]" : "h-[70dvh] min-h-[400px] w-full overflow-hidden rounded-xl bg-slate-950"} />
   </> : <button type="button" disabled={busy} onClick={() => void join()} className="rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Preparing call…" : "Join call"}</button>}
  </section>;
 }
