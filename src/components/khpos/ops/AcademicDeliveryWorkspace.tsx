@@ -1,5 +1,6 @@
 "use client";
 
+import { CatalogClassPicker, ClassSubjectSetup, useClassSubjectCatalog } from "./ClassSubjectCatalog";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -78,6 +79,7 @@ export function AcademicDeliveryWorkspace({
   const [termEndDate, setTermEndDate] = useState("");
   const [termCampusId, setTermCampusId] = useState("");
 
+  const catalog = useClassSubjectCatalog(organisationId);
   const [streamTermId, setStreamTermId] = useState("");
   const [streamCampusId, setStreamCampusId] = useState("");
   const [streamUnitId, setStreamUnitId] = useState("");
@@ -261,7 +263,7 @@ export function AcademicDeliveryWorkspace({
         mode: editingStreamId ? "update_stream" : "create_stream",
         ...(editingStreamId ? { streamId: editingStreamId } : {}),
         termId: streamTermId,
-        campusId: streamCampusId || null,
+        campusId: (editingStreamId ? streamCampusId : workspace?.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId) || null,
         unitId: streamUnitId || null,
         classLabel: classLabel.trim(),
         sectionLabel: sectionLabel.trim() || null,
@@ -445,6 +447,7 @@ export function AcademicDeliveryWorkspace({
           />
         </section>
 
+        {workspace.canPlan && <ClassSubjectSetup catalog={catalog} campuses={workspace.campuses} />}
         {workspace.canPlan && (
           <section className="grid gap-5 xl:grid-cols-2">
             <div id="academic-term-editor" className="scroll-mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -562,6 +565,9 @@ export function AcademicDeliveryWorkspace({
                       ))}
                     </select>
                     <Link href={`/khpos/${organisationId}/team#learning-sections`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline sm:col-span-2">Missing a preschool or primary section? Manage learning sections</Link>
+                    <CatalogClassPicker entries={catalog.entries}
+                      campusId={workspace.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId}
+                      onPick={(label, section) => { setClassLabel(label); setSectionLabel(section); }} />
                     <input
                       value={classLabel}
                       onChange={(event) => setClassLabel(event.target.value)}
@@ -574,6 +580,15 @@ export function AcademicDeliveryWorkspace({
                       placeholder="Section e.g. A"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
+                    {catalog.entries.some(entry => entry.campusId === null) && <label className="grid gap-1 text-sm font-semibold">
+                      Choose a saved subject
+                      <select value="" onChange={event => { if (event.target.value) setSubjectLabel(event.target.value); }}
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                        <option value="">Select to fill subject</option>
+                        {catalog.entries.filter(entry => entry.campusId === null).map(entry =>
+                          <option key={entry.id} value={entry.label}>{entry.label}</option>)}
+                      </select>
+                    </label>}
                     <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Subject / learning area</span><input
                       value={subjectLabel}
                       onChange={(event) => setSubjectLabel(event.target.value)}
