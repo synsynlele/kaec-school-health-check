@@ -32,6 +32,11 @@ const followups=[];
 const tableRows={kaec_hq_members:members,organisations,kaec_hq_school_engagements:engagements,
   kaec_hq_school_commitments:commitments,kaec_hq_school_followups:followups};
 const adapter={
+  async rpc(name, {p_actor, p_engagements}) {
+    assert.equal(name, "kaec_hq_rollout_adoption");
+    if (p_actor === members[1].user_id) assert.deepEqual(p_engagements, [id(20)]);
+    return {data:p_engagements.map(engagement_id=>({engagement_id})),error:null};
+  },
   from(table){
     const rows=tableRows[table];if(!rows)throw Error("Unknown table: "+table);
     let predicates=[],sort=null,lim=null,patch=null;
@@ -71,6 +76,7 @@ try{
   const vision=user(0),guide=user(1),otherGuide=user(2),alliance=user(3),outsider=user(4);
   const restricted=await svc.getSchoolDesk(guide);
   assert.deepEqual(restricted.engagements.map(e=>e.id),[id(20)]);
+  assert.deepEqual(restricted.adoption.map(e=>e.engagement_id),[id(20)]);
   assert.deepEqual(restricted.commitments.map(c=>c.id),[id(30)]);
   assert.deepEqual(restricted.organisations.map(o=>o.id),[id(10)]);
   assert.deepEqual(restricted.members.map(m=>m.user_id),[guide.id]);
