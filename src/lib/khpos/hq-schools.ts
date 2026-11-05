@@ -23,11 +23,17 @@ export type SchoolFollowup = {
   outcome: string; evidence_reference: string; next_followup_on: string|null;
   next_visit_on: string|null; recorded_by: string; happened_at: string; created_at: string;
 };
+type RolloutAdoption = {
+  engagement_id: string;
+  staff_total: number; linked_staff: number; active_staff: number; onboarding_staff: number; ready_staff: number;
+  week_start: string | null; week_end: string | null; staff_checkins: number; completed_lessons: number;
+};
 export type SchoolDeskSnapshot = {
   viewer: { userId: string; role: HqRole; aal: string };
   organisations: {id:string;name:string;partner_status:string}[];
   members: {user_id:string;display_name:string;role:string;status:string}[];
   engagements: SchoolEngagement[];
+  adoption: RolloutAdoption[] | null;
   commitments: SchoolCommitment[];
   followups: SchoolFollowup[];
   capped: boolean; generated_at: string;
@@ -136,7 +142,7 @@ export async function getSchoolDesk(user:VerifiedKhposUser):Promise<SchoolDeskSn
       .order("created_at",{ascending:false}).limit(301)
     : {data:[],error:null};
   if(followupError)throw new SchoolDeskError("Follow-up history could not be loaded.",503);
-  const [schoolsResult,membersResult]=await Promise.all([
+  const [schoolsResult,membersResult,adoptionResult]=await Promise.all([
     mayGovern(member)
       ? db().from("organisations").select("id,name,partner_status,partner_entitlements,status")
           .eq("partner_status","active").eq("status","active").order("name").limit(150)
@@ -146,7 +152,8 @@ export async function getSchoolDesk(user:VerifiedKhposUser):Promise<SchoolDeskSn
         : Promise.resolve({data:[],error:null}),
     maySeeAll(member)
       ? db().from("kaec_hq_members").select("user_id,display_name,role,status").order("display_name")
-      : db().from("kaec_hq_members").select("user_id,display_name,role,status").eq("user_id",user.id)
+      : db().from("kaec_hq_members").select("user_id,display_name,role,status").eq("user_id",user.id),
+    ids.length ? db().rpc("kaec_hq_rollout_adoption", { p_actor: user.id, p_engagements: ids }) : Promise.resolve({data:[],error:null})
   ]);
   if(schoolsResult.error || membersResult.error)throw new SchoolDeskError("School register or corporate people could not be loaded.",503);
   const organisations=((schoolsResult.data??[]) as {id:string;name:string;partner_status:string;status:string;partner_entitlements:string[]}[])
@@ -155,7 +162,7 @@ export async function getSchoolDesk(user:VerifiedKhposUser):Promise<SchoolDeskSn
     .map(({id,name,partner_status})=>({id,name,partner_status}));
   return {viewer:{userId:user.id,role:member.role,aal:user.aal},organisations,
     members:(membersResult.data??[]) as SchoolDeskSnapshot["members"],
-    engagements, commitments, followups:((allFollowups??[]) as SchoolFollowup[]).slice(0,300),
+    engagements, adoption: adoptionResult.error ? null : adoptionResult.data as RolloutAdoption[], commitments, followups:((allFollowups??[]) as SchoolFollowup[]).slice(0,300),
     capped:(allEngagements??[]).length>200 || (allCommitments??[]).length>300 || (allFollowups??[]).length>300,
     generated_at:new Date().toISOString()};
 }
