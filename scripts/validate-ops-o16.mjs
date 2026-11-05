@@ -62,7 +62,7 @@ for (const expected of [
   "Potential is a living hypothesis",
   "PipuPath privacy boundary",
   "Aggregate visibility only",
-  "No learner anchors yet",
+  "No learners added yet",
   "Discovery → test → evidence → reflection → review",
   "school-owned reflection",
 ]) requireText(workspace, expected, "O16 workspace");

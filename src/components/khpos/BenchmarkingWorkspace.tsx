@@ -249,7 +249,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
         {workspace.status === "awaiting_baseline" && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
             <Gauge className="size-9 text-brand-700" />
-            <h2 className="mt-4 text-2xl font-black">Complete the school baseline first.</h2>
+            <h2 className="mt-4 text-2xl font-black">Complete your first School Health Check.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
               Complete your school’s first School Health Check before viewing comparisons.
             </p>
@@ -352,7 +352,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
               {workspace.improvement?.eligible ? (
                 <div className="mt-6 grid gap-4 md:grid-cols-4">
                   <div className="rounded-2xl bg-slate-950 p-5 text-white">
-                    <p className="text-xs font-bold text-slate-400">Your delta from baseline</p>
+                    <p className="text-xs font-bold text-slate-400">Change since the first health check</p>
                     <p className="mt-1 text-2xl font-black">{workspace.improvement.ownDeltaFromBaseline ?? "—"}</p>
                   </div>
                   <div className="rounded-2xl bg-slate-100 p-5">

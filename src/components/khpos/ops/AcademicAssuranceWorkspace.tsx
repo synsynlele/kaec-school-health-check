@@ -1860,10 +1860,10 @@ function CloseoutCreatePanel({
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
           /></label>
         ))}
-        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Carry-over/escalation reference if anything remains open</span><input
+        <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit md:col-span-2"><span>Link any open item to its next action or referral</span><input
           value={values["close-carryover"] || ""}
           onChange={(event) => setValue("close-carryover", event.target.value)}
-          placeholder="Carry-over/escalation reference if anything remains open"
+          placeholder="Link any open item to its next action or referral"
           className="rounded-xl border border-slate-200 px-3 py-2 text-xs md:col-span-2"
         /></label>
       </div>

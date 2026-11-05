@@ -141,10 +141,10 @@ export function PartnerRegistryWorkspace() {
       {selected && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-5 backdrop-blur-sm">
           <form onSubmit={applyChange} className="w-full max-w-lg rounded-[28px] bg-white p-7 text-slate-950 shadow-2xl">
-            <p className="text-xs font-black uppercase tracking-[0.15em] text-brand-700">Partnership governance</p>
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-brand-700">Partnership access</p>
             <h2 className="mt-2 text-2xl font-black">{selected.action} {selected.name}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-500">This changes real KHP-OS access. Administrator MFA (AAL2) is required.</p>
-            <label className="mt-5 block text-xs font-black uppercase tracking-wide text-slate-500" htmlFor="partner-reason">Governance reason</label>
+            <label className="mt-5 block text-xs font-black uppercase tracking-wide text-slate-500" htmlFor="partner-reason">Reason for the change</label>
             <textarea id="partner-reason" required minLength={12} value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" placeholder="Why is KAEC-NG making this partnership decision?" />
             <div className="mt-5 flex justify-end gap-3"><button type="button" onClick={() => setSelected(null)} className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-bold">Cancel</button><button disabled={busy} className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">{busy ? "Applying…" : `Confirm ${selected.action}`}</button></div>
           </form>

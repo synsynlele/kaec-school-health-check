@@ -174,7 +174,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center gap-2">
-            {workspace.canViewHealthReport && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">Baseline activated</span>}
+            {workspace.canViewHealthReport && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">First health check saved</span>}
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
@@ -281,12 +281,12 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
         <section className="grid gap-4 md:grid-cols-3">
           {workspace.canViewHealthReport && <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Gauge className="size-6 text-brand-700" />
-            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">KSHC baseline</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">First School Health Check</p>
             <div className="mt-1 flex items-end gap-2">
               <span className="text-4xl font-black tracking-tight">{baseline?.overallScore ?? "—"}</span>
               {baseline?.overallScore !== null && baseline?.overallScore !== undefined && <span className="pb-1 text-sm font-bold text-slate-600">/100</span>}
             </div>
-            <p className="mt-2 text-sm font-semibold text-slate-700">{baseline?.healthRating ?? "Baseline awaiting completion"}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-700">{baseline?.healthRating ?? "Health check not completed yet"}</p>
             {baseline && (
               <Link
                 href={`/report/${baseline.assessmentId}`}
@@ -315,7 +315,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Building2 className="size-6 text-mint-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-600">School record</p>
-            <p className="mt-2 text-xl font-black text-slate-900">{workspace.canViewHealthReport ? "Baseline preserved" : "School workspace active"}</p>
+            <p className="mt-2 text-xl font-black text-slate-900">{workspace.canViewHealthReport ? "First health check saved" : "School workspace active"}</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">{workspace.canViewHealthReport ? `KSHC framework v${baseline?.frameworkVersion ?? "1.0"} is attached to this permanent school identity.` : "Use your assigned school duties and activities. School Health Reports are reserved for appointed leaders."}</p>
           </div>
         </section>
@@ -416,7 +416,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
 
         {workspace.canViewHealthReport && !!workspace.departmentScores.length && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Baseline detail</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">First health check details</p>
             <h2 className="mt-2 text-2xl font-black">The 11 KSHC areas preserved as your starting point</h2>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {workspace.departmentScores.map((area) => (

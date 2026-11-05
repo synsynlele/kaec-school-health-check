@@ -478,7 +478,7 @@ export function StaffTransitionWorkspace({
                 <ClipboardCheck className="mt-0.5 size-5 shrink-0 text-amber-700" />
                 <div>
                   <h2 className="text-sm font-black text-amber-950">
-                    Employment-action boundary
+                    Formal employment decisions
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-amber-900">
                     {workspace.legalBoundary}

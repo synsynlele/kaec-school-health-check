@@ -288,7 +288,7 @@ export function ImplementationWorkspace({
                         </div>
                         <div className="mt-6 grid gap-4 lg:grid-cols-2">
                           <div className="rounded-2xl bg-white p-5">
-                            <p className="text-xs font-black uppercase tracking-wide text-slate-400">Baseline condition</p>
+                            <p className="text-xs font-black uppercase tracking-wide text-slate-400">What things were like at the start</p>
                             <p className="mt-2 text-sm leading-6 text-slate-600">{plan.outcomeContract.baselineCondition}</p>
                           </div>
                           <div className="rounded-2xl bg-white p-5">

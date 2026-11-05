@@ -48,12 +48,12 @@ const workspace = read("src/components/khpos/ops/AvailabilityWorkspace.tsx");
 for (const expected of [
   "School operations",
   "Leave & cover",
-  "KHP-OS does not replace the school attendance system.",
-  "Transactional boundary",
-  "Coverage gaps",
+  "Request planned leave or report an absence here.",
+  "How this works",
+  "Duties without cover",
   "private reason is hidden",
-  "Confirm coverage plan",
-  "Repeated absence is not solved by repeated reminders",
+  "Confirm cover plan",
+  "Follow up on repeated absences",
 ]) {
   requireText(workspace, expected, "O8 availability workspace");
 }

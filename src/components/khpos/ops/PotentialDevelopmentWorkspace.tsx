@@ -321,7 +321,7 @@ export function PotentialDevelopmentWorkspace({
           </div>
           <div className="mt-6 max-w-4xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-mint-300">
-              Human Learner development
+              Learner development
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">
               Learner development
@@ -409,7 +409,7 @@ export function PotentialDevelopmentWorkspace({
         ) : workspace.learners.length === 0 ? (
           <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <Compass className="mx-auto size-9 text-slate-400" />
-            <h2 className="mt-3 text-xl font-black">No learner anchors yet</h2>
+            <h2 className="mt-3 text-xl font-black">No learners added yet</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Learner development intentionally reuses Learner support learners. Create or sync learners in Learner Progress first; Learner development does not create a second student database.
             </p>

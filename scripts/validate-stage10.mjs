@@ -77,7 +77,7 @@ expectContains("src/components/khpos/AdminConsoleWorkspace.tsx", [
   "KHP-OS | KAEC-NG Admin Console",
   "Set up authenticator MFA",
   "Verify MFA",
-  "Platform access governance",
+  "Platform access rules",
   "Platform audit",
   "Platform governance is separate from school authority.",
 ]);

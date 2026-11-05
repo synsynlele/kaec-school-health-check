@@ -526,7 +526,7 @@ export function AdminConsoleWorkspace() {
           <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Platform access governance</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Platform access rules</p>
                 <h2 className="mt-2 text-2xl font-black">Administrators</h2>
               </div>
               <Users className="size-7 text-brand-700" />
@@ -602,13 +602,13 @@ export function AdminConsoleWorkspace() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Platform audit</p>
-                <h2 className="mt-2 text-2xl font-black">Recent governance events</h2>
+                <h2 className="mt-2 text-2xl font-black">Recent access changes</h2>
               </div>
               <Activity className="size-7 text-brand-700" />
             </div>
             <div className="mt-5 space-y-3">
               {console.recentEvents.length === 0 ? (
-                <p className="text-sm text-slate-500">No platform governance events yet.</p>
+                <p className="text-sm text-slate-500">No access changes recorded yet.</p>
               ) : (
                 console.recentEvents.map((event) => (
                   <article key={event.id} className="rounded-2xl bg-slate-50 p-4">

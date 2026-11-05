@@ -113,7 +113,7 @@ const operationsLinks = [
   { suffix: "/recruitment", label: "Hiring", icon: BriefcaseBusiness },
   { suffix: "/availability", label: "Leave & cover", icon: CalendarClock },
   { suffix: "/staff-performance", label: "Staff support", icon: FileCheck2 },
-  { suffix: "/staff-accountability", label: "Staff concerns & praise", icon: Gavel },
+  { suffix: "/staff-accountability", label: "Staff queries & praise", icon: Gavel },
   { suffix: "/staff-transition", label: "Staff changes & leaving", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Teaching plans", icon: GraduationCap },
   { suffix: "/teaching-presence", label: "Attendance & lessons", icon: BookOpen },
@@ -198,7 +198,7 @@ const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? la
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }

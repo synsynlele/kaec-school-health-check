@@ -610,7 +610,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           {historyCategory==="school"&&<section className={box} aria-label="School attendance records">
             <h3 className="text-lg font-black text-slate-900">School check-in and check-out</h3>
             <p className="mt-1 text-sm text-slate-600">Staff arrival and departure across the selected dates. A school check-in does not prove a class was taught.</p>
-            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions on this page ({(activeHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
+            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show records with location issues on this page ({(activeHistory?.schoolRecords??[]).filter(d=>needsLocationReview(d.checkInLocation)||needsLocationReview(d.checkOutLocation)).length})</label>
             {schoolRows.length===0?<p className="mt-3 text-sm text-slate-500">{currentHistoryFilter.query?"No school attendance matches this search.":"No saved school attendance within the selected dates and your leadership scope."}</p>:
               <><div className="mt-3 space-y-3 md:hidden">{schoolRows.map(d=><article key={d.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                 <h4 className="font-black text-slate-950">{d.name||"Staff member"}</h4><p className="mt-1 text-xs text-slate-600">{data.campuses.find(c=>c.id===d.campusId)?.name??"School campus"} · {d.date}</p>
@@ -646,7 +646,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
           <details className={box}>
             <summary className="cursor-pointer text-lg font-black text-slate-900">Administrative corrections ({data.openClassSessions.length+data.openSchoolAttendance.length} open)</summary>
           {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <h3 className="font-black text-amber-900">Administrative correction — evidence required</h3>
+            <h3 className="font-black text-amber-900">Correct an attendance record with supporting information</h3>
             <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
             <label className="block text-xs font-bold">Correction reason and supporting reference (at least 15 characters)</label>
             <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason, verified information and issue reference.</span><textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/></label>

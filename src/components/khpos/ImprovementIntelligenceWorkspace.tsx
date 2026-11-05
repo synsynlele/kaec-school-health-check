@@ -281,7 +281,7 @@ export function ImprovementIntelligenceWorkspace({
         {!latest ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <Target className="mx-auto size-9 text-slate-400" />
-            <h2 className="mt-4 text-2xl font-black">Your baseline is preserved. No reassessment has completed yet.</h2>
+            <h2 className="mt-4 text-2xl font-black">Your first health check is saved. Complete another check to compare results.</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">
               Once a reassessment is completed, KHP-OS will automatically calculate all 55 indicator changes, 11 area changes, seven system changes and every active priority outcome.
             </p>
@@ -298,7 +298,7 @@ export function ImprovementIntelligenceWorkspace({
                 <p className="mt-2 text-4xl font-black">{latest.reassessmentOverallScore?.toFixed(1) ?? "—"}</p>
               </div>
               <div className={`rounded-3xl border p-5 shadow-sm ${changeTone(latest.deltaFromBaseline ?? 0)}`}>
-                <p className="text-xs font-black uppercase opacity-70">Change from baseline</p>
+                <p className="text-xs font-black uppercase opacity-70">Change since the first check</p>
                 <p className="mt-2 text-4xl font-black">{delta(latest.deltaFromBaseline)}</p>
               </div>
               <div className={`rounded-3xl border p-5 shadow-sm ${latest.verifiedImprovement ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-900"}`}>
