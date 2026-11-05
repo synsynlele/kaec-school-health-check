@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 24689)
-Total output lines: 2172
-
 "use client";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -847,7 +844,389 @@ export function LearnerProgressWorkspace({
                       placeholder="Foundational-gap summary"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
-                    <label className="grid min-w-0 gap-1 te…4689 tokens truncated…>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Progress and next steps</span><textarea
+                      value={progressionTrajectory}
+                      onChange={(event) =>
+                        setProgressionTrajectory(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Progress and next steps"
+                      className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Intervention/reassessment summary</span><textarea
+                      value={progressionIntervention}
+                      onChange={(event) =>
+                        setProgressionIntervention(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Intervention/reassessment summary"
+                      className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Attendance evidence reference</span><input
+                        value={progressionAttendance}
+                        onChange={(event) =>
+                          setProgressionAttendance(event.target.value)
+                        }
+                        placeholder="Attendance evidence reference"
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                      /></label>
+                      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Exam requirement summary</span><input
+                        value={progressionExam}
+                        onChange={(event) => setProgressionExam(event.target.value)}
+                        placeholder="Exam requirement summary"
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                      /></label>
+                    </div>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reasoned decision</span><textarea
+                      value={progressionRationale}
+                      onChange={(event) =>
+                        setProgressionRationale(event.target.value)
+                      }
+                      rows={3}
+                      placeholder="Reasoned decision"
+                      className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Required support carried forward</span><textarea
+                      value={progressionSupport}
+                      onChange={(event) =>
+                        setProgressionSupport(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Required support carried forward"
+                      className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Parent meeting reference for high-impact decision</span><input
+                      value={progressionParentRef}
+                      onChange={(event) =>
+                        setProgressionParentRef(event.target.value)
+                      }
+                      placeholder="Parent meeting reference for high-impact decision"
+                      className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void submit(
+                        {
+                          mode: "create_progression",
+                          learnerId: progressionLearnerId,
+                          academicYear: progressionYear,
+                          fromClassLabel: progressionFromClass,
+                          proposedNextClassLabel: progressionNextClass,
+                          decision: progressionDecision,
+                          attainmentReference: progressionAttainment,
+                          foundationalGapSummary: progressionFoundation,
+                          trajectorySummary: progressionTrajectory,
+                          interventionSummary: progressionIntervention,
+                          attendanceReference: progressionAttendance,
+                          examRequirementSummary: progressionExam,
+                          decisionRationale: progressionRationale,
+                          requiredSupport: progressionSupport,
+                          parentMeetingReference: progressionParentRef,
+                        },
+                        "progression",
+                      )
+                    }
+                    disabled={busyId === "progression"}
+                    className="mt-4 rounded-full bg-fuchsia-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+                  >
+                    Propose decision
+                  </button>
+                </div>
+
+                <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
+                    Term review
+                  </p>
+                  <h2 className="mt-2 text-xl font-black">
+                    Carry unresolved support into the next term
+                  </h2>
+                  <div className="mt-5 space-y-3">
+                    <select
+                      value={termReviewLearnerId}
+                      onChange={(event) =>
+                        setTermReviewLearnerId(event.target.value)
+                      }
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    >
+                      <option value="">Choose learner</option>
+                      {workspace.learners.map((learner) => (
+                        <option key={learner.id} value={learner.id}>
+                          {learner.displayName} · {learner.classLabel}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <select
+                        value={termReviewTermId}
+                        onChange={(event) =>
+                          setTermReviewTermId(event.target.value)
+                        }
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                      >
+                        <option value="">Choose term</option>
+                        {workspace.terms.map((term) => (
+                          <option key={term.id} value={term.id}>
+                            {term.sessionLabel} · {term.termName}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={termReviewStatus}
+                        onChange={(event) =>
+                          setTermReviewStatus(event.target.value)
+                        }
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                      >
+                        <option value="green">Green</option>
+                        <option value="amber">Amber</option>
+                        <option value="red">Red</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    </div>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Progress summary</span><textarea
+                      value={termReviewProgress}
+                      onChange={(event) =>
+                        setTermReviewProgress(event.target.value)
+                      }
+                      rows={3}
+                      placeholder="Progress summary"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Open risks</span><textarea
+                      value={termReviewRisks}
+                      onChange={(event) => setTermReviewRisks(event.target.value)}
+                      rows={2}
+                      placeholder="Open risks"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Intervention summary</span><textarea
+                      value={termReviewIntervention}
+                      onChange={(event) =>
+                        setTermReviewIntervention(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Intervention summary"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Next-term actions</span><textarea
+                      value={termReviewActions}
+                      onChange={(event) =>
+                        setTermReviewActions(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Next-term actions"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Evidence reference</span><input
+                      value={termReviewEvidence}
+                      onChange={(event) =>
+                        setTermReviewEvidence(event.target.value)
+                      }
+                      placeholder="Evidence reference"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    /></label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void submit(
+                        {
+                          mode: "term_review",
+                          learnerId: termReviewLearnerId,
+                          termId: termReviewTermId,
+                          overallStatus: termReviewStatus,
+                          progressSummary: termReviewProgress,
+                          openRisksSummary: termReviewRisks,
+                          interventionSummary: termReviewIntervention,
+                          nextTermActions: termReviewActions,
+                          evidenceReference: termReviewEvidence,
+                        },
+                        "term-review",
+                      )
+                    }
+                    disabled={busyId === "term-review"}
+                    className="mt-4 rounded-full bg-emerald-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+                  >
+                    Save term review
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {workspace.progressionDecisions.length > 0 ? (
+              <section>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-fuchsia-700">
+                  Progression decisions
+                </p>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  {workspace.progressionDecisions.map((decision) => (
+                    <article
+                      key={decision.id}
+                      className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
+                            decision.status,
+                          )}`}
+                        >
+                          {readable(decision.status)}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black capitalize text-slate-700">
+                          {readable(decision.decision)}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-lg font-black">
+                        {decision.learnerName} · {decision.academicYear}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {decision.decisionRationale}
+                      </p>
+                      {decision.requiredSupport ? (
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
+                          Support: {decision.requiredSupport}
+                        </p>
+                      ) : null}
+                      {workspace.canManage && decision.status === "proposed" ? (
+                        <div className="mt-4 space-y-2">
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Confirmation/cancellation note</span><textarea
+                            value={notes[`progression-${decision.id}`] ?? ""}
+                            onChange={(event) =>
+                              setNotes((current) => ({
+                                ...current,
+                                [`progression-${decision.id}`]:
+                                  event.target.value,
+                              }))
+                            }
+                            rows={2}
+                            placeholder="Confirmation/cancellation note"
+                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                          /></label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void submit(
+                                  {
+                                    mode: "progression_action",
+                                    decisionId: decision.id,
+                                    action: "confirm",
+                                    confirmationNote:
+                                      notes[
+                                        `progression-${decision.id}`
+                                      ] ?? "",
+                                  },
+                                  `progression-confirm-${decision.id}`,
+                                )
+                              }
+                              className="rounded-full bg-emerald-700 px-3 py-2 text-xs font-black text-white"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void submit(
+                                  {
+                                    mode: "progression_action",
+                                    decisionId: decision.id,
+                                    action: "cancel",
+                                    confirmationNote:
+                                      notes[
+                                        `progression-${decision.id}`
+                                      ] ?? "",
+                                  },
+                                  `progression-cancel-${decision.id}`,
+                                )
+                              }
+                              className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-700"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="mt-4 rounded-[28px] border border-dashed border-slate-300 bg-white p-7 text-center text-sm font-semibold text-slate-500">
+      {text}
+    </div>
+  );
+}
+
+function RiskSignalCard({
+  signal,
+  workspace,
+  busyId,
+  notes,
+  references,
+  selects,
+  dates,
+  setNotes,
+  setReferences,
+  setSelects,
+  setDates,
+  submit,
+}: {
+  signal: KhposOpsLearnerRiskSignal;
+  workspace: KhposOpsLearnerProgressWorkspace;
+  busyId: string | null;
+  notes: Record<string, string>;
+  references: Record<string, string>;
+  selects: Record<string, string>;
+  dates: Record<string, string>;
+  setNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setReferences: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setSelects: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setDates: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  submit: (payload: Record<string, unknown>, busyKey: string) => Promise<boolean>;
+}) {
+  const responseKey = `signal-response-${signal.id}`;
+  const responseRefKey = `signal-ref-${signal.id}`;
+  const ownerKey = `signal-owner-${signal.id}`;
+  const reviewKey = `signal-review-${signal.id}`;
+  const concernKey = `signal-concern-${signal.id}`;
+  const caseOwners = workspace.assignments.filter((item) =>
+    ["SECTIONAL_PROMOTER", "ACADEMIC_INSPECTOR", "SCHOOL_GUARDIAN"].includes(
+      item.roleCode,
+    ),
+  );
+
+  return (
+    <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
+            signal.severity,
+          )}`}
+        >
+          {signal.severity}
+        </span>
+        <span
+          className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${badgeClass(
+            signal.status,
+          )}`}
+        >
+          {signal.status}
+        </span>
+        <span className="text-[11px] font-bold text-slate-400">
+          {signal.reference}
+        </span>
       </div>
       <h3 className="mt-3 text-lg font-black">
         {signal.learnerName} · {signal.classLabel}
