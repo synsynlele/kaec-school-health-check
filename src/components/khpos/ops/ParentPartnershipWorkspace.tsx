@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -84,6 +86,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
   }
 
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <header><h1 className="text-3xl font-bold">Parent Partnership</h1><p className="mt-2 text-slate-600">Receive concerns, assign a campus owner, record what parents actually received, and verify resolution.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, use the <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">protected safeguarding pathway</Link> immediately. Keep disclosure details out of this workspace.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <p>Loading parent cases…</p>}

@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TapChoices } from "./TapChoices";
@@ -267,6 +269,7 @@ export function ReportsWorkspace({
   const chosen = detail?.items[0];
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-4 pb-16 sm:p-6">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
       <header className="space-y-3">
         <p className="text-xs font-black uppercase tracking-widest text-brand-700">
           School operations

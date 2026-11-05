@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -28,6 +30,7 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
   const [from, setFrom] = useState(() => monday(today));
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const [now, setNow] = useState(Date.now);
@@ -66,8 +69,10 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
     pending.current = true;
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       setEntries(await request(input));
+      setNotice("Assessment timetable updated.");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the timetable.");
     } finally {
@@ -117,7 +122,7 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
         </fieldset>
       </form>
     </details>}
-    {error && <p role="alert" className="text-red-800">{error}</p>}
+      <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!entries && !error && <p role="status">Loading timetable…</p>}
     {entries?.length === 0 && <p>No tests or exams scheduled for this week.</p>}
     {entries?.map(item => {

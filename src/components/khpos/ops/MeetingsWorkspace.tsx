@@ -1,4 +1,6 @@
 "use client";
+
+import { ActionFeedback } from "./ActionFeedback";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -79,6 +81,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const room=data?.room; const host=!!room&&room.meeting.created_by===data?.userId&&data.canCreate;
  const writable=!!room&&!["closed","cancelled"].includes(room.meeting.status);
  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
   <Link href={hq?"/khpos/hq":`/khpos/${organisationId}/work`} className="text-blue-700">{hq?"← KAEC HQ":"← Today"}</Link>
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
   {data?.canCreate&&<button className={button} onClick={()=>setShowCreate(!showCreate)}>Schedule a meeting</button>}</header>

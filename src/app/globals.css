@@ -147,3 +147,13 @@ body {
     min-width: 0;
   }
 }
+
+@layer base {
+  :where(button, [role="button"], a[href], summary):not(:disabled, [aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  :where(button:disabled, [role="button"][aria-disabled="true"], a[aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+}

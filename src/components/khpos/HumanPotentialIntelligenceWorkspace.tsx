@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -170,6 +172,7 @@ export function HumanPotentialIntelligenceWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link

@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -61,6 +63,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
   }
 
   return <main className="mx-auto max-w-3xl space-y-5 p-4 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <h1 className="text-2xl font-bold">Ideas &amp; Discussions</h1>
     <p>Share ideas and discuss suggestions with your team.</p>
     {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}

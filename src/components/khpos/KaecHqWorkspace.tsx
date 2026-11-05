@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -304,6 +306,7 @@ export function KaecHqWorkspace() {
   const privileged = snapshot.viewer.role === "vision_custodian";
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="border-b border-slate-200 bg-slate-950 text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6">
           <div className="flex items-center gap-3"><Landmark className="size-8 text-emerald-300" /><div>

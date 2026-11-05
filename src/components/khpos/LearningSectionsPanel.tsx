@@ -1,4 +1,6 @@
 "use client";
+
+import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
@@ -82,6 +84,7 @@ export function LearningSectionsPanel({
       id="learning-sections"
       className="scroll-mt-36 space-y-4 rounded-3xl border border-slate-200 bg-white p-5 sm:p-8"
     >
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-black">Learning sections</h2>
         {data?.campuses.some((c) => c.canManage) && (

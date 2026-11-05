@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BrainCircuit, CircleAlert, Link2, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
@@ -121,6 +123,7 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
   const connected = workspace.integration.status === "active";
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link href={`/khpos/${organisationId}/improvement`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">

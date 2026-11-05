@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -52,7 +54,8 @@ export function CampusReadinessWorkspace({ organisationId }: { organisationId: s
   const button = (title: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : title}</button>;
   const exceptions = data?.checks.filter((check) => ["exception", "resolved"].includes(check.status)) || [];
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900"><header><h1 className="text-3xl font-bold">Campus Readiness</h1><p className="mt-2 text-slate-600">Record daily checks. A failed check stays visible until a campus leader resolves it and another leader verifies the result. For a new fault after today’s check, <Link href={`/khpos/${organisationId}/issues`} className="underline">raise an issue</Link>.</p></header>
+  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><header><h1 className="text-3xl font-bold">Campus Readiness</h1><p className="mt-2 text-slate-600">Record daily checks. A failed check stays visible until a campus leader resolves it and another leader verifies the result. For a new fault after today’s check, <Link href={`/khpos/${organisationId}/issues`} className="underline">raise an issue</Link>.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <p>Loading campus readiness…</p>}
     {data && <><p className="rounded-lg bg-slate-100 p-3 text-sm font-semibold">Operating date: {data.operatingDate} · {exceptions.length} unresolved exception{exceptions.length === 1 ? "" : "s"}</p>

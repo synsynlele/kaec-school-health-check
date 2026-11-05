@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ops/ActionFeedback";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -205,6 +207,7 @@ export function ImprovementIntelligenceWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
           <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">

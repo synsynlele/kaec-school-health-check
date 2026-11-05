@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -184,6 +186,7 @@ export function ActivationCentre({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busyAction)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <section
         className={
           activation.foundationComplete

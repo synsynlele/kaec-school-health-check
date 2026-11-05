@@ -1,4 +1,6 @@
 "use client";
+
+import { ActionFeedback } from "./ops/ActionFeedback";
 import Link from "next/link";
 import {TapChoices} from "./TapChoices";
 import {hqProgressOptions,hqWorkOptions,type HqQuickAnswers} from "@/lib/khpos/hq-quick-report";
@@ -100,6 +102,7 @@ export function CorporateReportingCentre(){
   <p className="mt-4 text-sm">{error}</p>
   <Link href="/account" className="mt-4 inline-block rounded-lg bg-white px-4 py-2 text-slate-950">Sign in</Link></main>;
  return <div className="min-h-screen bg-slate-50 text-slate-950">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
   <header className="bg-slate-950 px-4 py-6 text-white">
    <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
     <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">KAEC-NG · Execution Accountability</p>
