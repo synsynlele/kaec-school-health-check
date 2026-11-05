@@ -1,5 +1,6 @@
 "use client";
 
+import { CatalogClassPicker, useClassSubjectCatalog } from "./ClassSubjectCatalog";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -66,6 +67,7 @@ export function LearnerProgressWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const catalog = useClassSubjectCatalog(organisationId);
   const [editingLearnerId, setEditingLearnerId] = useState("");
   const [registerNotice, setRegisterNotice] = useState("");
   const [anchorCampusId, setAnchorCampusId] = useState("");
@@ -435,6 +437,8 @@ export function LearnerProgressWorkspace({
                       placeholder="Learner name"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
+                    <CatalogClassPicker entries={catalog.entries} campusId={anchorCampusId}
+                      onPick={(label, section) => { setAnchorClass(label); setAnchorSection(section); }} />
                     <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Class / group, e.g. Nursery 1, Primary 3 or JSS1</span><input
                       value={anchorClass}
                       onChange={(event) => setAnchorClass(event.target.value)}
