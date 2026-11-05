@@ -66,6 +66,8 @@ export function LearnerProgressWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const [editingLearnerId, setEditingLearnerId] = useState("");
+  const [registerNotice, setRegisterNotice] = useState("");
   const [anchorCampusId, setAnchorCampusId] = useState("");
   const [anchorSource, setAnchorSource] = useState("SIS");
   const [anchorExternalRef, setAnchorExternalRef] = useState("");
@@ -270,7 +272,7 @@ export function LearnerProgressWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={registerNotice} onDismiss={() => { setError(""); setRegisterNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex items-center justify-between gap-4">
@@ -369,14 +371,35 @@ export function LearnerProgressWorkspace({
                     Learner register
                   </p>
                   <h2 className="mt-2 text-xl font-black">
-                    Add a learner
+                    {editingLearnerId ? "Edit learner details" : "Add a learner"}
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     Enter the learner’s name, campus, class and school ID. Only record the details needed for school support. Use the same record source and school ID when updating a learner.
                   </p>
+                  <label className="mt-4 grid gap-1 text-sm font-semibold">
+                    Choose an existing learner to edit
+                    <select value={editingLearnerId} disabled={Boolean(busyId)} onChange={event => {
+                      const learner = workspace.learners.find(item => item.id === event.target.value && item.status === "active" && item.campusId);
+                      setEditingLearnerId(learner?.id ?? "");
+                      setAnchorCampusId(learner?.campusId ?? workspace.campuses[0]?.id ?? "");
+                      setAnchorSource(learner?.externalSystem ?? "SIS");
+                      setAnchorExternalRef(learner?.externalReference ?? "");
+                      setAnchorName(learner?.displayName ?? "");
+                      setAnchorClass(learner?.classLabel ?? "");
+                      setAnchorSection(learner?.sectionLabel ?? "");
+                      setError("");
+                      setRegisterNotice("");
+                    }} className="rounded-xl border border-slate-200 px-3 py-2.5">
+                      <option value="">Add a new learner</option>
+                      {workspace.learners.filter(learner => learner.status === "active" && learner.campusId).map(learner => (
+                        <option key={learner.id} value={learner.id}>{learner.displayName} · {learner.classLabel} · {learner.externalReference}</option>
+                      ))}
+                    </select>
+                  </label>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <select
                       value={anchorCampusId}
+                      disabled={Boolean(editingLearnerId)}
                       onChange={(event) => setAnchorCampusId(event.target.value)}
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     >
@@ -389,6 +412,7 @@ export function LearnerProgressWorkspace({
                     </select>
                     <select
                       value={anchorSource}
+                      disabled={Boolean(editingLearnerId)}
                       onChange={(event) => setAnchorSource(event.target.value)}
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     >
@@ -398,6 +422,7 @@ export function LearnerProgressWorkspace({
                     </select>
                     <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Learner school ID</span><input
                       value={anchorExternalRef}
+                      readOnly={Boolean(editingLearnerId)}
                       onChange={(event) =>
                         setAnchorExternalRef(event.target.value)
                       }
@@ -425,21 +450,20 @@ export function LearnerProgressWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      void submit(
-                        {
-                          mode: "upsert_learner",
-                          campusId: anchorCampusId,
-                          externalSystem: anchorSource,
-                          externalLearnerReference: anchorExternalRef,
-                          displayName: anchorName,
-                          classLabel: anchorClass,
-                          sectionLabel: anchorSection,
-                        },
-                        "anchor",
-                      )
-                    }
-                    disabled={busyId === "anchor"}
+                    onClick={async () => {
+                      setRegisterNotice("");
+                      const saved = await submit({
+                        mode: "upsert_learner",
+                        campusId: anchorCampusId,
+                        externalSystem: anchorSource,
+                        externalLearnerReference: anchorExternalRef,
+                        displayName: anchorName,
+                        classLabel: anchorClass,
+                        sectionLabel: anchorSection,
+                      }, "anchor");
+                      if (saved) setRegisterNotice(editingLearnerId ? "Learner details updated." : "Learner saved.");
+                    }}
+                    disabled={Boolean(busyId)}
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
                   >
                     {busyId === "anchor" ? (
@@ -447,7 +471,7 @@ export function LearnerProgressWorkspace({
                     ) : (
                       <UsersRound className="size-3.5" />
                     )}
-                    Save learner
+                    {editingLearnerId ? "Save changes" : "Save learner"}
                   </button>
                 </div>
 
