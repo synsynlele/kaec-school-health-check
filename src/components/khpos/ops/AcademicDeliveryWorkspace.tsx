@@ -580,12 +580,12 @@ export function AcademicDeliveryWorkspace({
                       placeholder="Section e.g. A"
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     /></label>
-                    {catalog.entries.some(entry => entry.campusId === null) && <label className="grid gap-1 text-sm font-semibold">
+                    {catalog.entries.some(entry => entry.available !== false && entry.campusId === null) && <label className="grid gap-1 text-sm font-semibold">
                       Choose a saved subject
                       <select value="" onChange={event => { if (event.target.value) setSubjectLabel(event.target.value); }}
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                         <option value="">Select to fill subject</option>
-                        {catalog.entries.filter(entry => entry.campusId === null).map(entry =>
+                        {catalog.entries.filter(entry => entry.available !== false && entry.campusId === null).map(entry =>
                           <option key={entry.id} value={entry.label}>{entry.label}</option>)}
                       </select>
                     </label>}

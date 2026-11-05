@@ -10,6 +10,12 @@ const entry = z.object({
   label: z.string().trim().min(1).max(120),
   section: z.string().trim().max(120),
 }).refine(value => value.campusId !== null || value.section === "");
+const mutation = z.union([
+  entry,
+  z.object({ action: z.literal("edit"), id: z.uuid(), label: z.string().trim().min(1).max(120), section: z.string().trim().max(120) }),
+  z.object({ action: z.literal("availability"), id: z.uuid(), available: z.boolean() }),
+  z.object({ action: z.literal("delete"), id: z.uuid() }),
+]);
 const headers = { "Cache-Control": "private, no-store" };
 
 async function handle(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -20,12 +26,13 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
     const token = bearerTokenFromRequest(request);
     if (!token) throw new KhposAuthError("Sign in to view classes and subjects.");
     const actor = await verifyKhposAccessToken(token);
-    const input = request.method === "POST" ? entry.parse(await request.json()) : null;
+    const input = request.method === "POST" ? mutation.parse(await request.json()) : null;
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
     const { data, error } = await db.rpc("khpos_class_subject_catalog_server", { p_actor: actor.id, p_org: id, p_input: input });
     if (error?.code === "42501" || error?.code === "22023") {
       return NextResponse.json({ error: error.message }, { status: error.code === "42501" ? 403 : 400, headers });
     }
+    if (error?.code === "23505") return NextResponse.json({ error: "That name already exists in this list." }, { status: 409, headers });
     if (error) throw new Error("Classes and subjects request failed");
     return NextResponse.json({ entries: data }, { headers });
   } catch (error) {
