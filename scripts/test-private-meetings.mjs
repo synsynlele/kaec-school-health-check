@@ -12,7 +12,7 @@ try {
  create table organisations(id uuid primary key,status text,partner_status text,partner_entitlements text[],name text default 'Test School');
  create table khpos_ops_staff(id uuid primary key default gen_random_uuid(),user_id uuid,organisation_id uuid,status text,display_name text);
  create table organisation_memberships(organisation_id uuid,user_id uuid,status text,role text);
- create table kaec_hq_members(user_id uuid primary key,display_name text,status text);
+ create table kaec_hq_members(user_id uuid primary key,display_name text,status text,role text default 'school_pathfinder');
  create table kaec_hq_records(id uuid primary key default gen_random_uuid(),module text,record_type text,title text,description text,status text,owner_user_id uuid,due_on date,created_by uuid,updated_by uuid);
  create table kaec_hq_audit_events(actor_user_id uuid,action text,summary text,after_state jsonb);
  create table khpos_ops_audit_events(organisation_id uuid,actor_user_id uuid,event_type text,object_type text,object_id uuid,metadata jsonb);
@@ -36,6 +36,27 @@ try {
  const hostRole=uid(30),hostAssignment=uid(31);
  await q("insert into khpos_ops_roles values($1,$2,'active','SCHOOL_CUSTODIAN')",[hostRole,org]);
  await q("insert into khpos_ops_role_assignments(id,role_id,user_id,status) values($1,$2,$3,'active')",[hostAssignment,hostRole,host]);
+ await db.exec(fs.readFileSync('supabase/migrations/20261105110000_ideas_board.sql', 'utf8'));
+ const ideas = async (actor, scope, { body = null, anonymous = false, recipient = null, parent = null } = {}) =>
+   (await q('select public.khpos_ideas_server($1,$2,$3,$4,$5,$6,$7) result',
+     [actor, scope, body ? 'post' : 'list', body, anonymous, recipient, parent]))[0].result;
+ const privateBoard = await ideas(guest, org, { body: 'Private suggestion', anonymous: true, recipient: host });
+ const privateId = privateBoard.posts[0].id;
+ const inbox = await ideas(host, org);
+ assert.equal(inbox.posts[0].author, 'Anonymous');
+ assert.ok(!JSON.stringify(inbox.posts).includes(guest));
+ await ideas(guest, org, { body: 'More context', parent: privateId });
+ assert.equal((await ideas(host, org)).posts[0].replies[0].author, 'Anonymous');
+ await q("insert into organisation_memberships values($1,$2,'active','contributor')", [org, other]);
+ assert.equal((await ideas(other, org)).posts.length, 0);
+ await assert.rejects(ideas(other, org, { body: 'Uninvited reply', parent: privateId }), /Discussion access/);
+ await assert.rejects(ideas(guest, org, { body: 'Wrong recipient', recipient: hq }), /available leader/);
+ await q('delete from organisation_memberships where organisation_id=$1 and user_id=$2', [org, other]);
+ assert.equal((await ideas(other, org2)).posts.length, 0);
+ await assert.rejects(ideas(guest, null), /Board access/);
+ await ideas(guest, org, { body: 'Team suggestion' });
+ assert.equal((await ideas(host, org)).posts.length, 2);
+ console.log('Ideas board privacy, anonymous replies, leader eligibility and tenant isolation passed.');
  assert.equal((await call(hq,'list')).canCreate,true);
  assert.equal((await call(guest,'list')).canCreate,false);
  await q("update khpos_ops_roles set code='SECTIONAL_PROMOTER' where id=$1",[role]);
