@@ -164,7 +164,7 @@ export function StaffAccountabilityWorkspace({
 
       if (!active) return;
       if (!response.ok || !body.ok || !body.accountability) {
-        setError(body.error ?? "Staff concerns & praise could not be loaded.");
+        setError(body.error ?? "Staff queries & praise could not be loaded.");
         return;
       }
 
@@ -368,7 +368,7 @@ export function StaffAccountabilityWorkspace({
         <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <CircleAlert className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">
-            Staff concerns & praise is unavailable
+            Staff queries & praise is unavailable
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
@@ -402,7 +402,7 @@ export function StaffAccountabilityWorkspace({
           </div>
 
           <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl">
-            Staff concerns & praise
+            Staff queries & praise
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-brand-100 sm:text-base">
             Recognise good work and handle staff concerns fairly. A formal conduct case needs a clear concern, evidence, a chance to respond and an authorised decision-maker.
@@ -458,7 +458,7 @@ export function StaffAccountabilityWorkspace({
               <Scale className="mt-0.5 size-5 shrink-0 text-amber-800" />
               <div>
                 <p className="text-sm font-black text-amber-950">
-                  Capability gap ≠ misconduct
+                  When to coach and when to issue a query
                 </p>
                 <p className="mt-1 text-sm leading-6 text-amber-900/80">
                   If the person does not yet know how to perform, use Staff support coaching/development. Staff concerns requires a known expectation plus specific conduct/accountability evidence.
@@ -470,7 +470,7 @@ export function StaffAccountabilityWorkspace({
 
         <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <ShieldAlert className="size-5 text-brand-700" />
-          <p className="mt-3 text-sm font-black">Employment-action boundary</p>
+          <p className="mt-3 text-sm font-black">Formal employment decisions</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
             {workspace.legalBoundary}
           </p>
@@ -564,7 +564,7 @@ export function StaffAccountabilityWorkspace({
                 Conduct/accountability
               </p>
               <h2 className="mt-2 text-xl font-black">
-                Open corrective or formal case
+                Issue a staff query
               </h2>
 
               <div className="mt-5 space-y-3">
@@ -579,15 +579,15 @@ export function StaffAccountabilityWorkspace({
                   }
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                 >
-                  <option value="corrective">Corrective accountability</option>
-                  <option value="formal_discipline">Formal discipline</option>
+                  <option value="corrective">Corrective query</option>
+                  <option value="formal_discipline">Formal disciplinary query</option>
                 </select>
                 <select
                   value={conductSubjectId}
                   onChange={(event) => setConductSubjectId(event.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                 >
-                  <option value="">Choose subject staff</option>
+                  <option value="">Choose staff member</option>
                   {manageableStaff.map((staff) => (
                     <option key={staff.id} value={staff.id}>
                       {staff.displayName} · {staff.roleTitle}
@@ -992,7 +992,7 @@ export function StaffAccountabilityWorkspace({
                           <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-800" />
                           <div>
                             <p className="text-sm font-black text-amber-950">
-                              Independent external governance required
+                              Independent review outside the school required
                             </p>
                             <p className="mt-1 text-sm leading-6 text-amber-900/80">
                               The most senior internal reviewer is involved in this case. Use the required external review; they cannot decide their own case.
@@ -1079,7 +1079,7 @@ export function StaffAccountabilityWorkspace({
                           className="mt-5 rounded-2xl border border-violet-200 bg-violet-50 p-4"
                         >
                           <summary className="cursor-pointer text-sm font-black text-violet-950">
-                            Your response opportunity
+                            Respond to this query
                           </summary>
                           <p className="mt-2 text-xs leading-5 text-violet-800">
                             Respond to the concern before a decision is made. You can include a reference to supporting evidence.
@@ -1129,7 +1129,7 @@ export function StaffAccountabilityWorkspace({
                             }
                             className="mt-3 rounded-full bg-violet-700 px-4 py-2 text-xs font-black text-white"
                           >
-                            Submit response
+                            Submit query response
                           </button>
                         </details>
                       )}
@@ -1306,7 +1306,7 @@ export function StaffAccountabilityWorkspace({
                       review.responseState === "not_requested" && (
                         <div className="mt-4 rounded-2xl border border-slate-200 p-4">
                           <p className="text-xs font-black">
-                            Request subject response
+                            Ask staff member to respond
                           </p>
                           <input
                             type="datetime-local"
@@ -1428,7 +1428,7 @@ export function StaffAccountabilityWorkspace({
                     {decisionReady && (
                       <details className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-4">
                         <summary className="cursor-pointer text-sm font-black text-brand-950">
-                          Record reasoned case decision
+                          Record decision and reasons
                         </summary>
                         <div className="mt-3 grid gap-3 lg:grid-cols-2">
                           <select

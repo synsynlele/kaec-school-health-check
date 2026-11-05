@@ -93,7 +93,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
   <div className="mt-4"><CampusLocationPanel school={engagement.organisation_id} hq onLoaded={setCampuses}/></div>
   <p className="mt-3 text-xs leading-5 text-slate-600">Location is requested only when you tap check-in or check-out. Coordinates and accuracy are visible to authorised HQ supervisors. No background tracking. If location is unavailable, give an explanation to record attendance.</p>
   {assigned&&<label className={lbl+" mt-3"}>Attendance location explanation (optional)<input maxLength={500} className={ctrl+" !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>}
-  <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show location exceptions ({sessions.filter(s=>needsLocationReview(s.check_in_location)||needsLocationReview(s.check_out_location)).length})</label>
+  <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show records with location issues ({sessions.filter(s=>needsLocationReview(s.check_in_location)||needsLocationReview(s.check_out_location)).length})</label>
   {error&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-900">{error}</p>}
   {showSchedule&&lead&&<form className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"
    onSubmit={e=>{e.preventDefault();if(!start)return;void act("schedule_session",{

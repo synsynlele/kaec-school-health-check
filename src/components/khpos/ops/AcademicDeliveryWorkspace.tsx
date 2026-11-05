@@ -454,7 +454,7 @@ export function AcademicDeliveryWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
                 Academic term
               </p>
-              <h2 className="mt-2 text-xl font-black">{editingTermId ? "Edit saved academic term" : "Open the term baseline"}</h2>
+              <h2 className="mt-2 text-xl font-black">{editingTermId ? "Edit saved academic term" : "Set up the school term"}</h2>
               {editingTermId && <p className="mt-2 text-sm text-amber-800">Changes will update this record, not create another. Approved or active terms require a documented reason and preserve revision history.</p>}
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <select
@@ -526,7 +526,7 @@ export function AcademicDeliveryWorkspace({
                 Curriculum delivery stream
               </p>
               <h2 className="mt-2 text-xl font-black">
-                {editingStreamId ? "Edit curriculum execution record" : "Reference the approved scheme & timetable"}
+                {editingStreamId ? "Edit curriculum execution record" : "Link the scheme of work and timetable"}
               </h2>
               {editingStreamId && <p className="mt-2 text-sm text-amber-800">Update the existing curriculum record. Approved or active changes are logged and checked against related academic evidence.</p>}
               {workspace.teacherAssignments.length === 0 ? (
@@ -750,7 +750,7 @@ export function AcademicDeliveryWorkspace({
             Curriculum execution
           </p>
           <h2 className="mt-2 text-2xl font-black">
-            Streams, targets, verification & debt
+            Teaching assignments, targets and follow-up
           </h2>
           {visibleStreams.length === 0 ? (
             <Empty text={showArchived ? "No curriculum execution records exist." : "No visible curriculum streams. Select Show archived and removed to inspect previous records."} />

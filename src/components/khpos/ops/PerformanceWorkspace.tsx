@@ -51,7 +51,7 @@ const systemOptions = [
   ["people_staff", "02 · Staff"],
   ["academic_execution", "03 · Academic Execution"],
   ["learner_progress_intervention", "04 · Learner support"],
-  ["human_potential_development", "05 · Human Learner development"],
+  ["human_potential_development", "05 · Learner development"],
   ["student_culture_leadership", "06 · Student Culture, Behaviour & Leadership"],
   ["safeguarding_welfare_emergency", "07 · Safeguarding, Welfare & Emergency"],
   ["parent_experience_partnership", "08 · Parent Experience & Partnership"],

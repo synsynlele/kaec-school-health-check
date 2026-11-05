@@ -199,7 +199,7 @@ export function PriorityInterventionWorkspace({
               <span className="text-5xl font-black">{workspace.approvedCount}</span>
               <span className="pb-1 text-lg font-bold text-brand-200">/ {workspace.agendaLimit}</span>
             </div>
-            <p className="mt-2 max-w-xs text-xs leading-5 text-brand-100">Maximum 3 active priorities per KSHC baseline.</p>
+            <p className="mt-2 max-w-xs text-xs leading-5 text-brand-100">Maximum 3 active priorities per First School Health Check.</p>
           </div>
         </div>
       </section>
@@ -362,7 +362,7 @@ export function PriorityInterventionWorkspace({
         <section className="rounded-[30px] bg-slate-950 p-6 text-white sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-mint-300">Governance rule</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-mint-300">Approval rule</p>
               <h2 className="mt-2 text-2xl font-black">A recommendation is not a commitment.</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">KHP-OS suggests priorities and plans. An authorised school leader decides what to approve. Approvals and changes are saved in the school history.</p>
             </div>

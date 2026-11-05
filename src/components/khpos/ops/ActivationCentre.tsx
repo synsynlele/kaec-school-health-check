@@ -198,7 +198,7 @@ export function ActivationCentre({
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.14em]">
-              Operational Activation
+              School setup
             </span>
             <span
               className={
@@ -208,7 +208,7 @@ export function ActivationCentre({
               }
             >
               {activation.foundationComplete
-                ? "Core foundation active"
+                ? "Basic school setup complete"
                 : `${activation.blockerCount} blocking area${activation.blockerCount === 1 ? "" : "s"}`}
             </span>
           </div>

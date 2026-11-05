@@ -72,7 +72,7 @@ for (const expected of [
   "A score alone cannot promote someone.",
   "Your acceptance is required",
   "No departure without continuity, clearance and access closure",
-  "Employment-action boundary",
+  "Formal employment decisions",
   "workspace.legalBoundary",
 ]) {
   requireText(workspace, expected, "O11 workspace");

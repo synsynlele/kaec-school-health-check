@@ -236,7 +236,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
                       </ul>
                     </div>
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Escalate when</p>
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Ask for help when</p>
                       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                         {playbook.escalation.map((item, itemIndex) => (
                           <li key={`${playbook.id}-escalate-${itemIndex}`} className="flex gap-2">

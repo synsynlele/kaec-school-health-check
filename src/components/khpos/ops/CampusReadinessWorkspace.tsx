@@ -68,7 +68,7 @@ export function CampusReadinessWorkspace({ organisationId }: { organisationId: s
             {recorded && <><p className="text-sm">{recorded.observation} · {recorded.evidenceReference}</p>{recorded.resolutionNote && <p className="text-sm text-slate-600">Resolution: {recorded.resolutionNote} · {recorded.resolutionEvidence}</p>}{recorded.verificationNote && <p className="text-sm text-slate-600">Review: {recorded.verificationNote}</p>}</>}
           </div>;
         })}</div></section>)}
-      {exceptions.length > 0 && <section className="space-y-3"><h2 className="text-xl font-bold">Exceptions needing action</h2>{exceptions.map((entry) => {
+      {exceptions.length > 0 && <section className="space-y-3"><h2 className="text-xl font-bold">Campus checks needing action</h2>{exceptions.map((entry) => {
         const campus = data.campuses.find((item) => item.id === entry.campusId);
         const key = `resolution-${entry.id}`;
         return <div key={entry.id} className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/40 p-4"><h3 className="font-bold">{campus?.name} · {entry.operatingDate} · {checks.find((item) => item.code === entry.code)?.title} · {entry.status}</h3><p className="text-sm">{entry.observation}</p>

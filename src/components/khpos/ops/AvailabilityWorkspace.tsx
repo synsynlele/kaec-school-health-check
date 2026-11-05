@@ -441,10 +441,8 @@ export function AvailabilityWorkspace({
                 Leave & cover
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                KHP-OS does not replace the school attendance system. This is
-                the exception layer: request or record unavailability, decide
-                planned leave, make temporary ownership explicit and verify
-                return.
+                Request planned leave or report an absence here. Leaders can approve leave,
+                arrange cover and confirm when staff return.
               </p>
             </div>
 
@@ -455,7 +453,7 @@ export function AvailabilityWorkspace({
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-mint-300 px-5 py-3 text-sm font-black text-slate-950"
               >
                 <CalendarClock className="size-4" />
-                Record availability
+                Request leave or report absence
               </button>
             )}
           </div>
@@ -463,9 +461,9 @@ export function AvailabilityWorkspace({
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Pending approval", workspace.summary.pendingApproval],
-              ["Coverage gaps", workspace.summary.coverageGaps],
+              ["Duties without cover", workspace.summary.coverageGaps],
               ["Unavailable now", workspace.summary.currentlyUnavailable],
-              ["Return overdue", workspace.summary.overdueReturn],
+              ["Return not yet confirmed", workspace.summary.overdueReturn],
             ].map(([label, value]) => (
               <div
                 key={String(label)}
@@ -490,7 +488,7 @@ export function AvailabilityWorkspace({
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand-700" />
             <div>
-              <p className="text-sm font-black">Transactional boundary</p>
+              <p className="text-sm font-black">How this works</p>
               <p className="mt-1 text-sm leading-6 text-brand-900/80">
                 {workspace.attendanceBoundary}
               </p>
@@ -520,10 +518,10 @@ export function AvailabilityWorkspace({
             {showCreate && (
               <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
-                  Request / record exception
+                  Leave and absence
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
-                  Staff availability case
+                  Request leave or report absence
                 </h2>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -591,7 +589,7 @@ export function AvailabilityWorkspace({
                       >
                         <option value="leader_record">Leader record</option>
                         <option value="third_party_exception">
-                          Attendance-system exception
+                          Reported by the attendance system
                         </option>
                       </select>
                     </label>
@@ -718,12 +716,11 @@ export function AvailabilityWorkspace({
               <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
                 <CheckCircle2 className="mx-auto size-10 text-mint-700" />
                 <h2 className="mt-4 text-2xl font-black">
-                  No availability exceptions are open or recorded yet.
+                  No leave or absence records yet.
                 </h2>
                 <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  Normal attendance stays in the designated attendance system.
-                  KHP-OS only appears when an exception needs a decision,
-                  coverage or follow-up.
+                  Use the school attendance page for daily sign-in and sign-out.
+                  Use this page when leave, absence or cover needs attention.
                 </p>
               </section>
             ) : (
@@ -932,7 +929,7 @@ export function AvailabilityWorkspace({
                               }
                               className="rounded-full bg-mint-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
                             >
-                              Confirm coverage plan
+                              Confirm cover plan
                             </button>
                           )}
 
@@ -1329,7 +1326,7 @@ export function AvailabilityWorkspace({
         <section className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white sm:p-7">
           <UserCheck className="size-6 text-mint-300" />
           <h2 className="mt-3 text-xl font-black">
-            Repeated absence is not solved by repeated reminders
+            Follow up on repeated absences
           </h2>
           <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-300">
             Leave & cover handles the immediate continuity exception. If a pattern becomes repeated or materially affects performance, it should move into the staff performance process and, where necessary, the Issue Engine. Availability history is evidence; it is not itself a disciplinary verdict.

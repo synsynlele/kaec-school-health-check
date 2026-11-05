@@ -1199,10 +1199,10 @@ function SessionCard({
             <option value="partial">Resources partial</option>
             <option value="blocked">Resources blocked</option>
           </select>
-          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Outcome / exception note</span><textarea
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>What happened or needs attention</span><textarea
             value={notes[noteKey] ?? ""}
             onChange={(event) => onNote(noteKey, event.target.value)}
-            placeholder="Outcome / exception note"
+            placeholder="What happened or needs attention"
             rows={2}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
           /></label>

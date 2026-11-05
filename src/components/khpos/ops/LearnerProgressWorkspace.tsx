@@ -358,7 +358,7 @@ export function LearnerProgressWorkspace({
           <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
             <UserRoundSearch className="size-7 text-brand-700" />
             <h2 className="mt-3 text-xl font-black">
-              Aggregate learner-risk visibility
+              School-wide learner support summary
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               Your role can view school summaries. Individual learner support cases are available only to staff responsible for those learners.
@@ -510,7 +510,7 @@ export function LearnerProgressWorkspace({
                         onChange={(event) => setBaselineTermId(event.target.value)}
                         className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                       >
-                        <option value="">No term / entry baseline</option>
+                        <option value="">Starting record without a term</option>
                         {workspace.terms.map((term) => (
                           <option key={term.id} value={term.id}>
                             {term.sessionLabel} · {term.termName}

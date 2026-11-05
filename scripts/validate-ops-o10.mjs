@@ -12,7 +12,7 @@ function requireText(source, expected, context) {
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 requireText(nav, 'suffix: "/staff-accountability"', "school workspace navigation");
-requireText(nav, 'label: "Staff concerns & praise"', "school workspace navigation");
+requireText(nav, 'label: "Staff queries & praise"', "school workspace navigation");
 requireText(nav, 'suffix: "/staff-performance"', "O9 navigation continuity");
 requireText(nav, 'suffix: "/availability"', "O8 navigation continuity");
 
@@ -62,14 +62,14 @@ for (const expected of [
 const workspace = read("src/components/khpos/ops/StaffAccountabilityWorkspace.tsx");
 for (const expected of [
   "School operations",
-  "Staff concerns & praise",
+  "Staff queries & praise",
   "Recognition is not a staff score",
-  "Capability gap ≠ misconduct",
-  "Independent external governance required",
-  "Your response opportunity",
-  "Record reasoned case decision",
+  "When to coach and when to issue a query",
+  "Independent review outside the school required",
+  "Respond to this query",
+  "Record decision and reasons",
   "A grievance is a request",
-  "Employment-action boundary",
+  "Formal employment decisions",
   "workspace.legalBoundary",
 ]) {
   requireText(workspace, expected, "O10 workspace");

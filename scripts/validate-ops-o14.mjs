@@ -71,7 +71,7 @@ for (const expected of [
   "School operations",
   "Learner support",
   "No learner should quietly fall through the cracks",
-  "Aggregate learner-risk visibility",
+  "School-wide learner support summary",
   "Only record the details needed for school support",
   "A signal is a reason to investigate—not a permanent label",
   "Diagnose → intervene → reassess → recover or redirect",
