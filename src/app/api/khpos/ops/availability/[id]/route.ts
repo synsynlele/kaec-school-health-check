@@ -94,6 +94,8 @@ export async function POST(
     endAt?: string;
     reasonCategory?: string;
     reasonNote?: string | null;
+    handover?: string;
+    suggestedCover?: string;
     sourceReference?: string | null;
     coverageRequired?: boolean | null;
     action?:
@@ -143,6 +145,21 @@ export async function POST(
         );
       }
 
+      const planned = payload.caseType === "planned_leave";
+      const handover = typeof payload.handover === "string" ? payload.handover.trim() : "";
+      const suggestedCover = typeof payload.suggestedCover === "string" ? payload.suggestedCover.trim() : "";
+      if (planned && (typeof payload.coverageRequired !== "boolean" ||
+        (payload.coverageRequired && (!handover || handover.length > 1000 || suggestedCover.length > 120)))) {
+        return NextResponse.json({ ok: false, error: "Choose whether cover is needed and list the duties that need cover." }, { status: 400 });
+      }
+      const reasonNote = [
+        planned && payload.coverageRequired ? `Duties to cover: ${handover}` : "",
+        planned && payload.coverageRequired && suggestedCover ? `Suggested colleague: ${suggestedCover}` : "",
+        typeof payload.reasonNote === "string" ? payload.reasonNote.trim() : "",
+      ].filter(Boolean).join("\n");
+
+      if (reasonNote.length > 2000) return NextResponse.json({ ok: false, error: "Shorten the notes so the handover and reason fit within 2,000 characters." }, { status: 400 });
+
       const availability = await createKhposOpsAvailabilityCase(id, user.id, {
         staffId: payload.staffId,
         caseType: payload.caseType,
@@ -150,7 +167,7 @@ export async function POST(
         startAt: payload.startAt!,
         endAt: payload.endAt!,
         reasonCategory: payload.reasonCategory,
-        reasonNote: payload.reasonNote?.trim() || null,
+        reasonNote: reasonNote || null,
         sourceReference: payload.sourceReference?.trim() || null,
         coverageRequired: payload.coverageRequired === true,
       });
