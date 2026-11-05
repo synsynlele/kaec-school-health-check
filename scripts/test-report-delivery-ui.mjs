@@ -19,6 +19,7 @@ vm.runInNewContext(compiled,{exports,Date,URLSearchParams,window,document,Custom
  if(name==='next/link')return {default:'a'};
  if(name==='@/lib/supabase/client')return {createBrowserSupabaseClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'fixture'}}})}})};
  if(name==='@/lib/khpos/ops/action-events')return {KHPOS_ACTIVITY_CHANGED:'changed'};
+ if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
  throw new Error(name);
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}

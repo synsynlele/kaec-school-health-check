@@ -61,6 +61,7 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync("src/components/khpos/Camp
  }};
  if(name==="@/lib/supabase/client")return {createBrowserSupabaseClient:()=>({})};
  if(name==="@/lib/khpos/attendance-location")return {captureAttendanceLocation:async()=>reading,locationCaptureHelp:ok.api.locationCaptureHelp};
+ if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
  throw new Error(name);
 }});
 function render(){cursor=0;return panelExports.CampusLocationPanel({school:"school"});}
