@@ -45,6 +45,14 @@ function stamp(nowMs: number, target: number): string {
   return Number.isFinite(target) ? new Date(target).toISOString() : new Date(nowMs).toISOString();
 }
 
+export function calendarPauses(presence: KhposPresenceWorkspace, campusId: string | null, day: string, lessons: boolean) {
+  return presence.calendarClosures?.some(entry =>
+    (entry.campus_id === null || entry.campus_id === campusId) &&
+    entry.start_day <= day && entry.end_day >= day &&
+    (entry.kind === "closure" || lessons)
+  ) ?? false;
+}
+
 export function attendanceSteps(
   presence: KhposPresenceWorkspace,
   nowMs: number,
@@ -55,11 +63,12 @@ export function attendanceSteps(
   const today = presence.localDay;
   const myPeriods = presence.periods
     .filter((period) => period.teacherUserId === presence.userId && period.termActive &&
-      isToday(today, period.weekday))
+      isToday(today, period.weekday) &&
+      (period.session || !calendarPauses(presence, period.campusId, today, true)))
     .sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
   const weekdays = new Date(`${today}T12:00:00Z`).getUTCDay();
   const schoolDay = weekdays >= 1 && weekdays <= 6 || myPeriods.length > 0;
-  if (!schoolDay && !presence.todayPresence) return [];
+  if ((!schoolDay || calendarPauses(presence, presence.staff.campusId, today, false)) && !presence.todayPresence && !myPeriods.length) return [];
 
   const at = (clock: string) => schoolClockMs(today, clock);
   const starts = myPeriods.map((p) => at(p.start)).filter(Number.isFinite);
