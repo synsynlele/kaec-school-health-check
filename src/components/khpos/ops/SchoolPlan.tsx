@@ -35,7 +35,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
   useEffect(() => {
     const controller = new AbortController();
     void request(undefined, controller.signal).then(result => {
-      if (!controller.signal.aborted) setPlan(result);
+      if (!controller.signal.aborted) { setPlan(result); setError(""); }
     }).catch(error => { if (!controller.signal.aborted) setError(error.message); });
     return () => controller.abort();
   }, [request]);
@@ -80,6 +80,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       {!plan && !error && <p role="status">Loading school plan…</p>}
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
+      {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
       {plan?.canManage && !editing && <button type="button" className={button} onClick={() => { setKind("event"); setEditing("new"); }}>Add calendar entry</button>}
     </>}
     {editing && plan?.canManage && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
@@ -91,8 +92,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           {Object.entries(planKinds).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
         </select></label>
         <label>Title<input name="title" className={field} required maxLength={120} defaultValue={record?.title} /></label>
-        {kind !== "invigilation" && <label>Campus<select name="campus" className={field} defaultValue={record?.campus_id ?? ""}>
-          <option value="">Whole school</option>{plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
+        {kind !== "invigilation" && <label>Campus<select name="campus" className={field} defaultValue={record?.campus_id ?? (plan.canManageWholeSchool ? "" : plan.campuses[0]?.id)}>
+          {plan.canManageWholeSchool && <option value="">Whole school</option>}{plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
         </select></label>}
         {kind === "invigilation" ? <label>Scheduled exam or test<select name="assessment" className={field} required defaultValue={record?.assessment_id ?? ""}>
           <option value="">Choose an assessment</option>{plan.assessments.map(assessment => <option key={assessment.id} value={assessment.id}>{assessment.name} · {new Date(assessment.start).toLocaleString("en-NG", {timeZone:"Africa/Lagos"})}</option>)}
@@ -117,7 +118,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         <p>{planKinds[entry.kind]} · {entry.start_day}{entry.end_day !== entry.start_day && ` to ${entry.end_day}`} · {entry.campus_name ?? "Whole school"}</p>
         {entry.staff_name && <p>Assigned to {entry.staff_name}{entry.assessment_title && ` · ${entry.assessment_title}`}</p>}
         {entry.assessment_start && <p>Exam starts {new Date(entry.assessment_start).toLocaleString("en-NG",{timeZone:"Africa/Lagos"})}</p>}
-        {plan.canManage && <div className="flex gap-2">
+        {entry.can_edit && <div className="flex gap-2">
           <button type="button" className={button} disabled={busy} onClick={() => {
             setKind(entry.kind); setEditing(entry);
             document.getElementById("school-plan")?.scrollIntoView({block:"start"});

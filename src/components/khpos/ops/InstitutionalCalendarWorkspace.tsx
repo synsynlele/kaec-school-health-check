@@ -51,7 +51,7 @@ export function InstitutionalCalendarWorkspace({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [calendar, setCalendar] = useState<KhposCalendarSnapshot | null>(null);
-  const [kind, setKind] = useState<KhposCalendarItem["kind"] | "all">("all");
+  const [kind, setKind] = useState<KhposCalendarItem["kind"] | "all" | "overdue">("all");
   const [error, setError] = useState("");
   const calendarSearch = useRecordSearch(
     calendar?.items ?? [],
@@ -116,7 +116,7 @@ export function InstitutionalCalendarWorkspace({
     );
   }
 
-  const visible = calendarSearch.visibleItems.filter((item) => kind === "all" || item.kind === kind);
+  const visible = calendarSearch.visibleItems.filter((item) => kind === "all" || (kind === "overdue" ? item.overdue : item.kind === kind));
   const grouped = new Map<string, KhposCalendarItem[]>();
   for (const item of visible) {
     const rows = grouped.get(item.date) ?? [];
@@ -148,21 +148,23 @@ export function InstitutionalCalendarWorkspace({
             events, controlled policy reviews and future recurring operations.
           </p>
           <div className="mt-7 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              ["Total", calendar.summary.total],
-              ["Overdue", calendar.summary.overdue],
-              ["Work", calendar.summary.work],
-              ["Decisions", calendar.summary.decisions],
-              ["Events", calendar.summary.events],
-              ["Scheduled", calendar.summary.scheduledOperations],
-            ].map(([name, value]) => (
-              <div
-                key={String(name)}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4"
+            {([
+              ["Total", "all", calendar.summary.total],
+              ["Overdue", "overdue", calendar.summary.overdue],
+              ["Work", "work", calendar.summary.work],
+              ["Decisions", "decision", calendar.summary.decisions],
+              ["Events", "event", calendar.summary.events],
+              ["Scheduled", "recurring", calendar.summary.scheduledOperations],
+            ] as const).map(([name, filter, value]) => (
+              <a
+                key={name}
+                href="#calendar-timeline"
+                onClick={() => { setKind(filter); calendarSearch.setQuery(""); }}
+                className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
               >
                 <p className="text-xs font-bold text-brand-100">{name}</p>
                 <p className="mt-1 text-2xl font-black">{value}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -170,8 +172,8 @@ export function InstitutionalCalendarWorkspace({
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
         <SchoolPlan school={organisationId} />
-        <section className="flex flex-wrap gap-2">
-          {(["all", "work", "decision", "event", "policy_review", "recurring"] as const).map(
+        <section id="calendar-timeline" className="flex scroll-mt-24 flex-wrap gap-2">
+          {(["all", "overdue", "work", "decision", "event", "policy_review", "recurring"] as const).map(
             (value) => (
               <button
                 key={value}
@@ -183,7 +185,7 @@ export function InstitutionalCalendarWorkspace({
                     : "border-slate-200 bg-white text-slate-600"
                 }`}
               >
-                {value === "all" ? "All" : label(value)}
+                {value === "all" ? "All" : value === "overdue" ? "Overdue" : label(value)}
               </button>
             ),
           )}

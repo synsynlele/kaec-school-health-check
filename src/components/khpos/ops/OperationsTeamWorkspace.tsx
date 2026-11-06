@@ -209,28 +209,28 @@ export function OperationsTeamWorkspace({
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         {error && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <a href="#campus-structure" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-600">
             <Building2 className="size-6 text-brand-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">
               Campuses
             </p>
             <p className="mt-1 text-4xl font-black">{structure.summary.campusCount}</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          </a>
+          <a href="#campus-structure" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-600">
             <GitBranch className="size-6 text-brand-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">
               Units
             </p>
             <p className="mt-1 text-4xl font-black">{structure.summary.unitCount}</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          </a>
+          <a href="#operating-roles" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-600">
             <UsersRound className="size-6 text-brand-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">
               Operating roles
             </p>
             <p className="mt-1 text-4xl font-black">{structure.summary.roleCount}</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          </a>
+          <a href="#operating-roles" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-600">
             <UserRoundCheck className="size-6 text-mint-700" />
             <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">
               Assigned roles
@@ -239,7 +239,7 @@ export function OperationsTeamWorkspace({
             <p className="mt-2 text-xs font-semibold text-slate-500">
               {structure.summary.unassignedRoleCount} role{structure.summary.unassignedRoleCount === 1 ? "" : "s"} awaiting assignment
             </p>
-          </div>
+          </a>
         </section>
 
         {structure.summary.unassignedRoleCount > 0 && (
@@ -258,7 +258,7 @@ export function OperationsTeamWorkspace({
           </section>
         )}
 
-        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section id="campus-structure" className="scroll-mt-24 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
@@ -307,7 +307,7 @@ export function OperationsTeamWorkspace({
 
         <LearningSectionsPanel organisationId={organisationId} />
 
-        <section>
+        <section id="operating-roles" className="scroll-mt-24">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
               Operating hierarchy
