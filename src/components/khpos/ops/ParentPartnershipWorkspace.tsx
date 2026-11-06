@@ -82,7 +82,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
   }
   function noteAction(item: ParentCase, mode: "action" | "escalate" | "return" | "close", title: string) {
     const key = `${mode}-${item.id}`;
-    return <div className="space-y-2 rounded-lg bg-slate-50 p-3">{notes(key, title)}{button(mode === "action" ? "Log action" : mode === "escalate" ? "Escalate to School Guardian" : mode === "return" ? "Return for more work" : "Verify and close", () => void act(mode, { caseId: item.id, note: fields[key] }), !fields[key]?.trim())}</div>;
+    return <div className="space-y-2 rounded-lg bg-slate-50 p-3">{notes(key, title)}{button(mode === "action" ? "Log action" : mode === "escalate" ? "Send to the school leader" : mode === "return" ? "Return for more work" : "Verify and close", () => void act(mode, { caseId: item.id, note: fields[key] }), !fields[key]?.trim())}</div>;
   }
 
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
@@ -97,7 +97,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
         {select("channel", "How the concern arrived", channelOptions)}
         {input("parentReference", "Parent / guardian school reference")}
         {fields.campus && !data.learners.some(learner => learner.campusId === fields.campus) && <p className="text-sm md:col-span-3">No learners are available for this campus. You can log a parent concern without a learner, or ask the learner support lead to <Link className="underline" href={`/khpos/${organisationId}/learner-progress#add-learner`}>add the learner</Link>.</p>}
-        {fields.campus && !data.assignments.some(assignment => assignment.campusId === fields.campus || assignment.campusId === null) && <p className="text-sm md:col-span-3">Ask your School Guardian to assign a campus leader before recording a concern here.</p>}
+        {fields.campus && !data.assignments.some(assignment => assignment.campusId === fields.campus || assignment.campusId === null) && <p className="text-sm md:col-span-3">Ask your school leader to assign a campus leader before recording a concern here.</p>}
         {select("learner", "Learner (optional)", data.learners.filter((learner) => learner.campusId === fields.campus).map((learner) => ({ value: learner.id, title: `${learner.name} · ${learner.classLabel}` })))}
         {select("owner", "Campus leader responsible", data.assignments.filter((assignment) => assignment.campusId === fields.campus || assignment.campusId === null).map((assignment) => ({ value: assignment.id, title: `${assignment.title}${assignment.isMine ? " (me)" : ""}` })))}
         {input("due", "Response due", "date")}

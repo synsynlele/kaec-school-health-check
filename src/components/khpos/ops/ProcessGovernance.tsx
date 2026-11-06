@@ -188,6 +188,7 @@ export function ProcessGovernance({
     id: string,
     availableVersions = versions,
     availableBaselines = baselines,
+    useTemplate = false,
   ) {
     setSelected(id);
     setError("");
@@ -197,7 +198,7 @@ export function ProcessGovernance({
       (item) => item.process_id === id && ["draft", "in_review"].includes(item.status),
     );
     const active = processes.find((item) => item.id === id)?.activeVersion;
-    const baseline = availableBaselines[id];
+    const baseline = useTemplate ? availableBaselines[id] : undefined;
     const source = revision ?? active;
     const useBaseline = !source && Boolean(baseline);
 
@@ -332,6 +333,15 @@ export function ProcessGovernance({
               : process.activeVersion ? "Published document: prepare a new revision (the existing approved version remains live)" : "Start a new school draft"}
           </p>
 
+      {!current && !process.activeVersion && baselines[selected] && !baselineLoaded && (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-slate-600">Write your own procedure below, or start with the KAEC template.</span>
+          <button type="button" disabled={busy} className="rounded-xl border border-slate-300 px-3 py-2 font-bold"
+            onClick={() => {
+              if (window.confirm("Load the KAEC template? This replaces unsaved text in this form.")) choose(selected, versions, baselines, true);
+            }}>Use KAEC template</button>
+        </div>
+      )}
           {baselineLoaded && (
             <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
               <p className="font-bold text-brand-900">KAEC baseline loaded</p>

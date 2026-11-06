@@ -233,11 +233,11 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       {presence && !presence.pilotEnabled && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
         <strong>Attendance is not yet switched on for your school.</strong>{" "}
         {presence.canEnablePilot ? "Open the attendance page and choose Turn on school attendance to begin." :
-          "Ask your School Custodian to turn on attendance. Reminders will start only after it is enabled."}
+          "Ask your school owner to turn on attendance. Reminders will start only after it is enabled."}
         <div className="mt-3"><Link href={schoolUrl} className="font-black underline">Open attendance setup →</Link></div>
       </div>}
       {presence?.pilotEnabled && !presence.staff && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
-        <strong>Your staff profile is not yet active.</strong> Ask your School Guardian to complete your staff setup before recording attendance.
+        <strong>Your staff profile is not yet active.</strong> Ask your school leader to complete your staff setup before recording attendance.
         <div className="mt-3"><Link href={`/khpos/${organisationId}/people`} className="font-black underline">Open Staff →</Link></div>
       </div>}
       {presence?.pilotEnabled && presence.staff && (
@@ -274,7 +274,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
             </h3>
             {classCount === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
               You have no lessons on your timetable today.
-              If you expected a class, ask your School Guardian or Academic Inspector to check the timetable.
+              If you expected a class, ask your school or academic lead to check the timetable.
             </p> : <div className="grid gap-3 lg:grid-cols-2">
               {classSteps.map((step) => <AttendanceRow key={step.id} step={step}
                 organisationId={organisationId} busy={busy} onRecord={record}

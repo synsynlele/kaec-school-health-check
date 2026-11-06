@@ -2010,7 +2010,7 @@ function CloseoutCard({
       <div className="mt-3 flex flex-wrap gap-2">
         {item.status === "draft" ? (
           <MiniButton
-            label="Submit for School Guardian review"
+            label="Submit for school leader review"
             busy={busyId === `closeout-submit-${item.id}`}
             onClick={() =>
               void submit(
