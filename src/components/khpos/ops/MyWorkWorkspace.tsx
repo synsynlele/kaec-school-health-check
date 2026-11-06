@@ -56,6 +56,7 @@ export function MyWorkWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [overdueCutoff, setOverdueCutoff] = useState(0);
   const [taskFilter, setTaskFilter] = useState<"all" | "overdue" | "blocked">("all");
   const [roleFilter, setRoleFilter] = useState("");
   const [work, setWork] = useState<KhposOpsMyWork | null>(null);
@@ -380,7 +381,7 @@ export function MyWorkWorkspace({
     .filter((item) => matchesSearch([item.title, item.roleTitle, item.processCode ?? "", item.campusName ?? "", item.status].join(" "))));
   const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
   const shownTasks = openItems.filter(item => taskFilter === "all" || (taskFilter === "blocked"
-    ? item.status === "blocked" : Boolean(item.dueAt && Date.parse(item.dueAt) < Date.now())));
+    ? item.status === "blocked" : Boolean(item.dueAt && Date.parse(item.dueAt) < overdueCutoff)));
   const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
   const completedItems = visibleItems.filter((item) => item.status === "completed");
   const otherActions = (attention?.items ?? []).filter(item => item.kind !== "work" && item.kind !== "verification");
@@ -424,6 +425,7 @@ export function MyWorkWorkspace({
               <a key={label} href={`#${anchor}`}
                 onClick={() => {
                   setTaskFilter(filter);
+                  if (filter === "overdue") setOverdueCutoff(Date.now());
                   setRoleFilter("");
                   setWorkQuery("");
                   if (anchor === "today-completed") document.querySelector<HTMLDetailsElement>("#today-completed details")?.setAttribute("open", "");
