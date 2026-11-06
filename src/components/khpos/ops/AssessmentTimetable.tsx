@@ -10,6 +10,7 @@ type Entry = {
   id: string; stream_id: string; can_edit: boolean; kind: string; title: string; starts_at: string; ends_at: string;
   checked_in_at: string | null; checked_out_at: string | null; marked_at: string | null;
   submitted_at: string | null; submitted_to: string | null; mine: boolean;
+  invigilators?: string[]; my_invigilation?: boolean; can_manage_coverage?: boolean;
   class_label: string; subject_label: string; teacher: string;
 };
 
@@ -136,6 +137,8 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
         <h3 className="font-bold">{item.title} · {item.class_label} · {item.subject_label}</h3>
         <p className="capitalize">{item.kind} · {item.teacher}</p>
         <p>{stamp(item.starts_at)} to {stamp(item.ends_at)} WAT</p>
+        {!!item.invigilators?.length && <p><span className="font-bold">Invigilators</span> · {item.invigilators.join(", ")}{item.my_invigilation && " · You are assigned"}</p>}
+        {item.can_manage_coverage && item.invigilators?.length === 0 && <p className="font-bold text-amber-800">Invigilator needed</p>}
         <p>Check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>
         {item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
         {item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
