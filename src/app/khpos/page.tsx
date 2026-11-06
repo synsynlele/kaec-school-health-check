@@ -1,50 +1,74 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Building2, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Building2, CalendarDays, ClipboardCheck, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "KHP-OS | Schools & KAEC HQ Access",
-  description: "KHP-OS by KAEC-NG helps approved schools manage responsibilities, daily action, evidence, wellbeing and improvement.",
+  title: "KHP-OS | Run your school",
+  description: "Manage attendance, teaching, exams and follow-up in one school workspace with KHP-OS by KAEC-NG.",
 };
+
+const todayExamples = [
+  { icon: Building2, title: "School attendance", detail: "Record your arrival and departure." },
+  { icon: CalendarDays, title: "Tests and exams", detail: "See your invigilation duty, check in and submit your report." },
+  { icon: ClipboardCheck, title: "Work that needs attention", detail: "Open an assigned action and record what was done." },
+];
 
 export default function KhposAccessPage() {
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-12 text-white sm:py-20">
+    <main className="min-h-screen bg-slate-950 px-5 py-8 text-white sm:py-12">
       <div className="mx-auto max-w-6xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-mint-300/30 bg-white/5 px-4 py-2 text-xs font-bold text-mint-300">
-          <ShieldCheck className="size-4" /> KHP-OS by KAEC-NG
+          <ShieldCheck aria-hidden="true" className="size-4" /> KHP-OS by KAEC-NG
         </div>
-        <h1 className="mt-8 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-          Where would you like to go?
-        </h1>
-        <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-          Know what needs attention today, carry out your assigned responsibilities and keep completed work in its proper History.
-        </p>
+        <div className="mt-7 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+          <section aria-labelledby="welcome-heading">
+            <h1 id="welcome-heading" className="text-4xl font-black leading-tight tracking-tight sm:text-6xl">
+              Run your school with KHP-OS
+            </h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
+              See who’s on duty, what needs attention, and what’s been completed. Manage attendance, teaching, exams, and follow-up in one place.
+            </p>
+            <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
+              <Link href="/account" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mint-300 px-4 py-3 font-bold text-slate-950 hover:bg-mint-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                Sign in to your school <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+              <Link href="/assessment" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 px-4 py-3 font-bold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                <BookOpenCheck aria-hidden="true" className="size-4" /> Start the free School Health Check
+              </Link>
+            </div>
+          </section>
 
-        <div className="mt-9 grid gap-4 md:grid-cols-3">
-          <Link href="/account" className="group flex min-h-48 flex-col justify-between rounded-3xl bg-mint-300 p-6 text-slate-950 focus-visible:outline-4 focus-visible:outline-white">
-            <Building2 className="size-9" />
-            <span><strong className="block text-2xl font-black">Sign in to your school</strong><span className="mt-2 block text-sm leading-6">Open your approved school workspace or create a free KSHC account.</span></span>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-black">Continue <ArrowRight className="size-4" /></span>
-          </Link>
-          <Link href="/assessment" className="group flex min-h-48 flex-col justify-between rounded-3xl border border-white/20 bg-white/5 p-6 text-white transition hover:bg-white/10">
-            <BookOpenCheck className="size-9 text-brand-200" />
-            <span><strong className="block text-2xl font-black">Run a School Health Check</strong><span className="mt-2 block text-sm leading-6 text-slate-300">Not yet a partner school? Begin with the free school diagnostic.</span></span>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-black">Start KSHC <ArrowRight className="size-4" /></span>
-          </Link>
-          <Link href="/khpos/hq" className="group flex min-h-48 flex-col justify-between rounded-3xl border border-mint-300/40 bg-mint-300/10 p-6 text-white transition hover:bg-mint-300/20 focus-visible:outline-4 focus-visible:outline-white">
-            <ShieldCheck className="size-9 text-mint-300" />
-            <span><strong className="block text-2xl font-black">Enter KAEC HQ</strong><span className="mt-2 block text-sm leading-6 text-slate-300">For appointed KAEC team members: coordinate partner schools, visits, actions and reports.</span></span>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-black">Open HQ <ArrowRight className="size-4" /></span>
-          </Link>
+          <section aria-labelledby="today-preview" className="rounded-3xl border border-white/15 bg-white/5 p-5 sm:p-6">
+            <p className="text-xs font-bold uppercase tracking-wider text-mint-300">Example school day</p>
+            <h2 id="today-preview" className="mt-2 text-2xl font-black">What you can do in Today</h2>
+            <ul className="mt-4 divide-y divide-white/15">
+              {todayExamples.map(({ icon: Icon, title, detail }) => (
+                <li key={title} className="flex gap-3 py-3">
+                  <Icon aria-hidden="true" className="mt-1 size-5 shrink-0 text-mint-300" />
+                  <div>
+                    <p className="font-bold">{title}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">{detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-400">KAEC HQ requires a corporate appointment. School membership alone does not grant HQ access.</p>
-        <p className="mt-7 max-w-2xl text-sm leading-6 text-slate-400">Account access and KHP-OS access are intentionally different. Creating a free account does not automatically give access to KHP-OS. KAEC-NG must first approve the school partnership, and your school must authorise your position.</p>
 
-        <details className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-          <summary className="cursor-pointer font-bold text-white">KAEC-NG platform administration</summary>
-          <p className="mt-3 leading-6">These areas are restricted to authorised KAEC-NG platform administrators and may require additional verification.</p>
+        <section className="mt-8 rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6" aria-labelledby="getting-started">
+          <h2 id="getting-started" className="text-xl font-black">Getting your school started</h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
+            <li>Complete the free School Health Check to see where your school can improve.</li>
+            <li>Apply for a school partnership. KAEC-NG reviews and approves access to KHP-OS.</li>
+            <li>Once approved, your school authorises your role so you can sign in and open its workspace.</li>
+          </ol>
+        </section>
+
+        <details className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
+          <summary className="cursor-pointer font-bold text-white">KAEC HQ and platform administration</summary>
+          <p className="mt-3 leading-6">For appointed KAEC team members and authorised platform administrators.</p>
           <div className="mt-4 flex flex-wrap gap-4">
+            <Link href="/khpos/hq" className="text-mint-300 underline">Enter KAEC HQ</Link>
             <Link href="/khpos/admin" className="text-mint-300 underline">Admin Console</Link>
             <Link href="/khpos/admin/partnerships" className="text-mint-300 underline">Partnership Registry</Link>
             <Link href="/khpos/portfolio" className="text-mint-300 underline">Portfolio Intelligence</Link>
