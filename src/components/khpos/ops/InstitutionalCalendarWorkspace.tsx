@@ -1,5 +1,7 @@
 "use client";
 
+import { SchoolPlan } from "./SchoolPlan";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
@@ -167,6 +169,7 @@ export function InstitutionalCalendarWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+        <SchoolPlan school={organisationId} />
         <section className="flex flex-wrap gap-2">
           {(["all", "work", "decision", "event", "policy_review", "recurring"] as const).map(
             (value) => (
