@@ -7,10 +7,12 @@ import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
 import { planKinds } from "@/lib/khpos/ops/school-plan-types";
 import { KhposPresenceError, verifyTeachingPreviewIsolation } from "@/lib/khpos/ops/presence";
 
-const mutation = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("save"), id: z.uuid().nullable(), kind: z.enum(Object.keys(planKinds) as [keyof typeof planKinds, ...(keyof typeof planKinds)[]]),
+const saveEntry = z.object({ action: z.literal("save"), id: z.uuid().nullable(), kind: z.enum(Object.keys(planKinds) as [keyof typeof planKinds, ...(keyof typeof planKinds)[]]),
     title: z.string().trim().min(1).max(120), campusId: z.uuid().nullable(), staffId: z.uuid().nullable(),
-    assessmentId: z.uuid().nullable(), startDay: z.iso.date().nullable(), endDay: z.iso.date().nullable(), published: z.boolean() }),
+    assessmentId: z.uuid().nullable(), startDay: z.iso.date().nullable(), endDay: z.iso.date().nullable(), published: z.boolean() });
+const mutation = z.discriminatedUnion("action", [
+  saveEntry,
+  z.object({ action: z.literal("save_document"), entries: z.array(saveEntry.extend({ id: z.null() })).min(1).max(60) }),
   z.object({ action: z.literal("remove"), id: z.uuid() }),
   z.object({ action: z.literal("rule"), id: z.uuid(), dayMode: z.enum(["scheduled", "teaching", "staff"]) }),
 ]);
@@ -30,12 +32,13 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
     const from = todayOnly ? today : z.iso.date().parse(url.searchParams.get("from") ?? today.slice(0, 8) + "01");
     const to = todayOnly ? today : new Date(Date.parse(from) + 91 * 86400000).toISOString().slice(0, 10);
     const input = request.method === "POST" ? mutation.parse(await request.json()) : null;
-    if (input?.action === "save" && (
-      (input.kind === "invigilation") !== Boolean(input.assessmentId) ||
-      (input.kind === "invigilation" || input.kind === "weekly_duty") !== Boolean(input.staffId)
-    )) return NextResponse.json({ error: "Choose the required staff member and assessment." }, { status: 400, headers });
+    const entries = input?.action === "save_document" ? input.entries : input?.action === "save" ? [input] : [];
+    if (entries.some(entry => (
+      (entry.kind === "invigilation") !== Boolean(entry.assessmentId) ||
+      (entry.kind === "invigilation" || entry.kind === "weekly_duty") !== Boolean(entry.staffId)
+    ))) return NextResponse.json({ error: "Choose the required staff member and assessment." }, { status: 400, headers });
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-    const { data, error } = await db.rpc("khpos_school_plan_server", { p_actor: actor.id, p_org: id, p_from: from, p_to: to, p_input: input, p_today: todayOnly });
+    const { data, error } = await db.rpc(input?.action === "save_document" ? "khpos_school_plan_documents_server" : "khpos_school_plan_server", { p_actor: actor.id, p_org: id, p_from: from, p_to: to, p_input: input, p_today: todayOnly });
     if (error?.code === "42501" || error?.code === "22023") {
       return NextResponse.json({ error: error.message }, { status: error.code === "42501" ? 403 : 400, headers });
     }
