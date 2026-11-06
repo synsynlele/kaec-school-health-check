@@ -140,8 +140,16 @@ export function DecisionsWorkspace({
       return !next.approval && !next.implementation;
     },
   );
+  const [summaryFilter, setSummaryFilter] = useState<number | null>(null);
+  const summaryGroups = ["Pending", "Waiting for me", "Overdue", "Implemented"];
+  const summaryItems = summaryGroups.map((_, index) => (workspace?.items ?? []).filter(item => {
+    const open = ["submitted", "under_review", "returned"].includes(item.status);
+    const overdue = Boolean(item.decisionDueAt && workspace && Date.parse(item.decisionDueAt) < Date.parse(workspace.generatedAt));
+    return [open, item.isAuthority && ["submitted", "under_review"].includes(item.status), open && overdue, item.status === "implemented"][index];
+  }));
+  const queueItems = summaryFilter === null ? decisionQueue.visibleItems : summaryItems[summaryFilter];
   const decisionSearch = useRecordSearch(
-    decisionQueue.visibleItems,
+    queueItems,
     (decision) => [decision.reference, decision.title, decision.context, decision.priority, decision.category, decision.status, decision.requester.displayName ?? "", decision.authority.roleTitle].join(" "),
     (decision) => decision.title,
     (decision) => decision.decisionDueAt ?? decision.createdAt,
@@ -584,19 +592,13 @@ export function DecisionsWorkspace({
           </div>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["Pending", workspace.summary.pending],
-              ["Waiting for me", workspace.summary.waitingForMe],
-              ["Overdue", workspace.summary.overdue],
-              ["Implemented", workspace.summary.implemented],
-            ].map(([label, value]) => (
-              <div
-                key={String(label)}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4"
-              >
+            {summaryGroups.map((label, index) => (
+              <a key={label} href="#decision-records"
+                onClick={() => { setSummaryFilter(index); decisionSearch.setQuery(""); }}
+                className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
                 <p className="text-xs font-bold text-brand-100">{label}</p>
-                <p className="mt-1 text-3xl font-black">{value}</p>
-              </div>
+                <p className="mt-1 text-3xl font-black">{summaryItems[index].length}</p>
+              </a>
             ))}
           </div>
         </div>
@@ -942,8 +944,10 @@ export function DecisionsWorkspace({
           </section>
         )}
 
-        <RecordQueueTabs view={decisionQueue.view} setView={decisionQueue.setView} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
-        <RecordQueueSearchControls query={decisionSearch.query} setQuery={decisionSearch.setQuery} sort={decisionSearch.sort} setSort={decisionSearch.setSort} shown={decisionSearch.visibleItems.length} total={decisionQueue.visibleItems.length} placeholder="Search decision, reference, role or status" hasPriority />
+        <div id="decision-records" className="scroll-mt-24" />
+        {summaryFilter !== null && <p className="text-sm font-bold">Showing {summaryGroups[summaryFilter]} · <button type="button" className="underline" onClick={() => setSummaryFilter(null)}>Clear filter</button></p>}
+        <RecordQueueTabs view={decisionQueue.view} setView={view => { setSummaryFilter(null); decisionQueue.setView(view); }} activeCount={decisionQueue.activeCount} historyCount={decisionQueue.historyCount} waitingCount={decisionQueue.waitingCount} />
+        <RecordQueueSearchControls query={decisionSearch.query} setQuery={decisionSearch.setQuery} sort={decisionSearch.sort} setSort={decisionSearch.setSort} shown={decisionSearch.visibleItems.length} total={queueItems.length} placeholder="Search decision, reference, role or status" hasPriority />
 
         {decisionSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">

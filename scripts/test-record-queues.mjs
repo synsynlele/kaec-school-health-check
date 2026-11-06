@@ -53,7 +53,10 @@ for(const [page, queue, filtered] of [
 ]){
   const source=read(base+page+".tsx");
   assert.ok(source.includes("const "+filtered+" = useRecordSearch("),page+" missing hook");
-  assert.ok(source.includes("useRecordSearch(\n    "+queue+".visibleItems"),page+" must preserve queue lifecycle filter");
+  const defaultQueue = source.includes("useRecordSearch(\n    "+queue+".visibleItems");
+  const summaryQueue = source.includes("summaryFilter === null ? "+queue+".visibleItems : summaryItems[summaryFilter]") &&
+    source.includes("useRecordSearch(\n    queueItems,") && source.includes("setSummaryFilter(null); "+queue+".setView(view)");
+  assert.ok(defaultQueue || summaryQueue,page+" must preserve queue lifecycle filter");
   assert.ok(source.includes("<RecordQueueSearchControls query={"+filtered+".query}"),page+" missing toolbar");
   assert.ok(source.includes(filtered+".visibleItems.map("),page+" still renders unsorted/unfiltered items");
   assert.ok(source.includes("No "+(page==="PeopleWorkspace"?"staff":page==="AssetsMaintenanceWorkspace"?"assets":"")),page+" missing empty state");
