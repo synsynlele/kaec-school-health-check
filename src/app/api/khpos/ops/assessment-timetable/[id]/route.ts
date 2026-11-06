@@ -15,6 +15,8 @@ const payload = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("add"), ...schedule }),
   z.object({ mode: z.literal("edit"), id: z.uuid(), ...schedule }),
   z.object({ mode: z.enum(["start", "finish", "mark"]), from: date, id: z.uuid() }),
+  z.object({ mode: z.literal("invigilator_start"), from: date, id: z.uuid() }),
+  z.object({ mode: z.literal("invigilator_finish"), from: date, id: z.uuid(), note: z.string().trim().min(1).max(2000) }),
   z.object({ mode: z.literal("submit"), from: date, id: z.uuid(), recipient: z.string().trim().min(1).max(120) }),
 ]);
 const headers = { "Cache-Control": "private, no-store" };
