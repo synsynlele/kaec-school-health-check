@@ -17,6 +17,7 @@ export type PlanEntry = {
   assessment_start: string | null; assessment_title: string | null;
 };
 export type SchoolPlan = {
+  canManageInvigilation?: boolean;
   canManage: boolean; canManageWholeSchool: boolean; entries: PlanEntry[];
   campuses: { id: string; name: string }[];
   staff: { id: string; name: string }[];
