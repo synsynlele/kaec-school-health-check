@@ -10,6 +10,7 @@ type Entry = {
   id: string; stream_id: string; can_edit: boolean; kind: string; title: string; starts_at: string; ends_at: string;
   checked_in_at: string | null; checked_out_at: string | null; marked_at: string | null;
   submitted_at: string | null; submitted_to: string | null; mine: boolean;
+  invigilation_attendance?: { id: string; name: string; mine: boolean; published: boolean; in: string | null; out: string | null; note: string | null }[];
   invigilators?: string[]; my_invigilation?: boolean; can_manage_coverage?: boolean;
   class_label: string; subject_label: string; teacher: string;
 };
@@ -139,7 +140,26 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
         <p>{stamp(item.starts_at)} to {stamp(item.ends_at)} WAT</p>
         {!!item.invigilators?.length && <p><span className="font-bold">Invigilators</span> · {item.invigilators.join(", ")}{item.my_invigilation && " · You are assigned"}</p>}
         {item.can_manage_coverage && item.invigilators?.length === 0 && <p className="font-bold text-amber-800">Invigilator needed</p>}
-        <p>Check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>
+        <p>Assigned teacher check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>
+        {item.invigilation_attendance?.map(duty => <section key={duty.id} className="space-y-2 rounded-lg border border-slate-200 p-3">
+          <h4 className="font-bold">Invigilation attendance · {duty.name}</h4>
+          <p>Check-in {duty.in ? stamp(duty.in) : "pending"} · Check-out {duty.out ? stamp(duty.out) : "pending"}</p>
+          {duty.note && <p className="whitespace-pre-wrap break-words">Exam report · {duty.note}</p>}
+          {duty.mine && duty.published && !duty.in && (canStart
+            ? <button type="button" disabled={busy} className={button}
+                onClick={() => void save({ mode: "invigilator_start", id: item.id })}>Check in as invigilator</button>
+            : <p>Invigilator check-in opens 30 minutes before the assessment.</p>)}
+          {duty.mine && duty.in && !duty.out && <form className="space-y-2" onSubmit={event => {
+            event.preventDefault();
+            void save({ mode: "invigilator_finish", id: item.id, note: new FormData(event.currentTarget).get("note") });
+          }}>
+            <label>Exam report or comment
+              <textarea name="note" className={field} required maxLength={2000}
+                placeholder="Summarise how it went, or enter No issues. Leave out learner names." />
+            </label>
+            <button type="submit" disabled={busy} className={button}>Submit report and check out</button>
+          </form>}
+        </section>)}
         {item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
         {item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
         {item.can_edit && assignments.length > 0 && <button type="button" disabled={busy} className={button} onClick={() => {
