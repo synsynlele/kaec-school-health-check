@@ -62,6 +62,9 @@ export default function KhposAccessPage() {
             <li>Apply for a school partnership. KAEC-NG reviews and approves access to KHP-OS.</li>
             <li>Once approved, your school authorises your role so you can sign in and open its workspace.</li>
           </ol>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Account access and KHP-OS access are intentionally different. A free account lets you run the School Health Check. Your school workspace opens after partnership approval and role authorisation.
+          </p>
         </section>
 
         <details className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
