@@ -62,6 +62,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const supabase=useMemo(()=>createBrowserSupabaseClient(),[]);
   const [data,setData]=useState<KhposPresenceWorkspace|null>(null);
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
+  const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | null>(null);
   const [tab,setTab]=useState<Panel>("day");
   const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
@@ -607,8 +608,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               </label>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed class sessions (last 14 days)</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></div>
-              <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></div>
+              <a href="#attendance-corrections" onClick={() => { setCorrectionCategory("class"); document.querySelector<HTMLDetailsElement>("#attendance-corrections")?.setAttribute("open",""); }} className="block rounded-xl bg-slate-50 p-3 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600"><p className="text-xs text-slate-600">Unclosed class sessions (last 14 days)</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></a>
+              <a href="#attendance-corrections" onClick={() => { setCorrectionCategory("school"); document.querySelector<HTMLDetailsElement>("#attendance-corrections")?.setAttribute("open",""); }} className="block rounded-xl bg-slate-50 p-3 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></a>
             </div>
           </section>
           {historyCategory==="school"&&<section className={box} aria-label="School attendance records">
@@ -647,18 +648,19 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                 className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
             </div>
           </div>
-          <details className={box}>
+          <details id="attendance-corrections" className={box + " scroll-mt-24"}>
             <summary className="cursor-pointer text-lg font-black text-slate-900">Administrative corrections ({data.openClassSessions.length+data.openSchoolAttendance.length} open)</summary>
           {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 className="font-black text-amber-900">Correct an attendance record with supporting information</h3>
             <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
             <label className="block text-xs font-bold">Correction reason and supporting reference (at least 15 characters)</label>
             <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason, verified information and issue reference.</span><textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/></label>
-            {data.openClassSessions.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+            {correctionCategory && <p className="text-sm">Showing {correctionCategory} records · <button type="button" className="underline" onClick={() => setCorrectionCategory(null)}>Show all</button></p>}
+            {correctionCategory !== "school" && data.openClassSessions.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
               <span><b>{x.teacher}</b> · {x.class} · {x.subject} · School date: {x.date} · Class check-in: {dateTime(x.in)}</span>
               <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("class_reconcile",{classSessionId:x.id,reason:reconcileReason},"Class administratively closed as unverified.")}>Close as unverified</button>
             </div>)}
-            {data.openSchoolAttendance.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+            {correctionCategory !== "class" && data.openSchoolAttendance.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
               <span><b>{x.teacher}</b> · School date: {x.date} · School check-in: {dateTime(x.in)}</span>
               <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("school_reconcile",{presenceId:x.id,reason:reconcileReason},"School attendance administratively closed.")}>Record admin closure</button>
             </div>)}
