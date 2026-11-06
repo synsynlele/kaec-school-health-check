@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -107,6 +108,32 @@ export function OperationsTeamWorkspace({
       active = false;
     };
   }, [organisationId, supabase, structureRevision]);
+
+  const [savingTitle, setSavingTitle] = useState(false);
+  const [titleError, setTitleError] = useState("");
+  const [titleNotice, setTitleNotice] = useState("");
+
+  async function saveRoleTitle(roleId: string, previous: string, title: string) {
+    if (savingTitle) return;
+    setSavingTitle(true);
+    setTitleError("");
+    setTitleNotice("");
+    try {
+      const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+      if (!token) throw new Error("Sign in again to continue.");
+      const response = await fetch(`/api/khpos/ops/structure/${organisationId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId, previous, title }),
+      });
+      const body = await response.json();
+      if (!response.ok || !body.structure) throw new Error(body.error ?? "Could not save the title.");
+      setStructure(body.structure);
+      setTitleNotice("Role title updated.");
+    } catch (error) {
+      setTitleError(error instanceof Error ? error.message : "Could not save the title.");
+    } finally { setSavingTitle(false); }
+  }
 
   if (!structure && !error) {
     return (
@@ -293,6 +320,8 @@ export function OperationsTeamWorkspace({
             </p>
           </div>
 
+          <ActionFeedback busy={savingTitle} error={titleError} notice={titleNotice}
+            onDismiss={() => { setTitleError(""); setTitleNotice(""); }} />
           <div className="mt-6 space-y-4">
             {structure.roles.map((role) => (
               <details
@@ -338,6 +367,21 @@ export function OperationsTeamWorkspace({
                 </summary>
 
                 <div className="border-t border-slate-100 px-6 pb-7 pt-6 sm:px-7">
+                  {structure.canRenameRoles && role.status === "active" && (
+                    <form key={role.title} className="mb-6 space-y-2" onSubmit={event => {
+                      event.preventDefault();
+                      const title = String(new FormData(event.currentTarget).get("title") ?? "");
+                      void saveRoleTitle(role.id, role.title, title);
+                    }}>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Role title used by your school
+                        <input name="title" defaultValue={role.title} required maxLength={80}
+                          className="max-w-sm rounded-xl border border-slate-300 px-3 py-2" />
+                      </label>
+                      <p className="text-sm text-slate-600">This changes the title staff see. The role keeps its responsibilities and permissions.</p>
+                      <button type="submit" disabled={savingTitle} className="rounded-xl bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Save role title</button>
+                    </form>
+                  )}
                   {role.assignments.length > 0 && (
                     <div className="mb-6">
                       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">

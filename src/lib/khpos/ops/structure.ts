@@ -63,6 +63,7 @@ export interface KhposOpsStructure {
     name: string;
   };
   membershipRole: string;
+  canRenameRoles: boolean;
   campuses: KhposOpsCampus[];
   units: KhposOpsUnit[];
   roles: KhposOpsRole[];
@@ -127,5 +128,19 @@ export async function getKhposOpsStructure(
     throw new KhposOpsStructureError(message, status);
   }
 
-  return data as unknown as KhposOpsStructure;
+  const permission = await admin().rpc("khpos_ops_school_role_title", {
+    p_actor: userId, p_org: organisationId,
+  });
+  return { ...(data as unknown as KhposOpsStructure), canRenameRoles: permission.data === true };
+}
+
+export async function renameSchoolRole(organisationId: string, userId: string, roleId: string, title: string, previous: string) {
+  const { error } = await admin().rpc("khpos_ops_school_role_title", {
+    p_actor: userId, p_org: organisationId, p_role: roleId, p_title: title, p_previous: previous,
+  });
+  if (error) {
+    const status = { "42501": 403, "22023": 400, "40001": 409 }[error.code] ?? 500;
+    throw new KhposOpsStructureError(status === 500 ? "The role title could not be saved." : error.message, status);
+  }
+  return getKhposOpsStructure(organisationId, userId);
 }
