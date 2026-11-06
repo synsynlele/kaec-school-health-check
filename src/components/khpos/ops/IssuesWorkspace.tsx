@@ -97,8 +97,16 @@ export function IssuesWorkspace({
     (issue) => issue.status === "closed",
     (issue) => issueAttentionAction(issue, Boolean(issue.dueAt && Date.parse(issue.dueAt) < Date.parse(workspace?.generatedAt ?? ""))) === null,
   );
+  const [summaryFilter, setSummaryFilter] = useState<number | null>(null);
+  const summaryGroups = ["Needs handling", "Active P1", "Overdue action", "Awaiting review / closure"];
+  const summaryItems = summaryGroups.map((_, index) => (workspace?.items ?? []).filter(item => {
+    const open = !["resolved", "verified", "closed"].includes(item.status);
+    const overdue = Boolean(item.dueAt && workspace && Date.parse(item.dueAt) < Date.parse(workspace.generatedAt));
+    return [open, open && item.severity === "P1", open && overdue, ["resolved", "verified"].includes(item.status)][index];
+  }));
+  const queueItems = summaryFilter === null ? issueQueue.visibleItems : summaryItems[summaryFilter];
   const issueSearch = useRecordSearch(
-    issueQueue.visibleItems,
+    queueItems,
     (issue) => [issue.reference, issue.title, issue.description, issue.category, issue.severity, issue.status, issue.dueAt ?? ""].join(" "),
     (issue) => issue.title,
     (issue) => issue.dueAt,
@@ -331,19 +339,13 @@ export function IssuesWorkspace({
           </div>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["Needs handling", workspace.items.filter((item) => !["resolved", "verified", "closed"].includes(item.status)).length],
-              ["Active P1", workspace.items.filter((item) => item.severity === "P1" && !["resolved", "verified", "closed"].includes(item.status)).length],
-              ["Overdue action", workspace.items.filter((item) => item.dueAt && Date.parse(item.dueAt) < Date.parse(workspace.generatedAt) && !["resolved", "verified", "closed"].includes(item.status)).length],
-              ["Awaiting review / closure", workspace.summary.resolvedAwaitingClosure],
-            ].map(([label, value]) => (
-              <div
-                key={String(label)}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4"
-              >
+            {summaryGroups.map((label, index) => (
+              <a key={label} href="#issue-records"
+                onClick={() => { setSummaryFilter(index); issueSearch.setQuery(""); }}
+                className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
                 <p className="text-xs font-bold text-brand-100">{label}</p>
-                <p className="mt-1 text-3xl font-black">{value}</p>
-              </div>
+                <p className="mt-1 text-3xl font-black">{summaryItems[index].length}</p>
+              </a>
             ))}
           </div>
         </div>
@@ -469,8 +471,10 @@ export function IssuesWorkspace({
           </section>
         )}
 
-        <RecordQueueTabs view={issueQueue.view} setView={issueQueue.setView} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} waitingCount={issueQueue.waitingCount} />
-        <RecordQueueSearchControls query={issueSearch.query} setQuery={issueSearch.setQuery} sort={issueSearch.sort} setSort={issueSearch.setSort} shown={issueSearch.visibleItems.length} total={issueQueue.visibleItems.length} placeholder="Search issue, reference, severity or status" hasPriority />
+        <div id="issue-records" className="scroll-mt-24" />
+        {summaryFilter !== null && <p className="text-sm font-bold">Showing {summaryGroups[summaryFilter]} · <button type="button" className="underline" onClick={() => setSummaryFilter(null)}>Clear filter</button></p>}
+        <RecordQueueTabs view={issueQueue.view} setView={view => { setSummaryFilter(null); issueQueue.setView(view); }} activeCount={issueQueue.activeCount} historyCount={issueQueue.historyCount} waitingCount={issueQueue.waitingCount} />
+        <RecordQueueSearchControls query={issueSearch.query} setQuery={issueSearch.setQuery} sort={issueSearch.sort} setSort={issueSearch.setSort} shown={issueSearch.visibleItems.length} total={queueItems.length} placeholder="Search issue, reference, severity or status" hasPriority />
 
         {issueSearch.visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
