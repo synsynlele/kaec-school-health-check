@@ -25,6 +25,7 @@ export type SchoolClosure = { campus_id: string | null; kind: "closure" | "no_le
 
 export interface KhposPresenceWorkspace {
   calendarClosures?: SchoolClosure[];
+  sectionalScheduleStreamIds?: string[];
   localDay: string; userId: string; canManage: boolean; canEnablePilot: boolean; pilotEnabled: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
   todayPresence: null | { checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
