@@ -670,141 +670,551 @@ export function MyWorkWorkspace({
                           Awaiting verification
                         </span>
                       </div>
-                      <h3 className="mt-3 text-xl font-black">{…25752 tokens truncated…{ id: string; name: string }>;
-  todayPresence: null | { checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
-  periods: KhposPresencePeriod[]; observations: KhposHqlsObservation[];
-  teamPresence: Array<{ checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; name: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean }>;
-  openClassSessions: Array<{ id: string; date: string; class: string; subject: string; teacher: string; in: string }>;
-  openSchoolAttendance: Array<{ id: string; date: string; teacher: string; campusId: string; in: string }>;
-}
-export interface KhposPresenceHistory {
-  from: string; to: string; page: number; pageSize: number;
-  schoolTotal: number; classTotal: number;
-  schoolRecords: Array<{ checkInLocation?:AttendanceLocation|null; checkOutLocation?:AttendanceLocation|null; id:string; name:string; campusId:string; date:string; in:string; out:string|null; administrativelyClosed:boolean }>;
-  classRecords: Array<{ id:string; date:string; teacher:string; class:string; subject:string; in:string; out:string|null; topic:string|null; outcome:string|null; administrativelyClosed:boolean }>;
-}
+                      <h3 className="mt-3 text-xl font-black">{item.title}</h3>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Submitted by {item.roleTitle} · Reviewing as {item.reviewerRoleTitle}
+                        {item.campusName ? ` · ${item.campusName}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-500">
+                      {formatDate(item.submittedForVerificationAt)}
+                    </span>
+                  </div>
 
-export interface KhposFilteredPresenceHistory extends KhposPresenceHistory {
-  category: "school" | "class"; search: string; sort: "newest" | "oldest" | "name"; total: number;
-}
+                  {item.checklist && (
+                    <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <summary className="cursor-pointer text-sm font-black">
+                        Review checklist · {item.checklist.name}
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {item.checklist.items.map((check) => (
+                          <div
+                            key={check.id}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                          >
+                            <p className="font-bold">{check.label}</p>
+                            <p className="mt-1 text-slate-600">
+                              {check.response === null
+                                ? "No response"
+                                : typeof check.response === "boolean"
+                                  ? check.response
+                                    ? "Yes"
+                                    : "No"
+                                  : String(check.response)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
 
-export async function getFilteredPresenceHistory(
-  org:string, actor:string, from:string, to:string,
-  category:"school"|"class", search:string, sort:"newest"|"oldest"|"name", page:number, pageSize:20|50
-):Promise<KhposFilteredPresenceHistory> {
-  const {data,error}=await service().rpc("khpos_ops_presence_history_filtered_server",{
-    p_actor:actor,p_org:org,p_from:from,p_to:to,p_category:category,
-    p_query:search,p_sort:sort,p_page:page,p_page_size:pageSize
-  });
-  if(error) fail(error.message);
-  if(!data || typeof data!=="object" || Array.isArray(data)) fail("Attendance history could not be loaded.");
-  return data as KhposFilteredPresenceHistory;
-}
+                  {item.recordRequirements.length > 0 && (
+                    <div className="mt-5 space-y-3">
+                      {item.recordRequirements.map((requirement) => (
+                        <div
+                          key={requirement.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <p className="text-sm font-black">{requirement.label}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {requirement.toolCode} · {requirement.records.length} submission(s)
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {requirement.records
+                              .filter((record) => record.status !== "returned")
+                              .map((record) => (
+                                <div
+                                  key={record.id}
+                                  className="rounded-xl bg-white p-3 text-sm"
+                                >
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {Object.entries(record.payload).map(
+                                      ([key, value]) => (
+                                        <div key={key}>
+                                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                                            {key.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                                          </p>
+                                          <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                                            {String(value)}
+                                          </p>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-export async function getPresenceHistory(org:string, actor:string, from:string, to:string, page:number):Promise<KhposPresenceHistory> {
-  const {data,error}=await service().rpc("khpos_ops_presence_history_server",{
-    p_actor:actor,p_org:org,p_from:from,p_to:to,p_page:page,p_page_size:50
-  });
-  if(error) fail(error.message);
-  if(!data || typeof data!=="object" || Array.isArray(data)) fail("Attendance history could not be loaded.");
-  return data as KhposPresenceHistory;
-}
+                  {item.evidenceRecords.length > 0 && (
+                    <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                        Supporting evidence
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {item.evidenceRecords.map((evidence) => (
+                          <div key={evidence.id} className="text-sm text-slate-700">
+                            {evidence.note || evidence.externalUrl || evidence.storageReference}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-export class KhposPresenceError extends Error {
-  constructor(message: string, public readonly status = 400) { super(message); }
-}
-function service() {
-  if (!url || !key) throw new KhposPresenceError("Teaching attendance is not configured.", 503);
-  return client ??= createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-function fail(message: string) {
-  const status = /does not exist|could not find the function|not configured|schema cache/i.test(message)
-    ? 503 : /only|membership|authorised|permitted|active staff|another school|independent observer/i.test(message)
-      ? 403 : 400;
-  throw new KhposPresenceError(message, status);
-}
-export async function getPresenceWorkspace(org: string, actor: string): Promise<KhposPresenceWorkspace> {
-  const { data, error } = await service().rpc("khpos_ops_presence_workspace_server", { p_actor: actor, p_org: org });
-  if (error) fail(error.message);
-  if (!data || typeof data !== "object" || Array.isArray(data)) fail("Attendance could not be loaded.");
-  const workspace = data as KhposPresenceWorkspace;
-  const date = new Date(workspace.localDay + "T12:00:00Z");
-  date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7);
-  const from = date.toISOString().slice(0, 10);
-  date.setUTCDate(date.getUTCDate() + 6);
-  const to = date.toISOString().slice(0, 10);
-  const { data: closures, error: closureError } = await service().from("khpos_school_plan_entries")
-    .select("campus_id,kind,start_day,end_day").eq("organisation_id", org).eq("published", true)
-    .in("kind", ["closure", "no_lessons"]).lte("start_day", to).gte("end_day", from);
-  if (closureError) fail(closureError.message);
-  return { ...workspace, calendarClosures: closures as SchoolClosure[] };
-}
-export async function actOnPresence(org: string, actor: string, mode: string, input: Record<string, unknown>) {
-  const { error } = await service().rpc("khpos_ops_presence_action_server", {
-    p_actor: actor, p_org: org, p_mode: mode, p_input: input
-  });
-  if (error) fail(error.message);
-}
+                  <label className="mt-5 block text-sm font-bold">
+                    Verification note
+                    <textarea
+                      rows={3}
+                      value={reviewNote}
+                      onChange={(event) =>
+                        setReviewNotes((current) => ({
+                          ...current,
+                          [item.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="Optional when verifying; required when returning."
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-brand-400"
+                    />
+                  </label>
 
-export type WeeklyClassRecord = { periodId: string; date: string; in: string; out: string | null; outcome: string | null; administrativelyClosed: boolean };
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() =>
+                        void act(item, {
+                          action: "verify",
+                          note: reviewNote.trim() || undefined,
+                        })
+                      }
+                      className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50"
+                    >
+                      {isBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="size-4" />
+                      )}
+                      Verify work
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy || reviewNote.trim().length < 3}
+                      onClick={() =>
+                        void act(item, {
+                          action: "return_verification",
+                          note: reviewNote.trim(),
+                        })
+                      }
+                      className="rounded-full border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-black text-amber-900 disabled:opacity-50"
+                    >
+                      Return for correction
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
 
-export async function getWeeklyClassRecords(org: string, actor: string) {
-  const workspace = await getPresenceWorkspace(org, actor);
-  const monday = new Date(workspace.localDay + "T12:00:00Z");
-  monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
-  const sunday = new Date(monday);
-  sunday.setUTCDate(sunday.getUTCDate() + 6);
-  const from = monday.toISOString().slice(0, 10);
-  const to = sunday.toISOString().slice(0, 10);
-  const visible = new Map(workspace.periods.map(period => [period.id, period.teacherUserId]));
-  const ids = [...visible.keys()];
-  const records: WeeklyClassRecord[] = [];
-  // Keep each request below REST URL and row limits.
-  for (let index = 0; index < ids.length; index += 100) {
-    const { data, error } = await service().from("khpos_ops_class_sessions")
-      .select("period_id,teacher_user_id,local_day,checked_in_at,checked_out_at,outcome,closed_by")
-      .eq("organisation_id", org).in("period_id", ids.slice(index, index + 100))
-      .gte("local_day", from).lte("local_day", to);
-    if (error) fail(error.message);
-    for (const row of data ?? []) {
-      if (visible.get(row.period_id) !== row.teacher_user_id) continue;
-      records.push({ periodId: row.period_id, date: row.local_day, in: row.checked_in_at,
-        out: row.checked_out_at, outcome: row.outcome, administrativelyClosed: Boolean(row.closed_by) });
-    }
-  }
-  return { from, to, records };
-}
+        {openItems.length === 0 && verificationItems.length === 0 && !workSearch.query.trim() ? (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <CheckCircle2 className="mx-auto size-10 text-mint-700" />
+            <h2 className="mt-4 text-2xl font-black">Nothing needs your action right now.</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              New tasks appear here when they are assigned to your position, become due on a schedule or follow from a reported issue or approved decision.
+            </p>
+            <Link
+              href={`/khpos/${organisationId}/team`}
+              className="mt-5 inline-flex text-sm font-black text-brand-700"
+            >
+              Review Staff & roles →
+            </Link>
+          </section>
+        ) : (
+          <section className="space-y-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
+                Action queue
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Your tasks</h2>
+            </div>
 
-export async function getAssessmentAlerts(org: string, actor: string, day: string, nowMs: number) {
-  const { data, error } = await service().rpc("khpos_assessment_timetable_server", {
-    p_actor: actor, p_org: org, p_mode: "list", p_input: { from: day },
-  });
-  if (error) fail(error.message);
-  const endOfDay = Date.parse(day + "T00:00:00+01:00") + 86400000;
-  const entries = data as { id: string; mine: boolean; title: string; class_label: string;
-    starts_at: string; ends_at: string; checked_in_at: string | null }[];
-  return entries.filter(entry => entry.mine && !entry.checked_in_at &&
-    Date.parse(entry.starts_at) < endOfDay && nowMs <= Date.parse(entry.ends_at) + 1800000)
-    .map(entry => ({
-      id: "assessment:" + entry.id, title: entry.title + " · " + entry.class_label,
-      detail: "Open Tests & exams to check the time and record attendance.",
-      href: `/khpos/${org}/teaching-presence?tab=exams`, dueAt: entry.starts_at,
-      urgent: false, level: "action" as const, category: "assessment",
-    }));
-}
+            {openItems.map((item) => {
+              const note = notes[item.id] ?? "";
+              const isBusy = busyId === item.id;
+              const operatingProcess = item.processCode
+                ? processByCode.get(item.processCode)
+                : undefined;
 
-// Preview must be bound to an isolated Supabase branch before this feature is usable.
-export function verifyTeachingPreviewIsolation() {
-  if (process.env.VERCEL_ENV !== "preview") return;
-  const ref = process.env.KHPOS_TEACHING_PREVIEW_DB_REF?.trim();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!ref || !/^[a-z0-9]{20}$/.test(ref) || !url) {
-    throw new KhposPresenceError("Teaching preview requires an isolated Supabase branch.", 503);
-  }
-  let hostname = "";
-  try { hostname = new URL(url).hostname.toLowerCase(); }
-  catch { throw new KhposPresenceError("Invalid preview Supabase URL.", 503); }
-  if (ref === "rlpciatblisxnuuiekkf" || hostname !== ref + ".supabase.co") {
-    throw new KhposPresenceError("Teaching preview cannot use the live KHP-OS database.", 503);
-  }
+              return (
+                <article
+                  key={item.id}
+                  id={khposRecordAnchor("work", item.id)}
+                  tabIndex={-1}
+                  className="scroll-mt-24 target:ring-4 target:ring-brand-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.processCode && (
+                          <span className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-black text-brand-800">
+                            {item.processCode}
+                          </span>
+                        )}
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black capitalize text-slate-600">
+                          {statusLabel(item.status)}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black capitalize text-slate-600">
+                          {item.priority}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-xl font-black">{item.title}</h3>
+                      {item.description && (
+                        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
+                        <span>{item.roleTitle}</span>
+                        {item.campusName && <span>{item.campusName}</span>}
+                        {item.unitName && <span>{item.unitName}</span>}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock3 className="size-3.5" />
+                          {formatDate(item.dueAt)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {item.status === "blocked" && (
+                      <div className="max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <div className="flex gap-2 font-black">
+                          <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                          Blocked
+                        </div>
+                        <p className="mt-2 leading-6">{item.blockedReason}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {operatingProcess && (
+                    <section className="mt-6">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-brand-700">
+                        Approved operating process
+                      </p>
+                      <ProcessDocument process={operatingProcess} compact />
+                    </section>
+                  )}
+
+                  {item.checklist && (
+                    <section className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                      <div className="flex items-center gap-3">
+                        <ClipboardCheck className="size-5 text-brand-700" />
+                        <div>
+                          <p className="text-sm font-black">{item.checklist.name}</p>
+                          <p className="text-xs text-slate-500">{item.checklist.code}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        {item.checklist.items.map((check) => {
+                          const answered = check.response !== null;
+                          const booleanValue =
+                            check.response === true
+                              ? true
+                              : check.response === false
+                                ? false
+                                : null;
+
+                          return (
+                            <div
+                              key={check.id}
+                              className="rounded-2xl border border-slate-200 bg-white p-4"
+                            >
+                              <div className="flex items-start gap-3">
+                                {answered ? (
+                                  <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-mint-700" />
+                                ) : (
+                                  <Circle className="mt-0.5 size-5 shrink-0 text-slate-300" />
+                                )}
+                                <div className="flex-1">
+                                  <p className="text-sm font-bold text-slate-900">
+                                    {check.label}
+                                    {check.required && <span className="text-red-600"> *</span>}
+                                  </p>
+                                  {check.guidance && (
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                      {check.guidance}
+                                    </p>
+                                  )}
+
+                                  {check.responseType === "boolean" ? (
+                                    <div className="mt-3 flex gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() =>
+                                          void act(item, {
+                                            action: "checklist",
+                                            templateItemId: check.id,
+                                            response: true,
+                                          })
+                                        }
+                                        className={`rounded-full px-4 py-2 text-xs font-black ${
+                                          booleanValue === true
+                                            ? "bg-mint-700 text-white"
+                                            : "border border-slate-200 bg-white text-slate-700"
+                                        }`}
+                                      >
+                                        Yes
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() =>
+                                          void act(item, {
+                                            action: "checklist",
+                                            templateItemId: check.id,
+                                            response: false,
+                                          })
+                                        }
+                                        className={`rounded-full px-4 py-2 text-xs font-black ${
+                                          booleanValue === false
+                                            ? "bg-amber-600 text-white"
+                                            : "border border-slate-200 bg-white text-slate-700"
+                                        }`}
+                                      >
+                                        No
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Enter response</span><input
+                                      defaultValue={
+                                        typeof check.response === "string"
+                                          ? check.response
+                                          : ""
+                                      }
+                                      disabled={isBusy}
+                                      onBlur={(event) => {
+                                        const value = event.currentTarget.value.trim();
+                                        if (!value) return;
+                                        void act(item, {
+                                          action: "checklist",
+                                          templateItemId: check.id,
+                                          response: value,
+                                        });
+                                      }}
+                                      className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                                      placeholder="Enter response"
+                                    /></label>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {item.recordRequirements.length > 0 && (
+                    <section className="mt-6 space-y-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
+                          Reports & logs
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          Complete the forms requested for this task. Your answers will be saved with the task for review.
+                        </p>
+                      </div>
+                      {item.recordRequirements.map((requirement) => (
+                        <WorkRecordRequirementCard
+                          key={`${requirement.id}:${requirement.records
+                            .map((record) => `${record.id}-${record.status}`)
+                            .join("|")}`}
+                          requirement={requirement}
+                          enabled={item.status === "in_progress"}
+                          busy={isBusy}
+                          onSubmit={async (recordPayload, recordId) => {
+                            await act(item, {
+                              action: "record_submit",
+                              requirementId: requirement.id,
+                              recordId: recordId ?? undefined,
+                              recordPayload,
+                            });
+                          }}
+                        />
+                      ))}
+                    </section>
+                  )}
+
+                  <section className="mt-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                        Evidence / operating note
+                      </p>
+                      <span className="text-xs font-bold text-slate-500">
+                        {item.evidenceCount} record{item.evidenceCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <label className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-inherit"><span>{item.evidenceRequired
+                            ? "Add required evidence note"
+                            : "Add a note or explain a blockage"}</span><input
+                        value={note}
+                        onChange={(event) =>
+                          setNotes((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                        placeholder={
+                          item.evidenceRequired
+                            ? "Add required evidence note"
+                            : "Add a note or explain a blockage"
+                        }
+                        className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+                      /></label>
+                      <button
+                        type="button"
+                        disabled={isBusy || !note.trim()}
+                        onClick={() =>
+                          void act(item, {
+                            action: "evidence",
+                            evidenceType: "note",
+                            note: note.trim(),
+                          }).then(() =>
+                            setNotes((current) => ({ ...current, [item.id]: "" })),
+                          )
+                        }
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-black text-slate-700 disabled:opacity-50"
+                      >
+                        <FileCheck2 className="size-4" />
+                        Add evidence
+                      </button>
+                    </div>
+                    {item.evidenceRecords.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {item.evidenceRecords.map((evidence) => (
+                          <div
+                            key={evidence.id}
+                            className="rounded-xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600"
+                          >
+                            {evidence.note || evidence.externalUrl || evidence.storageReference}
+                            <span className="ml-2 font-bold capitalize">
+                              · {evidence.verificationStatus}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {(item.status === "pending" || item.status === "blocked") && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void act(item, { action: "start" })}
+                        className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
+                      >
+                        {isBusy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+                        {item.status === "blocked" ? "Resume" : "Start"}
+                      </button>
+                    )}
+                    {item.status !== "awaiting_verification" && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() =>
+                          void act(item, {
+                            action: "block",
+                            note: note.trim(),
+                          })
+                        }
+                        className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-black text-amber-900 disabled:opacity-60"
+                      >
+                        <AlertTriangle className="size-4" />
+                        Block
+                      </button>
+                    )}
+                    {item.status !== "blocked" && item.status !== "awaiting_verification" && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void act(item, { action: "complete" })}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
+                      >
+                        <CheckCircle2 className="size-4" />
+                        Complete
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        {awaitingItems.length > 0 && (
+          <section className="rounded-[28px] border border-blue-100 bg-blue-50/60 p-5 sm:p-6">
+            <h2 className="text-lg font-black text-slate-900">
+              Submitted — waiting for independent verification
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              These items are no longer in your action queue. Another authorised
+              person must verify them. You will need to act only if a reviewer
+              returns an item for correction.
+            </p>
+            <details className="mt-4 rounded-xl border border-blue-100 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-bold text-brand-800">
+                View {awaitingItems.length} submitted item{awaitingItems.length === 1 ? "" : "s"}
+              </summary>
+              <ul className="mt-3 space-y-2">
+                {awaitingItems.map((item) => (
+                  <li key={item.id} className="rounded-lg border border-slate-100 p-3">
+                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {item.roleTitle} · Awaiting review
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </section>
+        )}
+
+        {completedItems.length > 0 && (
+          <details className="rounded-2xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-black text-slate-700">
+              History · {completedItems.length} completed item{completedItems.length === 1 ? "" : "s"}
+            </summary>
+            <div className="mt-3 space-y-2">
+              {completedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <CheckCircle2 className="size-5 shrink-0 text-mint-700" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">{item.title}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {item.processCode ?? "Operational work"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-xs font-semibold text-slate-500">
+                    {formatDate(item.completedAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </main>
+  );
 }
