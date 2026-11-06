@@ -203,6 +203,7 @@ export function InstitutionalLibrary({
   const [query, setQuery] = useState(initialQuery);
   const [focusedProcessId, setFocusedProcessId] = useState(initialProcessId);
   const [sortOrder, setSortOrder] = useState<"default" | "name_asc" | "name_desc">("default");
+  const [requiredOnly, setRequiredOnly] = useState(false);
   const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
   const [error, setError] = useState(
@@ -335,6 +336,7 @@ export function InstitutionalLibrary({
   const needle = query.trim().toLowerCase();
   const policies = library.policies.filter(
     (item) =>
+      (!requiredOnly || item.requiredForMyRole) &&
       (!criticalOnly || (item.priority === "C0" && !item.activeVersion)) &&
       (!needle ||
         `${item.code} ${item.name} ${item.operatingSystem} ${item.ownerLabel}`
@@ -390,26 +392,34 @@ export function InstitutionalLibrary({
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            <Link href={`/khpos/${organisationId}/library?tab=policies#library-records`}
+              onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); setRequiredOnly(false); }}
+              className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
               <p className="text-xs font-bold text-brand-100">Policy register</p>
               <p className="mt-1 text-3xl font-black">{library.summary.policyCount}</p>
               <p className="mt-1 text-xs text-brand-100">{library.summary.activePolicyDocuments} approved documents</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            </Link>
+            <Link href={`/khpos/${organisationId}/library?tab=policies#library-records`}
+              onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); setRequiredOnly(true); }}
+              className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
               <p className="text-xs font-bold text-brand-100">Required for me</p>
               <p className="mt-1 text-3xl font-black">{library.summary.requiredPolicyCount}</p>
               <p className="mt-1 text-xs text-brand-100">{library.summary.unacknowledgedRequiredPolicies} acknowledgement(s) open</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            </Link>
+            <Link href={`/khpos/${organisationId}/library?tab=processes#library-records`}
+              onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); setRequiredOnly(false); }}
+              className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
               <p className="text-xs font-bold text-brand-100">Process register</p>
               <p className="mt-1 text-3xl font-black">{library.summary.processCount}</p>
               <p className="mt-1 text-xs text-brand-100">{library.summary.activeProcessDocuments} fully published processes</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            </Link>
+            <Link href={`/khpos/${organisationId}/library?tab=tools#library-records`}
+              onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); setRequiredOnly(false); }}
+              className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
               <p className="text-xs font-bold text-brand-100">Reusable tools</p>
               <p className="mt-1 text-3xl font-black">{library.summary.toolCount}</p>
               <p className="mt-1 text-xs text-brand-100">Shared execution instruments</p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -421,7 +431,7 @@ export function InstitutionalLibrary({
           </div>
         )}
 
-        <section className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <section id="library-records" className="flex scroll-mt-24 flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
           <div className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
             {([
               ["policies", "Policies", FileText],
@@ -432,7 +442,7 @@ export function InstitutionalLibrary({
                 key={value}
                 href={`/khpos/${organisationId}/library?tab=${value}`}
                 aria-current={tab === value ? "page" : undefined}
-                onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); }}
+                onClick={() => { setFocusedProcessId(""); setQuery(""); setCriticalOnly(false); setRequiredOnly(false); }}
                 className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition ${
                   tab === value ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
                 }`}
@@ -477,6 +487,7 @@ export function InstitutionalLibrary({
           </div>
         </section>
 
+        {tab === "policies" && requiredOnly && <p className="text-sm font-bold">Required for me · <button type="button" className="underline" onClick={() => setRequiredOnly(false)}>Show all policies</button></p>}
         {tab === "policies" && (
           <section className="space-y-4">
             <div>
