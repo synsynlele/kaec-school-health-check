@@ -1,5 +1,7 @@
 "use client";
 
+import { SchoolPlan } from "./SchoolPlan";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { ReportsWorkspace } from "@/components/khpos/ReportsWorkspace";
@@ -447,6 +449,7 @@ export function MyWorkWorkspace({
           <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
           {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
         </nav>
+        <SchoolPlan school={organisationId} todayOnly />
         <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
         <div id="today-reports" className="scroll-mt-24"><ReportsWorkspace organisationId={organisationId} compact /></div>
         <AnnouncementsWorkspace organisationId={organisationId} compact />

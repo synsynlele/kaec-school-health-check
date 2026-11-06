@@ -21,7 +21,10 @@ export interface KhposHqlsObservation {
   coaching: string | null; due: string | null; coachingWorkId: string | null;
   teacherResponse: string | null; acknowledgedAt: string | null; observedAt: string;
 }
+export type SchoolClosure = { campus_id: string | null; kind: "closure" | "no_lessons"; start_day: string; end_day: string };
+
 export interface KhposPresenceWorkspace {
+  calendarClosures?: SchoolClosure[];
   localDay: string; userId: string; canManage: boolean; canEnablePilot: boolean; pilotEnabled: boolean; canEnableHqls: boolean; hqlsEnabled: boolean; staff: null | { id: string; name: string; campusId: string | null };
   campuses: Array<{ id: string; name: string }>;
   todayPresence: null | { checkInLocation?: AttendanceLocation | null; checkOutLocation?: AttendanceLocation | null; id: string; campusId: string; in: string; out: string | null; administrativelyClosed: boolean };
@@ -80,7 +83,17 @@ export async function getPresenceWorkspace(org: string, actor: string): Promise<
   const { data, error } = await service().rpc("khpos_ops_presence_workspace_server", { p_actor: actor, p_org: org });
   if (error) fail(error.message);
   if (!data || typeof data !== "object" || Array.isArray(data)) fail("Attendance could not be loaded.");
-  return data as KhposPresenceWorkspace;
+  const workspace = data as KhposPresenceWorkspace;
+  const date = new Date(workspace.localDay + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7);
+  const from = date.toISOString().slice(0, 10);
+  date.setUTCDate(date.getUTCDate() + 6);
+  const to = date.toISOString().slice(0, 10);
+  const { data: closures, error: closureError } = await service().from("khpos_school_plan_entries")
+    .select("campus_id,kind,start_day,end_day").eq("organisation_id", org).eq("published", true)
+    .in("kind", ["closure", "no_lessons"]).lte("start_day", to).gte("end_day", from);
+  if (closureError) fail(closureError.message);
+  return { ...workspace, calendarClosures: closures as SchoolClosure[] };
 }
 export async function actOnPresence(org: string, actor: string, mode: string, input: Record<string, unknown>) {
   const { error } = await service().rpc("khpos_ops_presence_action_server", {
