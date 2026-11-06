@@ -56,6 +56,7 @@ export function MyWorkWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [attentionLimit, setAttentionLimit] = useState(10);
   const [overdueCutoff, setOverdueCutoff] = useState(0);
   const [taskFilter, setTaskFilter] = useState<"all" | "overdue" | "blocked">("all");
   const [roleFilter, setRoleFilter] = useState("");
@@ -490,8 +491,13 @@ export function MyWorkWorkspace({
               </div>
             </div>
 
+            <label className="mt-4 block text-sm font-bold">Show actions
+              <select className="ml-2 rounded-lg border p-2" value={attentionLimit} onChange={event => setAttentionLimit(Number(event.target.value))}>
+                {[10, 20, 50, 100].map(count => <option key={count} value={count}>{count}</option>)}
+              </select>
+            </label>
             <div className="mt-6 grid gap-3 lg:grid-cols-2">
-              {otherActions.slice(0, 8).map((item) => (
+              {otherActions.slice(0, attentionLimit).map((item) => (
                 <Link
                   key={item.id}
                   onClick={() => setRoleFilter("")}
