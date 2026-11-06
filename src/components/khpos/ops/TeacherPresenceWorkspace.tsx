@@ -267,6 +267,9 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const canManage=Boolean(data?.canManage);
   const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
   const roleStreams=(academic?.streams??[]).filter(s=>["approved","active"].includes(s.status));
+  const sectionalScheduleIds = new Set(data?.sectionalScheduleStreamIds ?? []);
+  const lessonStreams = canManage ? roleStreams : roleStreams.filter(stream => sectionalScheduleIds.has(stream.id));
+  const assessmentStreams = academic?.canPlan ? roleStreams : roleStreams.filter(stream => sectionalScheduleIds.has(stream.id));
   const todays=(data?.periods??[])
     .filter(p=>p.teacherUserId===data?.userId && p.termActive && possibleToday(data?.localDay??"",p.weekday) &&
       (p.session || !data || !calendarPauses(data,p.campusId,data.localDay,true)))
@@ -361,12 +364,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
 
         {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
-          {canManage&&<details className={box}>
+          {(canManage || lessonStreams.length > 0)&&<details className={box}>
             <summary className="cursor-pointer text-xl font-black text-slate-900">Add a weekly lesson</summary>
             <p className="my-2 text-sm text-slate-600">Choose the teaching assignment, day and time. KHP-OS checks for overlaps.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2"><label className="text-xs font-bold">Class, subject and teacher</label><select className={field} value={scheduleStream} onChange={e=>setScheduleStream(e.target.value)}>
-                <option value="">Choose an approved teaching assignment</option>{roleStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
+                <option value="">Choose an approved teaching assignment</option>{lessonStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
               </select></div>
               <div><label className="text-xs font-bold">Weekday</label><select className={field} value={weekday} onChange={e=>setWeekday(e.target.value)}>{WEEKDAYS.slice(1).map((d,i)=><option value={i+1} key={d}>{d}</option>)}</select></div>
               <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
@@ -375,7 +378,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             </div>
             <button disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
               onClick={()=>void act("period_add",{streamId:scheduleStream,weekday:Number(weekday),start,end,room},"Weekly class period added.")}>Save lesson</button>
-            {roleStreams.length===0&&<Link className="mt-3 block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/academic-delivery"}>Set up a teaching assignment</Link>}
+            {lessonStreams.length===0&&<Link className="mt-3 block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/academic-delivery"}>Set up a teaching assignment</Link>}
           </details>}
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">Weekly timetable</h2>
@@ -436,7 +439,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                     </p>
                   ))}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
-                  {canManage && roleStreams.some(stream => stream.id === p.streamId) && (
+                  {lessonStreams.some(stream => stream.id === p.streamId) && (
                     <div className="mt-3">
                       <button type="button" disabled={Boolean(busy)} aria-expanded={editingPeriod === p.id}
                         className="text-sm font-bold text-brand-700" onClick={() => setEditingPeriod(editingPeriod === p.id ? "" : p.id)}>
@@ -470,7 +473,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
 
         </div>}
 
-        {tab==="exams" && <AssessmentTimetable school={organisationId} today={data.localDay} assignments={academic?.canPlan ? roleStreams : []} />}
+        {tab==="exams" && <AssessmentTimetable school={organisationId} today={data.localDay} assignments={assessmentStreams} />}
 
         {tab==="hqls"&&<div className="space-y-4">
           <section className={box}>
