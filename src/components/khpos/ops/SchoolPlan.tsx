@@ -16,6 +16,13 @@ const groups: { label: string; kinds: PlanKind[] }[] = [
   { label: "Exams and invigilation", kinds: ["exam_period", "invigilation"] },
 ];
 const pageSize = 5;
+const dayMs = 86400000;
+
+function mondayOf(day: string) {
+  const date = new Date(day + "T00:00:00Z");
+  date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7);
+  return date.toISOString().slice(0, 10);
+}
 
 const modes = { scheduled: "Run on the scheduled date", teaching: "Teaching days only", staff: "Staff working days" };
 
@@ -30,16 +37,21 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
   const [sort, setSort] = useState("soonest");
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [limit, setLimit] = useState(pageSize);
+  const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
-  const request = useCallback(async (input?: object, signal?: AbortSignal) => {
+  const request = useCallback(async (input?: object, signal?: AbortSignal, rangeStart = from) => {
     const token = (await createBrowserSupabaseClient()?.auth.getSession())?.data.session?.access_token;
     if (!token) throw new Error("Sign in to open the school plan.");
-    const response = await fetch(`/api/khpos/ops/school-plan/${school}?${todayOnly ? "today=1" : "from=" + from}`, {
+    const response = await fetch(`/api/khpos/ops/school-plan/${school}?${todayOnly ? "today=1" : "from=" + rangeStart}`, {
       method: input ? "POST" : "GET", cache: "no-store", signal,
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: input ? JSON.stringify(input) : undefined,
+    }).catch(error => {
+      if (signal?.aborted) throw error;
+      throw new Error("Could not reach the school planner. Check your connection and try again.");
     });
-    const body = await response.json();
+    const body = await response.json().catch(() => null);
+    if (!body) throw new Error("The school planner did not respond. Try again.");
     if (!response.ok) throw new Error(body.error ?? "Could not load the school plan.");
     return body.plan as Plan;
   }, [school, from, todayOnly]);
@@ -50,12 +62,25 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       if (!controller.signal.aborted) { setPlan(result); setError(""); }
     }).catch(error => { if (!controller.signal.aborted) setError(error.message); });
     return () => controller.abort();
-  }, [request]);
+  }, [request, retry]);
 
-  async function mutate(input: object, message: string) {
+  async function mutate(input: object, message: string, destination?: { kind: PlanKind; day: string }) {
     if (busy) return;
     setBusy(true); setError(""); setNotice("");
-    try { setPlan(await request(input)); setEditing(null); setNotice(message); }
+    try {
+      const outsideRange = destination && (destination.day < from || Date.parse(destination.day) - Date.parse(from) > 91 * dayMs);
+      const rangeStart = outsideRange ? destination.day : from;
+      setPlan(await request(input, undefined, rangeStart));
+      if (outsideRange) setFrom(rangeStart);
+      if (destination) {
+        setSelectedGroup(groups.findIndex(group => group.kinds.includes(destination.kind)));
+        setQuery("");
+        setSort("soonest");
+        setLimit(pageSize);
+      }
+      setEditing(null);
+      setNotice(message);
+    }
     catch (error) { setError(error instanceof Error ? error.message : "Could not save the school plan."); }
     finally { setBusy(false); }
   }
@@ -65,17 +90,24 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     const data = new FormData(event.currentTarget);
     const start = String(data.get("start") ?? "");
     const weekly = kind === "weekly_duty" || kind === "weekly_theme";
-    const end = weekly && start ? new Date(Date.parse(start) + 6 * 86400000).toISOString().slice(0, 10)
+    if (weekly && start && start !== mondayOf(start)) {
+      setError("Choose a Monday for a weekly theme or staff duty.");
+      return;
+    }
+    const assessment = plan?.assessments.find(item => item.id === data.get("assessment"));
+    const entryDay = assessment ? lagosLocalDay(Date.parse(assessment.start)) : start;
+    const end = weekly && start ? new Date(Date.parse(start) + 6 * dayMs).toISOString().slice(0, 10)
       : kind === "daily_topic" ? start : String(data.get("end") ?? "");
     if (published && (kind === "closure" || kind === "no_lessons") &&
         !window.confirm("Publish these dates? Lessons and calendar-aware duties will pause where applicable. Review any work already assigned separately.")) return;
     void mutate({ action: "save", id: record?.id ?? null, kind, title: data.get("title"),
       campusId: data.get("campus") || null, staffId: data.get("staff") || null,
       assessmentId: data.get("assessment") || null, startDay: start || null, endDay: end || null, published },
-      published ? "Calendar entry published." : "Draft saved.");
+      published ? "Calendar entry published." : "Draft saved.", { kind, day: entryDay });
   }
 
   const record = editing && editing !== "new" ? editing : null;
+  const weeklyEntry = kind === "weekly_duty" || kind === "weekly_theme";
   const hasStaff = kind === "weekly_duty" || kind === "invigilation";
   const hasEnd = !["weekly_duty", "weekly_theme", "daily_topic", "invigilation"].includes(kind);
   const group = selectedGroup === null ? null : groups[selectedGroup];
@@ -103,6 +135,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         }} />
       </label>
       {!plan && !error && <p role="status">Loading school plan…</p>}
+      {!plan && error && <button type="button" className={button} onClick={() => { setError(""); setRetry(value => value + 1); }}>Retry loading planner</button>}
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
       {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
@@ -121,9 +154,9 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           {plan.canManageWholeSchool && <option value="">Whole school</option>}{plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
         </select></label>}
         {kind === "invigilation" ? <label>Scheduled exam or test<select name="assessment" className={field} required defaultValue={record?.assessment_id ?? ""}>
-          <option value="">Choose an assessment</option>{plan.assessments.map(assessment => <option key={assessment.id} value={assessment.id}>{assessment.name} · {new Date(assessment.start).toLocaleString("en-NG", {timeZone:"Africa/Lagos"})}</option>)}
+          <option value="">{plan.assessments.length ? "Choose an assessment" : "No scheduled tests or exams in this date range"}</option>{plan.assessments.map(assessment => <option key={assessment.id} value={assessment.id}>{assessment.name} · {new Date(assessment.start).toLocaleString("en-NG", {timeZone:"Africa/Lagos"})}</option>)}
         </select></label> : <label>{hasEnd ? "Start date" : kind === "daily_topic" ? "Date" : "Monday of the week"}
-          <input type="date" name="start" className={field} required defaultValue={record?.start_day ?? from} />
+          <input key={weeklyEntry ? "week" : "day"} type="date" name="start" className={field} required defaultValue={record?.start_day ?? (weeklyEntry ? mondayOf(from) : from)} />
         </label>}
         {hasEnd && <label>End date (inclusive)<input type="date" name="end" className={field} required defaultValue={record?.end_day ?? from} /></label>}
         {hasStaff && <label>Assigned staff member<select name="staff" className={field} required defaultValue={record?.staff_id ?? ""}>
@@ -131,8 +164,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </select></label>}
       </fieldset>
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={button} disabled={busy} value="publish">Publish entry</button>
-        <button type="submit" className={button} disabled={busy} value="draft">Save as draft</button>
+        <button type="submit" className={button} disabled={busy || (kind === "invigilation" && !plan.assessments.length)} value="publish">Publish entry</button>
+        <button type="submit" className={button} disabled={busy || (kind === "invigilation" && !plan.assessments.length)} value="draft">Save as draft</button>
         <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
       </div>
     </form>}
