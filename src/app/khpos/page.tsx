@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Building2, CalendarDays, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Building2, CalendarDays, ClipboardCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "KHP-OS | Run your school",
@@ -15,32 +16,31 @@ const todayExamples = [
 
 export default function KhposAccessPage() {
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-8 text-white sm:py-12">
+    <main className="min-h-screen bg-slate-950 px-5 py-5 text-white sm:py-9">
       <div className="mx-auto max-w-6xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-mint-300/30 bg-white/5 px-4 py-2 text-xs font-bold text-mint-300">
-          <ShieldCheck aria-hidden="true" className="size-4" /> KHP-OS by KAEC-NG
+        <div className="flex items-center gap-4">
+          <Image src="/khpos-icon-192.png" alt="KHP-OS logo" width={88} height={88} priority className="size-[72px] rounded-2xl sm:size-[88px]" />
+          <p className="font-bold text-mint-300">KHP-OS <span className="block text-sm font-medium text-slate-300">by KAEC-NG</span></p>
         </div>
-        <div className="mt-7 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
-          <section aria-labelledby="welcome-heading">
-            <h1 id="welcome-heading" className="text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              Run your school with KHP-OS
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
-              See who’s on duty, what needs attention, and what’s been completed. Manage attendance, teaching, exams, and follow-up in one place.
-            </p>
-            <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
-              <Link href="/account" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mint-300 px-4 py-3 font-bold text-slate-950 hover:bg-mint-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-                Sign in to your school <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
-              <Link href="/assessment" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 px-4 py-3 font-bold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-                <BookOpenCheck aria-hidden="true" className="size-4" /> Start the free School Health Check
-              </Link>
-            </div>
-          </section>
-
-          <section aria-labelledby="today-preview" className="rounded-3xl border border-white/15 bg-white/5 p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-mint-300">Example school day</p>
-            <h2 id="today-preview" className="mt-2 text-2xl font-black">What you can do in Today</h2>
+        <section aria-labelledby="welcome-heading" className="mt-5 max-w-2xl">
+          <h1 id="welcome-heading" className="text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+            Run your school with KHP-OS
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
+            Manage attendance, teaching, exams, and follow-up in one place.
+          </p>
+          <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+            <Link href="/account" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mint-300 px-4 py-3 font-bold text-slate-950 hover:bg-mint-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              Sign in to your school <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+            <Link href="/assessment" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 px-4 py-3 font-bold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              <BookOpenCheck aria-hidden="true" className="size-4" /> Start the free School Health Check
+            </Link>
+          </div>
+        </section>
+        <div className="mt-5 grid max-w-3xl gap-2 sm:grid-cols-2">
+          <details className="rounded-xl border border-white/15 px-4 py-3">
+            <summary className="cursor-pointer text-sm font-bold">See an example school day</summary>
             <ul className="mt-4 divide-y divide-white/15">
               {todayExamples.map(({ icon: Icon, title, detail }) => (
                 <li key={title} className="flex gap-3 py-3">
@@ -52,20 +52,20 @@ export default function KhposAccessPage() {
                 </li>
               ))}
             </ul>
-          </section>
-        </div>
+          </details>
 
-        <section className="mt-8 rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6" aria-labelledby="getting-started">
-          <h2 id="getting-started" className="text-xl font-black">Getting your school started</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
-            <li>Complete the free School Health Check to see where your school can improve.</li>
-            <li>Apply for a school partnership. KAEC-NG reviews and approves access to KHP-OS.</li>
-            <li>Once approved, your school authorises your role so you can sign in and open its workspace.</li>
-          </ol>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            Account access and KHP-OS access are intentionally different. A free account lets you run the School Health Check. Your school workspace opens after partnership approval and role authorisation.
-          </p>
-        </section>
+          <details className="rounded-xl border border-white/15 px-4 py-3">
+            <summary className="cursor-pointer text-sm font-bold">Getting your school started</summary>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
+              <li>Complete the free School Health Check to see where your school can improve.</li>
+              <li>Apply for a school partnership. KAEC-NG reviews and approves access to KHP-OS.</li>
+              <li>Once approved, your school authorises your role so you can sign in and open its workspace.</li>
+            </ol>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Account access and KHP-OS access are intentionally different. A free account lets you run the School Health Check. Your school workspace opens after partnership approval and role authorisation.
+            </p>
+          </details>
+        </div>
 
         <details className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
           <summary className="cursor-pointer font-bold text-white">KAEC HQ and platform administration</summary>
