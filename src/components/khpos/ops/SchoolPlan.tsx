@@ -219,7 +219,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </li>;
   }
 
-  if (todayOnly && !plan?.entries.length) return null;
+  const todayEntries = plan?.entries.filter(entry => entry.kind !== "invigilation") ?? [];
+  if (todayOnly && !todayEntries.length) return null;
   return <section id={todayOnly ? undefined : "school-plan"} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5">
     <h2 className="text-xl font-black">{todayOnly ? "School plan for today" : "Academic calendar and staff duties"}</h2>
     <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
@@ -377,14 +378,14 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </select>
       </label>
       <ul className="divide-y divide-slate-200">
-        {plan.entries.slice(0, todayLimit).map(entry => <li key={entry.id} className="py-3 text-sm">
+        {todayEntries.slice(0, todayLimit).map(entry => <li key={entry.id} className="py-3 text-sm">
           <p className="font-bold">{entry.title}</p>
           <p>{planKinds[entry.kind]} · {entry.campus_name ?? "Whole school"}</p>
           {entry.staff_name && <p>Assigned to {entry.staff_name}</p>}
           {entry.assessment_start && <p>Starts at {new Date(entry.assessment_start).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "numeric", minute: "2-digit" })}</p>}
         </li>)}
       </ul>
-      <p className="text-sm text-slate-600">Showing {Math.min(todayLimit, plan.entries.length)} of {plan.entries.length} active entries</p>
+      <p className="text-sm text-slate-600">Showing {Math.min(todayLimit, todayEntries.length)} of {todayEntries.length} active entries</p>
     </>}
     {plan?.canManage && plan.rules.length > 0 && <details className="space-y-3">
       <summary className="font-bold">When recurring duties run</summary>

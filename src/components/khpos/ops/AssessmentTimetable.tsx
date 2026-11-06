@@ -3,6 +3,7 @@
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type Assignment = { id: string; classLabel: string; subjectLabel: string; teacherDisplay: string };
@@ -28,8 +29,10 @@ function stamp(value: string) {
   return new Date(value).toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" });
 }
 
-export function AssessmentTimetable({ school, today, assignments }: { school: string; today: string; assignments: Assignment[] }) {
-  const [from, setFrom] = useState(() => monday(today));
+export function AssessmentTimetable({ school, today, assignments = [], todayInvigilation = false }: {
+  school: string; today?: string; assignments?: Assignment[]; todayInvigilation?: boolean;
+}) {
+  const [week, setWeek] = useState(() => monday(today ?? lagosLocalDay(Date.now())));
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [error, setError] = useState("");
@@ -37,6 +40,8 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const [now, setNow] = useState(Date.now);
+  const localDay = lagosLocalDay(now);
+  const from = todayInvigilation ? localDay : week;
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 15000);
     return () => window.clearInterval(timer);
@@ -101,16 +106,21 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
 
   const editStart = editing ? new Date(Date.parse(editing.starts_at) + 3600000).toISOString() : "";
   const editEnd = editing ? new Date(Date.parse(editing.ends_at) + 3600000).toISOString() : "";
+  const visibleEntries = todayInvigilation ? entries?.filter(item =>
+    lagosLocalDay(Date.parse(item.starts_at)) === localDay &&
+    item.invigilation_attendance?.some(duty => duty.mine && (duty.published || duty.in)),
+  ) : entries;
+  if (todayInvigilation && !error && !visibleEntries?.length) return null;
   return <section className="space-y-4 rounded-2xl border bg-white p-4 text-slate-900">
-    <h2 className="text-xl font-bold">Tests and exams timetable</h2>
-    <label className="block max-w-xs text-sm font-bold">Choose a date to view its week
+    <h2 className="text-xl font-bold">{todayInvigilation ? "My invigilation today" : "Tests and exams timetable"}</h2>
+    {!todayInvigilation && <label className="block max-w-xs text-sm font-bold">Choose a date to view its week
       <input type="date" value={from} disabled={busy} className={field} onChange={event => {
         if (event.target.value) {
           const selectedWeek = monday(event.target.value);
-          if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); setFrom(selectedWeek); }
+          if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); setWeek(selectedWeek); }
         }
       }} />
-    </label>
+    </label>}
     {assignments.length > 0 && <details className="rounded-xl border p-3" open={editing ? true : undefined}>
       <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
       <form id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">
@@ -132,16 +142,16 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!entries && !error && <p role="status">Loading timetable…</p>}
     {entries?.length === 0 && <p>No tests or exams scheduled for this week.</p>}
-    {entries?.map(item => {
+    {visibleEntries?.map(item => {
       const canStart = now >= Date.parse(item.starts_at) - 1800000 && now <= Date.parse(item.ends_at) + 1800000;
       return <article key={item.id} className="space-y-2 rounded-xl border p-3 text-sm">
         <h3 className="font-bold">{item.title} · {item.class_label} · {item.subject_label}</h3>
-        <p className="capitalize">{item.kind} · {item.teacher}</p>
+        {!todayInvigilation && <p className="capitalize">{item.kind} · {item.teacher}</p>}
         <p>{stamp(item.starts_at)} to {stamp(item.ends_at)} WAT</p>
-        {!!item.invigilators?.length && <p><span className="font-bold">Invigilators</span> · {item.invigilators.join(", ")}{item.my_invigilation && " · You are assigned"}</p>}
-        {item.can_manage_coverage && item.invigilators?.length === 0 && <p className="font-bold text-amber-800">Invigilator needed</p>}
-        <p>Assigned teacher check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>
-        {item.invigilation_attendance?.map(duty => <section key={duty.id} className="space-y-2 rounded-lg border border-slate-200 p-3">
+        {!todayInvigilation && !!item.invigilators?.length && <p><span className="font-bold">Invigilators</span> · {item.invigilators.join(", ")}{item.my_invigilation && " · You are assigned"}</p>}
+        {!todayInvigilation && item.can_manage_coverage && item.invigilators?.length === 0 && <p className="font-bold text-amber-800">Invigilator needed</p>}
+        {!todayInvigilation && <p>Assigned teacher check-in {item.checked_in_at ? stamp(item.checked_in_at) : "pending"} · Check-out {item.checked_out_at ? stamp(item.checked_out_at) : "pending"}</p>}
+        {item.invigilation_attendance?.filter(duty => !todayInvigilation || duty.mine).map(duty => <section key={duty.id} className="space-y-2 rounded-lg border border-slate-200 p-3">
           <h4 className="font-bold">Invigilation attendance · {duty.name}</h4>
           <p>Check-in {duty.in ? stamp(duty.in) : "pending"} · Check-out {duty.out ? stamp(duty.out) : "pending"}</p>
           {duty.note && <p className="whitespace-pre-wrap break-words">Exam report · {duty.note}</p>}
@@ -149,7 +159,8 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
             ? <button type="button" disabled={busy} className={button}
                 onClick={() => void save({ mode: "invigilator_start", id: item.id })}>Check in as invigilator</button>
             : <p>Invigilator check-in opens 30 minutes before the assessment.</p>)}
-          {duty.mine && duty.in && !duty.out && <form className="space-y-2" onSubmit={event => {
+          {todayInvigilation && duty.mine && duty.in && !duty.out && now < Date.parse(item.ends_at) && <p>Check-out opens at the scheduled end time.</p>}
+          {duty.mine && duty.in && !duty.out && (!todayInvigilation || now >= Date.parse(item.ends_at)) && <form className="space-y-2" onSubmit={event => {
             event.preventDefault();
             void save({ mode: "invigilator_finish", id: item.id, note: new FormData(event.currentTarget).get("note") });
           }}>
@@ -160,16 +171,16 @@ export function AssessmentTimetable({ school, today, assignments }: { school: st
             <button type="submit" disabled={busy} className={button}>Submit report and check out</button>
           </form>}
         </section>)}
-        {item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
-        {item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
-        {item.can_edit && assignments.length > 0 && <button type="button" disabled={busy} className={button} onClick={() => {
+        {!todayInvigilation && item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
+        {!todayInvigilation && item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
+        {!todayInvigilation && item.can_edit && assignments.length > 0 && <button type="button" disabled={busy} className={button} onClick={() => {
           setEditing(item);
           document.getElementById("assessment-schedule-form")?.parentElement?.scrollIntoView({ block: "nearest" });
         }}>Edit schedule</button>}
-        {item.mine && !item.checked_in_at && canStart && <button disabled={busy} className={button} onClick={() => void save({ mode: "start", id: item.id })}>Check in</button>}
-        {item.mine && item.checked_in_at && !item.checked_out_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "finish", id: item.id })}>Check out</button>}
-        {item.mine && item.checked_out_at && !item.marked_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "mark", id: item.id })}>Marking finished</button>}
-        {item.mine && item.marked_at && !item.submitted_at && <form onSubmit={event => {
+        {!todayInvigilation && item.mine && !item.checked_in_at && canStart && <button disabled={busy} className={button} onClick={() => void save({ mode: "start", id: item.id })}>Check in</button>}
+        {!todayInvigilation && item.mine && item.checked_in_at && !item.checked_out_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "finish", id: item.id })}>Check out</button>}
+        {!todayInvigilation && item.mine && item.checked_out_at && !item.marked_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "mark", id: item.id })}>Marking finished</button>}
+        {!todayInvigilation && item.mine && item.marked_at && !item.submitted_at && <form onSubmit={event => {
           event.preventDefault();
           void save({ mode: "submit", id: item.id, recipient: new FormData(event.currentTarget).get("recipient") });
         }} className="space-y-2">
