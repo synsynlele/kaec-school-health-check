@@ -22,7 +22,11 @@ begin
   whole_school := khpos_private.ops_presence_leader(p_actor,p_org,null,null,array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN']);
   select array(select c.id from public.khpos_ops_campuses c
     where c.organisation_id=p_org and c.status='active'
-      and khpos_private.ops_presence_leader(p_actor,p_org,c.id,null,array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN','ACADEMIC_INSPECTOR']))
+      and (khpos_private.ops_presence_leader(p_actor,p_org,c.id,null,array['SCHOOL_CUSTODIAN','SCHOOL_GUARDIAN'])
+        or exists(select 1 from public.khpos_ops_role_assignments a
+          join public.khpos_ops_roles r on r.id=a.role_id
+          where a.user_id=p_actor and a.status='active' and a.campus_id=c.id
+            and r.organisation_id=p_org and r.status='active' and r.code='ACADEMIC_INSPECTOR')))
     into managed_campuses;
   manage := whole_school or cardinality(managed_campuses)>0;
   if p_input is not null then
