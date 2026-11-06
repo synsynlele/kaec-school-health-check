@@ -235,22 +235,22 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       {!plan && error && <button type="button" className={button} onClick={() => { setError(""); setRetry(value => value + 1); }}>Retry loading planner</button>}
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
-      {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
-      {plan?.canManage && !editing && group && <button type="button" className={button} onClick={() => {
-        setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(true); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
+      {plan && !plan.canManage && !plan.canManageInvigilation && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
+      {(plan?.canManage || (selectedGroup === 2 && plan?.canManageInvigilation)) && !editing && group && <button type="button" className={button} onClick={() => {
+        setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(Boolean(plan?.canManage)); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
       }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
     </>}
-    {editing === "document" && plan?.canManage && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
+    {editing === "document" && plan && (plan.canManage || (selectedGroup === 2 && plan.canManageInvigilation)) && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Exam plan"}</legend>
-        {selectedGroup === 2 && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Include an exam period</label>}
+        {selectedGroup === 2 && plan.canManage && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Include an exam period</label>}
         {(selectedGroup === 1 || includeExamPeriod) && <label>{selectedGroup === 1 ? "Monday of the week" : "Exam period starts"}
           <input type="date" name="documentStart" required className={field} defaultValue={selectedGroup === 1 ? mondayOf(from) : from} />
         </label>}
-        <label>Campus<select name="documentCampus" className={field}>
+        {plan.canManage && <label>Campus<select name="documentCampus" className={field}>
           {plan.canManageWholeSchool && <option value="">Whole school</option>}
           {plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
-        </select></label>
+        </select></label>}
         {selectedGroup === 1 ? <>
           <label className="sm:col-span-2">Weekly theme<input name="theme" maxLength={120} className={field} /></label>
           {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) =>
@@ -284,7 +284,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
       </div>
     </form>}
-    {editing && editing !== "document" && plan?.canManage && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
+    {editing && editing !== "document" && plan && (plan.canManage || (record?.can_edit && kind === "invigilation")) && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
       const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
       save(event, submitter?.value === "publish");
     }}>
@@ -327,7 +327,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       <button type="button" className={button}
         onClick={() => { setSelectedGroup(null); setEditing(null); }}>← All planner groups</button>
       <h3 className="text-lg font-black">{group.label}</h3>
-      {plan.canManage && <button type="button" className={button} onClick={() => { setShowArchive(!showArchive); setLimit(pageSize); }}>
+      {(plan.canManage || (selectedGroup === 2 && plan.canManageInvigilation)) && <button type="button" className={button} onClick={() => { setShowArchive(!showArchive); setLimit(pageSize); }}>
         {showArchive ? "Show current records" : "Show archived records"}
       </button>}
       <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">

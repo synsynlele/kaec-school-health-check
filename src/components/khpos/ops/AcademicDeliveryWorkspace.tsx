@@ -69,6 +69,11 @@ export function AcademicDeliveryWorkspace({
   const [editingStreamId, setEditingStreamId] = useState<string | null>(null);
   const [termEditReason, setTermEditReason] = useState("");
   const [streamEditReason, setStreamEditReason] = useState("");
+  const [curriculumQuery, setCurriculumQuery] = useState("");
+  const [curriculumStatus, setCurriculumStatus] = useState("");
+  const [curriculumClass, setCurriculumClass] = useState("");
+  const [curriculumPageSize, setCurriculumPageSize] = useState(10);
+  const [curriculumPage, setCurriculumPage] = useState(0);
   const [showArchived, setShowArchived] = useState(false);
   const [success, setSuccess] = useState("");
 
@@ -366,7 +371,18 @@ export function AcademicDeliveryWorkspace({
   }
 
   const visibleTerms = workspace.terms.filter((term) => showArchived || !["archived", "removed"].includes(term.status));
-  const visibleStreams = workspace.streams.filter((stream) => showArchived || !["archived", "removed"].includes(stream.status));
+  const curriculumStreams = workspace.streams.filter(stream => showArchived || !["archived", "removed"].includes(stream.status));
+  const curriculumClasses = [...new Set(curriculumStreams.map(stream => stream.classLabel))].sort();
+  const curriculumStatuses = [...new Set(curriculumStreams.map(stream => stream.status))].sort();
+  const curriculumWords = curriculumQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const visibleStreams = curriculumStreams.filter(stream => {
+    const searchText = [stream.classLabel, stream.sectionLabel, stream.subjectLabel, stream.subjectCode, stream.teacherDisplay, stream.schemeReference].join(" ").toLowerCase();
+    return (!curriculumStatus || stream.status === curriculumStatus) &&
+      (!curriculumClass || stream.classLabel === curriculumClass) && curriculumWords.every(word => searchText.includes(word));
+  });
+  const curriculumPages = Math.max(1, Math.ceil(visibleStreams.length / curriculumPageSize));
+  const shownCurriculumPage = Math.min(curriculumPage, curriculumPages - 1);
+  const curriculumOffset = shownCurriculumPage * curriculumPageSize;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -663,7 +679,7 @@ export function AcademicDeliveryWorkspace({
             <p className="text-xs text-slate-600">Approved records can be corrected with reasons and audit history. Archived records remain available for restoration.</p>
           </div>
           <label className="flex items-center gap-2 text-sm font-bold text-brand-800">
-            <input type="checkbox" checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />
+            <input type="checkbox" checked={showArchived} onChange={(event) => { setShowArchived(event.target.checked); setCurriculumStatus(""); setCurriculumClass(""); setCurriculumPage(0); }} />
             Show archived and removed ({workspace.terms.filter((term) => ["archived", "removed"].includes(term.status)).length + workspace.streams.filter((stream) => ["archived", "removed"].includes(stream.status)).length})
           </label>
         </div>
@@ -752,11 +768,39 @@ export function AcademicDeliveryWorkspace({
           <h2 className="mt-2 text-2xl font-black">
             Teaching assignments, targets and follow-up
           </h2>
+          <div className="mt-4 grid gap-3 rounded-2xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-sm font-bold">Search curriculum records
+              <input type="search" className="mt-1 w-full rounded-lg border p-2 font-normal" value={curriculumQuery} placeholder="Class, subject or teacher"
+                onChange={event => { setCurriculumQuery(event.target.value); setCurriculumPage(0); }} />
+            </label>
+            <label className="text-sm font-bold">Class
+              <select className="mt-1 w-full rounded-lg border p-2 font-normal" value={curriculumClass} onChange={event => { setCurriculumClass(event.target.value); setCurriculumPage(0); }}>
+                <option value="">All classes</option>{curriculumClasses.map(value => <option key={value}>{value}</option>)}
+              </select>
+            </label>
+            <label className="text-sm font-bold">Status
+              <select className="mt-1 w-full rounded-lg border p-2 font-normal capitalize" value={curriculumStatus} onChange={event => { setCurriculumStatus(event.target.value); setCurriculumPage(0); }}>
+                <option value="">All statuses</option>{curriculumStatuses.map(value => <option key={value}>{value}</option>)}
+              </select>
+            </label>
+            <label className="text-sm font-bold">Records per page
+              <select className="mt-1 w-full rounded-lg border p-2 font-normal" value={curriculumPageSize} onChange={event => { setCurriculumPageSize(Number(event.target.value)); setCurriculumPage(0); }}>
+                {[10, 20, 50, 100].map(value => <option key={value}>{value}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <p role="status">{visibleStreams.length ? `Showing ${curriculumOffset + 1}–${Math.min(curriculumOffset + curriculumPageSize, visibleStreams.length)} of ${visibleStreams.length}` : "0 matching records"}</p>
+            <div className="flex gap-2">
+              <button type="button" className="rounded-lg border px-3 py-2 disabled:opacity-40" disabled={shownCurriculumPage === 0} onClick={() => setCurriculumPage(shownCurriculumPage - 1)}>Previous</button>
+              <button type="button" className="rounded-lg border px-3 py-2 disabled:opacity-40" disabled={shownCurriculumPage + 1 >= curriculumPages} onClick={() => setCurriculumPage(shownCurriculumPage + 1)}>Next</button>
+            </div>
+          </div>
           {visibleStreams.length === 0 ? (
-            <Empty text={showArchived ? "No curriculum execution records exist." : "No visible curriculum streams. Select Show archived and removed to inspect previous records."} />
+            <Empty text={curriculumQuery || curriculumStatus || curriculumClass ? "No curriculum records match these filters." : "No curriculum execution records in this view."} />
           ) : (
             <div className="mt-5 space-y-5">
-              {visibleStreams.map((stream) => (
+              {visibleStreams.slice(curriculumOffset, curriculumOffset + curriculumPageSize).map((stream) => (
                 <StreamCard
                   key={stream.id}
                   stream={stream}
