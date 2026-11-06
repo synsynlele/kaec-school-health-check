@@ -36,6 +36,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
   const [sort, setSort] = useState("soonest");
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [limit, setLimit] = useState(pageSize);
+  const [showArchive, setShowArchive] = useState(false);
+  const [includeExamPeriod, setIncludeExamPeriod] = useState(true);
   const [documentRows, setDocumentRows] = useState(1);
   const [todayLimit, setTodayLimit] = useState(10);
   const [retry, setRetry] = useState(0);
@@ -113,7 +115,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     const published = submitter?.value === "publish";
     const data = new FormData(event.currentTarget);
     const read = (name: string) => String(data.get(name) ?? "").trim();
-    const start = read("documentStart");
+    let start = read("documentStart");
     const campusId = read("documentCampus") || null;
     const weekly = selectedGroup === 1;
     if (weekly && start !== mondayOf(start)) {
@@ -137,19 +139,20 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       }
     } else {
       const end = read("documentEnd");
-      if (end < start) { setError("The exam period must end on or after its start date."); return; }
-      add("exam_period", read("documentTitle"), start, end);
+      if (includeExamPeriod && end < start) { setError("The exam period must end on or after its start date."); return; }
+      if (includeExamPeriod) add("exam_period", read("documentTitle"), start, end);
       for (let i = 0; i < documentRows; i++) {
         const staff = read(`staff-${i}`);
         const assessment = plan?.assessments.find(item => item.id === read(`assessment-${i}`));
         if (!staff && !assessment) continue;
         if (!staff || !assessment) { setError("Choose both a scheduled test or exam and an invigilator for each assignment."); return; }
         const date = lagosLocalDay(Date.parse(assessment.start));
-        if (date < start || date > end) { setError("Choose an assessment within the exam period."); return; }
+        if (includeExamPeriod && (date < start || date > end)) { setError("Choose an assessment within the exam period."); return; }
+        if (!start || (!includeExamPeriod && date < start)) start = date;
         add("invigilation", assessment.name.slice(0, 120), null, null, staff, assessment.id);
       }
     }
-    if (!entries.length) { setError("Enter a theme, daily topic or staff duty before saving."); return; }
+    if (!entries.length) { setError(weekly ? "Enter a theme, daily topic or staff duty before saving." : "Add an exam period or choose an assessment and invigilator."); return; }
     void mutate({ action: "save_document", entries }, published ? "Plan published." : "Plan saved as draft.",
       { kind: weekly ? "weekly_theme" : "exam_period", day: start });
   }
@@ -164,7 +167,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     const text = [entry.title, planKinds[entry.kind], entry.staff_name, entry.assessment_title,
       entry.campus_name ?? "Whole school", entry.start_day, entry.end_day, entry.published ? "Published" : "Draft"]
       .join(" ").toLowerCase();
-    return Boolean(group?.kinds.includes(entry.kind)) && words.every(word => text.includes(word));
+    return Boolean(entry.archived_at) === showArchive && Boolean(group?.kinds.includes(entry.kind)) && words.every(word => text.includes(word));
   }).sort((a, b) => {
     const dateOrder = a.start_day.localeCompare(b.start_day);
     const titleOrder = a.title.localeCompare(b.title);
@@ -180,20 +183,38 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
   }
   const documents = Array.from(groupedEntries.values());
 
+  function recordActions(entry: PlanEntry, wholeDocument = false, canDelete = !entry.published) {
+    const label = wholeDocument ? "plan" : "entry";
+    const target = { id: entry.id, ...(wholeDocument ? { documentId: entry.document_id } : {}) };
+    return <>
+      <button type="button" className={button} disabled={busy} onClick={() => {
+        if (entry.archived_at) {
+          void mutate({ action: "restore", ...target }, "Restored as draft.");
+        } else if (window.confirm(`Archive this ${label}? Published items will stop appearing on Today and affecting the schedule.`)) {
+          void mutate({ action: "archive", ...target }, "Archived.");
+        }
+      }}>{entry.archived_at ? "Restore as draft" : "Archive"}{wholeDocument ? " plan" : ""}</button>
+      {canDelete && <button type="button" className={button} disabled={busy} onClick={() => {
+        if (window.confirm(`Delete this ${label} from the planner? This cannot be undone here.`)) void mutate({ action: "delete", ...target }, "Deleted.");
+      }}>Delete{wholeDocument ? " plan" : ""}</button>}
+    </>;
+  }
+
   function renderEntry(entry: PlanEntry) {
     return <li key={entry.id} className="space-y-1 py-3 text-sm">
-          <p className="font-bold">{entry.title}{!entry.published && " · Draft"}</p>
+          <p className="font-bold">{entry.title}{entry.archived_at ? " · Archived" : !entry.published && " · Draft"}</p>
           <p>{planKinds[entry.kind]} · {entry.start_day}{entry.end_day !== entry.start_day && ` to ${entry.end_day}`} · {entry.campus_name ?? "Whole school"}</p>
           {entry.staff_name && <p>Assigned to {entry.staff_name}{entry.assessment_title && ` · ${entry.assessment_title}`}</p>}
           {entry.assessment_start && <p>Exam starts {new Date(entry.assessment_start).toLocaleString("en-NG",{timeZone:"Africa/Lagos"})}</p>}
-          {entry.can_edit && <div className="flex gap-2">
-            <button type="button" className={button} disabled={busy} onClick={() => {
+          {entry.can_edit && <div className="flex flex-wrap gap-2">
+            {!entry.archived_at && <button type="button" className={button} disabled={busy} onClick={() => {
               setKind(entry.kind); setEditing(entry);
               document.getElementById("school-plan")?.scrollIntoView({block:"start"});
-            }}>Edit</button>
+            }}>Edit</button>}
             {entry.published && <button type="button" className={button} disabled={busy} onClick={() => {
               if (window.confirm("Unpublish this entry?")) void mutate({action:"remove",id:entry.id},"Entry unpublished.");
             }}>Unpublish</button>}
+            {recordActions(entry)}
           </div>}
         </li>;
   }
@@ -215,17 +236,16 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
       {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
       {plan?.canManage && !editing && group && <button type="button" className={button} onClick={() => {
-        setKind(group.kinds[0]); setDocumentRows(1); setEditing(selectedGroup === 0 ? "new" : "document");
+        setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(true); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
       }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
-      {plan?.canManage && selectedGroup === 2 && !editing && <button type="button" className={button}
-        onClick={() => { setKind("invigilation"); setEditing("new"); }}>Assign invigilator</button>}
     </>}
     {editing === "document" && plan?.canManage && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Exam plan"}</legend>
-        <label>{selectedGroup === 1 ? "Monday of the week" : "Exam period starts"}
+        {selectedGroup === 2 && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Include an exam period</label>}
+        {(selectedGroup === 1 || includeExamPeriod) && <label>{selectedGroup === 1 ? "Monday of the week" : "Exam period starts"}
           <input type="date" name="documentStart" required className={field} defaultValue={selectedGroup === 1 ? mondayOf(from) : from} />
-        </label>
+        </label>}
         <label>Campus<select name="documentCampus" className={field}>
           {plan.canManageWholeSchool && <option value="">Whole school</option>}
           {plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
@@ -235,8 +255,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) =>
             <label key={day}>{day} topic<input name={`topic-${index}`} maxLength={120} className={field} /></label>)}
         </> : <>
-          <label>Exam period title<input name="documentTitle" required maxLength={120} className={field} /></label>
-          <label>Exam period ends<input type="date" name="documentEnd" required className={field} defaultValue={from} /></label>
+          {includeExamPeriod && <><label>Exam period title<input name="documentTitle" required maxLength={120} className={field} /></label>
+          <label>Exam period ends<input type="date" name="documentEnd" required className={field} defaultValue={from} /></label></>}
           {!plan.assessments.length && <p className="text-sm sm:col-span-2">No assessments are scheduled in this calendar date range. Open Tests and exams to schedule one, or choose a calendar date range that includes it. <Link className="font-bold underline" href={`/khpos/${school}/teaching-presence?tab=exams`}>Open Tests and exams</Link></p>}
         </>}
         <>
@@ -293,10 +313,10 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     </form>}
     {plan && !todayOnly && !group && <div className="grid gap-3 sm:grid-cols-2">
       {groups.map(({ label, kinds }, index) => {
-        const count = plan.entries.filter(entry => kinds.includes(entry.kind)).length;
+        const count = plan.entries.filter(entry => kinds.includes(entry.kind) && !entry.archived_at).length;
         return <button key={label} type="button"
           className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-600"
-          onClick={() => { setSelectedGroup(index); setQuery(""); setLimit(pageSize); }}>
+          onClick={() => { setSelectedGroup(index); setShowArchive(false); setQuery(""); setLimit(pageSize); }}>
           <span><span className="block font-black">{label}</span><span className="text-sm text-slate-600">{count} {count === 1 ? "entry" : "entries"}</span></span>
           <span aria-hidden="true">→</span>
         </button>;
@@ -306,6 +326,9 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       <button type="button" className={button}
         onClick={() => { setSelectedGroup(null); setEditing(null); }}>← All planner groups</button>
       <h3 className="text-lg font-black">{group.label}</h3>
+      {plan.canManage && <button type="button" className={button} onClick={() => { setShowArchive(!showArchive); setLimit(pageSize); }}>
+        {showArchive ? "Show current records" : "Show archived records"}
+      </button>}
       <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
         <label className="text-sm font-bold">Search {todayOnly ? "today’s plan" : "this date range"}
           <input type="search" className={field} placeholder="Title, teacher, campus or date" value={query}
@@ -334,6 +357,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
                 {selectedGroup === 1 ? `Week of ${date}` : heading.title} · {heading.campus_name ?? "Whole school"}
                 <span className="ml-2 text-sm font-normal text-slate-600">{items.length} {items.length === 1 ? "entry" : "entries"}</span>
               </summary>
+              {items.every(item => item.can_edit) && <div className="mt-2 flex flex-wrap gap-2">{recordActions(first, true, items.every(item => !item.published))}</div>}
               <ul className="mt-2 divide-y pl-4">{items.map(renderEntry)}</ul>
             </details>
           </li>;

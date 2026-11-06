@@ -11,6 +11,7 @@ export const planKinds = {
 export type PlanKind = keyof typeof planKinds;
 export type PlanEntry = {
   id: string; kind: PlanKind; title: string; start_day: string; end_day: string;
+  archived_at?: string | null;
   document_id?: string | null; can_edit: boolean; published: boolean; campus_id: string | null; campus_name: string | null;
   staff_id: string | null; staff_name: string | null; assessment_id: string | null;
   assessment_start: string | null; assessment_title: string | null;

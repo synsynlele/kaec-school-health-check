@@ -14,6 +14,7 @@ const mutation = z.discriminatedUnion("action", [
   saveEntry,
   z.object({ action: z.literal("save_document"), entries: z.array(saveEntry.extend({ id: z.null() })).min(1).max(60) }),
   z.object({ action: z.literal("remove"), id: z.uuid() }),
+  z.object({ action: z.enum(["archive", "restore", "delete"]), id: z.uuid(), documentId: z.uuid().optional() }),
   z.object({ action: z.literal("rule"), id: z.uuid(), dayMode: z.enum(["scheduled", "teaching", "staff"]) }),
 ]);
 const headers = { "Cache-Control": "private, no-store" };
@@ -38,7 +39,7 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
       (entry.kind === "invigilation" || entry.kind === "weekly_duty") !== Boolean(entry.staffId)
     ))) return NextResponse.json({ error: "Choose the required staff member and assessment." }, { status: 400, headers });
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-    const { data, error } = await db.rpc(input?.action === "save_document" ? "khpos_school_plan_documents_server" : "khpos_school_plan_server", { p_actor: actor.id, p_org: id, p_from: from, p_to: to, p_input: input, p_today: todayOnly });
+    const { data, error } = await db.rpc(input?.action === "save_document" || (input && "documentId" in input && input.documentId) ? "khpos_school_plan_documents_server" : "khpos_school_plan_server", { p_actor: actor.id, p_org: id, p_from: from, p_to: to, p_input: input, p_today: todayOnly });
     if (error?.code === "42501" || error?.code === "22023") {
       return NextResponse.json({ error: error.message }, { status: error.code === "42501" ? 403 : 400, headers });
     }
