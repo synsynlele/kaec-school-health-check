@@ -11,8 +11,7 @@ const field = "block w-full rounded-xl border border-slate-300 bg-white px-3 py-
 const button = "rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold disabled:opacity-50";
 const groups: { label: string; kinds: PlanKind[] }[] = [
   { label: "School calendar", kinds: ["event", "closure", "no_lessons"] },
-  { label: "Themes and topics", kinds: ["weekly_theme", "daily_topic"] },
-  { label: "Teachers on duty", kinds: ["weekly_duty"] },
+  { label: "Weekly plans", kinds: ["weekly_theme", "daily_topic", "weekly_duty"] },
   { label: "Exams and invigilation", kinds: ["exam_period", "invigilation"] },
 ];
 const pageSize = 5;
@@ -29,7 +28,7 @@ const modes = { scheduled: "Run on the scheduled date", teaching: "Teaching days
 export function SchoolPlan({ school, todayOnly = false }: { school: string; todayOnly?: boolean }) {
   const [from, setFrom] = useState(() => lagosLocalDay(Date.now()).slice(0, 8) + "01");
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [editing, setEditing] = useState<PlanEntry | "new" | null>(null);
+  const [editing, setEditing] = useState<PlanEntry | "new" | "document" | null>(null);
   const [kind, setKind] = useState<PlanKind>("event");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -37,6 +36,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
   const [sort, setSort] = useState("soonest");
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [limit, setLimit] = useState(pageSize);
+  const [documentRows, setDocumentRows] = useState(1);
+  const [todayLimit, setTodayLimit] = useState(10);
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const request = useCallback(async (input?: object, signal?: AbortSignal, rangeStart = from) => {
@@ -106,7 +107,54 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       published ? "Calendar entry published." : "Draft saved.", { kind, day: entryDay });
   }
 
-  const record = editing && editing !== "new" ? editing : null;
+  function saveDocument(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const published = submitter?.value === "publish";
+    const data = new FormData(event.currentTarget);
+    const read = (name: string) => String(data.get(name) ?? "").trim();
+    const start = read("documentStart");
+    const campusId = read("documentCampus") || null;
+    const weekly = selectedGroup === 1;
+    if (weekly && start !== mondayOf(start)) {
+      setError("Choose a Monday to start the weekly plan.");
+      return;
+    }
+    const entries: { action: "save"; id: null; kind: PlanKind; title: string; campusId: string | null;
+      startDay: string | null; endDay: string | null; staffId: string | null; assessmentId: string | null; published: boolean }[] = [];
+    function add(entryKind: PlanKind, title: string, startDay: string | null, endDay: string | null, staffId: string | null = null, assessmentId: string | null = null) {
+      entries.push({ action: "save", id: null, kind: entryKind, title, campusId, startDay, endDay, staffId, assessmentId, published });
+    }
+    if (weekly) {
+      const dayAt = (offset: number) => new Date(Date.parse(start) + offset * dayMs).toISOString().slice(0, 10);
+      if (read("theme")) add("weekly_theme", read("theme"), start, dayAt(6));
+      for (let i = 0; i < 7; i++) {
+        if (read(`topic-${i}`)) add("daily_topic", read(`topic-${i}`), dayAt(i), dayAt(i));
+      }
+      for (let i = 0; i < documentRows; i++) {
+        if (read(`staff-${i}`)) add("weekly_duty", read(`duty-${i}`) || "Weekly staff duty", start, dayAt(6), read(`staff-${i}`));
+        else if (read(`duty-${i}`)) { setError("Choose a teacher for each duty you enter."); return; }
+      }
+    } else {
+      const end = read("documentEnd");
+      if (end < start) { setError("The exam period must end on or after its start date."); return; }
+      add("exam_period", read("documentTitle"), start, end);
+      for (let i = 0; i < documentRows; i++) {
+        const staff = read(`staff-${i}`);
+        const assessment = plan?.assessments.find(item => item.id === read(`assessment-${i}`));
+        if (!staff && !assessment) continue;
+        if (!staff || !assessment) { setError("Choose both a scheduled test or exam and an invigilator for each assignment."); return; }
+        const date = lagosLocalDay(Date.parse(assessment.start));
+        if (date < start || date > end) { setError("Choose an assessment within the exam period."); return; }
+        add("invigilation", assessment.name.slice(0, 120), null, null, staff, assessment.id);
+      }
+    }
+    if (!entries.length) { setError("Enter a theme, daily topic or staff duty before saving."); return; }
+    void mutate({ action: "save_document", entries }, published ? "Plan published." : "Plan saved as draft.",
+      { kind: weekly ? "weekly_theme" : "exam_period", day: start });
+  }
+
+  const record = editing && typeof editing !== "string" ? editing : null;
   const weeklyEntry = kind === "weekly_duty" || kind === "weekly_theme";
   const hasStaff = kind === "weekly_duty" || kind === "invigilation";
   const hasEnd = !["weekly_duty", "weekly_theme", "daily_topic", "invigilation"].includes(kind);
@@ -123,6 +171,33 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     if (sort === "name") return titleOrder || dateOrder;
     return (sort === "latest" ? -dateOrder : dateOrder) || titleOrder;
   });
+  const groupedEntries = new Map<string, PlanEntry[]>();
+  for (const entry of entries) {
+    const key = entry.document_id ?? entry.id;
+    const existing = groupedEntries.get(key);
+    if (existing) existing.push(entry);
+    else groupedEntries.set(key, [entry]);
+  }
+  const documents = Array.from(groupedEntries.values());
+
+  function renderEntry(entry: PlanEntry) {
+    return <li key={entry.id} className="space-y-1 py-3 text-sm">
+          <p className="font-bold">{entry.title}{!entry.published && " · Draft"}</p>
+          <p>{planKinds[entry.kind]} · {entry.start_day}{entry.end_day !== entry.start_day && ` to ${entry.end_day}`} · {entry.campus_name ?? "Whole school"}</p>
+          {entry.staff_name && <p>Assigned to {entry.staff_name}{entry.assessment_title && ` · ${entry.assessment_title}`}</p>}
+          {entry.assessment_start && <p>Exam starts {new Date(entry.assessment_start).toLocaleString("en-NG",{timeZone:"Africa/Lagos"})}</p>}
+          {entry.can_edit && <div className="flex gap-2">
+            <button type="button" className={button} disabled={busy} onClick={() => {
+              setKind(entry.kind); setEditing(entry);
+              document.getElementById("school-plan")?.scrollIntoView({block:"start"});
+            }}>Edit</button>
+            {entry.published && <button type="button" className={button} disabled={busy} onClick={() => {
+              if (window.confirm("Unpublish this entry?")) void mutate({action:"remove",id:entry.id},"Entry unpublished.");
+            }}>Unpublish</button>}
+          </div>}
+        </li>;
+  }
+
   if (todayOnly && !plan?.entries.length) return null;
   return <section id={todayOnly ? undefined : "school-plan"} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5">
     <h2 className="text-xl font-black">{todayOnly ? "School plan for today" : "Academic calendar and staff duties"}</h2>
@@ -139,15 +214,60 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
       {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
-      {plan?.canManage && !editing && <button type="button" className={button} onClick={() => { setKind(group?.kinds[0] ?? "event"); setEditing("new"); }}>Add calendar entry</button>}
+      {plan?.canManage && !editing && group && <button type="button" className={button} onClick={() => {
+        setKind(group.kinds[0]); setDocumentRows(1); setEditing(selectedGroup === 0 ? "new" : "document");
+      }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
     </>}
-    {editing && plan?.canManage && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
+    {editing === "document" && plan?.canManage && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
+      <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
+        <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Exam plan"}</legend>
+        <label>{selectedGroup === 1 ? "Monday of the week" : "Exam period starts"}
+          <input type="date" name="documentStart" required className={field} defaultValue={selectedGroup === 1 ? mondayOf(from) : from} />
+        </label>
+        <label>Campus<select name="documentCampus" className={field}>
+          {plan.canManageWholeSchool && <option value="">Whole school</option>}
+          {plan.campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}
+        </select></label>
+        {selectedGroup === 1 ? <>
+          <label className="sm:col-span-2">Weekly theme<input name="theme" maxLength={120} className={field} /></label>
+          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) =>
+            <label key={day}>{day} topic<input name={`topic-${index}`} maxLength={120} className={field} /></label>)}
+        </> : <>
+          <label>Exam period title<input name="documentTitle" required maxLength={120} className={field} /></label>
+          <label>Exam period ends<input type="date" name="documentEnd" required className={field} defaultValue={from} /></label>
+          {!plan.assessments.length && <p className="text-sm sm:col-span-2">Schedule tests or exams in Teaching plans before assigning invigilators. You can save the exam period now.</p>}
+        </>}
+        {(selectedGroup === 1 || plan.assessments.length > 0) && <>
+          {Array.from({ length: documentRows }, (_, index) => <fieldset key={index} className="grid gap-2 rounded-xl border p-3 sm:col-span-2 sm:grid-cols-2">
+            <legend className="px-1 text-sm font-bold">{selectedGroup === 1 ? "Staff duty" : "Invigilation"} {index + 1}</legend>
+            {selectedGroup === 1 ? <label>Duty<input name={`duty-${index}`} maxLength={120} className={field} /></label>
+              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field}>
+                <option value="">Choose an assessment</option>
+                {plan.assessments.map(item => <option key={item.id} value={item.id}>{item.name} · {lagosLocalDay(Date.parse(item.start))}</option>)}
+              </select></label>}
+            <label>{selectedGroup === 1 ? "Teacher on duty" : "Invigilator"}<select name={`staff-${index}`} className={field}>
+              <option value="">Choose staff</option>
+              {plan.staff.map(staff => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
+            </select></label>
+          </fieldset>)}
+          {documentRows < 50 && <button type="button" className={button} onClick={() => setDocumentRows(count => count + 1)}>
+            {selectedGroup === 1 ? "Add another duty" : "Add another invigilator"}
+          </button>}
+        </>}
+      </fieldset>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className={button} value="publish" disabled={busy}>Publish plan</button>
+        <button type="submit" className={button} value="draft" disabled={busy}>Save plan as draft</button>
+        <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
+      </div>
+    </form>}
+    {editing && editing !== "document" && plan?.canManage && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
       const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
       save(event, submitter?.value === "publish");
     }}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
         <label>Type<select className={field} value={kind} onChange={event => setKind(event.target.value as PlanKind)}>
-          {Object.entries(planKinds).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+          {Object.entries(planKinds).filter(([key]) => group?.kinds.includes(key as PlanKind)).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
         </select></label>
         <label>Title<input name="title" className={field} required maxLength={120} defaultValue={record?.title} /></label>
         {kind !== "invigilation" && <label>Campus<select name="campus" className={field} defaultValue={record?.campus_id ?? (plan.canManageWholeSchool ? "" : plan.campuses[0]?.id)}>
@@ -169,7 +289,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
       </div>
     </form>}
-    {plan && !group && <div className="grid gap-3 sm:grid-cols-2">
+    {plan && !todayOnly && !group && <div className="grid gap-3 sm:grid-cols-2">
       {groups.map(({ label, kinds }, index) => {
         const count = plan.entries.filter(entry => kinds.includes(entry.kind)).length;
         return <button key={label} type="button"
@@ -180,7 +300,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </button>;
       })}
     </div>}
-    {plan && group && <section aria-label={group.label} className="space-y-4">
+    {plan && !todayOnly && group && <section aria-label={group.label} className="space-y-4">
       <button type="button" className={button}
         onClick={() => { setSelectedGroup(null); setEditing(null); }}>← All planner groups</button>
       <h3 className="text-lg font-black">{group.label}</h3>
@@ -201,29 +321,45 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         {query.trim() ? "No entries match your search." : "No entries in this group for the selected dates."}
       </p>}
       <ul className="divide-y divide-slate-200">
-        {entries.slice(0, limit).map(entry => <li key={entry.id} className="space-y-1 py-3 text-sm">
-          <p className="font-bold">{entry.title}{!entry.published && " · Draft"}</p>
-          <p>{planKinds[entry.kind]} · {entry.start_day}{entry.end_day !== entry.start_day && ` to ${entry.end_day}`} · {entry.campus_name ?? "Whole school"}</p>
-          {entry.staff_name && <p>Assigned to {entry.staff_name}{entry.assessment_title && ` · ${entry.assessment_title}`}</p>}
-          {entry.assessment_start && <p>Exam starts {new Date(entry.assessment_start).toLocaleString("en-NG",{timeZone:"Africa/Lagos"})}</p>}
-          {entry.can_edit && <div className="flex gap-2">
-            <button type="button" className={button} disabled={busy} onClick={() => {
-              setKind(entry.kind); setEditing(entry);
-              document.getElementById("school-plan")?.scrollIntoView({block:"start"});
-            }}>Edit</button>
-            {entry.published && <button type="button" className={button} disabled={busy} onClick={() => {
-              if (window.confirm("Unpublish this entry?")) void mutate({action:"remove",id:entry.id},"Entry unpublished.");
-            }}>Unpublish</button>}
-          </div>}
-        </li>)}
+        {documents.slice(0, limit).map(items => {
+          const first = items[0];
+          if (!first.document_id) return renderEntry(first);
+          const heading = items.find(entry => entry.kind === "weekly_theme" || entry.kind === "exam_period") ?? first;
+          const date = selectedGroup === 1 ? mondayOf(heading.start_day) : heading.start_day;
+          return <li key={first.document_id} className="py-3">
+            <details>
+              <summary className="cursor-pointer font-bold">
+                {selectedGroup === 1 ? `Week of ${date}` : heading.title} · {heading.campus_name ?? "Whole school"}
+                <span className="ml-2 text-sm font-normal text-slate-600">{items.length} {items.length === 1 ? "entry" : "entries"}</span>
+              </summary>
+              <ul className="mt-2 divide-y pl-4">{items.map(renderEntry)}</ul>
+            </details>
+          </li>;
+        })}
       </ul>
       <div className="flex flex-wrap gap-2">
-        {entries.length > limit && <button type="button" className={button}
-          onClick={() => setLimit(limit + pageSize)}>Show {Math.min(pageSize, entries.length - limit)} more</button>}
+        {documents.length > limit && <button type="button" className={button}
+          onClick={() => setLimit(limit + pageSize)}>Show {Math.min(pageSize, documents.length - limit)} more</button>}
         {limit > pageSize && <button type="button" className={button}
           onClick={() => setLimit(pageSize)}>Show fewer</button>}
       </div>
     </section>}
+    {todayOnly && plan && <>
+      <label className="block max-w-xs text-sm font-bold">Show active entries
+        <select className={field} value={todayLimit} onChange={event => setTodayLimit(Number(event.target.value))}>
+          {[10, 20, 50, 100, 250].map(count => <option key={count} value={count}>{count}</option>)}
+        </select>
+      </label>
+      <ul className="divide-y divide-slate-200">
+        {plan.entries.slice(0, todayLimit).map(entry => <li key={entry.id} className="py-3 text-sm">
+          <p className="font-bold">{entry.title}</p>
+          <p>{planKinds[entry.kind]} · {entry.campus_name ?? "Whole school"}</p>
+          {entry.staff_name && <p>Assigned to {entry.staff_name}</p>}
+          {entry.assessment_start && <p>Starts at {new Date(entry.assessment_start).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "numeric", minute: "2-digit" })}</p>}
+        </li>)}
+      </ul>
+      <p className="text-sm text-slate-600">Showing {Math.min(todayLimit, plan.entries.length)} of {plan.entries.length} active entries</p>
+    </>}
     {plan?.canManage && plan.rules.length > 0 && <details className="space-y-3">
       <summary className="font-bold">When recurring duties run</summary>
       <p className="text-sm">Choose how each rule responds to published closures and days without regular lessons. Already assigned work stays available for review.</p>
