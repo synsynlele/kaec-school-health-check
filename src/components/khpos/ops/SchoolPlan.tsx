@@ -217,6 +217,8 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       {plan?.canManage && !editing && group && <button type="button" className={button} onClick={() => {
         setKind(group.kinds[0]); setDocumentRows(1); setEditing(selectedGroup === 0 ? "new" : "document");
       }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
+      {plan?.canManage && selectedGroup === 2 && !editing && <button type="button" className={button}
+        onClick={() => { setKind("invigilation"); setEditing("new"); }}>Assign invigilator</button>}
     </>}
     {editing === "document" && plan?.canManage && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
@@ -235,25 +237,25 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </> : <>
           <label>Exam period title<input name="documentTitle" required maxLength={120} className={field} /></label>
           <label>Exam period ends<input type="date" name="documentEnd" required className={field} defaultValue={from} /></label>
-          {!plan.assessments.length && <p className="text-sm sm:col-span-2">Schedule tests or exams in Teaching plans before assigning invigilators. You can save the exam period now.</p>}
+          {!plan.assessments.length && <p className="text-sm sm:col-span-2">No assessments are scheduled in this calendar date range. Open Tests and exams to schedule one, or choose a calendar date range that includes it. <Link className="font-bold underline" href={`/khpos/${school}/teaching-presence?tab=exams`}>Open Tests and exams</Link></p>}
         </>}
-        {(selectedGroup === 1 || plan.assessments.length > 0) && <>
+        <>
           {Array.from({ length: documentRows }, (_, index) => <fieldset key={index} className="grid gap-2 rounded-xl border p-3 sm:col-span-2 sm:grid-cols-2">
             <legend className="px-1 text-sm font-bold">{selectedGroup === 1 ? "Staff duty" : "Invigilation"} {index + 1}</legend>
             {selectedGroup === 1 ? <label>Duty<input name={`duty-${index}`} maxLength={120} className={field} /></label>
-              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field}>
-                <option value="">Choose an assessment</option>
+              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field} disabled={!plan.assessments.length}>
+                <option value="">{plan.assessments.length ? "Choose an assessment" : "No scheduled assessments in this date range"}</option>
                 {plan.assessments.map(item => <option key={item.id} value={item.id}>{item.name} · {lagosLocalDay(Date.parse(item.start))}</option>)}
               </select></label>}
-            <label>{selectedGroup === 1 ? "Teacher on duty" : "Invigilator"}<select name={`staff-${index}`} className={field}>
+            <label>{selectedGroup === 1 ? "Teacher on duty" : "Invigilator"}<select name={`staff-${index}`} className={field} disabled={selectedGroup !== 1 && !plan.assessments.length}>
               <option value="">Choose staff</option>
               {plan.staff.map(staff => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
             </select></label>
           </fieldset>)}
-          {documentRows < 50 && <button type="button" className={button} onClick={() => setDocumentRows(count => count + 1)}>
+          {documentRows < 50 && (selectedGroup === 1 || plan.assessments.length > 0) && <button type="button" className={button} onClick={() => setDocumentRows(count => count + 1)}>
             {selectedGroup === 1 ? "Add another duty" : "Add another invigilator"}
           </button>}
-        </>}
+        </>
       </fieldset>
       <div className="flex flex-wrap gap-2">
         <button type="submit" className={button} value="publish" disabled={busy}>Publish plan</button>
