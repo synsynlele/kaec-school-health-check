@@ -80,7 +80,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       {!plan && !error && <p role="status">Loading school plan…</p>}
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
-      {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian or a guardian for your campus can add entries.</p>}
+      {plan && !plan.canManage && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
       {plan?.canManage && !editing && <button type="button" className={button} onClick={() => { setKind("event"); setEditing("new"); }}>Add calendar entry</button>}
     </>}
     {editing && plan?.canManage && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
