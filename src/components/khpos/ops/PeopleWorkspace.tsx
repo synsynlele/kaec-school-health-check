@@ -247,7 +247,7 @@ export function PeopleWorkspace({
     }
 
     if (workspace?.roles.find((role) => role.id === roleId)?.code === "SCHOOL_GUARDIAN" && !campusId) {
-      setError("Choose the campus this School Guardian will lead.");
+      setError("Choose the campus this campus leader will lead.");
       return;
     }
 
@@ -618,7 +618,7 @@ export function PeopleWorkspace({
                   ))}
                 </select>
                 <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">
-                  School Guardians must lead a selected approved campus. A new campus requires its own KSHC and KAEC approval.
+                  Campus leaders must lead a selected approved campus. A new campus requires its own KSHC and KAEC approval.
                 </span>
               </label>
 

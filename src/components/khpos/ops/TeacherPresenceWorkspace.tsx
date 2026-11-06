@@ -297,12 +297,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       {data&&<>
         {!data.pilotEnabled&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <h2 className="text-xl font-black text-amber-950">School attendance and teaching — ready to activate</h2>
-          <p className="mt-2 text-sm leading-6 text-amber-900">The new tools are available to every KHP-OS school. School attendance, lesson check-ins and HQLS observations stay inactive at this school until its School Custodian enables them. Existing school records are not changed.</p>
+          <p className="mt-2 text-sm leading-6 text-amber-900">The new tools are available to every KHP-OS school. School attendance, lesson check-ins and HQLS observations stay inactive at this school until the school owner enables them. Existing school records are not changed.</p>
           {data.canEnablePilot?<button type="button" disabled={Boolean(busy)}
             className="mt-4 rounded-xl bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
             onClick={()=>{if(window.confirm("Enable school attendance, scheduled lesson check-ins and HQLS observation tools for this school? Existing records will remain unchanged."))void act("pilot_enable",{enabled:true},"School attendance and teaching pilot activated.");}}>
             Enable for this school</button>
-            :<p className="mt-3 text-sm font-semibold text-amber-900">Ask your School Custodian to activate these tools for your school.</p>}
+            :<p className="mt-3 text-sm font-semibold text-amber-900">Ask your school owner to activate these tools for your school.</p>}
         </section>}
         {data.pilotEnabled&&data.canEnablePilot&&<div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <span className="text-sm font-semibold text-emerald-900">School attendance and teaching are enabled.</span>
@@ -324,7 +324,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
             <p className="mb-4 text-sm text-slate-600">Arrival and departure save server time and request one location reading, with your permission. Your supervisors can view the coordinates and accuracy. No background tracking. If GPS fails, explain why and still record attendance. Your classes are recorded separately.</p>
             <label className="mb-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
-            {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your School Guardian to complete Staff onboarding.</p>
+            {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your school leader to complete Staff onboarding.</p>
             :<div className="space-y-3">
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
               <p className="text-sm"><b>School day:</b> {data.localDay}</p>
@@ -384,7 +384,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
               </select>
             </label>}
             <p className="my-2 text-sm text-slate-600">A class check-in is available from 30 minutes before the lesson starts until 30 minutes after it finishes. The assigned teacher must record the actual start time. After teaching, record the class check-out and what happened. Finish an open class before checking out of school.</p>
-            {own.length===0?<p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">No period has been entered for the current term. An Academic Inspector or School Guardian should add the schedule below. <Link href={"/khpos/"+organisationId+"/academic-delivery"} className="font-bold underline">Open Academic Delivery</Link>.</p>:null}
+            {own.length===0?<p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">No period has been entered for the current term. An authorised school or academic lead should add the schedule below. <Link href={"/khpos/"+organisationId+"/academic-delivery"} className="font-bold underline">Open Academic Delivery</Link>.</p>:null}
             <label className="mt-4 block text-sm font-semibold text-slate-700">Day
               <select className={field} value={lessonDay} onChange={e=>setLessonDay(e.target.value)}>
                 <option value="">All days</option>
@@ -480,7 +480,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                 {data.hqlsEnabled?"Disable new observations":"Enable HQLS rubric for this school"}
               </button>
             </div>}
-            {!data.hqlsEnabled&&<p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">New HQLS observations require the School Custodian or Guardian to enable this standard. Historical records remain visible.</p>}
+            {!data.hqlsEnabled&&<p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">New HQLS observations require an authorised school leader to enable this standard. Historical records remain visible.</p>}
             {!canObserve || !data.hqlsEnabled?<p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm">Only authorised instructional leaders can submit observations. Teachers can review and acknowledge their recorded observations below.</p>:<>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div><label className="text-sm font-bold">Class and teacher</label>

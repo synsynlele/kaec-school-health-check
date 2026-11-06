@@ -141,11 +141,11 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
     return () => { alive = false; };
   }, [organisationId, supabase, initialEditId]);
 
-  function choose(id: string, availableVersions = versions, availableBaselines = baselines) {
+  function choose(id: string, availableVersions = versions, availableBaselines = baselines, useTemplate = false) {
     setSelected(id); setError(""); setMessage("");
     const revision = availableVersions.find((item) => item.policy_id === id && ["draft", "in_review"].includes(item.status));
     const active = policies.find((item) => item.id === id)?.activeVersion;
-    const baseline = availableBaselines[id];
+    const baseline = useTemplate ? availableBaselines[id] : undefined;
     const source = revision ?? active;
     const useBaseline = !source && Boolean(baseline);
     setBaselineLoaded(useBaseline);
@@ -209,6 +209,15 @@ export function PolicyGovernance({ organisationId, policies, onPublished, initia
     </label>
     {policy && <div className="mt-5 space-y-4">
       <p className="text-sm font-semibold">{current ? `Revision v${current.version}: ${current.status.replaceAll("_", " ")}` : policy.activeVersion ? "Approved policy: create a new revision without overwriting the published version" : "Start a new school draft"}</p>
+      {!current && !policy.activeVersion && baselines[selected] && !baselineLoaded && (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-slate-600">Write your own policy below, or start with the KAEC template.</span>
+          <button type="button" disabled={busy} className="rounded-xl border border-slate-300 px-3 py-2 font-bold"
+            onClick={() => {
+              if (window.confirm("Load the KAEC template? This replaces unsaved text in this form.")) choose(selected, versions, baselines, true);
+            }}>Use KAEC template</button>
+        </div>
+      )}
       {baselineLoaded && <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-brand-900">KAEC baseline loaded</p>
         <p className="mt-1">Check and adapt this draft for your school before saving. A different authorised leader must approve it before it becomes an official policy.</p>

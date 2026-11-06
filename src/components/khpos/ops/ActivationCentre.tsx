@@ -253,10 +253,10 @@ export function ActivationCentre({
             </p>
             <div className="mt-4 space-y-1 text-xs font-bold">
               <p className={people.custodianPresent ? "text-emerald-700" : "text-amber-700"}>
-                {people.custodianPresent ? "✓" : "○"} Custodian authority
+                {people.custodianPresent ? "✓" : "○"} School owner assigned
               </p>
               <p className={people.guardianPresent ? "text-emerald-700" : "text-amber-700"}>
-                {people.guardianPresent ? "✓" : "○"} School Guardian authority
+                {people.guardianPresent ? "✓" : "○"} School leader assigned
               </p>
             </div>
           </div>

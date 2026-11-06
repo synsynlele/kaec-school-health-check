@@ -407,7 +407,7 @@ export function YoungCeoWorkspace({
                 Aggregate strategic view only
               </h2>
               <p className="mt-2 text-sm leading-6 text-brand-900">
-                School Custodians can view the programme summary and problems that need attention. Individual learner records require the assigned learner-support role.
+                School owners can view the programme summary and problems that need attention. Individual learner records require the assigned learner-support role.
               </p>
             </section>
           ) : null}
