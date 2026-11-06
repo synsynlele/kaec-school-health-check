@@ -56,6 +56,7 @@ export function MyWorkWorkspace({
   organisationId: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [taskFilter, setTaskFilter] = useState<"all" | "overdue" | "blocked">("all");
   const [roleFilter, setRoleFilter] = useState("");
   const [work, setWork] = useState<KhposOpsMyWork | null>(null);
   const [error, setError] = useState(
@@ -378,6 +379,8 @@ export function MyWorkWorkspace({
   const verificationItems = sortBySelection(work.verificationQueue
     .filter((item) => matchesSearch([item.title, item.roleTitle, item.processCode ?? "", item.campusName ?? "", item.status].join(" "))));
   const openItems = visibleItems.filter((item) => needsOwnerWorkAction(item.status));
+  const shownTasks = openItems.filter(item => taskFilter === "all" || (taskFilter === "blocked"
+    ? item.status === "blocked" : Boolean(item.dueAt && Date.parse(item.dueAt) < Date.now())));
   const awaitingItems = visibleItems.filter((item) => item.status === "awaiting_verification");
   const completedItems = visibleItems.filter((item) => item.status === "completed");
   const otherActions = (attention?.items ?? []).filter(item => item.kind !== "work" && item.kind !== "verification");
@@ -411,20 +414,24 @@ export function MyWorkWorkspace({
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              ["To do", openItems.length],
-              ["Awaiting review", awaitingItems.length],
-              ["Overdue", work.summary.overdue],
-              ["Blocked", work.summary.blocked],
-              ["Completed", work.summary.completed],
-            ].map(([label, value]) => (
-              <div
-                key={String(label)}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4"
-              >
+            {([
+              ["To do", "all", "today-tasks", openItems.length],
+              ["Awaiting review", "all", "today-awaiting", awaitingItems.length],
+              ["Overdue", "overdue", "today-tasks", work.summary.overdue],
+              ["Blocked", "blocked", "today-tasks", work.summary.blocked],
+              ["Completed", "all", "today-completed", work.summary.completed],
+            ] as const).map(([label, filter, anchor, value]) => (
+              <a key={label} href={`#${anchor}`}
+                onClick={() => {
+                  setTaskFilter(filter);
+                  setRoleFilter("");
+                  setWorkQuery("");
+                  if (anchor === "today-completed") document.querySelector<HTMLDetailsElement>("#today-completed details")?.setAttribute("open", "");
+                }}
+                className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
                 <p className="text-xs font-bold text-brand-100">{label}</p>
                 <p className="mt-1 text-3xl font-black">{value}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -819,6 +826,7 @@ export function MyWorkWorkspace({
           </section>
         )}
 
+        <div id="today-tasks" className="scroll-mt-24" />
         {openItems.length === 0 && verificationItems.length === 0 && !workSearch.query.trim() ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-sm">
             <CheckCircle2 className="mx-auto size-10 text-mint-700" />
@@ -842,7 +850,9 @@ export function MyWorkWorkspace({
               <h2 className="mt-2 text-2xl font-black">Your tasks</h2>
             </div>
 
-            {openItems.map((item) => {
+            {taskFilter !== "all" && <p className="text-sm">Showing {taskFilter} tasks. <button type="button" className="font-bold underline" onClick={() => setTaskFilter("all")}>Show all tasks</button></p>}
+            {shownTasks.length === 0 && <p className="text-sm text-slate-600">No tasks match this view.</p>}
+            {shownTasks.map((item) => {
               const note = notes[item.id] ?? "";
               const isBusy = busyId === item.id;
               const operatingProcess = item.processCode
@@ -1158,6 +1168,8 @@ export function MyWorkWorkspace({
           </section>
         )}
 
+        <div id="today-awaiting" className="scroll-mt-24" />
+        {awaitingItems.length === 0 && <p className="sr-only">No tasks awaiting review.</p>}
         {awaitingItems.length > 0 && (
           <section className="rounded-[28px] border border-blue-100 bg-blue-50/60 p-5 sm:p-6">
             <h2 className="text-lg font-black text-slate-900">
@@ -1186,6 +1198,7 @@ export function MyWorkWorkspace({
           </section>
         )}
 
+        <div id="today-completed" className="scroll-mt-24">
         {completedItems.length > 0 && (
           <details className="rounded-2xl border border-slate-200 bg-white p-4">
             <summary className="cursor-pointer text-sm font-black text-slate-700">
@@ -1214,6 +1227,7 @@ export function MyWorkWorkspace({
             </div>
           </details>
         )}
+        </div>
       </div>
     </main>
   );
