@@ -7,12 +7,13 @@ import {
 } from "@/lib/khpos/auth";
 import {
   getKhposOpsStructure,
+  renameSchoolRole,
   KhposOpsStructureError,
 } from "@/lib/khpos/ops/structure";
 
 export const runtime = "nodejs";
 
-export async function GET(
+async function handle(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
@@ -35,7 +36,18 @@ export async function GET(
 
   try {
     const user = await verifyKhposAccessToken(accessToken);
-    const structure = await getKhposOpsStructure(id, user.id);
+    let structure;
+    if (request.method === "POST") {
+      const input = await request.json().catch(() => null);
+      if (!input || typeof input.roleId !== "string" || !UUID_RE.test(input.roleId) ||
+          typeof input.title !== "string" || !input.title.trim() || input.title.trim().length > 80 ||
+          typeof input.previous !== "string") {
+        return NextResponse.json({ ok: false, error: "Choose a role and enter a title of up to 80 characters." }, { status: 400 });
+      }
+      structure = await renameSchoolRole(id, user.id, input.roleId, input.title, input.previous);
+    } else {
+      structure = await getKhposOpsStructure(id, user.id);
+    }
 
     return NextResponse.json(
       { ok: true, structure },
@@ -56,3 +68,6 @@ export async function GET(
     );
   }
 }
+
+export const GET = handle;
+export const POST = handle;
