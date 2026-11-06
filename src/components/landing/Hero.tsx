@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Lock, RefreshCw, Smartphone } from "lucide-react";
 import { KhposDistributionButton } from "@/components/pwa/KhposDistributionButton";
@@ -61,11 +62,17 @@ export function Hero() {
               Start Free Assessment
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-            <KhposDistributionButton />
+            <Link href="/khpos" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
+              <Image src="/khpos-icon-192.png" alt="" width={28} height={28} className="rounded-md" />
+              Open KHP-OS
+            </Link>
             <Link href="#how" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
               See how it works
             </Link>
           </div>
+
+          <p className="mt-4 text-sm leading-6 text-slate-600">The School Health Check shows where your school can improve. Approved partner schools use KHP-OS to manage attendance, teaching, exams, and follow-up.</p>
+          <div className="mt-3"><KhposDistributionButton /></div>
 
           <ul
             className="mt-9 flex animate-fade-up flex-wrap gap-x-6 gap-y-2.5"
