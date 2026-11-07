@@ -175,7 +175,7 @@ export function AccountAccess() {
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950">Sign in or create your account</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Use the email your school invited. New schools can create a free account for the School Health Check and request KHP-OS access after their report. School workspaces require partnership approval and an authorised role.
+            Use the email your school invited. New schools can create a free account for the School Health Check and request KHP-OS access after their report. Creating an account does not grant KHP-OS access. School workspaces require partnership approval and an authorised role.
           </p>
 
           <div className="mt-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
