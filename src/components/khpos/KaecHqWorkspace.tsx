@@ -220,12 +220,19 @@ export function KaecHqWorkspace() {
     await load();
   }
   async function signOut() {
-    if (!client) return;
+    if (!client || busy) return;
     setBusy(true);
-    const { error: signOutError } = await client.auth.signOut();
-    setBusy(false);
-    if (signOutError) { setError("Could not sign out. Please retry from Account."); return; }
-    setSnapshot(null); setAccess("signed_out");
+    setError("");
+    try {
+      const response = await fetch("/api/kshc/session", { method: "DELETE" });
+      if (!response.ok) throw new Error("Session could not be cleared.");
+      const { error: signOutError } = await client.auth.signOut();
+      if (signOutError) throw signOutError;
+      window.location.replace("/khpos");
+    } catch {
+      setError("Could not finish signing out. Check your connection and try again.");
+      setBusy(false);
+    }
   }
   function startAction(record: HqRecord, mode: ActionMode) {
     setActionRecord(record); setActionMode(mode);
