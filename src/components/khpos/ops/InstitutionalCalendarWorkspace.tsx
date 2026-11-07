@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { SchoolPlan } from "./SchoolPlan";
 
 import { useEffect, useMemo, useState } from "react";
@@ -12,7 +14,6 @@ import {
   Clock3,
   FileCheck2,
   Flag,
-  Loader2,
   Repeat2,
   School,
   Target,
@@ -97,11 +98,7 @@ export function InstitutionalCalendarWorkspace({
   }, [organisationId, supabase]);
 
   if (!calendar && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!calendar) {

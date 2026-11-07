@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -57,7 +59,7 @@ export function CampusReadinessWorkspace({ organisationId }: { organisationId: s
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><header><h1 className="text-3xl font-bold">Campus Readiness</h1><p className="mt-2 text-slate-600">Record daily checks. A failed check stays visible until a campus leader resolves it and another leader verifies the result. For a new fault after today’s check, <Link href={`/khpos/${organisationId}/issues`} className="underline">raise an issue</Link>.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
-    {!data && !error && <p>Loading campus readiness…</p>}
+    {!data && !error && <LoadingScreen />}
     {data && <><p className="rounded-lg bg-slate-100 p-3 text-sm font-semibold">Operating date: {data.operatingDate} · {exceptions.length} unresolved exception{exceptions.length === 1 ? "" : "s"}</p>
       {data.campuses.map((campus) => <section key={campus.id} className="space-y-4 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">{campus.name}</h2><div className="grid gap-3 md:grid-cols-2">
         {checks.map((item) => {

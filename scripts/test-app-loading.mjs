@@ -22,6 +22,12 @@ assert.match(html, /min-height:100svh/);
 assert.match(html, /position:fixed;inset:0/);
 assert.match(html, /background:#0f172a/);
 assert(!html.includes('<img'), 'The first loading paint must not depend on an image request');
+const sectionHtml = renderToStaticMarkup(React.createElement(screen.LoadingScreen, { inline: true }));
+assert.match(sectionHtml, /data-loading-scope="section"/);
+assert.match(sectionHtml, /position:relative/);
+assert(!sectionHtml.includes('position:fixed'), 'A section refresh must not block the whole workspace');
+assert.match(sectionHtml, /KHP-OS/);
+assert.match(sectionHtml, /role="status"/);
 
 let state = true, effect, nextFrame = 0;
 const frames = new Map();
@@ -50,3 +56,85 @@ assert.equal(manifest.background_color, '#0f172a');
 assert.equal(JSON.parse(fs.readFileSync('android-lite/twa-manifest.production.json')).backgroundColor, manifest.background_color);
 assert.equal(JSON.parse(fs.readFileSync('public/khpos-lite-bootstrap.webmanifest')).background_color, manifest.background_color);
 console.log('Loading passed: inline branded first paint, no image dependency, hydration handoff, frame cleanup and matching app backgrounds.');
+
+// Prevent another page from introducing its own full-size spinner or loading screen.
+const legacy = [];
+function auditLoaders(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { auditLoaders(path); continue; }
+    if (!path.endsWith('.tsx') || path.endsWith('/LoadingScreen.tsx')) continue;
+    const source = ts.createSourceFile(path, fs.readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    function visit(node) {
+      if (ts.isJsxSelfClosingElement(node) && node.tagName.getText(source) === 'Loader2' && /size-(?:[7-9]|\d{2,})\b/.test(node.getText(source))) legacy.push(path);
+      if (ts.isJsxText(node) && /^(Loading|Preparing|Opening|Checking) .+(?:…|\.{3})$/.test(node.text.trim())) legacy.push(path);
+      ts.forEachChild(node, visit);
+    }
+    visit(source);
+  }
+}
+auditLoaders('src');
+assert.deepEqual(legacy, [], 'Page and section loading states must use the shared branded design');
+console.log('App-wide loading audit passed: no separate page spinners or legacy loading screens.');
+
+// Navigation uses the same screen and releases it as soon as its destination commits.
+let destination = '', pathname = '/khpos', query = '';
+const listeners = {};
+class Element { closest() { return this; } }
+class Anchor extends Element {
+  constructor(href) { super(); this.href = href; this.target = ''; }
+  hasAttribute() { return false; }
+}
+const location = { origin: 'https://example.invalid', pathname: '/khpos', search: '' };
+const navigation = load('src/components/navigation/NavigationFeedback.tsx', name => {
+  if (name === 'react/jsx-runtime') return jsx;
+  if (name === './LoadingScreen') return screen;
+  if (name === 'next/navigation') return { usePathname: () => pathname, useSearchParams: () => new URLSearchParams(query) };
+  if (name === 'react') return { useState: () => [destination, value => { destination = value; }], useEffect: fn => fn() };
+  throw new Error(name);
+}, { URL, Element, HTMLAnchorElement: Anchor, setTimeout: () => 1, clearTimeout() {},
+  document: { addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
+  window: { location, addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
+});
+assert.equal(navigation.NavigationFeedback(), null);
+listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq') });
+assert.equal(navigation.NavigationFeedback().type, screen.LoadingScreen);
+pathname = location.pathname = '/khpos/hq';
+assert.equal(navigation.NavigationFeedback(), null);
+listeners.pageshow();
+listeners.click({ button: 0, target: new Anchor('https://outside.invalid/') });
+assert.equal(navigation.NavigationFeedback(), null);
+listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq?view=history') });
+assert.equal(navigation.NavigationFeedback().type, screen.LoadingScreen);
+query = 'view=history';
+assert.equal(navigation.NavigationFeedback(), null);
+console.log('Navigation loading passed: shared design, route/query completion, page restoration and external links.');
+
+// A failed sign-in must show its error instead of leaving a permanent loading cover.
+for (const rejected of [false, true]) {
+  let cursor = 0;
+  const states = [], effects = [];
+  const client = { auth: { exchangeCodeForSession: async () => {
+    if (rejected) throw new Error('Connection failure');
+    return { error: new Error('Invalid response') };
+  } } };
+  const callback = load('src/app/auth/callback/page.tsx', name => {
+    if (name === 'react/jsx-runtime') return jsx;
+    if (name.endsWith('/LoadingScreen')) return screen;
+    if (name === 'next/navigation') return { useRouter: () => ({ replace() { assert.fail('Failed sign-in must not redirect'); } }) };
+    if (name === '@/lib/supabase/client') return { createBrowserSupabaseClient: () => client };
+    if (name === 'react') return { useMemo: fn => fn(), useEffect: fn => effects.push(fn), useState(initial) {
+      const i = cursor++; if (!(i in states)) states[i] = initial;
+      return [states[i], value => { states[i] = value; }];
+    } };
+    throw new Error(name);
+  }, { URLSearchParams, window: { location: { search: '?code=fixture', hash: '' } } });
+  const render = () => { cursor = 0; return callback.default(); };
+  assert.equal(render().type, screen.LoadingScreen);
+  effects[0]();
+  for (let i = 0; i < 8; i++) await Promise.resolve();
+  const errorHtml = renderToStaticMarkup(render());
+  assert.match(errorHtml, /could not complete sign-in/);
+  assert(!errorHtml.includes('aria-busy="true"'));
+}
+console.log('Sign-in loading recovery passed: rejected responses and connection errors release the page loader.');

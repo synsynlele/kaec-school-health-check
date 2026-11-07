@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { SchoolSetupGuide } from "./SchoolSetupGuide";
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -158,16 +160,7 @@ export function ActivationCentre({
   }
 
   if (!activation && !error) {
-    return (
-      <main className="grid min-h-[60vh] place-items-center px-6">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-8 animate-spin text-brand-700" />
-          <p className="mt-3 text-sm font-semibold text-slate-600">
-            Checking the school operating foundation…
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (error || !activation) {

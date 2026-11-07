@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 import Link from "next/link";
 import {TapChoices} from "./TapChoices";
@@ -96,7 +98,7 @@ export function CorporateReportingCentre(){
   if(returnedReport?.quick_answers){setChallenges(returnedReport.quick_answers.help === "Yes" ? returnedReport.challenges : "");setNextActions(returnedReport.quick_answers.followUp === "Yes" ? returnedReport.next_actions : "");}
   setError("");
  }
- if(loading)return <main className="grid min-h-screen place-items-center bg-slate-950 text-white">Loading corporate reporting centre…</main>;
+ if(loading)return <LoadingScreen />;
  if(!desk)return <main className="min-h-screen bg-slate-950 p-8 text-white">
   <h1 className="text-xl font-black">KAEC HQ reports</h1>
   <p className="mt-4 text-sm">{error}</p>

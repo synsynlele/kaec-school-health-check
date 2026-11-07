@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -67,7 +69,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
     <h1 className="text-2xl font-bold">Ideas &amp; Discussions</h1>
     <p>Share ideas and discuss suggestions with your team.</p>
     {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
-    {!board && !error && <p role="status">Loading discussions…</p>}
+    {!board && !error && <LoadingScreen />}
     {board && <>
       <div className="flex gap-2">
         {["Team board", "Private to a leader"].map((label, index) => <button key={label}

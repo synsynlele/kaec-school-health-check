@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -64,7 +66,7 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><header><h1 className="text-3xl font-bold">Assets & Maintenance</h1><p className="mt-2 text-slate-600">Keep an asset register, see service due dates, and verify maintenance evidence. Faults go to the shared <Link href={`/khpos/${organisationId}/issues`} className="underline">Issues queue</Link> for ownership and closure.</p><p className="mt-2 text-sm font-semibold text-rose-800">For a child safety concern, use the protected <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">Safeguarding pathway</Link>. Keep disclosures out of asset notes.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
-    {!data && !error && <p>Loading assets…</p>}
+    {!data && !error && <LoadingScreen />}
     {data && <><div className="flex flex-wrap gap-3 text-sm font-bold"><span className="rounded-lg bg-slate-100 p-3">{data.assets.filter((asset) => asset.status === "active").length} active assets</span><span className={`rounded-lg p-3 ${dueCount ? "bg-amber-50 text-amber-900" : "bg-slate-100"}`}>{dueCount} service due</span><span className={`rounded-lg p-3 ${faultCount ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{faultCount} open faults</span></div>
       {data.campuses.some((campus) => campus.canManage) && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Register an asset</h2><div className="grid gap-3 md:grid-cols-3">
         {select("campus", "Campus", data.campuses.filter((campus) => campus.canManage).map((campus) => ({ value: campus.id, label: campus.name })))}

@@ -158,7 +158,7 @@ export function AccountAccess() {
   }
 
   if (state === "checking") {
-    return <LoadingScreen message="Opening your school account…" />;
+    return <LoadingScreen />;
   }
 
   if (loadFailed) {

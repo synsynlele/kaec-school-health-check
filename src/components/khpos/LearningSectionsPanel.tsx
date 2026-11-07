@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -115,7 +117,7 @@ export function LearningSectionsPanel({
           {notice}
         </p>
       )}
-      {!data && !error && <p className="text-sm">Loading sections…</p>}
+      {!data && !error && <LoadingScreen inline />}
       {editor !== false && data && (
         <SectionEditor
           key={editor?.id || "new"}

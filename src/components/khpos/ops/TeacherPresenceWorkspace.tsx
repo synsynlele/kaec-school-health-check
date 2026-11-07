@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { calendarPauses } from "@/lib/khpos/ops/attendance-guidance";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -7,7 +9,7 @@ import { ActionFeedback } from "./ActionFeedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
-import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, Loader2, School, UsersRound } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, School, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
 import type { KhposHqlsDomain } from "@/lib/khpos/ops/presence";
@@ -300,7 +302,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         <p className="mt-2 text-xs text-slate-300">Recorded using Nigerian local school time (Africa/Lagos). Staff attendance and subject lesson delivery are separate records.</p>
       </div>
       <ActionFeedback busy={Boolean(busy)} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      {!data&&<div className={box}><Loader2 className="mr-2 inline size-5 animate-spin"/> Loading school attendance…</div>}
+      {!data&&!error&&<LoadingScreen />}
       {data&&<>
         {!data.pilotEnabled&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <h2 className="text-xl font-black text-amber-950">School attendance and teaching — ready to activate</h2>
@@ -580,7 +582,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             </div>
             <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search). Each tab has its own search, sorting and pages.</p>
             {historyError&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{historyError}</p>}
-            {historyBusy&&<p role="status" className="mt-2 text-xs font-semibold text-slate-600">Loading attendance history…</p>}
+            {historyBusy&&<LoadingScreen inline message="Opening attendance history…" />}
             <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Attendance record type">
               {([["school","School sign-in records"],["class","Class sign-in records"]] as const).map(([category,label])=>
                 <button key={category} type="button" role="tab" aria-selected={historyCategory===category}

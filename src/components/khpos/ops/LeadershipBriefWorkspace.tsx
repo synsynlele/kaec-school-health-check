@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -10,7 +12,6 @@ import {
   CircleAlert,
   FileText,
   Gauge,
-  Loader2,
   Target,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -72,11 +73,7 @@ export function LeadershipBriefWorkspace({
   }, [organisationId, supabase]);
 
   if (!brief && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!brief) {

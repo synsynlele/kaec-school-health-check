@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -47,7 +49,7 @@ export function StaffJoinWorkspace({ token }: { token: string }) {
   }
   return <main className="grid min-h-screen place-items-center bg-slate-950 p-5 text-white">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><section className="w-full max-w-lg space-y-5 rounded-2xl border border-white/15 bg-white/5 p-7"><p className="text-xs font-bold uppercase tracking-widest text-mint-300">KHP-OS · Staff access</p><h1 className="text-3xl font-bold">Join your school team</h1><p className="text-sm text-slate-300">Sign in with the Google account that matches the email on your appointment. Complete your joining steps, then wait for campus leadership to activate your position.</p>
-    {loading ? <p>Checking sign-in…</p> : email ? <><p className="rounded-lg bg-white/10 p-3 text-sm">Signed in as <strong>{email}</strong></p><button type="button" disabled={busy} onClick={() => void join()} className="rounded-lg bg-mint-300 px-5 py-3 font-bold text-slate-950 disabled:opacity-50">{busy ? "Joining…" : "Join school team"}</button><button type="button" onClick={() => void switchAccount()} className="ml-3 text-sm underline">Use another account</button></> : <button type="button" onClick={() => void signIn()} className="rounded-lg bg-mint-300 px-5 py-3 font-bold text-slate-950">Continue with Google</button>}
+    {loading ? <LoadingScreen /> : email ? <><p className="rounded-lg bg-white/10 p-3 text-sm">Signed in as <strong>{email}</strong></p><button type="button" disabled={busy} onClick={() => void join()} className="rounded-lg bg-mint-300 px-5 py-3 font-bold text-slate-950 disabled:opacity-50">{busy ? "Joining…" : "Join school team"}</button><button type="button" onClick={() => void switchAccount()} className="ml-3 text-sm underline">Use another account</button></> : <button type="button" onClick={() => void signIn()} className="rounded-lg bg-mint-300 px-5 py-3 font-bold text-slate-950">Continue with Google</button>}
     {error && <p role="alert" className="rounded-lg bg-rose-950 p-3 text-sm text-rose-200">{error}</p>}
   </section></main>;
 }

@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [pending, setPending] = useState(!!supabase);
   const [message, setMessage] = useState(
     supabase ? "Completing secure sign-in…" : "Sign-in is not configured.",
   );
@@ -34,6 +35,7 @@ export default function AuthCallbackPage() {
       if (!active) return;
       if (result.error) {
         setMessage("We could not complete sign-in. Please return and try again.");
+        setPending(false);
         return;
       }
 
@@ -70,17 +72,23 @@ export default function AuthCallbackPage() {
 
       router.replace(next);
     };
-    void complete();
+    void complete().catch(() => {
+      if (active) {
+        setMessage("We could not complete sign-in. Please return and try again.");
+        setPending(false);
+      }
+    });
 
     return () => {
       active = false;
     };
   }, [router, supabase]);
 
+  if (pending) return <LoadingScreen />;
+
   return (
     <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
       <div className="text-center">
-        {supabase && <Loader2 className="mx-auto size-9 animate-spin text-mint-400" />}
         <h1 className="mt-5 text-xl font-extrabold">KHP-OS | Schools</h1>
         <p className="mt-2 text-sm text-slate-300">{message}</p>
       </div>

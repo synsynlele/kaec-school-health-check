@@ -1,8 +1,10 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Handshake, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Handshake, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { createBrowserSupabaseClient, createEmailLinkSupabaseClient } from "@/lib/supabase/client";
 
 function GoogleMark() {
@@ -148,12 +150,7 @@ export function ActivationFlow({ assessmentId }: { assessmentId: string }) {
         </div>
 
         {busy ? (
-          <div className="mt-8 flex min-h-48 flex-col items-center justify-center rounded-2xl bg-slate-50 text-center">
-            <Loader2 className="size-8 animate-spin text-brand-700" />
-            <p className="mt-4 text-sm font-bold text-slate-800">
-              {state === "requesting" ? "Submitting the institution for KAEC-NG review…" : "Checking your account…"}
-            </p>
-          </div>
+          <LoadingScreen message={state === "requesting" ? "Submitting your partnership request…" : undefined} />
         ) : (
           <>
             <button type="button" onClick={continueWithGoogle} className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md">

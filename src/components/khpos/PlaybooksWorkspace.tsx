@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -11,7 +13,6 @@ import {
   Circle,
   Clock3,
   FileCheck2,
-  Loader2,
   ShieldAlert,
   Target,
   Workflow,
@@ -81,16 +82,7 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
   }, [organisationId, supabase]);
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading the school's implementation playbooks…
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (error || !workspace) {

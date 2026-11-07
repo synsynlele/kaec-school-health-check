@@ -1,9 +1,10 @@
 "use client";
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,18 +110,7 @@ export function AssessmentFlow({ accountEmail }: { accountEmail: string }) {
 
       <AnimatePresence mode="wait">
         {stage === "checking" && (
-          <motion.div
-            key="checking"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="grid min-h-[50vh] place-items-center"
-          >
-            <div className="flex flex-col items-center gap-3 text-slate-500">
-              <Loader2 className="size-7 animate-spin text-brand-600" />
-              <p className="text-sm font-medium">Preparing your assessment…</p>
-            </div>
-          </motion.div>
+          <LoadingScreen key="checking" />
         )}
 
         {stage === "details" && (

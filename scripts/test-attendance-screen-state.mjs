@@ -42,6 +42,7 @@ vm.runInNewContext(compile("src/components/khpos/ops/TodayAttendanceCard.tsx"),{
  if(name==="@/components/khpos/useAttendanceLocation")return {useAttendanceLocation:()=>({capture:async()=>({status:"captured",latitude:6.55,longitude:3.25,accuracy:5}),dialog:null})};
  if(name==="@/components/khpos/AttendanceLocationEvidence")return {AttendanceLocationEvidence:"div"};
  if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
+ if(name==="@/components/navigation/LoadingScreen")return {LoadingScreen:"div"};
  throw new Error(name);
 }});
 function render(){cursor=0;refCursor=0;latest=exports.TodayAttendanceCard({organisationId:"school"});return latest;}

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -36,7 +38,7 @@ export function SchoolsCampusesWorkspace({ organisationId }: { organisationId?: 
   <div className="flex flex-wrap gap-3 text-sm font-semibold"><Link href={organisationId ? "/account" : "/khpos/admin/partnerships"} className="rounded-xl border p-3">{organisationId ? "School partnerships & school access" : "Independent school partnerships"}</Link>{organisationId && <><Link href={`/khpos/${organisationId}/people`} className="rounded-xl border p-3">Assign campus leaders</Link><Link href={`/khpos/${organisationId}/campus-readiness`} className="rounded-xl border p-3">Daily campus readiness</Link></>}</div>
   <p className="text-sm text-slate-600">New independent schools join through the existing KSHC partnership process. New campuses require a separate readiness review and KAEC approval. Approval alone does not activate a campus.</p>
   {error && <div role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}<button type="button" disabled={busy} className="ml-3 underline" onClick={() => { setError(""); void fetchDirectory().then(setDirectory).catch(cause => setError(cause.message)); }}>Retry</button></div>}
-  {!directory && !error && <p role="status">Loading schools and campuses…</p>}
+  {!directory && !error && <LoadingScreen />}
   {directory && <>
    {directory.switchableSchools.length > 1 && <section><h2 className="text-xl font-bold">Switch school</h2><div className="mt-3 flex flex-wrap gap-2">{directory.switchableSchools.map(s => <Link key={s.id} aria-current={s.id === organisationId ? "page" : undefined} className="rounded-xl border bg-white p-3" href={`/khpos/${s.id}/schools-campuses`}>{s.name}</Link>)}</div></section>}
    <section className="space-y-3"><h2 className="text-xl font-bold">School & campus directory</h2><label className="block">Search schools and campuses<input type="search" className={field} value={directoryQuery} onChange={event => setDirectoryQuery(event.target.value)} /></label>{directory.schools.filter(s => `${s.name} ${directory.campuses.filter(c => c.organisationId === s.id).map(c => c.name).join(" ")}`.toLowerCase().includes(directoryQuery.trim().toLowerCase())).map(s => <article key={s.id} className="rounded-2xl border bg-white p-4"><h3 className="font-bold">{s.name} <span className="text-sm font-normal">· {s.status}</span></h3><ul className="mt-3 space-y-2">{directory.campuses.filter(c => c.organisationId === s.id).map(c => <li key={c.id}>{c.name} · {c.status}</li>)}</ul></article>)}</section>

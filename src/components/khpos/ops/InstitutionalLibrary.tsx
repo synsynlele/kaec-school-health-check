@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -299,16 +301,7 @@ export function InstitutionalLibrary({
   }
 
   if (!library && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">
-            Loading the School library…
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (error && !library) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -367,11 +369,7 @@ export function StaffTransitionWorkspace({
   }
 
   if (!workspace && !error) {
-    return (
-      <div className="grid min-h-[50vh] place-items-center">
-        <Loader2 className="size-7 animate-spin text-brand-600" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const self = workspace?.staff.find((staff) => staff.isSelf) ?? null;

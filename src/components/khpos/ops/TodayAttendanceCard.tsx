@@ -1,10 +1,12 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock3, School, BookOpenCheck, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock3, School, BookOpenCheck } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import { attendanceSteps, type AttendanceStep } from "@/lib/khpos/ops/attendance-guidance";
@@ -226,9 +228,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
           Open full attendance page
         </Link>
       </div>
-      {loading && <p role="status" className="mt-5 flex items-center gap-2 text-sm text-slate-600">
-        <Loader2 className="size-4 animate-spin" /> Checking your attendance…
-      </p>}
+      {loading && <LoadingScreen inline />}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       {presence && !presence.pilotEnabled && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
         <strong>Attendance is not yet switched on for your school.</strong>{" "}

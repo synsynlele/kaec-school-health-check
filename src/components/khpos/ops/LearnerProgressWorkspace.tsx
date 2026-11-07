@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { CatalogClassPicker, useClassSubjectCatalog } from "./ClassSubjectCatalog";
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -239,16 +241,7 @@ export function LearnerProgressWorkspace({
   }
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-50">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-8 animate-spin text-brand-600" />
-          <p className="mt-3 text-sm font-semibold text-slate-500">
-            Loading Learner Progress…
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!workspace) {
