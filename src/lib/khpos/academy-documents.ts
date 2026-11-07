@@ -21,7 +21,8 @@ export async function createAcademyPdf(course:AcademyCourse):Promise<Uint8Array>
   const addText=(page:ReturnType<typeof doc.addPage>,text:string,x:number,y:number,size:number,strong=false,color=COLOR)=>{
     page.drawText(safe(text),{x,y,size,font:strong?bold:font,color,maxWidth:510});
   };
-  let page=doc.addPage([595,842]);
+  const addPage=()=>{const sheet=doc.addPage();sheet.setSize(595,842);return sheet;};
+  let page=addPage();
   page.drawRectangle({x:0,y:786,width:595,height:56,color:GREEN});
   addText(page,"KHP-OS  /  TRAINING ACADEMY",42,810,15,true,rgb(1,1,1));
   addText(page,course.title,42,725,22,true);
@@ -32,11 +33,11 @@ export async function createAcademyPdf(course:AcademyCourse):Promise<Uint8Array>
   addText(page,"Course contents",42,552,17,true);
   let y=518;for(let i=0;i<course.lessons.length;i++){
     for(const row of lineWrap((i+1)+". "+course.lessons[i].title,78)){addText(page,row,50,y,11);y-=18;}
-    if(y<70){page=doc.addPage([595,842]);y=770;}
+    if(y<70){page=addPage();y=770;}
   }
   for(let i=0;i<course.lessons.length;i++){
     const lesson:AcademyLesson=course.lessons[i];
-    page=doc.addPage([595,842]);
+    page=addPage();
     page.drawRectangle({x:0,y:790,width:595,height:52,color:GREEN});
     addText(page,"KHP-OS  /  "+course.title,42,810,13,true,rgb(1,1,1));
     let cy=751;
