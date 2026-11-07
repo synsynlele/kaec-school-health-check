@@ -42,7 +42,7 @@ const require=createRequire(import.meta.url);
 function compile(modulePath, resolve){
   const exports={};
   const js=ts.transpileModule(src(modulePath),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  vm.runInNewContext(js,{exports,require:resolve,Buffer,Uint8Array,ArrayBuffer},{filename:modulePath});
+  vm.runInNewContext(js,{exports,require:resolve,Buffer,Uint8Array,ArrayBuffer,Array},{filename:modulePath});
   return exports;
 }
 const curriculum=compile("src/lib/khpos/academy-data.ts",require);
