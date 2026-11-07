@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -307,11 +309,7 @@ export function LeadershipFinancialWorkspace({
   }
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
-        <Loader2 className="size-8 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!workspace) {

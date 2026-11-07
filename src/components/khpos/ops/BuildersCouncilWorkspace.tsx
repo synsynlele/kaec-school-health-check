@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -57,7 +59,7 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <div><h1 className="text-3xl font-bold">Builders Council</h1><p className="mt-2 text-slate-600">Student representation, service and accountable leadership. Student voice is recorded with evidence; this is not an online ballot.</p></div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
-    {!data && !error && <p>Loading council…</p>}
+    {!data && !error && <LoadingScreen />}
     {data && !data.canManage && <p>You can view council decisions. Authorised school or section leaders manage council records.</p>}
     {data?.canManage && <section className="grid gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-3"><h2 className="md:col-span-3 text-xl font-bold">Start a session</h2>{select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}{input("session", "Session", "2026/2027")}{button("Create council cycle", () => void act("create_cycle", { campusId: fields.campus, sessionLabel: fields.session }), !fields.campus || !fields.session)}</section>}
     {data?.cycles.map((cycle) => <section key={cycle.id} className="space-y-4 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">{cycle.sessionLabel} · {data.campuses.find((c) => c.id === cycle.campusId)?.name || "Campus"}</h2>

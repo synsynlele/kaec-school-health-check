@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
@@ -12,7 +14,6 @@ import {
   CircleAlert,
   Gauge,
   KeyRound,
-  Loader2,
   LockKeyhole,
   LogOut,
   RefreshCw,
@@ -251,11 +252,7 @@ export function AdminConsoleWorkspace() {
   }
 
   if (state === "checking") {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (state === "signed_out") {

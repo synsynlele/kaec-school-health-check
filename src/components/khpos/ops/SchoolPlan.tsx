@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -231,7 +233,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           if (event.target.value) { setPlan(null); setEditing(null); setLimit(pageSize); setFrom(event.target.value); }
         }} />
       </label>
-      {!plan && !error && <p role="status">Loading school plan…</p>}
+      {!plan && !error && <LoadingScreen inline={todayOnly} />}
       {!plan && error && <button type="button" className={button} onClick={() => { setError(""); setRetry(value => value + 1); }}>Retry loading planner</button>}
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}

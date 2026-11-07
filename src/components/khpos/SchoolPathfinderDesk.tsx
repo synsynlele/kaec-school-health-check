@@ -1,12 +1,14 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import Link from "next/link";
 import { useCallback,useEffect,useMemo,useState } from "react";
 import {
   ArrowLeft,BookOpen,CalendarCheck2,CheckCircle2,ClipboardList,MapPinned,
-  ShieldCheck,Loader2,Plus,RefreshCw,Search,Users,Video,
+  ShieldCheck,Plus,RefreshCw,Search,Users,Video,
 } from "lucide-react";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
 import {PathfinderSchedulePanel} from "@/components/khpos/PathfinderSchedulePanel";
@@ -136,7 +138,7 @@ export function SchoolPathfinderDesk() {
       kind==="followup"?"Follow-up added to the school history.":kind==="progress"?"School progress updated.":"Independent verification decision recorded.");
     if(done)setCurrentAction(null);
   }
-  if(loading)return <div className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-8 animate-spin" aria-label="Loading school desk"/></div>;
+  if(loading)return <LoadingScreen />;
   if(!desk)return <main className="grid min-h-screen place-items-center bg-slate-950 p-6 text-white">
     <div className="max-w-lg rounded-2xl border border-white/20 p-7">
       <h1 className="text-2xl font-black">School Pathfinders</h1>

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -89,7 +91,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
     <header><h1 className="text-3xl font-bold">Parent Partnership</h1><p className="mt-2 text-slate-600">Receive concerns, assign a campus owner, record what parents actually received, and verify resolution.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, use the <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">protected safeguarding pathway</Link> immediately. Keep disclosure details out of this workspace.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
-    {!data && !error && <p>Loading parent cases…</p>}
+    {!data && !error && <LoadingScreen />}
     {data && <><div className="flex flex-wrap gap-3 text-sm font-semibold"><span className="rounded-lg bg-slate-100 px-3 py-2">{openCount} open</span><span className={`rounded-lg px-3 py-2 ${overdueCount ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{overdueCount} overdue</span></div>
       <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Record a parent concern</h2><p className="text-sm text-slate-600">Use an existing school reference for the parent. Do not enter phone numbers or private safeguarding details.</p><div className="grid gap-3 md:grid-cols-3">
         {select("campus", "Campus", data.campuses.map((campus) => ({ value: campus.id, title: campus.name })))}

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -15,7 +17,6 @@ import {
   CircleAlert,
   ClipboardCheck,
   FileCheck2,
-  Loader2,
   ShieldCheck,
   UsersRound,
   Workflow,
@@ -186,11 +187,7 @@ export function MyOnboardingWorkspace({
   }
 
   if (!data && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!data) {

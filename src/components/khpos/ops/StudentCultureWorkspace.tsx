@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import Link from "next/link";
@@ -62,7 +64,7 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
   return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><div><h1 className="text-3xl font-bold">Student Culture</h1><p className="mt-2 text-slate-600">Record ordinary concerns, student voice and recognition. Assign a response and verify its outcome.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, protect them and report it in Safeguarding immediately. Do not enter confidential disclosure details here.</p></div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
-    {!data && !error && <p>Loading cases…</p>}
+    {!data && !error && <LoadingScreen />}
     {data && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Report or recognise</h2><div className="grid gap-3 md:grid-cols-3">
       {select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}
       {select("category", "Category", categories.map(([value, label]) => ({ value, label })))}

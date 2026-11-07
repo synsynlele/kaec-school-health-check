@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -7,7 +9,6 @@ import {
   BarChart3,
   Building2,
   Gauge,
-  Loader2,
   LockKeyhole,
   Minus,
   MoveDownRight,
@@ -186,11 +187,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
   }, [organisationId, supabase]);
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!workspace) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { LoadingScreen } from "./LoadingScreen";
 
 export function NavigationFeedback() {
   const pathname = usePathname();
@@ -36,7 +37,5 @@ export function NavigationFeedback() {
   }, []);
   // Derive visibility from the completed route so there is no blank frame
   // while an effect waits to clear the pending state.
-  return destination && destination !== current ? <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 top-0 z-[200] border-b border-brand-200 bg-brand-50 px-4 py-3 text-center text-sm font-bold text-brand-900 shadow-soft">
-    <span aria-hidden="true" className="mr-2 inline-block size-4 animate-spin rounded-full border-2 border-brand-700 border-r-transparent align-middle" />Opening page…
-  </div> : null;
+  return destination && destination !== current ? <LoadingScreen /> : null;
 }

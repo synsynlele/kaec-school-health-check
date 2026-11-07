@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { CatalogClassPicker, ClassSubjectSetup, useClassSubjectCatalog } from "./ClassSubjectCatalog";
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -344,11 +346,7 @@ export function AcademicDeliveryWorkspace({
   }
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-50">
-        <Loader2 className="size-8 animate-spin text-brand-700" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!workspace) {

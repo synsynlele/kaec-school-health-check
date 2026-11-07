@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -244,7 +246,7 @@ export function ReportsWorkspace({
             Reports could not load. Open Reports to retry.
           </p>
         ) : !summary ? (
-          <p className="text-sm">Loading reporting actions…</p>
+          <LoadingScreen inline />
         ) : (
           <p className="text-sm text-slate-700">
             {summary.open} to complete · {summary.overdue} overdue ·{" "}
@@ -463,16 +465,12 @@ export function ReportsWorkspace({
                   onAction={act}
                 />
               ) : (
-                <p className="text-sm">
-                  {detail
-                    ? "This report is unavailable to your current role or school. Refresh the list or contact your school administrator."
-                    : "Loading report…"}
-                </p>
+                detail ? <p className="text-sm">This report is unavailable to your current role or school. Refresh the list or contact your school administrator.</p> : <LoadingScreen inline />
               )}
             </section>
           )}
           {!data ? (
-            <p>Loading reports…</p>
+            !error && <LoadingScreen />
           ) : data.items.length === 0 ? (
             <div className="rounded-2xl border border-dashed p-6 text-sm text-slate-600">
               No reports match this view. A school leader can configure

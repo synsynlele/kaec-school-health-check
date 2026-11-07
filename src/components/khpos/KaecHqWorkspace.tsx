@@ -1,12 +1,14 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BookOpen, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleAlert,
-  ClipboardCheck, FolderKanban, Landmark, LayoutDashboard, Loader2, LockKeyhole,
+  ClipboardCheck, FolderKanban, Landmark, LayoutDashboard, LockKeyhole,
   Plus, RefreshCw, ShieldCheck, Users, Wallet, LogOut, type LucideIcon,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -286,7 +288,7 @@ export function KaecHqWorkspace() {
       (person.role === "system_steward" && record.module !== "finance") ||
       (person.role === "finance_steward" && record.module === "finance")));
 
-  if (access === "loading") return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-emerald-300" aria-label="Loading KAEC HQ" /></main>;
+  if (access === "loading") return <LoadingScreen />;
   if (access === "signed_out") return <main className="grid min-h-screen place-items-center bg-slate-950 px-5 text-white">
     <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
       <LockKeyhole className="mx-auto size-10 text-emerald-300"/><h1 className="mt-4 text-3xl font-black">KAEC HQ sign-in</h1>

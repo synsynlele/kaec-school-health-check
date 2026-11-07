@@ -1,4 +1,6 @@
 "use client";
+
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -94,7 +96,7 @@ export function MeetingCallPanel({ meeting, organisationId, onJoined }: { meetin
    <div className={expanded ? "flex shrink-0 justify-end bg-slate-950 px-2 pt-[env(safe-area-inset-top)]" : "flex justify-end"}>
     <button type="button" aria-pressed={expanded} aria-label={expanded ? "Exit full screen" : "Full screen"} title={expanded ? "Exit full screen" : "Full screen"} onClick={() => void toggleFullScreen()} className={expanded ? "grid size-8 place-items-center rounded text-lg leading-none text-white hover:bg-white/15" : "rounded-lg border bg-white px-3 py-2 text-sm text-slate-900"}>{expanded ? <span aria-hidden="true">×</span> : "Full screen"}</button>
    </div>
-   {!ready && <p role="status">Loading the call…</p>}
+   {!ready && <LoadingScreen inline message="Opening the call…" />}
    <div ref={container} className={expanded ? "min-h-0 flex-1 w-full overflow-hidden bg-slate-950 pb-[env(safe-area-inset-bottom)]" : "h-[70dvh] min-h-[400px] w-full overflow-hidden rounded-xl bg-slate-950"} />
   </> : <button type="button" disabled={busy} onClick={() => void join()} className="rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Preparing call…" : "Join call"}</button>}
  </section>;

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,7 +16,6 @@ import {
   FileCheck2,
   Gauge,
   Layers3,
-  Loader2,
   Milestone,
   ShieldCheck,
   Target,
@@ -97,16 +98,7 @@ export function ImplementationWorkspace({
   }, [organisationId, supabase]);
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-9 animate-spin text-mint-300" />
-          <p className="mt-4 text-sm font-semibold text-slate-300">
-            Building the institution-specific execution view…
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (error || !workspace) {

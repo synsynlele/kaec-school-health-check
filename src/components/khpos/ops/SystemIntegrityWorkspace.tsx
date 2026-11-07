@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { plainLabel } from "@/lib/khpos/plain-language";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +11,6 @@ import {
   ArrowRight,
   CheckCircle2,
   CircleAlert,
-  Loader2,
   ShieldCheck,
   Wrench,
 } from "lucide-react";
@@ -77,11 +78,7 @@ export function SystemIntegrityWorkspace({
   }, [organisationId, supabase]);
 
   if (!snapshot && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-9 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!snapshot) {

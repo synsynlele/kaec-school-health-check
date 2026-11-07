@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -211,7 +213,7 @@ export function ExecutionControlWorkspace({ organisationId }: { organisationId: 
     }
   }
 
-  if (!snapshot && !error) return <main className="grid min-h-screen place-items-center bg-slate-950"><Loader2 className="size-9 animate-spin text-mint-300" /></main>;
+  if (!snapshot && !error) return <LoadingScreen />;
   if (!snapshot) return <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white"><div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center"><CircleAlert className="mx-auto size-9 text-amber-300" /><h1 className="mt-4 text-2xl font-black">Task setup is unavailable</h1><p className="mt-3 text-sm text-slate-300">{error}</p></div></main>;
 
   const visible = showAll ? snapshot.items : snapshot.items.filter((item) => item.status !== "configured");

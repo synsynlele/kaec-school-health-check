@@ -16,6 +16,7 @@ vm.runInNewContext(compiled+"\nexports.TypeEditor=TypeEditor;",{exports,Date,For
  if(name==="@/lib/supabase/client")return {};
  if(name==="@/lib/khpos/ops/action-events")return {};
  if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
+ if(name==="@/components/navigation/LoadingScreen")return {LoadingScreen:"div"};
  throw new Error(name);
 }});
 const type={id:"type",version:3,title:"Class teacher report",fields:[{key:"summary",label:"Summary",type:"textarea",required:true}],cadence:"daily",owner_role_id:"teacher-role",reviewer_role_id:"reviewer-role",audience_mode:"selected",audience_assignment_ids:[],campus_id:"campus",unit_id:null,start_date:"2026-10-19",interval_days:14,due_days:1,due_time:"17:00",status:"paused"};

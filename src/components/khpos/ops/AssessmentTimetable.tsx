@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -140,7 +142,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </form>
     </details>}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-    {!entries && !error && <p role="status">Loading timetable…</p>}
+    {!entries && !error && <LoadingScreen inline />}
     {entries?.length === 0 && <p>No tests or exams scheduled for this week.</p>}
     {visibleEntries?.map(item => {
       const canStart = now >= Date.parse(item.starts_at) - 1800000 && now <= Date.parse(item.ends_at) + 1800000;

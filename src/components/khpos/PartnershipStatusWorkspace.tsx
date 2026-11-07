@@ -1,8 +1,10 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, CircleAlert, Clock3, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, Clock3, ShieldCheck } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposPartnerSnapshot } from "@/lib/khpos/partnership";
 
@@ -67,7 +69,7 @@ export function PartnershipStatusWorkspace({ organisationId }: { organisationId:
   }, [organisationId, supabase]);
 
   if (state === "loading") {
-    return <main className="grid min-h-screen place-items-center bg-slate-950 text-white"><Loader2 className="size-9 animate-spin text-mint-300" /></main>;
+    return <LoadingScreen />;
   }
 
   if (state === "signed_out") {

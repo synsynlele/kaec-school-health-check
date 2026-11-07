@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
+
 import { ActionFeedback } from "./ActionFeedback";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -14,7 +16,6 @@ import {
   FileText,
   FlaskConical,
   Lightbulb,
-  Loader2,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -276,11 +277,7 @@ export function PotentialDevelopmentWorkspace({
     ) ?? null;
 
   if (!workspace && !error) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <Loader2 className="size-8 animate-spin text-mint-300" />
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!workspace) {
