@@ -35,3 +35,31 @@ assert.match(out,/createAcademyPdf/);
 assert.match(out,/createAcademyPptx/);
 assert(!api.includes("NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"),"Never expose service privileges");
 console.log("KHP-OS Training Academy static access, routing and generation checks passed.");
+
+import vm from "node:vm";
+import { createRequire } from "node:module";
+const require=createRequire(import.meta.url);
+function compile(modulePath, resolve){
+  const exports={};
+  const js=ts.transpileModule(src(modulePath),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  vm.runInNewContext(js,{exports,require:resolve,Buffer,Uint8Array,ArrayBuffer},{filename:modulePath});
+  return exports;
+}
+const curriculum=compile("src/lib/khpos/academy-data.ts",require);
+const documentModule=compile("src/lib/khpos/academy-documents.ts",(id)=>require(id));
+assert.equal(curriculum.ACADEMY_COURSES.length,3);
+assert.deepEqual(curriculum.academyForRole(["TEACHER"],false).map(c=>c.id),["staff"]);
+assert.deepEqual(curriculum.academyForRole(["TEACHER","SECTIONAL_PROMOTER"],false).map(c=>c.id),["staff","leadership"]);
+assert.deepEqual(curriculum.academyForRole([],true).map(c=>c.id),["staff","leadership","hq"]);
+for (const course of curriculum.ACADEMY_COURSES){
+ const pptx=Buffer.from(documentModule.createAcademyPptx(course));
+ assert.equal(pptx.readUInt32LE(0),0x04034b50,"PPTX must have ZIP local header");
+ assert.equal(pptx.readUInt32LE(pptx.length-22),0x06054b50,"PPTX must have ZIP end record");
+ assert(pptx.includes("ppt/slideMasters/slideMaster1.xml"),"PPTX has an explicit slide master");
+ assert(pptx.includes("ppt/slides/slide1.xml"),"PPTX contains slides");
+ const pdf=await documentModule.createAcademyPdf(course);
+ const {PDFDocument}=require("pdf-lib");
+ const parsed=await PDFDocument.load(pdf);
+ assert(parsed.getPageCount()>=course.lessons.length+1,"PDF must cover all lessons");
+}
+console.log("KHP-OS Training Academy role matrix, PDF generation and PowerPoint ZIP checks passed.");
