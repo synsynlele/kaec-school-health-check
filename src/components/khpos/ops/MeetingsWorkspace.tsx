@@ -7,6 +7,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { MeetingInvitees } from "./MeetingInvitees";
 import { MeetingCallPanel } from "./MeetingCallPanel";
 import { meetingEnd } from "@/lib/khpos/ops/call-plan";
+import { isCurrentMeeting } from "@/lib/khpos/ops/meeting-lifecycle";
 import type { MeetingWorkspace } from "@/lib/khpos/ops/meetings";
 
 const field = "w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900";
@@ -25,8 +26,12 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
 
  const [invitees,setInvitees]=useState<string[]>([]); const [message,setMessage]=useState("");
  const [decision,setDecision]=useState(""); const [action,setAction]=useState(""); const [owner,setOwner]=useState(""); const [due,setDue]=useState("");
+ const [now,setNow] = useState(Date.now);
+ const requestVersion = useRef(0);
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return ()=>clearInterval(timer);},[]);
  const pendingRef = useRef(false); const mounted = useRef(true);
  const request = useCallback(async (input?:Record<string,unknown>, roomId=selectedRef.current) => {
+  const version=++requestVersion.current;
   const session = await supabase?.auth.getSession(); const token=session?.data.session?.access_token;
   if (!token) throw new Error("Sign in to view your private meetings.");
   const response = await fetch(`/api/khpos/ops/meetings/${organisationId}${!input&&roomId?`?meeting=${roomId}`:""}`, {
@@ -34,7 +39,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    ...(input?{body:JSON.stringify(input)}:{}),cache:"no-store"
   });
   const result = await response.json(); if (!response.ok) throw new Error(result.error || "Could not load meetings.");
-  if (mounted.current && roomId===selectedRef.current) setData(previous=>({...result.workspace,people:result.workspace.people.length?result.workspace.people:previous?.people??[]}));
+  if (mounted.current && version===requestVersion.current && roomId===selectedRef.current) setData(previous=>({...result.workspace,people:result.workspace.people.length?result.workspace.people:previous?.people??[]}));
   return result.workspace as MeetingWorkspace;
  },[organisationId,supabase]);
  useEffect(()=>{
@@ -78,6 +83,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   finally{pendingRef.current=false;setBusy(false);}
  }
  const visibleError=error||readError;
+ const listedMeetings=(data?.meetings??[]).filter(m=>history?!isCurrentMeeting(m,now):isCurrentMeeting(m,now)).filter(m=>m.title.toLowerCase().includes(search.toLowerCase()));
  const room=data?.room; const host=!!room&&room.meeting.created_by===data?.userId&&data.canCreate;
  const writable=!!room&&!["closed","cancelled"].includes(room.meeting.status);
  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
@@ -97,8 +103,10 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <MeetingInvitees people={data?.people??[]} userId={data?.userId??""} hq={hq} selected={invitees} onChange={setInvitees} disabled={busy} />
    <button disabled={busy||!invitees.length} className={button}>Save meeting</button>
   </form>}
+  <p className="text-sm text-slate-600">Meetings move to History when their scheduled time ends, or when the host closes or cancels them.</p>
   <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="space-y-3"><div className="flex gap-2"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
-   {data?.meetings.filter(m=>history?["closed","cancelled"].includes(m.status):!["closed","cancelled"].includes(m.status)).filter(m=>m.title.toLowerCase().includes(search.toLowerCase())).map(m=><button key={m.id} onClick={()=>{if(!busy){setData(d=>d?{...d,room:null}:d);setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{m.status}</span></button>)}
+   {data&&!listedMeetings.length&&<p role="status" className="rounded-xl border bg-white p-4 text-sm text-slate-600">{search?"No meetings match your search.":history?"No past meetings yet.":"No upcoming or active meetings."}</p>}
+   {listedMeetings.map(m=><button key={m.id} onClick={()=>{if(!busy){setData(d=>d?{...d,room:null}:d);selectedRef.current=m.id;setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{isCurrentMeeting(m,now)||["closed","cancelled"].includes(m.status)?m.status:"Time ended"}</span></button>)}
    {data&&!data.meetings.length&&<p className="rounded-xl bg-slate-100 p-4">No meetings yet. Your invitations will appear here.</p>}
   </aside>
   {room?<section className="space-y-5 rounded-2xl border bg-white p-5">
