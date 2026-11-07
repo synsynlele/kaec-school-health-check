@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Building2, CheckCircle2, Loader2, LogOut, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import {
@@ -39,6 +40,7 @@ export function AccountAccess() {
   const [sharedReports, setSharedReports] = useState<Array<{ id: string; schoolName: string; completedAt: string | null }>>([]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState(supabase ? "" : "Account sign-in is not configured.");
 
@@ -81,6 +83,11 @@ export function AccountAccess() {
         return;
       }
       setState("ready");
+    }).catch(() => {
+      if (!active) return;
+      setLoadFailed(true);
+      setError("Your account could not load. Check your connection and try again.");
+      setState("ready");
     });
     return () => {
       active = false;
@@ -88,14 +95,20 @@ export function AccountAccess() {
   }, [supabase]);
 
   async function continueWithGoogle() {
-    if (!supabase) return;
+    if (!supabase || busy) return;
+    setBusy(true);
     setError("");
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/account${window.location.search}`)}`;
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (authError) setError("Google sign-in could not start. Please try again.");
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/account${window.location.search}`)}`;
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (authError) throw authError;
+    } catch {
+      setError("Google sign-in could not start. Please try again.");
+      setBusy(false);
+    }
   }
 
   async function continueWithEmail(event: React.FormEvent<HTMLFormElement>) {
@@ -122,27 +135,47 @@ export function AccountAccess() {
   }
 
   async function signOut() {
-    if (!supabase) return;
-    await fetch("/api/kshc/session", { method: "DELETE" });
-    await supabase.auth.signOut();
-    window.location.reload();
+    if (!supabase || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/kshc/session", { method: "DELETE" });
+      if (!response.ok) throw new Error("Please try signing out again.");
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      window.location.replace("/khpos");
+    } catch {
+      setError("Could not finish signing out. Check your connection and try again.");
+      setBusy(false);
+    }
   }
 
   if (state === "checking") {
     return <main className="grid min-h-screen place-items-center bg-slate-50"><Loader2 className="size-8 animate-spin text-brand-700" /></main>;
   }
 
+  if (loadFailed) {
+    return <main className="grid min-h-screen place-items-center bg-slate-50 p-5">
+      <section className="max-w-md space-y-4 rounded-2xl border bg-white p-6">
+        <h1 className="text-xl font-bold">Could not open your account</h1>
+        <p role="alert" className="text-sm text-slate-600">{error}</p>
+        <button type="button" className="min-h-11 rounded-xl bg-brand-700 px-4 text-sm font-bold text-white" onClick={() => window.location.reload()}>Try again</button>
+        <Link href="/khpos" className="ml-4 text-sm font-bold text-brand-700 underline">Main entrance</Link>
+      </section>
+    </main>;
+  }
+
   if (state === "signed_out") {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-14 sm:px-6">
         <div className="mx-auto max-w-xl rounded-[32px] border border-slate-200 bg-white p-7 shadow-lift sm:p-10">
-          <Link href="/" className="text-sm font-bold text-brand-700">← Back to KSHC</Link>
+          <Link href="/khpos" className="text-sm font-bold text-brand-700">← Back to KHP-OS entrance</Link>
           <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-brand-800">
-            <ShieldCheck className="size-4" /> Free KSHC account
+            <Image src="/khpos-icon-192.png" alt="" width={24} height={24} className="rounded-md" /> KHP-OS · School account
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950">Sign in or create your account</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Your account lets you securely return to KAEC-NG services. Creating an account does <strong>not</strong> grant KHP-OS access; KHP-OS is reserved for approved partner institutions.
+            Use the email your school invited. New schools can create a free account for the School Health Check and request KHP-OS access after their report. School workspaces require partnership approval and an authorised role.
           </p>
 
           <div className="mt-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
@@ -153,7 +186,7 @@ export function AccountAccess() {
             ))}
           </div>
 
-          <button type="button" onClick={continueWithGoogle} className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 px-5 py-3.5 text-sm font-extrabold text-slate-900 transition hover:bg-slate-50">
+          <button type="button" disabled={busy} onClick={continueWithGoogle} className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 px-5 py-3.5 text-sm font-extrabold text-slate-900 transition hover:bg-slate-50">
             <GoogleMark /> Continue with Google <ArrowRight className="size-4" />
           </button>
           <p className="mt-2 text-center text-xs text-slate-400">First-time Google users automatically receive a free KSHC account.</p>
@@ -166,11 +199,11 @@ export function AccountAccess() {
             </div>
           ) : (
             <form onSubmit={continueWithEmail} className="space-y-3">
-              <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@school.com" className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+              <label className="block text-sm font-bold text-slate-700">School email<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@school.com" className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" /></label>
               <button disabled={busy} className="w-full rounded-xl bg-slate-950 px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60">{busy ? "Sending…" : mode === "signin" ? "Email me a sign-in link" : "Create account with email"}</button>
             </form>
           )}
-          {error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         </div>
       </main>
     );
@@ -181,7 +214,7 @@ export function AccountAccess() {
       <div className="mx-auto max-w-4xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div><p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">KAEC-NG secure account</p><h1 className="mt-2 text-3xl font-black text-slate-950">Welcome back</h1><p className="mt-1 text-sm text-slate-500">{accountEmail}</p></div>
-          <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"><LogOut className="size-4" /> Sign out</button>
+          <button disabled={busy} onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"><LogOut className="size-4" /> Sign out</button>
         </div>
 
         {partnerships.some(item=>item.partnerStatus === "active") && <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5"><h2 className="text-xl font-bold text-slate-950">Continue your work</h2><div className="mt-3 grid gap-3">{partnerships.filter(item=>item.partnerStatus === "active").map(item=><div key={item.organisationId} className="rounded-xl bg-white p-4"><p className="font-bold text-slate-950">{item.name}</p><div className="mt-3 flex flex-wrap gap-3"><Link className="rounded-xl bg-blue-700 px-4 py-3 font-bold text-white" href={`/khpos/${item.organisationId}/work`}>Open Today</Link><Link className="rounded-xl border px-4 py-3 text-blue-800" href={`/khpos/${item.organisationId}/onboarding`}>Get started / finish setup</Link></div></div>)}</div></section>}
