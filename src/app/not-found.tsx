@@ -19,15 +19,14 @@ export default function NotFound() {
           <Compass className="size-7 text-white" />
         </span>
         <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-slate-900">
-          This page took an unexpected school trip
+          This page could not be found
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-500">
-          The link may be old, mistyped, or the page may have moved. The Health Check — the thing most
-          people come for — is right where it should be.
+          The link may be out of date. Open the KHP-OS entrance to sign in, or return to the product homepage.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/assessment" className={cn(buttonVariants({ size: "lg" }))}>
-            <ArrowLeft className="size-4" /> Start Free Assessment
+          <Link href="/khpos" className={cn(buttonVariants({ size: "lg" }))}>
+            <ArrowLeft className="size-4" /> Open KHP-OS
           </Link>
           <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
             <Home className="size-4" /> Back home
