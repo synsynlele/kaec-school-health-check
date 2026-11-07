@@ -1,7 +1,7 @@
 /** Inline essentials paint before the stylesheet and client bundles arrive. */
 export function LoadingScreen({ message = "Opening your workspace…" }: { message?: string }) {
   return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100svh", display: "grid", placeItems: "center", background: "#0f172a", color: "#fff", padding: "2rem", boxSizing: "border-box", fontFamily: "system-ui, sans-serif", textAlign: "center" }}>
+    <div role="status" aria-live="polite" aria-busy="true" style={{ position: "fixed", inset: 0, zIndex: 9998, minHeight: "100svh", display: "grid", placeItems: "center", background: "#0f172a", color: "#fff", padding: "2rem", boxSizing: "border-box", fontFamily: "system-ui, sans-serif", textAlign: "center" }}>
       <div>
         <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: 18, background: "#0f4fd8", color: "#fff", fontSize: 32, fontWeight: 900 }}>K</span>
         <p style={{ margin: "1rem 0 .5rem", fontSize: 22, fontWeight: 800 }}>KHP-OS</p>
