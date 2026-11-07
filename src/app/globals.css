@@ -196,3 +196,10 @@ body {
     transform: none;
   }
 }
+
+/* Render school content immediately during route changes; reserve animation for controls. */
+.khpos-school-shell :is(.animate-fade-in, .animate-fade-up) {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
