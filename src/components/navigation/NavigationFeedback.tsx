@@ -24,12 +24,12 @@ export function NavigationFeedback() {
       }
     };
     const clear = () => { clearTimeout(timer); setDestination(""); };
-    document.addEventListener("click", start);
+    document.addEventListener("click", start, true);
     window.addEventListener("pageshow", clear);
     window.addEventListener("popstate", clear);
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("click", start);
+      document.removeEventListener("click", start, true);
       window.removeEventListener("pageshow", clear);
       window.removeEventListener("popstate", clear);
     };
