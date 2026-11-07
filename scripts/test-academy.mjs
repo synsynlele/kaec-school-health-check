@@ -16,7 +16,7 @@ assert.match(data,/id:"staff"/);
 assert.match(data,/id:"leadership"/);
 assert.match(data,/id:"hq"/);
 assert.match(data,/if\(corporate\)/);
-assert.match(data,/c\.id==="leadership"&&leadership/);
+assert.match(data,/course\.id==="leadership"&&leadership/);
 assert.match(api,/verifyKhposAccessToken\(token\)/);
 assert.match(api,/getKhposOpsLibrary\(organisationId,user\.id\)/);
 assert.match(api,/getHqSnapshot\(user\)/);
