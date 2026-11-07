@@ -114,10 +114,11 @@ export function AccountAccess() {
   async function continueWithEmail(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const client = createEmailLinkSupabaseClient();
-    if (!client || !email.trim()) return;
+    if (!client || !email.trim() || busy) return;
     setBusy(true);
     setError("");
     const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/account${window.location.search}`)}`;
+    try {
     const { error: authError } = await client.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { emailRedirectTo, shouldCreateUser: mode === "signup" },
@@ -132,6 +133,11 @@ export function AccountAccess() {
       return;
     }
     setEmailSent(true);
+    } catch {
+      setError("Could not send your sign-in link. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function signOut() {
@@ -214,14 +220,16 @@ export function AccountAccess() {
       <div className="mx-auto max-w-4xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div><p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">KAEC-NG secure account</p><h1 className="mt-2 text-3xl font-black text-slate-950">Welcome back</h1><p className="mt-1 text-sm text-slate-500">{accountEmail}</p></div>
-          <button disabled={busy} onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"><LogOut className="size-4" /> Sign out</button>
+          <button disabled={busy} onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"><LogOut className="size-4" /> {busy ? "Signing out…" : "Sign out"}</button>
         </div>
+
+        {error && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
         {partnerships.some(item=>item.partnerStatus === "active") && <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5"><h2 className="text-xl font-bold text-slate-950">Continue your work</h2><div className="mt-3 grid gap-3">{partnerships.filter(item=>item.partnerStatus === "active").map(item=><div key={item.organisationId} className="rounded-xl bg-white p-4"><p className="font-bold text-slate-950">{item.name}</p><div className="mt-3 flex flex-wrap gap-3"><Link className="rounded-xl bg-blue-700 px-4 py-3 font-bold text-white" href={`/khpos/${item.organisationId}/work`}>Open Today</Link><Link className="rounded-xl border px-4 py-3 text-blue-800" href={`/khpos/${item.organisationId}/onboarding`}>Get started / finish setup</Link></div></div>)}</div></section>}
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <Link href="/assessment" className="rounded-[26px] bg-brand-700 p-6 text-white shadow-lift"><CheckCircle2 className="size-7" /><h2 className="mt-4 text-xl font-black">Start free School Health Check</h2><p className="mt-2 text-sm leading-6 text-brand-100">KSHC remains open whether or not your school is a KHP-OS partner.</p></Link>
-          <Link href="/" className="rounded-[26px] border border-slate-200 bg-white p-6"><UserPlus className="size-7 text-slate-700" /><h2 className="mt-4 text-xl font-black text-slate-950">Explore KAEC-NG</h2><p className="mt-2 text-sm leading-6 text-slate-500">Return to the diagnostic platform and Human Potential Development resources.</p></Link>
+          <Link href="/" className="rounded-[26px] border border-slate-200 bg-white p-6"><UserPlus className="size-7 text-slate-700" /><h2 className="mt-4 text-xl font-black text-slate-950">Explore KHP-OS</h2><p className="mt-2 text-sm leading-6 text-slate-500">See how the school operations app and School Health Check work together.</p></Link>
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
