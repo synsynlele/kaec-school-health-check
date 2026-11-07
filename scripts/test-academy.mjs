@@ -21,7 +21,7 @@ assert.match(api,/verifyKhposAccessToken\(token\)/);
 assert.match(api,/getKhposOpsLibrary\(organisationId,user\.id\)/);
 assert.match(api,/getHqSnapshot\(user\)/);
 assert.match(api,/courses\.find\(c=>c\.id===courseId\)/);
-assert.match(api,/status:.*403/);
+assert.match(api,/Training is not available to this role\."\},403\)/);
 assert.match(api,/no-store/);
 assert.match(ask,/TrainingAcademy organisationId=/);
 assert.match(ask,/activeTab==="training"/);
