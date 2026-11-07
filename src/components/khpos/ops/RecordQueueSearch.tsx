@@ -103,7 +103,7 @@ export function RecordQueueSearchControls({
         </button>
       )}
       <p className="w-full text-xs text-slate-500" role="status" aria-live="polite">
-        Showing {shown} of {total} in this list. Choose Needs attention, Waiting on others or History to search another list.
+        Showing {shown} of {total} records in this view. Search and sorting apply to the current list.
       </p>
     </div>
   );
