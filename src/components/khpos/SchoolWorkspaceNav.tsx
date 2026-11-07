@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { NotificationBell } from "@/components/khpos/NotificationBell";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { usePathname, useRouter } from "next/navigation";
@@ -28,6 +29,7 @@ import {
   LibraryBig,
   Rocket,
   ListTodo,
+  LogOut,
   Menu,
   ShieldCheck,
   Search,
@@ -288,11 +290,30 @@ function WorkspaceLink({
 export function SchoolWorkspaceNav({ organisationId }: { organisationId: string }) {
   const pathname = usePathname();
   const base = `/khpos/${organisationId}`;
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const current = workspaceLinks.find((item) => isActive(pathname, base, item.suffix));
   const moreActive = !dailyLinks.slice(0, 4).some((item) => isActive(pathname, base, item.suffix));
+
+  async function signOut() {
+    const client = createBrowserSupabaseClient();
+    if (!client || signingOut) return;
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      const response = await fetch("/api/kshc/session", { method: "DELETE" });
+      if (!response.ok) throw new Error("Session could not be cleared.");
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+      window.location.replace("/khpos");
+    } catch {
+      setSignOutError("Could not sign out. Check your connection and try again.");
+      setSigningOut(false);
+    }
+  }
 
   useEffect(() => {
     const client = createBrowserSupabaseClient();
@@ -335,7 +356,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
           <div className="mb-3 flex justify-end"><NotificationBell key={organisationId} organisationId={organisationId} /></div>
           <Link href={base} className="flex items-center gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-mint-300 text-slate-950 shadow-sm">
-              <Building2 className="size-5" />
+              <Image src="/khpos-icon-192.png" alt="" width={40} height={40} className="rounded-xl" />
             </span>
             <span className="min-w-0">
               <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-mint-300">
@@ -371,6 +392,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
               Main entrance
             </Link>
           </div>
+          <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-50"><LogOut aria-hidden="true" className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
+          {signOutError && <p role="alert" className="mt-2 text-xs text-rose-200">{signOutError}</p>}
           <p className="mt-3 px-1 text-[10px] leading-4 text-slate-500">
             School operations by KAEC-NG.
           </p>
@@ -384,7 +407,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3 sm:px-6">
           <Link href={base} className="flex min-w-0 items-center gap-2.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-mint-300 text-slate-950">
-              <Building2 className="size-4" />
+              <Image src="/khpos-icon-192.png" alt="" width={32} height={32} className="rounded-lg" />
             </span>
             <span className="min-w-0">
               <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-mint-300">
@@ -399,7 +422,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
               Account
             </Link>
             <Link href="/khpos" className="rounded-lg border border-white/10 px-2.5 py-2 text-[11px] font-bold text-slate-300">
-              Hub
+              Entrance
             </Link>
           </div>
         </div>
@@ -433,6 +456,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Find your way" className="absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><h2 className="font-bold">Find your way</h2><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
           <nav aria-label="Find your way" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
+          {signOutError && <p role="alert" className="px-3 text-xs text-rose-200">{signOutError}</p>}
+          <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mx-3 mb-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 text-sm font-bold disabled:opacity-50"><LogOut aria-hidden="true" className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
           <div className="flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
         </div>
       </div>}
@@ -443,9 +468,15 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const pathname = usePathname(), router = useRouter(), base = `/khpos/${organisationId}`;
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
-  if (!area) return null;
+  const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
+  const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+    <Link href={base} className="inline-flex min-h-9 items-center font-bold text-brand-700 hover:underline">School overview</Link>
+    {current?.suffix && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
+    <Link href="/contact" className="ml-auto inline-flex min-h-9 items-center font-semibold text-brand-700 underline">Help</Link>
+  </nav>;
+  if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
-    <div className="mx-auto max-w-7xl"><p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{area.help}</p>
+    <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
       <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
         <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
       </label>
