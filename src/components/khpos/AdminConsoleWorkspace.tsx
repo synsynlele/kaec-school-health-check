@@ -143,17 +143,19 @@ export function AdminConsoleWorkspace() {
   }
 
   async function signOut() {
-    if (!supabase) return;
+    if (!supabase || busy) return;
     setBusy("signout");
     setError("");
-    await fetch("/api/kshc/session", { method: "DELETE" });
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
+    try {
+      const response = await fetch("/api/kshc/session", { method: "DELETE" });
+      if (!response.ok) throw new Error("Session could not be cleared.");
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      window.location.replace("/khpos");
+    } catch {
       setBusy("");
       setError("We could not sign you out. Please try again.");
-      return;
     }
-    window.location.replace("/account");
   }
 
   async function startMfaEnrollment() {
