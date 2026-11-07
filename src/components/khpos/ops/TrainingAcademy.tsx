@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Download, ExternalLink, GraduationCap, Loader2 } from "lucide-react";
+import { BookOpen, Download, ExternalLink, GraduationCap } from "lucide-react";
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { AcademyCourse } from "@/lib/khpos/academy-data";
 
@@ -54,7 +55,7 @@ export function TrainingAcademy({organisationId}:{organisationId?:string}){
         <p className="mt-1 text-sm text-slate-600">Learn your role, practise the workflows, and keep the approved guides for reference.</p>
       </div></div>
       <p className="mt-4 text-sm text-slate-600">The latest guides are generated directly by KHP-OS. Your active school or corporate appointment determines which levels you can see.</p>
-      {status==="loading"&&<p role="status" className="mt-5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Loader2 className="size-4 animate-spin"/> Checking your training access…</p>}
+      {status==="loading"&&<LoadingScreen inline message="Checking your training access…" />}
       {status==="ready"&&<div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Training level">
         {courses.map(course=><button key={course.id} type="button" role="tab" aria-selected={course.id===selected?.id} onClick={()=>setActive(course.id)}
           className={"rounded-xl px-4 py-3 text-sm font-bold "+(course.id===selected?.id?"bg-slate-950 text-white":"border border-slate-300 bg-white text-slate-800")}>{course.id==="staff"?"Level 1 — Staff":course.id==="leadership"?"Level 2 — School leaders":"Level 3 — KAEC HQ"}</button>)}
