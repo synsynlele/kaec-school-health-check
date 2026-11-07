@@ -19,6 +19,7 @@ assert.match(html, /role="status"/);
 assert.match(html, /KHP-OS/);
 assert.match(html, /Opening your workspace/);
 assert.match(html, /min-height:100svh/);
+assert.match(html, /position:fixed;inset:0/);
 assert.match(html, /background:#0f172a/);
 assert(!html.includes('<img'), 'The first loading paint must not depend on an image request');
 
