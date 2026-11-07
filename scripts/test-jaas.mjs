@@ -55,7 +55,9 @@ const success = await routes.POST(new Request(url, { method: 'POST', headers: { 
 assert.equal(success.data.jwt, 'test-only');
 assert.equal(success.headers['Cache-Control'], 'private, no-store');
 console.log('JaaS HTTP: signed-out and uninvited access rejected before token issuance; successful response is not cacheable.');
-// Live meetings remain discoverable after their planned end until explicitly closed.
+// Current meetings and Today alerts share the same time and status boundary.
+const lifecycle = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync("src/lib/khpos/ops/meeting-lifecycle.ts", "utf8"), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText, {exports:lifecycle,Date});
 const meetingExports = {};
 const now = Date.parse('2026-11-05T12:00:00Z');
 const meetings = [
@@ -66,10 +68,16 @@ const meetings = [
 ];
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/khpos/ops/meetings.ts','utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
  exports: meetingExports, process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'test', SUPABASE_SERVICE_ROLE_KEY: 'test' } },
- require: () => ({ createClient: () => ({ rpc: async () => ({ data: { meetings }, error: null }) }) })
+ require: name => name.endsWith('meeting-lifecycle') ? lifecycle : ({ createClient: () => ({ rpc: async () => ({ data: { meetings }, error: null }) }) })
 });
 const alerts = await meetingExports.getMeetingAlerts('school', 'host', now);
-assert.deepEqual(Array.from(alerts, a => a.id), ['meeting:live', 'meeting:scheduled']);
-assert.equal(alerts[0].live, true);
-assert.equal(alerts[1].live, false);
-console.log('Meeting discovery: live calls survive planned-end time; closed/cancelled calls disappear; upcoming invitations remain.');
+assert.deepEqual(Array.from(alerts, a => a.id), ['meeting:scheduled']);
+assert.equal(alerts[0].live, false);
+const future = {status:"scheduled",ends_at:new Date(now+1000).toISOString()};
+assert.equal(lifecycle.isCurrentMeeting(future,now),true);
+assert.equal(lifecycle.isCurrentMeeting(future,now+1000),false);
+assert.equal(lifecycle.isCurrentMeeting({...future,status:"cancelled"},now),false);
+assert.equal(lifecycle.isCurrentMeeting({...future,status:"closed"},now),false);
+assert.equal(lifecycle.isCurrentMeeting({...future,status:"live"},now),true);
+assert.equal(lifecycle.isCurrentMeeting({...future,status:"live"},now+1000),false);
+console.log('Meeting discovery: expired, closed and cancelled meetings disappear; upcoming invitations remain; exact end boundary passed.');
