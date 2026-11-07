@@ -1,35 +1,15 @@
-import { Header } from "@/components/site/Header";
-import { Footer } from "@/components/site/Footer";
-import { Hero } from "@/components/landing/Hero";
-import { Faq } from "@/components/landing/Faq";
-import { CompanyAbout, CompanyContact } from "@/components/landing/CompanyPositioning";
-import {
-  Benefits,
-  HowItWorks,
-  Receive,
-  StatsStrip,
-} from "@/components/landing/Sections";
-import { getGlobalStats } from "@/lib/storage";
+import type { Metadata } from "next";
+import { ProductLanding } from "@/components/landing/ProductLanding";
 
-export const dynamic = "force-dynamic";
+const description = "KHP-OS brings school attendance, timetables, policies, staff duties, meetings and follow-up into one school operations workspace. Start with a free School Health Check.";
 
-export default async function LandingPage() {
-  const stats = await getGlobalStats();
+export const metadata: Metadata = {
+  title: { absolute: "KHP-OS | The school operations app" },
+  description,
+  openGraph: { title: "KHP-OS | Run your school. See what’s done.", description },
+  twitter: { card: "summary_large_image", title: "KHP-OS | The school operations app", description },
+};
 
-  return (
-    <>
-      <Header />
-      <main>
-        <Hero />
-        <StatsStrip stats={stats} />
-        <HowItWorks />
-        <Benefits />
-        <Receive />
-        <Faq />
-        <CompanyAbout />
-        <CompanyContact />
-      </main>
-      <Footer />
-    </>
-  );
+export default function LandingPage() {
+  return <ProductLanding />;
 }
