@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { NavigationFeedback } from "@/components/navigation/NavigationFeedback";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { SITE, appUrl } from "@/lib/site";
@@ -114,8 +116,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-white font-sans text-slate-900 antialiased">
+      <body className="bg-slate-50 font-sans text-slate-900 antialiased">
         <script dangerouslySetInnerHTML={{ __html: pwaInstallCaptureScript }} />
+        <Suspense fallback={null}><NavigationFeedback /></Suspense>
         {children}
       </body>
     </html>
