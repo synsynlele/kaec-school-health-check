@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import ts from "typescript";
+const src=(p)=>fs.readFileSync(p,"utf8");
+const data=src("src/lib/khpos/academy-data.ts");
+const api=src("src/app/api/khpos/academy/route.ts");
+const ask=src("src/components/khpos/ops/AskKhposWorkspace.tsx");
+const ui=src("src/components/khpos/ops/TrainingAcademy.tsx");
+const hq=src("src/components/khpos/KaecHqWorkspace.tsx");
+const out=src("src/lib/khpos/academy-documents.ts");
+for(const [name,body,kind] of [["curriculum",data,ts.ScriptKind.TS],["api",api,ts.ScriptKind.TS],["ui",ui,ts.ScriptKind.TSX],["ask",ask,ts.ScriptKind.TSX],["documents",out,ts.ScriptKind.TS]]){
+  const f=ts.createSourceFile(name,body,ts.ScriptTarget.Latest,true,kind);
+  assert.equal(f.parseDiagnostics.length,0,name+" should parse");
+}
+assert.match(data,/id:"staff"/);
+assert.match(data,/id:"leadership"/);
+assert.match(data,/id:"hq"/);
+assert.match(data,/if\(corporate\)/);
+assert.match(data,/c\.id==="leadership"&&leadership/);
+assert.match(api,/verifyKhposAccessToken\(token\)/);
+assert.match(api,/getKhposOpsLibrary\(organisationId,user\.id\)/);
+assert.match(api,/getHqSnapshot\(user\)/);
+assert.match(api,/courses\.find\(c=>c\.id===courseId\)/);
+assert.match(api,/status:.*403/);
+assert.match(api,/no-store/);
+assert.match(ask,/TrainingAcademy organisationId=/);
+assert.match(ask,/activeTab==="training"/);
+assert.match(ask,/activeTab==="ask"/);
+assert.match(ui,/Authorization:"Bearer "\+token/);
+assert.match(ui,/LoadingScreen inline/);
+assert.match(ui,/download\(selected,"pdf"\)/);
+assert.match(ui,/download\(selected,"pptx"\)/);
+assert.match(hq,/href="\/khpos\/hq\/ask"/);
+assert.match(out,/createAcademyPdf/);
+assert.match(out,/createAcademyPptx/);
+assert(!api.includes("NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"),"Never expose service privileges");
+console.log("KHP-OS Training Academy static access, routing and generation checks passed.");
