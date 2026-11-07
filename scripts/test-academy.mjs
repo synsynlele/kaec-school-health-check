@@ -48,9 +48,9 @@ function compile(modulePath, resolve){
 const curriculum=compile("src/lib/khpos/academy-data.ts",require);
 const documentModule=compile("src/lib/khpos/academy-documents.ts",(id)=>require(id));
 assert.equal(curriculum.ACADEMY_COURSES.length,3);
-assert.deepEqual(curriculum.academyForRole(["TEACHER"],false).map(c=>c.id),["staff"]);
-assert.deepEqual(curriculum.academyForRole(["TEACHER","SECTIONAL_PROMOTER"],false).map(c=>c.id),["staff","leadership"]);
-assert.deepEqual(curriculum.academyForRole([],true).map(c=>c.id),["staff","leadership","hq"]);
+assert.deepEqual(Array.from(curriculum.academyForRole(["TEACHER"],false),c=>c.id),["staff"]);
+assert.deepEqual(Array.from(curriculum.academyForRole(["TEACHER","SECTIONAL_PROMOTER"],false),c=>c.id),["staff","leadership"]);
+assert.deepEqual(Array.from(curriculum.academyForRole([],true),c=>c.id),["staff","leadership","hq"]);
 for (const course of curriculum.ACADEMY_COURSES){
  const pptx=Buffer.from(documentModule.createAcademyPptx(course));
  assert.equal(pptx.readUInt32LE(0),0x04034b50,"PPTX must have ZIP local header");
