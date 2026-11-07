@@ -105,8 +105,12 @@ expectContains("next.config.ts", [
 ]);
 
 expectContains("src/app/page.tsx", [
-  "CompanyAbout",
-  "CompanyContact",
+  "ProductLanding",
+]);
+expectContains("src/components/landing/ProductLanding.tsx", [
+  "KAEC-NG",
+  "School Health Check",
+  'href="/contact"',
 ]);
 expectContains("src/components/landing/CompanyPositioning.tsx", [
   "Human Potential Development Company",

@@ -40,7 +40,9 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
+  const [signingOut, setSigningOut] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [signOutError, setSignOutError] = useState("");
   const [openingReport, setOpeningReport] = useState(false);
 
   async function openReport(event: React.MouseEvent<HTMLAnchorElement>, assessmentId: string) {
@@ -115,9 +117,19 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   }, [organisationId, supabase]);
 
   async function signOut() {
-    await fetch("/api/kshc/session", { method: "DELETE" });
-    if (supabase) await supabase.auth.signOut();
-    router.push("/");
+    if (!supabase || signingOut) return;
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      const response = await fetch("/api/kshc/session", { method: "DELETE" });
+      if (!response.ok) throw new Error("Session could not be cleared.");
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      window.location.replace("/khpos");
+    } catch {
+      setSignOutError("Could not finish signing out. Check your connection and try again.");
+      setSigningOut(false);
+    }
   }
 
   if (!workspace && !error) {
@@ -138,7 +150,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           <ShieldCheck className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">KHP-OS access could not be confirmed</h1>
           <p className="mt-3 text-sm leading-6 text-slate-200">{error}</p>
-          <button onClick={() => router.push("/")} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
+          <button onClick={() => router.push("/khpos")} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
             Return to KSHC
           </button>
         </div>
@@ -162,13 +174,14 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             </span>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Schools</p>
-              <p className="truncate text-sm font-extrabold text-white">School School overview</p>
+              <p className="truncate text-sm font-extrabold text-white">School overview</p>
             </div>
           </div>
-          <button onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-xs font-bold text-slate-100 transition hover:bg-white/10">
-            <LogOut className="size-4" /> Sign out
+          <button disabled={signingOut} onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-xs font-bold text-slate-100 transition hover:bg-white/10">
+            <LogOut className="size-4" /> {signingOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
+        {signOutError && <p role="alert" className="mx-auto max-w-7xl px-4 pb-3 text-sm text-rose-200">{signOutError}</p>}
       </header>
 
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">

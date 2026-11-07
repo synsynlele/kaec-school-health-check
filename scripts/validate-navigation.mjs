@@ -25,7 +25,7 @@ requireText(adminNav, 'href="/account"', "Admin school-platform escape action");
 requireText(adminNav, "School Platform", "Admin school-platform escape label");
 
 const adminConsole = read("src/components/khpos/AdminConsoleWorkspace.tsx");
-requireText(adminConsole, 'window.location.replace("/account")', "Admin sign-out destination");
+requireText(adminConsole, 'window.location.replace("/khpos")', "Admin sign-out destination");
 requireText(adminConsole, 'href="/account"', "Admin signed-out and denied escape route");
 requireText(adminConsole, "Go to School Platform", "Admin signed-out and denied escape label");
 
@@ -162,3 +162,11 @@ for (const area of navigation.schoolAreas) for (const route of area.routes) {
 }
 if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
 console.log(`School navigation validated: ${navigation.workspaceLinks.length} routes reachable through ${destinations.length} unique main entrances, with related pages grouped and searchable.`);
+
+for (const file of [
+  "src/components/account/AccountAccess.tsx",
+  "src/components/khpos/CommandCentre.tsx",
+  "src/components/khpos/KaecHqWorkspace.tsx",
+]) {
+  requireText(read(file), 'window.location.replace("/khpos")', file + " sign-out returns to the app entrance");
+}

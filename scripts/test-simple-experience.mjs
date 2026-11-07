@@ -15,6 +15,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
  if(name==='react')return {useState(initial){const i=stateCursor++;if(!(i in state))state[i]=initial;return [state[i],v=>state[i]=v];},useRef(initial){const i=refCursor++;return refs[i]??={current:initial};},useEffect:fn=>effects.push(fn)};
  if(name==='next/navigation')return {usePathname:()=>currentPath,useRouter:()=>({push:path=>pushes.push(path)})};
  if(name==='next/link')return {default:'a'};
+ if(name==='next/image')return {default:'img'};
  if(name==='lucide-react')return new Proxy({},{get:()=> 'span'});
  if(name==='@/components/khpos/NotificationBell')return {NotificationBell:'button'};
  if(name==='@/lib/supabase/client')return {createBrowserSupabaseClient:()=>null};
@@ -31,8 +32,8 @@ assert.equal(all.find(x=>x.type==='select').props.value,'/team');
 assert.ok(all.some(x=>x.props.href==='/khpos/school/people'));
 assert.ok(all.some(x=>x.props.href==='/khpos/school/team'&&x.props['aria-current']==='page'));
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
-currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href).every(x=>x.props.href.startsWith('/khpos/other/')),'Area links preserve school boundaries');
-currentPath='/khpos/school/work';assert.equal(exports.SchoolAreaNavigation({organisationId:'school'}),null,'Today has no extra area menu');
+currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
+currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
 console.log('Simpler experience passed: 54 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];

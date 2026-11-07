@@ -157,3 +157,42 @@ body {
     cursor: not-allowed;
   }
 }
+
+
+/* Consistent controls across all school workspaces. */
+.khpos-school-shell :where(section, article, fieldset, form) {
+  min-width: 0;
+}
+
+.khpos-school-shell :where(h1, h2, h3, p, label) {
+  overflow-wrap: anywhere;
+}
+
+.khpos-school-shell :where(button, summary, select) {
+  min-height: 2.75rem;
+}
+
+.khpos-school-shell :where(button, summary, a[href], input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 3px;
+}
+
+.khpos-school-shell :where(input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 639px) {
+  .khpos-school-shell > div > main > section:first-of-type > div[class*="max-w-7xl"] {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-fade-up, .animate-fade-in, .animate-float, .shimmer-text {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
