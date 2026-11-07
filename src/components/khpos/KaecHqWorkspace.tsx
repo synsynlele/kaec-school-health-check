@@ -329,6 +329,7 @@ export function KaecHqWorkspace() {
             <Link href="/khpos/hq/ideas" className="rounded-full border border-white/30 px-3 py-2">Ideas &amp; discussions</Link>
             <Link href="/khpos/hq/meetings" className="rounded-full border border-white/30 px-3 py-2">Meetings</Link>
             <Link href="/khpos/hq/reports" className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2">Reporting Centre</Link>
+            <Link href="/khpos/hq/ask" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/50 px-3 py-2 text-emerald-100">Ask KHP-OS · Training Academy</Link>
             <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
             <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
           </div>

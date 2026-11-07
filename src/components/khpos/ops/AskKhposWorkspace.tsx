@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionFeedback } from "./ActionFeedback";
+import { TrainingAcademy } from "./TrainingAcademy";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -32,6 +33,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
   const [result, setResult] = useState<KhposAskResult | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [activeTab, setActiveTab] = useState<"ask" | "training">("ask");
 
   async function ask(value?: string) {
     const clean = (value ?? question).trim();
@@ -101,6 +103,13 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
       </section>
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+        <div role="tablist" aria-label="Ask KHP-OS sections" className="flex flex-wrap gap-2">
+          <button type="button" role="tab" aria-selected={activeTab==="ask"} onClick={()=>setActiveTab("ask")}
+            className={"rounded-xl px-5 py-3 text-sm font-bold "+(activeTab==="ask"?"bg-slate-950 text-white":"border border-slate-300 bg-white text-slate-800")}>Ask a question</button>
+          <button type="button" role="tab" aria-selected={activeTab==="training"} onClick={()=>setActiveTab("training")}
+            className={"rounded-xl px-5 py-3 text-sm font-bold "+(activeTab==="training"?"bg-slate-950 text-white":"border border-slate-300 bg-white text-slate-800")}>Training Academy</button>
+        </div>
+        {activeTab==="training"?<TrainingAcademy organisationId={organisationId}/>:<>
         <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <label className="block text-sm font-black">
             What do you need to understand?
@@ -227,6 +236,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
             })}
           </section>
         )}
+        </>}
       </div>
     </main>
   );
