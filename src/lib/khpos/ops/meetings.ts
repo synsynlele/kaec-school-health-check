@@ -1,3 +1,4 @@
+import { isCurrentMeeting } from "./meeting-lifecycle";
 import { createClient } from "@supabase/supabase-js";
 
 export type Meeting = { id: string; title: string; agenda: string; starts_at: string; ends_at: string; call_url: string | null; status: "scheduled" | "live" | "closed" | "cancelled"; created_by: string; call_parts: string[]; active_call_part: number; call_part_started_at: string | null };
@@ -37,7 +38,7 @@ export async function getMeetingAlerts(org: string, actor: string, nowMs = Date.
   const rooms = new Map<string, { meeting: Meeting; scope: string }>();
   for (const meeting of workspace.meetings) rooms.set(meeting.id, { meeting, scope: org });
   for (const meeting of corporate?.meetings ?? []) if (!rooms.has(meeting.id)) rooms.set(meeting.id, { meeting, scope: "hq" });
-  return Array.from(rooms.values()).filter(({meeting:m}) => m.status === "live" || (m.status === "scheduled" && Date.parse(m.ends_at) >= nowMs && Date.parse(m.starts_at) <= nowMs + 7 * 86400000)).map(({meeting:m,scope}) => ({
+  return Array.from(rooms.values()).filter(({meeting:m}) => isCurrentMeeting(m,nowMs) && Date.parse(m.starts_at) <= nowMs + 7 * 86400000).map(({meeting:m,scope}) => ({
     id: `meeting:${m.id}`, live: m.status === "live", title: m.title, detail: `Private meeting · ${new Date(m.starts_at).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} (Lagos)`,
     href: `/khpos/${scope}/meetings?meeting=${m.id}`, dueAt: m.starts_at, urgent: false, level: "action" as const, category: "meeting",
   }));
