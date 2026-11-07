@@ -80,7 +80,7 @@ export function TrainingAcademy({organisationId}:{organisationId?:string}){
         <p className="mt-3 text-sm text-slate-700">{lesson.purpose}</p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700">{lesson.steps.map((step,i)=><li key={i}>{step}</li>)}</ol>
         <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-950"><strong>Practise:</strong> {lesson.practice}</p>
-        <Link href={origin+lesson.route} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-800"><ExternalLink className="size-4"/>Open relevant KHP-OS page</Link>
+        <Link href={lesson.route==="/khpos"?"/khpos":origin+lesson.route} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-800"><ExternalLink className="size-4"/>Open relevant KHP-OS page</Link>
       </details>)}
       </div>
       <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4"><BookOpen className="mt-0.5 size-5 shrink-0 text-emerald-700"/>
