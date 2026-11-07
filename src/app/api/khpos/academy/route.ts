@@ -38,10 +38,11 @@ export async function GET(request:Request){
     const bytes=format==="pdf"?await createAcademyPdf(course):createAcademyPptx(course);
     const extension=format==="pdf"?"pdf":"pptx";
     const mime=format==="pdf"?"application/pdf":"application/vnd.openxmlformats-officedocument.presentationml.presentation";
-    const buffer=Buffer.from(bytes);
-    return new Response(buffer,{status:200,headers:{
+    const body=new Uint8Array(new ArrayBuffer(bytes.length));
+    body.set(bytes);
+    return new Response(body,{status:200,headers:{
       "Content-Type":mime,
-      "Content-Length":String(buffer.length),
+      "Content-Length":String(body.length),
       "Content-Disposition":'attachment; filename="KHP-OS-'+course.id+'-academy-v'+course.version+'.'+extension+'"',
       "Cache-Control":"private, no-store",
       "X-Content-Type-Options":"nosniff",
