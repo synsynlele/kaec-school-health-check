@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/khpos",
     scope: "/",
     display: "standalone",
-    background_color: "#ffffff",
+    background_color: "#0f172a",
     theme_color: "#0f4fd8",
     orientation: "any",
     categories: ["education", "productivity", "business"],

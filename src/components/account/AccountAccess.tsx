@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Building2, CheckCircle2, Loader2, LogOut, Mail, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, LogOut, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import {
   createBrowserSupabaseClient,
   createEmailLinkSupabaseClient,
@@ -157,7 +158,7 @@ export function AccountAccess() {
   }
 
   if (state === "checking") {
-    return <main className="grid min-h-screen place-items-center bg-slate-50"><Loader2 className="size-8 animate-spin text-brand-700" /></main>;
+    return <LoadingScreen message="Opening your school account…" />;
   }
 
   if (loadFailed) {

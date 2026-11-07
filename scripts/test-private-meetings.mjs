@@ -27,6 +27,7 @@ try {
  await db.exec(fs.readFileSync('supabase/migrations/20261104222329_independent_hq_meetings.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104224214_meeting_invitee_directory.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261104225619_school_meeting_staff_directory_only.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261107083808_meeting_history_deletion.sql','utf8'));
  for(const [id,email] of [[host,'host@test.invalid'],[guest,'guest@test.invalid'],[other,'other@test.invalid'],[hq,'hq@test.invalid']])await q('insert into auth.users values($1,$2)',[id,email]);
  for(const id of [org,org2])await q("insert into organisations(id,status,partner_status,partner_entitlements) values($1,'active','active',array['khpos_core'])",[id]);
  await q("insert into organisation_memberships values($1,$2,'active','executive'),($1,$3,'active','contributor'),($4,$5,'active','executive')",[org,host,guest,org2,other]);
@@ -172,5 +173,38 @@ try {
  await db.exec('reset role');
  const grants=await q("select has_function_privilege('authenticated','public.khpos_meetings_server(uuid,uuid,text,jsonb)','execute') allowed,has_table_privilege('anon','public.khpos_meeting_messages','select') readable");
  assert.equal(grants[0].allowed,false);assert.equal(grants[0].readable,false);
+ // Deletion is a host operation in the same school/HQ scope, including time-ended rooms.
+ const remove={meetingId,confirmed:true};
+ await assert.rejects(call(guest,'delete',remove),/active meeting host/);
+ await assert.rejects(call(other,'delete',remove),/active meeting host/);
+ await assert.rejects(corporate(host,'delete',remove),/active meeting host/);
+ await assert.rejects(call(host,'delete',{meetingId}),/Confirm/);
+ await q("update khpos_ops_role_assignments set status='suspended' where id=$1",[hostAssignment]);
+ await assert.rejects(call(host,'delete',remove),/active meeting host/);
+ await q("update khpos_ops_role_assignments set status='active' where id=$1",[hostAssignment]);
+ const deleted=await call(host,'delete',remove);
+ assert.equal(deleted.room,null);
+ assert(!deleted.meetings.some(m=>m.id===meetingId));
+ for(const table of ['khpos_meetings','khpos_meeting_participants','khpos_meeting_messages','khpos_meeting_decisions','khpos_meeting_actions']) {
+  assert.equal((await q(`select count(*)::int n from ${table} where ${table==='khpos_meetings'?'id':'meeting_id'}=$1`,[meetingId]))[0].n,0);
+ }
+ assert.equal((await q('select count(*)::int n from khpos_ops_work_items'))[0].n,1,'Assigned Today work survives deletion');
+ assert.equal((await q("select count(*)::int n from khpos_ops_audit_events where event_type='meeting_deleted' and object_id=$1",[meetingId]))[0].n,1);
+ await assert.rejects(call(guest,'list',{meetingId}),/access required/);
+ await assert.rejects(call(host,'delete',remove),/active meeting host/);
+ const future=await call(host,'create',{title:'Future review',agenda:'Plan',startsAt:'2099-11-05T10:00:00Z',endsAt:'2099-11-05T11:00:00Z',participants:[guest]});
+ const futureId=future.room.meeting.id;
+ await assert.rejects(call(host,'delete',{meetingId:futureId,confirmed:true}),/Close or cancel/);
+ await call(host,'status',{meetingId:futureId,status:'cancelled'});
+ await call(host,'delete',{meetingId:futureId,confirmed:true});
+ const expired=await call(host,'create',{title:'Time ended',agenda:'Review',startsAt:'2020-11-05T10:00:00Z',endsAt:'2020-11-05T11:00:00Z',participants:[guest]});
+ await call(host,'delete',{meetingId:expired.room.meeting.id,confirmed:true});
+ await assert.rejects(corporate(hq2,'delete',{meetingId:internalId,confirmed:true}),/active meeting host/);
+ await corporate(hq,'delete',{meetingId:internalId,confirmed:true});
+ assert.equal((await q('select count(*)::int n from kaec_hq_records'))[0].n,1,'Assigned HQ work survives deletion');
+ assert.equal((await q("select count(*)::int n from kaec_hq_audit_events where action='meeting_deleted'"))[0].n,1);
+ const permissions=await q("select has_function_privilege('anon','public.khpos_meetings_server(uuid,uuid,text,jsonb)','execute') anonymous,has_function_privilege('authenticated','public.khpos_meetings_server(uuid,uuid,text,jsonb)','execute') client,has_table_privilege('authenticated','public.khpos_meetings','delete') direct_delete");
+ assert.equal(permissions[0].anonymous,false);assert.equal(permissions[0].client,false);assert.equal(permissions[0].direct_delete,false);
+ console.log('History deletion passed: host-only authority, revocation, confirmation, scope isolation, active-room denial, cancelled/expired history, cascading room removal, preserved Today/HQ work and durable audits.');
  console.log('Private meetings: invitations, school isolation, HQ invitation, host authority, revocation, text, decisions, atomic Today actions, retry deduplication, read-only closure database grants, multi-hour plans, sequential shared handoff, retry-safe timers and closed-room protection passed.');
 }finally{await db.close();}
