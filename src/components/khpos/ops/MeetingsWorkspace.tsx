@@ -19,6 +19,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const [data,setData] = useState<MeetingWorkspace|null>(null);
  const [selected,setSelected] = useState(initialMeeting); const selectedRef = useRef(initialMeeting);
  const [error,setError] = useState(""); const [readError,setReadError]=useState(""); const [busy,setBusy] = useState(false);
+ const [notice,setNotice] = useState("");
  const [history,setHistory]=useState(false);
  const [showCreate,setShowCreate] = useState(false); const [search,setSearch] = useState("");
  const [title,setTitle]=useState(""); const [agenda,setAgenda]=useState("");
@@ -77,17 +78,30 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   return ()=>subscription?.data.subscription.unsubscribe();
  },[supabase]);
  async function save(input:Record<string,unknown>, done:()=>void) {
-  if(pendingRef.current)return; pendingRef.current=true;setBusy(true);setError("");
-  try { const updated=await request(input); if(input.mode==="create"&&updated.room){selectedRef.current=updated.room.meeting.id;setSelected(updated.room.meeting.id);setData(previous=>({...updated,people:previous?.people??[]}));} done(); }
+  if(pendingRef.current)return; pendingRef.current=true;setBusy(true);setError("");setNotice("");
+  try { const updated=await request(input); if(input.mode==="create"&&updated.room){selectedRef.current=updated.room.meeting.id;setSelected(updated.room.meeting.id);setData(previous=>({...updated,people:previous?.people??[]}));} done();setReadError(""); }
   catch(e){setError(e instanceof Error?e.message:"Could not save.");}
   finally{pendingRef.current=false;setBusy(false);}
  }
  const visibleError=error||readError;
  const listedMeetings=(data?.meetings??[]).filter(m=>history?!isCurrentMeeting(m,now):isCurrentMeeting(m,now)).filter(m=>m.title.toLowerCase().includes(search.toLowerCase()));
  const room=data?.room; const host=!!room&&room.meeting.created_by===data?.userId&&data.canCreate;
+ const canDelete=host&&!!room&&!isCurrentMeeting(room.meeting,now);
+ function deleteMeeting() {
+  if(!room||!canDelete||busy)return;
+  if(!window.confirm(`Delete “${room.meeting.title}” from meeting history for everyone invited? Its discussion and decisions will be permanently removed. Assigned follow-up tasks will stay in Today or HQ Work. This cannot be undone.`))return;
+  void save({mode:"delete",meetingId:room.meeting.id,confirmed:true},()=>{
+   ++requestVersion.current;
+   selectedRef.current="";setSelected("");
+   setData(previous=>previous?{...previous,room:null}:previous);
+   const url=new URL(window.location.href);url.searchParams.delete("meeting");
+   window.history.replaceState(window.history.state,"",url);
+   setNotice("Meeting deleted. Assigned follow-up tasks remain available.");
+  });
+ }
  const writable=!!room&&!["closed","cancelled"].includes(room.meeting.status);
  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError("");setNotice(""); }} />
   <Link href={hq?"/khpos/hq":`/khpos/${organisationId}/work`} className="text-blue-700">{hq?"← KAEC HQ":"← Today"}</Link>
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
   {data?.canCreate&&<button className={button} onClick={()=>setShowCreate(!showCreate)}>Schedule a meeting</button>}</header>
@@ -104,6 +118,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <button disabled={busy||!invitees.length} className={button}>Save meeting</button>
   </form>}
   <p className="text-sm text-slate-600">Meetings move to History when their scheduled time ends, or when the host closes or cancels them.</p>
+  {history&&<p className="text-sm text-slate-600">To delete a past meeting you hosted, open it and choose Delete meeting.</p>}
   <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="space-y-3"><div className="flex gap-2"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
    {data&&!listedMeetings.length&&<p role="status" className="rounded-xl border bg-white p-4 text-sm text-slate-600">{search?"No meetings match your search.":history?"No past meetings yet.":"No upcoming or active meetings."}</p>}
    {listedMeetings.map(m=><button key={m.id} onClick={()=>{if(!busy){setData(d=>d?{...d,room:null}:d);selectedRef.current=m.id;setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{isCurrentMeeting(m,now)||["closed","cancelled"].includes(m.status)?m.status:"Time ended"}</span></button>)}
@@ -112,6 +127,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   {room?<section className="space-y-5 rounded-2xl border bg-white p-5">
    <div><p className="text-sm capitalize text-blue-700">{room.meeting.status}</p><h2 className="text-2xl font-bold">{room.meeting.title}</h2><p>{date(room.meeting.starts_at)} – {date(room.meeting.ends_at)}</p><p className="mt-3 whitespace-pre-wrap">{room.meeting.agenda}</p></div>
    <button className="text-blue-700 underline" onClick={()=>void navigator.clipboard.writeText(`${window.location.origin}/khpos/${organisationId}/meetings?meeting=${selected}`).catch(()=>setError("Could not copy the link. Open this meeting using its invitation."))}>Copy meeting link</button>
+   {canDelete&&<button disabled={busy} className="ml-4 rounded-xl border border-red-300 px-4 py-3 font-semibold text-red-700 disabled:opacity-50" onClick={deleteMeeting}>Delete meeting</button>}
    <details><summary>Invited people ({room.participants.length})</summary><ul className="mt-2 space-y-1">{room.participants.map(p=><li key={p.user_id} className="rounded-lg bg-slate-50 p-2"><span className="block font-semibold">{p.name}</span>{p.email&&<span className="block break-all text-sm text-slate-600">{p.email}</span>}</li>)}</ul></details>
    <MeetingCallPanel key={room.meeting.id} meeting={room.meeting} organisationId={organisationId} onJoined={host&&room.meeting.status==="scheduled"?()=>void save({mode:"status",meetingId:selected,status:"live"},()=>{}):undefined} />
    {host&&writable&&<div className="flex flex-wrap gap-2">{room.meeting.status==="scheduled"&&<button disabled={busy} className={button} onClick={()=>void save({mode:"status",meetingId:selected,status:"live"},()=>{})}>Start meeting</button>}<button disabled={busy} className="rounded-xl border p-3" onClick={()=>{if(window.confirm("Close this meeting? Its discussion and outcomes will become read-only. Today tasks remain active."))void save({mode:"status",meetingId:selected,status:"closed"},()=>{});}}>Close meeting</button><button disabled={busy} className="rounded-xl border p-3" onClick={()=>{if(window.confirm("Cancel this meeting? Existing Today tasks will remain active."))void save({mode:"status",meetingId:selected,status:"cancelled"},()=>{});}}>Cancel meeting</button></div>}

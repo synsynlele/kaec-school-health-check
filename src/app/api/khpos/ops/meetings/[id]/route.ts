@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const text = z.string().trim().min(1).max(4000);
 const schema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("delete"), meetingId: z.uuid(), confirmed: z.literal(true) }),
   z.object({ mode: z.literal("start_call"), meetingId: z.uuid(), part: z.number().int().min(1).max(6) }),
   z.object({ mode: z.literal("create"), title: text.max(160), agenda: text, startsAt: z.iso.datetime(), endsAt: z.iso.datetime(), callUrl: z.string().max(300).refine(v => !v || /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(v), "Use a Google Meet joining link."), callParts: z.array(z.string().regex(/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/)).max(6).optional(), participants: z.array(z.uuid()).min(1).max(50) }),
   z.object({ mode: z.literal("message"), meetingId: z.uuid(), id: z.uuid(), body: text }),
