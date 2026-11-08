@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
+import { academyForSchoolRole } from "@/lib/khpos/academy-data";
+import { answerKhposAppHelp, isKhposAppHelpQuestion } from "@/lib/khpos/ops/app-help";
 import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
@@ -22,6 +24,7 @@ const KHPOS_MODEL =
 let adminClient: SupabaseClient | null = null;
 
 export type KhposAskIntent =
+  | "app_help"
   | "process"
   | "policy"
   | "work"
@@ -34,7 +37,7 @@ export type KhposAskIntent =
 
 export interface KhposAskSource {
   id: string;
-  category: "process" | "policy" | "work" | "decision" | "performance" | "calendar" | "meeting" | "improvement";
+  category: "training" | "process" | "policy" | "work" | "decision" | "performance" | "calendar" | "meeting" | "improvement";
   title: string;
   detail: string;
   href: string;
@@ -96,6 +99,7 @@ function scoreText(questionTokens: string[], text: string) {
 }
 
 function detectIntent(question: string): KhposAskIntent {
+  if (isKhposAppHelpQuestion(question)) return "app_help";
   const lower = question.toLowerCase();
   if (/meeting|agenda|minutes|meeting follow.?up|meeting action/i.test(lower))
     return "meeting";
@@ -293,6 +297,47 @@ export async function askKhpos(
 
   const orgName = await membershipName(organisationId, userId);
   const intent = detectIntent(clean);
+
+  if (intent === "app_help") {
+    // Preserve the exact same role-based academy access control as the training
+    // endpoint. No OpenAI call, no token reservation, no personal record prompts.
+    const library = await getKhposOpsLibrary(organisationId, userId);
+    const courses = academyForSchoolRole(library.operatingRoleCodes, library.membershipRole);
+    const help = answerKhposAppHelp(clean, courses, organisationId);
+    const helpSources: KhposAskSource[] = help.matches.map((match, index) => ({
+      id: `training:${match.courseId}:${index}`,
+      category: "training",
+      title: match.lesson.title,
+      detail: match.lesson.purpose,
+      href: match.href,
+    }));
+    const hash = createHash("sha256").update(clean).digest("hex").slice(0, 16);
+    await admin().from("khpos_ops_audit_events").insert({
+      organisation_id: organisationId,
+      actor_user_id: userId,
+      event_type: "ops_ask_khpos",
+      object_type: "assistant_query",
+      metadata: {
+        intent,
+        questionHash: hash,
+        sourceCount: helpSources.length,
+        engine: "grounded_engine",
+        model: null,
+        tokenFree: true,
+      },
+    }).then(({ error }) => {
+      if (error) console.warn("[khpos][ask] help audit unavailable", error.code);
+    });
+    return {
+      answer: help.answer,
+      intent,
+      engine: "grounded_engine",
+      model: null,
+      sources: helpSources,
+      disclaimer: "This guidance comes from KHP-OS Training Academy. Your appointed role and approved school procedures determine what you may do.",
+    };
+  }
+
   const context: string[] = [];
   const sources: KhposAskSource[] = [];
 
