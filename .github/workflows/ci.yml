@@ -27,8 +27,8 @@ jobs:
       - name: Foundation and scoring tests
         run: npm test
 
-      - name: Agentic AI cost, app guidance and safety checks
-        run: node scripts/test-khpos-agentic-ai-budget.mjs && node scripts/test-khpos-app-help.mjs
+      - name: Agentic AI cost, all four phases, app guidance and safety checks
+        run: node scripts/test-khpos-agentic-ai-budget.mjs && node scripts/test-khpos-app-help.mjs && node scripts/test-khpos-agentic-phases.mjs
 
       - name: Lint errors
         run: node scripts/lint-errors.mjs
