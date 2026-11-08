@@ -107,8 +107,9 @@ function decisionForAttention(item: KhposAttentionItem): AgentDecisionDraft | nu
 }
 
 type Performance = KhposOpsPerformanceWorkspace["derivedPerformance"];
+type MeasuredKey = Exclude<keyof Performance, "periodDays" | "recordsSubmitted">;
 const measures: readonly {
-  key: keyof Performance;
+  key: MeasuredKey;
   label: string;
   target: number;
   detail: string;
@@ -162,9 +163,20 @@ export function buildSchoolAgentPlan(input: {
 
   // Phase 1: ratios are evidence, not invented comparisons. These targets are
   // internal *review prompts*, never official or industry performance standards.
+  // Avoid overreacting to a percentage calculated from one or two records.
+  // These are evidence-sufficiency guards, not school quality benchmarks.
+  const observations: Record<MeasuredKey, number> = {
+    executionCoverage:performance.executionCoverage.approved,
+    workCompletionReliability:performance.workCompletionReliability.due,
+    onTimeCompletion:performance.onTimeCompletion.completedWithDeadline,
+    verificationFirstPass:performance.verificationFirstPass.verified,
+    issueClosure:performance.issueClosure.opened,
+    decisionActionClosure:performance.decisionActionClosure.requiringAction,
+  };
   for (const measure of measures) {
     const metric = performance[measure.key];
-    if (typeof metric !== "object" || metric === null || !("percent" in metric)) continue;
+    const minimum = measure.key === "executionCoverage" ? 1 : 5;
+    if (observations[measure.key] < minimum) continue;
     const value = metric.percent;
     if (value === null || typeof value !== "number" || !Number.isFinite(value) ||
         value >= measure.target) continue;
