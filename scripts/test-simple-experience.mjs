@@ -53,8 +53,13 @@ function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:t
 auditFields('src/components/khpos');assert.deepEqual(missing,[],'Placeholder text must never be the only field label');
 console.log('Form accessibility passed: every placeholder field retains a visible label or an explicit accessible name.');
 
+const appHelp={};
+vm.runInNewContext(compile('src/lib/khpos/ops/app-help.ts'),{exports:appHelp});
 const assistant={};
-vm.runInNewContext(compile('src/lib/khpos/ops/assistant.ts')+'\nexports.detectIntent=detectIntent; exports.fallbackAnswer=deterministicAnswer;',{exports:assistant,process:{env:{}},require:()=>({})});
+vm.runInNewContext(compile('src/lib/khpos/ops/assistant.ts')+'\nexports.detectIntent=detectIntent; exports.fallbackAnswer=deterministicAnswer;',{
+ exports:assistant,process:{env:{}},
+ require:(name)=>name==='@/lib/khpos/ops/app-help'?appHelp:{},
+});
 assert.equal(assistant.detectIntent('Are school tasks being completed on time?'),'performance','Plain-English results question must reach the scoped performance service');
 assert.equal(assistant.detectIntent('Show school results'),'performance');
 assert.equal(assistant.detectIntent('What tasks do I have today?'),'work');
