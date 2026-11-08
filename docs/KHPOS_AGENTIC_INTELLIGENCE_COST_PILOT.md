@@ -25,6 +25,12 @@ By default the system recognises the project's existing `gpt-4.1-mini-2025-04-14
 
 The token estimate intentionally over-reserves. Hard cost ceilings are approximate to the extent the model's final billed usage can exceed its reservation, e.g. unexpected provider overhead. The actual usage ledger records the difference; final provider invoices remain authoritative.
 
+### KSHC costs alongside KHP-OS
+
+The same migration adds the restricted `kaec_ai_usage_events` table. KSHC's report generation and coach record measured input and output tokens in this table, without school names, report content or learner data. These are **cost observations**, not school subscription deductions. KSHC remains free and no new charge is introduced by the telemetry code.
+
+Provider prices may change. Provider invoices govern costs; estimates may be null when a model's current price has not been confirmed.
+
 ### Safe deployment order
 
 1. Run the migration `20261108100500_khpos_ai_budget_governance.sql` in the matching KSHC/KHP-OS Supabase project, inspect permissions and schema. Never enable an anonymous read policy.
@@ -36,7 +42,7 @@ The token estimate intentionally over-reserves. Hard cost ceilings are approxima
 
 ## Boundaries and known next tasks
 
-- This initial school budget does **not** include KSHC's free diagnostic report or KSHC coach spending. Those currently have independent AI code paths. A complete combined P&L requires KSHC model usage instrumentation, a separate platform-wide cap and unified reporting.
+- This initial school budget does **not** include KSHC's free diagnostic report or its coach spending. **Token-usage telemetry has now been added** to both KSHC AI paths, subject to applying this migration. A complete combined P&L still requires a unified reporting interface, provider-invoice reconciliation, and a separate platform-wide cap.
 - Failed provider responses without usage may still incur billable tokens; reconcile against provider spend. Long-lived reserved requests (if a worker crashes before settlement) temporarily reduce the allowance until an audited recovery procedure is introduced.
 - AI summaries should be generated on demand or when a meaningful event occurs; ordinary database alerts and recurring routines must not call a model.
 - Limit cross-school intelligence to established HQ/portfolio authorisation. KSI integration should transfer only specifically consented, minimum-necessary learner aggregates.
