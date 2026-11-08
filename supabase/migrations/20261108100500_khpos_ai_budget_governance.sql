@@ -147,3 +147,22 @@ revoke all on function public.khpos_ai_budget_reserve(uuid, uuid, text, bigint, 
 revoke all on function public.khpos_ai_budget_settle(uuid, bigint, integer, integer, text, boolean) from public, anon, authenticated;
 grant execute on function public.khpos_ai_budget_reserve(uuid, uuid, text, bigint, bigint) to service_role;
 grant execute on function public.khpos_ai_budget_settle(uuid, bigint, integer, integer, text, boolean) to service_role;
+
+-- KSHC assessments and coaching are not always attached to a paid KHP-OS
+-- organisation. Track their provider usage separately, without storing personal
+-- school details, prompts or messages. This makes combined platform P&L possible.
+create table if not exists public.kaec_ai_usage_events (
+  id uuid primary key default gen_random_uuid(),
+  product text not null check (product in ('kshc')),
+  feature text not null check (feature in ('report', 'coach')),
+  model text not null,
+  input_tokens integer not null default 0 check (input_tokens >= 0),
+  output_tokens integer not null default 0 check (output_tokens >= 0),
+  estimated_micro_usd bigint check (estimated_micro_usd is null or estimated_micro_usd >= 0),
+  recorded_at timestamptz not null default now()
+);
+create index if not exists kaec_ai_usage_events_recency_idx
+  on public.kaec_ai_usage_events (recorded_at desc, product, feature);
+alter table public.kaec_ai_usage_events enable row level security;
+revoke all on public.kaec_ai_usage_events from public, anon, authenticated;
+grant insert, select on public.kaec_ai_usage_events to service_role;
