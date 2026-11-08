@@ -15,6 +15,7 @@ import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard"
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import { needsOwnerWorkAction } from "@/lib/khpos/ops/attention-rules";
+import { khposAgentAdviceForAttention } from "@/lib/khpos/agentic/plan";
 import { focusKhposRecord, khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   AlertTriangle,
@@ -444,6 +445,27 @@ export function MyWorkWorkspace({
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}
           </div>
+        )}
+
+        {attention && attention.items.length > 0 && (
+          <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Suggested next steps">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Your KHP-OS intelligence · No AI tokens</p>
+            <h2 className="mt-2 text-xl font-black">Start with these next steps</h2>
+            <p className="mt-2 text-sm text-slate-600">Only actions from your authorised school responsibilities appear here. Suggestions do not approve or complete work.</p>
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              {attention.items.slice(0,3).map((item) => {
+                const advice = khposAgentAdviceForAttention(item);
+                return (
+                  <div key={item.id} className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-black uppercase text-brand-700">{item.severity} · {item.kind.replaceAll("_"," ")}</p>
+                    <h3 className="mt-2 font-black text-slate-950">{item.title}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-6 text-slate-700">{advice.next}</p>
+                    <Link className="mt-4 text-sm font-black text-brand-800" href={item.href}>Open the assigned record →</Link>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">

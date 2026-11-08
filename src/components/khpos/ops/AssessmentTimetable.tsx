@@ -6,6 +6,7 @@ import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
+import { findExamCollisions } from "@/lib/khpos/ops/schedule-assist";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type Assignment = { id: string; classLabel: string; subjectLabel: string; teacherDisplay: string };
@@ -106,6 +107,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       startsAt: `${day}T${start}:00+01:00`, endsAt: `${day}T${end}:00+01:00` });
   }
 
+  const examConflicts = !todayInvigilation ? findExamCollisions(entries??[]) : [];
   const editStart = editing ? new Date(Date.parse(editing.starts_at) + 3600000).toISOString() : "";
   const editEnd = editing ? new Date(Date.parse(editing.ends_at) + 3600000).toISOString() : "";
   const visibleEntries = todayInvigilation ? entries?.filter(item =>
@@ -115,6 +117,12 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
   if (todayInvigilation && !error && !visibleEntries?.length) return null;
   return <section className="space-y-4 rounded-2xl border bg-white p-4 text-slate-900">
     <h2 className="text-xl font-bold">{todayInvigilation ? "My invigilation today" : "Tests and exams timetable"}</h2>
+    {examConflicts.length>0&&<section className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+      <h3 className="font-black text-amber-950">Review {examConflicts.length} scheduling conflict{examConflicts.length===1?"":"s"}</h3>
+      <p className="mt-2 text-xs text-amber-900">KHP-OS detected overlapping class schedules or assigned invigilators in your authorised timetable. Confirm independently and edit the timetable if necessary.</p>
+      <ul className="mt-2 space-y-2">{examConflicts.slice(0,8).map(item=><li key={item.id} className="text-sm text-amber-950">{item.firstTitle} / {item.secondTitle}: {item.reason}</li>)}</ul>
+    </section>}
+
     {!todayInvigilation && <label className="block max-w-xs text-sm font-bold">Choose a date to view its week
       <input type="date" value={from} disabled={busy} className={field} onChange={event => {
         if (event.target.value) {

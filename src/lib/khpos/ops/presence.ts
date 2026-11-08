@@ -132,6 +132,37 @@ export async function getWeeklyClassRecords(org: string, actor: string) {
   return { from, to, records };
 }
 
+/** A person's own authorised historical lesson logs for a bounded report period.
+ * This deliberately does not include any other teacher's class sessions, even
+ * when the current user also has a leadership role. */
+export async function getOwnClassRecordsForReport(org:string,actor:string,from:string,to:string) {
+  const valid=(day:string)=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(Date.parse(day+"T00:00:00Z"));
+  if(!valid(from)||!valid(to)||from>to||
+      Date.parse(to+"T00:00:00Z")-Date.parse(from+"T00:00:00Z")>210*86_400_000) {
+    throw new KhposPresenceError("Select a report period of no more than 210 days.",400);
+  }
+  const workspace=await getPresenceWorkspace(org,actor);
+  const ids=workspace.periods.filter(p=>p.teacherUserId===actor).map(p=>p.id);
+  const records:WeeklyClassRecord[]=[];
+  for(let i=0;i<ids.length;i+=75){
+    const {data,error}=await service().from("khpos_ops_class_sessions")
+      .select("period_id,teacher_user_id,local_day,checked_in_at,checked_out_at,outcome,closed_by")
+      .eq("organisation_id",org).eq("teacher_user_id",actor)
+      .in("period_id",ids.slice(i,i+75)).gte("local_day",from).lte("local_day",to)
+      .limit(801);
+    if(error)fail(error.message);
+    if((data??[]).length>800||records.length+(data??[]).length>800){
+      return {from,to,records:[] as WeeklyClassRecord[],tooMany:true};
+    }
+    for(const row of data??[])records.push({
+      periodId:row.period_id,date:row.local_day,in:row.checked_in_at,
+      out:row.checked_out_at,outcome:row.outcome,
+      administrativelyClosed:Boolean(row.closed_by),
+    });
+  }
+  return {from,to,records,tooMany:false};
+}
+
 export async function getAssessmentAlerts(org: string, actor: string, day: string, nowMs: number) {
   const { data, error } = await service().rpc("khpos_assessment_timetable_server", {
     p_actor: actor, p_org: org, p_mode: "list", p_input: { from: day },

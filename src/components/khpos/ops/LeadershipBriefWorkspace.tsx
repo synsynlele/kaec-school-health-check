@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposLeadershipBrief } from "@/lib/khpos/ops/briefing";
+import { composeLeadershipSummary } from "@/lib/khpos/writing-assistant";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -31,6 +32,10 @@ export function LeadershipBriefWorkspace({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [brief, setBrief] = useState<KhposLeadershipBrief | null>(null);
+  const [days,setDays]=useState<7|30>(7);
+  const [narrative,setNarrative]=useState("");
+  const [copyError,setCopyError]=useState("");
+
   const [error, setError] = useState(supabase ? "" : "Sign-in is not configured. Please contact your school administrator.");
 
   useEffect(() => {
@@ -45,7 +50,7 @@ export function LeadershipBriefWorkspace({
       }
 
       const response = await fetch(
-        `/api/khpos/ops/briefing/${organisationId}`,
+        `/api/khpos/ops/briefing/${organisationId}?days=${days}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -70,7 +75,7 @@ export function LeadershipBriefWorkspace({
     return () => {
       active = false;
     };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, days]);
 
   if (!brief && !error) {
     return <LoadingScreen />;
@@ -119,6 +124,36 @@ export function LeadershipBriefWorkspace({
         </div>
       </section>
 
+      <div className="mx-auto max-w-7xl px-4 pt-7 sm:px-6">
+        <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm">
+          <h2 className="font-black text-slate-950">Professional leadership report · No AI tokens</h2>
+          <p className="mt-2 text-sm text-slate-600">Choose the period for recorded activity. The current exceptions and 30-day operating scorecard are separate from the rolling activity period.</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {([7,30] as const).map(value=><button key={value} type="button" aria-pressed={days===value}
+              onClick={()=>{if(value!==days){setBrief(null);setNarrative("");setCopyError("");setDays(value);}}}
+              className={`rounded-xl border px-4 py-2 text-sm font-bold ${days===value?"bg-brand-700 text-white":"bg-white text-brand-900"}`}>
+              {value===7?"Last 7 days":"Last 30 days"}
+            </button>)}
+            <button type="button" className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white"
+              onClick={()=>{setNarrative(composeLeadershipSummary({
+                organisationName:brief.organisation.name,generatedAt:brief.generatedAt,periodDays:brief.periodDays,
+                progress:brief.progress,attention:brief.attention,agentPlan:brief.agentPlan,
+              }));setCopyError("");}}>
+              Prepare professional review
+            </button>
+          </div>
+          {narrative&&<div className="mt-4 space-y-3">
+            <textarea aria-label="Editable leadership review" rows={14} value={narrative} onChange={e=>setNarrative(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white p-4 text-sm leading-6 text-slate-950"/>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold"
+                onClick={async()=>{try{await navigator.clipboard.writeText(narrative);setCopyError("Copied.");}catch{setCopyError("Copy unavailable. Select the narrative above and copy manually.");}}}>Copy review</button>
+            </div>
+            {copyError&&<p role="status" className="text-xs text-slate-700">{copyError}</p>}
+            <p className="text-xs text-slate-600">This is an evidence-based draft for human verification, not a certified institutional assessment.</p>
+          </div>}
+        </section>
+      </div>
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6">
         <section>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
@@ -191,6 +226,62 @@ export function LeadershipBriefWorkspace({
               No current exception appears in your authorised attention queue.
             </p>
           )}
+        </section>
+
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7" aria-label="Intelligence action plan">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">KHP-OS Intelligence · Phases 1–3</p>
+              <h2 className="mt-2 text-2xl font-black">What leadership should address next</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                These recommendations connect operational exceptions, approvals, School Health Check progress and optional aggregated KSI learning signals. They use no AI tokens and cannot change school records by themselves.
+              </p>
+            </div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+              No model tokens
+            </span>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {[
+              ["Recommended next steps", brief.agentPlan.summary.recommendations],
+              ["Critical matters", brief.agentPlan.summary.critical],
+              ["Possible authority requests", brief.agentPlan.summary.approvalCandidates],
+            ].map(([label,value]) => (
+              <div key={String(label)} className="rounded-xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold text-slate-600">{label}</p>
+                <p className="mt-1 text-2xl font-black">{value}</p>
+              </div>
+            ))}
+          </div>
+          <ol className="mt-5 space-y-3">
+            {brief.agentPlan.actions.map((action,index) => (
+              <li key={action.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-black uppercase text-brand-700">
+                    {index+1}. {action.source === "kshc" ? "School Health Check" : action.source === "ksi" ? "KSI learning signal" : action.source} · {action.priority}
+                  </p>
+                  <span className="text-[11px] font-semibold text-slate-500">Phase {action.phase}</span>
+                </div>
+                <h3 className="mt-2 font-black text-slate-950">{action.title}</h3>
+                <p className="mt-2 text-sm text-slate-700">{action.observation}</p>
+                <p className="mt-2 text-sm leading-6"><strong>Recommended next step:</strong> {action.recommendation}</p>
+                <p className="mt-2 text-xs text-slate-600"><strong>Evidence to confirm:</strong> {action.evidenceToCheck}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <Link href={action.href} className="text-sm font-black text-brand-800">Review source <ArrowRight className="inline size-4" /></Link>
+                  {action.decisionDraft && (
+                    <Link href={`/khpos/${organisationId}/decisions?agentAction=${encodeURIComponent(action.id)}`}
+                      className="rounded-xl border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-800">
+                      Prepare decision request
+                    </Link>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+          {!brief.agentPlan.actions.length && (
+            <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900">No exception-triggered action is currently suggested. Continue routine monitoring and periodic improvement reviews.</p>
+          )}
+          <p className="mt-5 text-xs leading-5 text-slate-500">{brief.agentPlan.caveat}</p>
         </section>
 
         <section className="rounded-[30px] border border-brand-200 bg-brand-50 p-6 shadow-sm sm:p-7">

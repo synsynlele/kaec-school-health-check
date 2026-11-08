@@ -6,6 +6,7 @@
  * why AI was not used so production can never fail silently again.
  */
 import OpenAI from "openai";
+import { recordKshcAiUsage } from "@/lib/kaec-ai-observability";
 import { z } from "zod";
 import {
   CHAPTERS,
@@ -418,6 +419,7 @@ export async function generateReport(
         ],
       });
 
+      await recordKshcAiUsage("report", REPORT_MODEL, completion.usage);
       const raw = completion.choices[0]?.message?.content ?? "";
       const parsed = parseAiReport(raw);
       if (parsed.data) {

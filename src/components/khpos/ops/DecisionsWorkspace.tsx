@@ -95,6 +95,7 @@ export function DecisionsWorkspace({
   );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [agentDraftNotice, setAgentDraftNotice] = useState("");
 
   const [decisionMode, setDecisionMode] = useState<DecisionMode>("request");
   const [requesterAssignmentId, setRequesterAssignmentId] = useState("");
@@ -214,6 +215,51 @@ export function DecisionsWorkspace({
       }
 
       setError("");
+
+      // A leadership recommendation carries only an opaque, school-scoped ID
+      // in the URL. The server recomputes the proposal under the signed-in
+      // user's real permissions; private context is never copied into a URL.
+      const requestedId = new URLSearchParams(window.location.search).get("agentAction");
+      if (requestedId && requestedId.length <= 160) {
+        try {
+          const proposalResponse = await fetch(
+            `/api/khpos/ops/briefing/${organisationId}`,
+            { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
+          );
+          const payload = (await proposalResponse.json()) as {
+            ok?: boolean;
+            brief?: { agentPlan?: { actions: Array<{
+              id: string;
+              title: string;
+              decisionDraft: {
+                title: string;
+                context: string;
+                recommendation: string;
+                priority: KhposOpsDecisionPriority;
+                category: string;
+              } | null;
+            }> } };
+          };
+          if (active && proposalResponse.ok && payload.ok) {
+            const proposal = payload.brief?.agentPlan?.actions.find(
+              (item) => item.id === requestedId && item.decisionDraft !== null,
+            );
+            if (proposal?.decisionDraft) {
+              setDecisionMode("request");
+              setTitle(proposal.decisionDraft.title);
+              setContext(proposal.decisionDraft.context);
+              setRecommendation(proposal.decisionDraft.recommendation);
+              setPriority(proposal.decisionDraft.priority);
+              setCategory(proposal.decisionDraft.category);
+              setShowCreate(true);
+              setAgentDraftNotice("KHP-OS prepared this request from your current authorised records. Review the source and choose the correct authority before submitting. Nothing has been approved.");
+            }
+          }
+        } catch {
+          // Missing or stale suggestions never create records and never
+          // interfere with the ordinary manual decision workflow.
+        }
+      }
     });
 
     return () => {
@@ -419,6 +465,7 @@ export function DecisionsWorkspace({
       setRecordActionOutcome("");
       setRecordActionDueAt("");
       setShowCreate(false);
+      setAgentDraftNotice("");
     }
   }
 
@@ -621,6 +668,9 @@ export function DecisionsWorkspace({
 
         {showCreate && workspace.actorAssignments.length > 0 && (
           <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+            {agentDraftNotice && (
+              <p className="mb-5 rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm font-semibold text-brand-900">{agentDraftNotice}</p>
+            )}
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">

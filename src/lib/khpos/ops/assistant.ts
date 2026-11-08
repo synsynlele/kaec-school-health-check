@@ -2,11 +2,16 @@ import OpenAI from "openai";
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
+import { academyForSchoolRole } from "@/lib/khpos/academy-data";
+import { answerKhposAppHelp, isKhposAppHelpQuestion } from "@/lib/khpos/ops/app-help";
+import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
 import { getKhposOpsLibrary, type KhposOpsLibrary } from "@/lib/khpos/ops/library";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
 import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
+import { getKhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import { prepareKhposMeetingAgenda } from "@/lib/khpos/ops/meeting-agenda";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,17 +24,20 @@ const KHPOS_MODEL =
 let adminClient: SupabaseClient | null = null;
 
 export type KhposAskIntent =
+  | "app_help"
   | "process"
   | "policy"
   | "work"
   | "decision"
   | "performance"
   | "calendar"
+  | "meeting"
+  | "improvement"
   | "general";
 
 export interface KhposAskSource {
   id: string;
-  category: "process" | "policy" | "work" | "decision" | "performance" | "calendar";
+  category: "training" | "process" | "policy" | "work" | "decision" | "performance" | "calendar" | "meeting" | "improvement";
   title: string;
   detail: string;
   href: string;
@@ -91,7 +99,12 @@ function scoreText(questionTokens: string[], text: string) {
 }
 
 function detectIntent(question: string): KhposAskIntent {
+  if (isKhposAppHelpQuestion(question)) return "app_help";
   const lower = question.toLowerCase();
+  if (/meeting|agenda|minutes|meeting follow.?up|meeting action/i.test(lower))
+    return "meeting";
+  if (/school health|health check|kshc|reassessment|intervention|transformation|verified improvement/i.test(lower))
+    return "improvement";
   if (/policy|policies|rule|rules|allowed|prohibited|must we|requirement/.test(lower))
     return "policy";
   if (/process|procedure|how do|how should|workflow|steps|sla|escalat/.test(lower))
@@ -284,6 +297,47 @@ export async function askKhpos(
 
   const orgName = await membershipName(organisationId, userId);
   const intent = detectIntent(clean);
+
+  if (intent === "app_help") {
+    // Preserve the exact same role-based academy access control as the training
+    // endpoint. No OpenAI call, no token reservation, no personal record prompts.
+    const library = await getKhposOpsLibrary(organisationId, userId);
+    const courses = academyForSchoolRole(library.operatingRoleCodes, library.membershipRole);
+    const help = answerKhposAppHelp(clean, courses, organisationId);
+    const helpSources: KhposAskSource[] = help.matches.map((match, index) => ({
+      id: `training:${match.courseId}:${index}`,
+      category: "training",
+      title: match.lesson.title,
+      detail: match.lesson.purpose,
+      href: match.href,
+    }));
+    const hash = createHash("sha256").update(clean).digest("hex").slice(0, 16);
+    await admin().from("khpos_ops_audit_events").insert({
+      organisation_id: organisationId,
+      actor_user_id: userId,
+      event_type: "ops_ask_khpos",
+      object_type: "assistant_query",
+      metadata: {
+        intent,
+        questionHash: hash,
+        sourceCount: helpSources.length,
+        engine: "grounded_engine",
+        model: null,
+        tokenFree: true,
+      },
+    }).then(({ error }) => {
+      if (error) console.warn("[khpos][ask] help audit unavailable", error.code);
+    });
+    return {
+      answer: help.answer,
+      intent,
+      engine: "grounded_engine",
+      model: null,
+      sources: helpSources,
+      disclaimer: "This guidance comes from KHP-OS Training Academy. Your appointed role and approved school procedures determine what you may do.",
+    };
+  }
+
   const context: string[] = [];
   const sources: KhposAskSource[] = [];
 
@@ -412,16 +466,71 @@ export async function askKhpos(
     }
   }
 
+  // Phase 2: compose a follow-up agenda from the signed-in person's own
+  // action queue; never create tasks or approve decisions automatically.
+  if (intent === "meeting") {
+    const attention = await getKhposAttention(organisationId, userId);
+    const agenda = prepareKhposMeetingAgenda(attention.items);
+    context.push([
+      "ROLE-AUTHORISED MEETING FOLLOW-UP",
+      `There are ${agenda.items.length} suggested discussion items and ${agenda.remainingCount} additional items.`,
+      ...agenda.items.slice(0, 10).map(
+        (item) => `- ${item.purpose}: ${item.title}. Evidence: ${item.evidence}. Requested outcome: ${item.requestedOutcome}`,
+      ),
+    ].join("\n"));
+    for (const item of agenda.items.slice(0, 8)) {
+      sources.push({
+        id: item.sourceId,
+        category: "meeting",
+        title: item.title,
+        detail: item.requestedOutcome,
+        href: item.href,
+      });
+    }
+  }
+
+  // Phase 3: reuse the EXISTING KSHC baseline and reassessment conclusions.
+  // This is a read-only, authorised context; never regenerate the health check.
+  if (intent === "improvement") {
+    const health = await getKhposImprovementWorkspace(organisationId, userId);
+    context.push([
+      "KSHC SCHOOL HEALTH AND VERIFIED IMPROVEMENT",
+      `Baseline: ${health.baseline?.overallScore ?? "not assessed"}/100; status: ${health.baseline?.healthRating ?? "not established"}.`,
+      `Latest reassessment: ${health.latest?.reassessmentOverallScore ?? "none"}; change from baseline: ${health.latest?.deltaFromBaseline ?? "not established"}; verified: ${health.latest?.verifiedImprovement ? "yes" : "no"}.`,
+      ...health.priorityOutcomes.slice(0, 8).map(
+        (item) => `- Indicator ${item.sourceIndicatorId}: ${item.outcome}, score change ${item.scoreDelta}; next state: ${item.nextState}.`,
+      ),
+      "A completed task is not proof of institutional improvement; only valid reassessment evidence verifies progress.",
+    ].join("\n"));
+    sources.push({
+      id: "kshc-improvement",
+      category: "improvement",
+      title: "School health and improvement",
+      detail: "KSHC baseline and validated reassessment progress.",
+      href: `/khpos/${organisationId}/improvement`,
+    });
+  }
+
   const uniqueSources = Array.from(
     new Map(sources.map((source) => [source.id, source])).values(),
   ).slice(0, 10);
   const groundedContext = context.filter(Boolean).join("\n\n").slice(0, 14000);
   const ai = openai();
+  const permit = ai && groundedContext
+    ? await reserveKhposAi(admin(), {
+        organisationId,
+        actorUserId: userId,
+        feature: "ask",
+        model: KHPOS_MODEL,
+        inputCharacters: groundedContext.length + clean.length + orgName.length + 1900,
+        maxOutputTokens: 550,
+      })
+    : null;
   let answer: string;
   let engine: KhposAskResult["engine"] = "grounded_engine";
   let model: string | null = null;
 
-  if (!ai || !groundedContext) {
+  if (!ai || !groundedContext || !permit) {
     answer = deterministicAnswer(clean, intent, uniqueSources);
   } else {
     try {
@@ -450,12 +559,18 @@ ${groundedContext}`,
           { role: "user", content: clean },
         ],
       });
-      answer =
-        response.choices[0]?.message?.content?.trim() ||
-        deterministicAnswer(clean, intent, uniqueSources);
-      engine = "openai";
-      model = KHPOS_MODEL;
+      const generated = response.choices[0]?.message?.content?.trim();
+      answer = generated || deterministicAnswer(clean, intent, uniqueSources);
+      if (generated) {
+        engine = "openai";
+        model = KHPOS_MODEL;
+      }
+      await settleKhposAi(admin(), permit, response.usage ? {
+        inputTokens: response.usage.prompt_tokens,
+        outputTokens: response.usage.completion_tokens,
+      } : null, true);
     } catch (error) {
+      await settleKhposAi(admin(), permit, null, false);
       console.error("[khpos][ask] AI request failed; grounded fallback used", {
         reason: error instanceof Error ? error.name : "unknown_error",
       });

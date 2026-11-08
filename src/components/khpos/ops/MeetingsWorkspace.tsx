@@ -10,6 +10,7 @@ import { MeetingInvitees } from "./MeetingInvitees";
 import { MeetingCallPanel } from "./MeetingCallPanel";
 import { meetingEnd } from "@/lib/khpos/ops/call-plan";
 import { isCurrentMeeting } from "@/lib/khpos/ops/meeting-lifecycle";
+import { deriveMeetingFollowUps } from "@/lib/khpos/ops/meeting-followups";
 import type { MeetingWorkspace } from "@/lib/khpos/ops/meetings";
 
 const field = "w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900";
@@ -102,6 +103,9 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   });
  }
  const writable=!!room&&!["closed","cancelled"].includes(room.meeting.status);
+ const followUpDrafts=room ? deriveMeetingFollowUps({
+   decisions:room.decisions,messages:room.messages,existingActions:room.actions,
+ }) : [];
  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError("");setNotice(""); }} />
   <Link href={hq?"/khpos/hq":`/khpos/${organisationId}/work`} className="text-blue-700">{hq?"← KAEC HQ":"← Today"}</Link>
@@ -138,7 +142,16 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <div><h3 className="text-lg font-bold">Agreed decisions</h3><ul className="my-3 space-y-2">{room.decisions.map(d=><li key={d.id} className="whitespace-pre-wrap rounded-xl bg-blue-50 p-3">{d.body}</li>)}</ul>
    {host&&writable&&<form className="space-y-2" onSubmit={e=>{e.preventDefault();void save({mode:"decision",meetingId:selected,id:crypto.randomUUID(),body:decision},()=>setDecision(""));}}><label className="block">Record a decision<textarea required maxLength={4000} className={field} value={decision} onChange={e=>setDecision(e.target.value)}/></label><button disabled={busy||!decision.trim()} className={button}>Save decision</button></form>}</div>
    <div><h3 className="text-lg font-bold">Assigned follow-ups</h3><p className="text-sm text-slate-600">{hq?"Actions appear in the responsible colleague’s HQ Work queue. Record evidence and completion there.":"Actions appear in the responsible person’s Today queue. Completion evidence is recorded there."}</p><ul className="my-3 space-y-2">{room.actions.map(a=><li className="rounded-xl border p-3" key={a.id}><strong>{a.title}</strong><p>{a.owner_name} · Due {date(a.due_at)}</p><p className="capitalize">{a.status.replaceAll("_"," ")}</p></li>)}</ul>
-   {host&&writable&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void save({mode:"action",meetingId:selected,id:crypto.randomUUID(),title:action,ownerId:owner,dueAt:new Date(due).toISOString()},()=>{setAction("");setOwner("");setDue("");});}}><label className="block">What needs to happen?<input required maxLength={160} className={field} value={action} minLength={hq?4:1} onChange={e=>setAction(e.target.value)}/></label><label className="block">Who is responsible?<select required className={field} value={owner} onChange={e=>setOwner(e.target.value)}><option value="">{hq?"Choose an invited HQ colleague":"Choose an invited school staff member"}</option>{room.participants.filter(p=>!hq||p.is_hq).map(p=><option key={p.user_id} value={p.user_id}>{p.name}</option>)}</select></label><label className="block">Deadline<input required type="datetime-local" className={field} value={due} onChange={e=>setDue(e.target.value)}/></label><button disabled={busy} className={button}>{hq?"Assign in HQ Work":"Assign in Today"}</button></form>}</div>
+   {host&&writable&&followUpDrafts.length>0&&<aside className="my-4 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+   <p className="text-xs font-black uppercase text-brand-800">Suggested commitments · No AI tokens</p>
+   <p className="mt-2 text-sm text-brand-950">Explicitly marked Action:, Task: or Follow-up: in the private meeting's own messages or decisions. Select one to prepare an assignment; then choose the responsible attendee and deadline yourself.</p>
+   <div className="mt-3 space-y-2">{followUpDrafts.map(d=><button key={d.id} type="button" disabled={busy}
+     className="block w-full rounded-xl border border-brand-200 bg-white p-3 text-left text-sm font-semibold text-brand-950"
+     onClick={()=>{setAction(d.title);setOwner("");setDue("");}}>
+      Prepare: {d.title}
+   </button>)}</div>
+  </aside>}
+  {host&&writable&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void save({mode:"action",meetingId:selected,id:crypto.randomUUID(),title:action,ownerId:owner,dueAt:new Date(due).toISOString()},()=>{setAction("");setOwner("");setDue("");});}}><label className="block">What needs to happen?<input required maxLength={160} className={field} value={action} minLength={hq?4:1} onChange={e=>setAction(e.target.value)}/></label><label className="block">Who is responsible?<select required className={field} value={owner} onChange={e=>setOwner(e.target.value)}><option value="">{hq?"Choose an invited HQ colleague":"Choose an invited school staff member"}</option>{room.participants.filter(p=>!hq||p.is_hq).map(p=><option key={p.user_id} value={p.user_id}>{p.name}</option>)}</select></label><label className="block">Deadline<input required type="datetime-local" className={field} value={due} onChange={e=>setDue(e.target.value)}/></label><button disabled={busy} className={button}>{hq?"Assign in HQ Work":"Assign in Today"}</button></form>}</div>
   </section>:<section className="rounded-2xl bg-slate-50 p-6"><h2 className="text-xl font-semibold">A clear record of every commitment</h2><p className="mt-2">Open an invited meeting to discuss the agenda, see decisions and check follow-ups.</p></section>}
   </div>
  </main>;

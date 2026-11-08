@@ -3,6 +3,9 @@ import { prepareKhposMeetingAgenda } from "@/lib/khpos/ops/meeting-agenda";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
+import { getKhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import { getKhposKsiWorkspace } from "@/lib/khpos/ksi-integration";
+import { buildSchoolAgentPlan, type SchoolAgentPlan } from "@/lib/khpos/agentic/plan";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -11,7 +14,7 @@ let adminClient: SupabaseClient | null = null;
 export interface KhposLeadershipBrief {
   organisation: { id: string; name: string };
   generatedAt: string;
-  periodDays: 7;
+  periodDays: 7 | 30;
   attention: Awaited<ReturnType<typeof getKhposAttention>>;
   derivedPerformance: Awaited<ReturnType<typeof getKhposOpsPerformance>>["derivedPerformance"];
   progress: {
@@ -31,6 +34,7 @@ export interface KhposLeadershipBrief {
   }>;
   meetingQuestions: string[];
   meetingAgenda: ReturnType<typeof prepareKhposMeetingAgenda>;
+  agentPlan: SchoolAgentPlan;
 }
 
 export class KhposLeadershipBriefError extends Error {
@@ -58,6 +62,7 @@ function admin() {
 export async function getKhposLeadershipBrief(
   organisationId: string,
   userId: string,
+  periodDays: 7 | 30 = 7,
 ): Promise<KhposLeadershipBrief> {
   const [attention, performance, calendar] = await Promise.all([
     getKhposAttention(organisationId, userId),
@@ -73,7 +78,7 @@ export async function getKhposLeadershipBrief(
   }
 
   const client = admin();
-  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const since = new Date(Date.now() - periodDays * 86_400_000).toISOString();
   const [completedWork, resolvedIssues, implementedDecisions, submittedRecords] =
     await Promise.all([
       client
@@ -115,7 +120,28 @@ export async function getKhposLeadershipBrief(
     );
   }
 
+  // Reuse independent, already-governed KSHC and aggregated KSI evidence.
+  // A failed/optional connector must not block the ordinary leadership brief.
+  const [healthResult, ksiResult] = await Promise.allSettled([
+    getKhposImprovementWorkspace(organisationId, userId),
+    getKhposKsiWorkspace(organisationId, userId),
+  ]);
+  if (healthResult.status === "rejected") {
+    console.warn("[khpos][agentic] KSHC evidence unavailable",
+      healthResult.reason instanceof Error ? healthResult.reason.name : "unknown");
+  }
+  if (ksiResult.status === "rejected") {
+    console.warn("[khpos][agentic] KSI evidence unavailable",
+      ksiResult.reason instanceof Error ? ksiResult.reason.name : "unknown");
+  }
   const derived = performance.derivedPerformance;
+  const agentPlan = buildSchoolAgentPlan({
+    organisationId,
+    attention,
+    performance: derived,
+    health: healthResult.status === "fulfilled" ? healthResult.value : null,
+    ksi: ksiResult.status === "fulfilled" ? ksiResult.value : null,
+  });
   const meetingQuestions: string[] = [];
 
   if (attention.summary.critical > 0) {
@@ -181,7 +207,7 @@ export async function getKhposLeadershipBrief(
   return {
     organisation: performance.organisation,
     generatedAt: new Date().toISOString(),
-    periodDays: 7,
+    periodDays,
     attention,
     derivedPerformance: derived,
     progress: {
@@ -193,5 +219,6 @@ export async function getKhposLeadershipBrief(
     upcoming,
     meetingQuestions,
     meetingAgenda: prepareKhposMeetingAgenda(attention.items),
+    agentPlan,
   };
 }

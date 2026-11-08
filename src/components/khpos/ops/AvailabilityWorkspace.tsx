@@ -24,6 +24,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { proposeCoverageCandidates } from "@/lib/khpos/ops/schedule-assist";
 import type {
   KhposOpsAvailabilityCase,
   KhposOpsAvailabilityCaseType,
@@ -1045,6 +1046,18 @@ export function AvailabilityWorkspace({
                                   <p className="text-sm font-black text-brand-950">
                                     Assign temporary coverage
                                   </p>
+                                  <div className="mt-3 space-y-2">
+                                    <p className="text-xs font-semibold text-brand-900">Suggested staff to investigate · No AI tokens. Candidates are filtered against active leave conflicts; verify subject qualifications and actual lesson availability before assigning.</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {proposeCoverageCandidates(availabilityCase,workspace).map(candidate=>(
+                                        <button key={candidate.staffId} type="button" disabled={Boolean(busyId)}
+                                          className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-brand-950"
+                                          onClick={()=>setCoverCandidate(current=>({...current,[availabilityCase.id]:candidate.staffId}))}>
+                                          Consider {candidate.displayName} · {candidate.roleTitle}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
                                   <div className="mt-3 grid gap-3 lg:grid-cols-2">
                                     <select
                                       value={

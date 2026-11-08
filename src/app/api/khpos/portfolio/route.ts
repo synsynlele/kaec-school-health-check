@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { buildNetworkAgentPlan } from "@/lib/khpos/agentic/plan";
 import {
   bearerTokenFromRequest,
   KhposAuthError,
@@ -17,7 +18,11 @@ export async function GET(request: Request) {
     if (!accessToken) throw new KhposAuthError("Sign in to continue.", 401);
     const user = await verifyKhposAccessToken(accessToken);
     const portfolio = await getKhposPortfolioIntelligence(user.id);
-    return NextResponse.json({ ok: true, portfolio });
+    // The existing portfolio RPC enforces platform-custodian permission
+    // before any named cross-school intelligence is composed.
+    const agentPlan = buildNetworkAgentPlan(portfolio);
+    return NextResponse.json({ ok: true, portfolio, agentPlan },
+      { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof KhposAuthError || error instanceof KhposBenchmarkingError) {
       return NextResponse.json(

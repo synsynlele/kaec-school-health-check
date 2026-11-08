@@ -7,6 +7,7 @@ import {useCallback,useEffect,useState} from "react";
 import Link from "next/link";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
 import {KHPOS_ACTIVITY_CHANGED} from "@/lib/khpos/ops/action-events";
+import {composeAnnouncement, type WritingTone} from "@/lib/khpos/writing-assistant";
 import type {Announcement,AnnouncementWorkspace,AnnouncementTracking} from "@/lib/khpos/announcements";
 const field="mt-1 block min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base text-slate-950";
 const time=(value:string)=>new Date(value).toLocaleString("en-NG",{timeZone:"Africa/Lagos",dateStyle:"medium",timeStyle:"short"});
@@ -15,6 +16,17 @@ export function AnnouncementsWorkspace({organisationId,compact=false}:{organisat
  const [data,setData]=useState<AnnouncementWorkspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
  const [query,setQuery]=useState(""),[tab,setTab]=useState<"active"|"archive"|"manage">("active"),[opened,setOpened]=useState<string|null>(null);
  const [editor,setEditor]=useState<Announcement|null|false>(false),[scope,setScope]=useState(0),[tracking,setTracking]=useState<{id:string;offset:number;data:AnnouncementTracking}|null>(null),[withdraw,setWithdraw]=useState<string|null>(null);
+ const [announcementTitle,setAnnouncementTitle]=useState("");
+ const [announcementMessage,setAnnouncementMessage]=useState("");
+ const [draftPurpose,setDraftPurpose]=useState("");
+ const [draftPoints,setDraftPoints]=useState("");
+ const [draftAction,setDraftAction]=useState("");
+ const [draftDeadline,setDraftDeadline]=useState("");
+ const [draftContact,setDraftContact]=useState("");
+ const [draftSignature,setDraftSignature]=useState("");
+ const [draftTone,setDraftTone]=useState<WritingTone>("formal");
+ const [draftError,setDraftError]=useState("");
+
  const endpoint=`/api/khpos/announcements${organisationId?`?school=${organisationId}`:""}`;
  const request=useCallback(async(input?:Record<string,unknown>,extra="")=>{
   const client=createBrowserSupabaseClient(),session=(await client?.auth.getSession())?.data.session;
@@ -32,13 +44,59 @@ export function AnnouncementsWorkspace({organisationId,compact=false}:{organisat
  async function showTracking(id:string,offset=0){setBusy(true);try{const body=await request(undefined,`tracking=${id}&offset=${offset}`);setTracking({id,offset,data:body.tracking});setError("");}catch(cause){setError(cause instanceof Error?cause.message:"Tracking could not load.");}finally{setBusy(false);}}
  if(compact){const items=(data?.items??[]).filter(n=>n.canRespond&&n.available&&(n.priority==="urgent"||!n.readAt||(n.requires_ack&&!n.acknowledgedAt))).slice(0,3);return <section className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-bold">Staff announcements</h2><Link className="inline-flex min-h-11 items-center font-semibold text-brand-800 underline" href={`/khpos/${organisationId}/announcements`}>Open noticeboard</Link></div>{error?<p className="text-sm text-amber-900">Announcements could not load. Open the noticeboard to retry.</p>:!data?<LoadingScreen inline />:items.length===0?<p className="text-sm text-slate-600">No unread or urgent announcements right now.</p>:items.map(n=><Link key={n.id} href={`/khpos/${organisationId}/announcements?notice=${n.id}`} className={`block rounded-xl border bg-white p-3 ${n.priority==="urgent"?"border-rose-300":"border-slate-200"}`}><span className="text-xs font-bold uppercase">{n.priority}{n.requires_ack&&!n.acknowledgedAt?" · Acknowledgement needed":""}</span><span className="mt-1 block font-bold">{n.title}</span><span className="mt-1 block text-xs text-slate-600">{n.publisher_name} · {time(n.publish_at)}</span></Link>)}</section>;}
  const filtered=(data?.items??[]).filter(n=>tab==="manage"?n.canManage:tab==="archive"?n.phase==="expired":n.available).filter(n=>`${n.title} ${n.message} ${n.publisher_name} ${n.priority}`.toLowerCase().includes(query.trim().toLowerCase()));
- function startEdit(n:Announcement|null){setEditor(n);setScope(n?Math.max(0,data?.scopes.findIndex(s=>s.campusId===n.campus_id&&s.unitId===n.unit_id)??0):0);setError("");setNotice("");}
+ function startEdit(n:Announcement|null){
+  setAnnouncementTitle(n?.title??"");
+  setAnnouncementMessage(n?.message??"");
+  setDraftPurpose("");setDraftPoints("");setDraftAction("");setDraftDeadline("");
+  setDraftContact("");setDraftSignature("");setDraftTone("formal");setDraftError("");
+  setEditor(n);setScope(n?Math.max(0,data?.scopes.findIndex(s=>s.campusId===n.campus_id&&s.unitId===n.unit_id)??0):0);setError("");setNotice("");}
  async function save(event:React.FormEvent<HTMLFormElement>){event.preventDefault();const form=event.currentTarget,values=new FormData(form),mode=(event.nativeEvent as SubmitEvent).submitter?.getAttribute("value")||"save",audience=data?.scopes[scope];if(!audience)return;const publishAt=String(values.get("publishAt")||""),expiresAt=String(values.get("expiresAt")||"");await act({mode,id:editor?editor.id:null,title:values.get("title"),message:values.get("message"),priority:values.get("priority"),requiresAck:values.get("requiresAck")==="on",documentUrl:values.get("documentUrl"),taskUrl:values.get("taskUrl"),campusId:audience.campusId,unitId:audience.unitId,roleCodes:values.getAll("roleCodes").filter(Boolean),allSchools:!organisationId&&values.get("allSchools")==="on",schoolIds:!organisationId&&values.get("allSchools")!=="on"?values.getAll("schoolIds"):[],publishAt:publishAt?new Date(publishAt).toISOString():null,expiresAt:expiresAt?new Date(expiresAt).toISOString():null,changeNote:values.get("changeNote")});}
  return <main className="mx-auto max-w-6xl space-y-5 p-4 text-slate-950 sm:p-6">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} /><div><h1 className="text-3xl font-bold">Staff announcements</h1><p className="mt-2 text-sm leading-6 text-slate-600">Official notices for your permitted schools, campuses, sections and roles. Keep confidential safeguarding and personnel matters in their protected workflows. Use an assigned task for work with an owner and deadline.</p></div>
   {error&&<div role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}<button type="button" disabled={busy} onClick={()=>void load()} className="ml-3 min-h-11 underline">Refresh announcements</button></div>}{notice&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}
   <div className="flex flex-wrap gap-3">{(["active","archive",...(data?.scopes.length?["manage"]:[])] as const).map(t=><button key={t} type="button" disabled={busy} aria-pressed={tab===t} className={`min-h-12 rounded-xl border px-4 py-3 font-semibold capitalize ${tab===t?"bg-slate-950 text-white":"bg-white"}`} onClick={()=>setTab(t as typeof tab)}>{t==="manage"?"Publishing & tracking":t}</button>)}{!!data?.scopes.length&&<button type="button" disabled={busy} onClick={()=>startEdit(null)} className="min-h-12 rounded-xl bg-brand-700 px-4 py-3 font-semibold text-white">Create announcement</button>}</div>
-  {editor!==false&&data&&<form id="announcement-editor" key={editor?.id||"new"} onSubmit={event=>void save(event)} className="scroll-mt-40 space-y-4 rounded-2xl border border-brand-200 bg-white p-4 sm:p-6"><h2 className="text-xl font-bold">{editor?"Edit announcement":"Create announcement"}</h2><label className="block font-semibold">Title<input name="title" required minLength={3} maxLength={160} defaultValue={editor?.title} className={field}/></label><label className="block font-semibold">Message<textarea name="message" rows={5} required minLength={10} maxLength={10000} defaultValue={editor?.message} className={field}/></label>
+  {editor!==false&&data&&<form id="announcement-editor" key={editor?.id||"new"} onSubmit={event=>void save(event)} className="scroll-mt-40 space-y-4 rounded-2xl border border-brand-200 bg-white p-4 sm:p-6"><h2 className="text-xl font-bold">{editor?"Edit announcement":"Create announcement"}</h2>
+   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+     <details>
+       <summary className="cursor-pointer font-black text-emerald-950">Professional announcement writer · No AI tokens</summary>
+       <p className="mt-2 text-xs leading-5 text-emerald-950">Enter the facts yourself. KHP-OS formats them into an editable message locally; nothing is sent to ChatGPT or published without your review.</p>
+       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+         <label className="block text-sm font-bold sm:col-span-2">What is being announced? (required)
+           <textarea rows={2} value={draftPurpose} onChange={e=>setDraftPurpose(e.target.value)} className={field} maxLength={1800} placeholder="Enter the actual update or reason for the notice." />
+         </label>
+         <label className="block text-sm font-bold sm:col-span-2">Important details · one per line (optional)
+           <textarea rows={3} value={draftPoints} onChange={e=>setDraftPoints(e.target.value)} className={field} maxLength={2500} placeholder="Specific facts, event details, instructions or arrangements."/>
+         </label>
+         <label className="block text-sm font-bold">What should recipients do?
+           <textarea rows={2} value={draftAction} onChange={e=>setDraftAction(e.target.value)} className={field} maxLength={900}/>
+         </label>
+         <label className="block text-sm font-bold">Exact date / time, if any
+           <input value={draftDeadline} onChange={e=>setDraftDeadline(e.target.value)} className={field} maxLength={160} placeholder="e.g. Monday, 9 November, 10:00 am"/>
+         </label>
+         <label className="block text-sm font-bold">Who can answer questions?
+           <input value={draftContact} onChange={e=>setDraftContact(e.target.value)} className={field} maxLength={200}/>
+         </label>
+         <label className="block text-sm font-bold">Signed by · optional
+           <input value={draftSignature} onChange={e=>setDraftSignature(e.target.value)} className={field} maxLength={160}/>
+         </label>
+         <label className="block text-sm font-bold">Writing style
+           <select value={draftTone} onChange={e=>setDraftTone(e.target.value as WritingTone)} className={field}>
+             <option value="formal">Professional &amp; formal</option><option value="warm">Warm &amp; supportive</option><option value="concise">Brief &amp; direct</option>
+           </select>
+         </label>
+       </div>
+       {draftError&&<p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{draftError}</p>}
+       <button type="button" disabled={busy} className="mt-3 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white" onClick={()=>{
+         try {
+           setAnnouncementMessage(composeAnnouncement({title:announcementTitle,purpose:draftPurpose,keyPoints:draftPoints,
+             requiredAction:draftAction,deadline:draftDeadline,contact:draftContact,closingName:draftSignature,tone:draftTone}));
+           setDraftError("");
+         }catch(err){setDraftError(err instanceof Error?err.message:"Enter the notice subject and purpose first.");}
+       }}>Prepare professional draft · Free</button>
+     </details>
+   </div>
+   <label className="block font-semibold">Title<input name="title" required minLength={3} maxLength={160} value={announcementTitle} onChange={e=>setAnnouncementTitle(e.target.value)} className={field}/></label>
+   <label className="block font-semibold">Message · review and edit before publishing<textarea name="message" rows={8} required minLength={10} maxLength={10000} value={announcementMessage} onChange={e=>setAnnouncementMessage(e.target.value)} className={field}/></label>
    {organisationId?<label className="block font-semibold">Audience<select value={scope} onChange={e=>setScope(Number(e.target.value))} className={field}>{data.scopes.map((s,i)=><option key={i} value={i}>{s.label}</option>)}</select></label>:<fieldset className="space-y-3 rounded-xl border p-3"><legend className="font-bold">Network audience</legend><label className="flex min-h-11 items-center gap-3"><input name="allSchools" type="checkbox" defaultChecked={editor?.all_schools} className="size-5"/>All active approved schools, including future partners</label><label className="block text-sm font-semibold">Or select schools · leave this selection empty if all schools is checked<select multiple name="schoolIds" defaultValue={editor?.school_ids||[]} className={`${field} min-h-28`}>{data.schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><p className="text-xs text-slate-600">Network publishing requires administrator MFA.</p></fieldset>}
    <label className="block font-semibold">Limit to roles · optional<select multiple name="roleCodes" defaultValue={editor?.role_codes||[]} className={`${field} min-h-28`}>{data.roles.map(r=><option key={r.code} value={r.code}>{r.title}</option>)}</select><span className="text-xs font-normal text-slate-600">No selected roles means all staff within the chosen audience.</span></label>
    <label className="block font-semibold">Priority<select name="priority" defaultValue={editor?.priority||"normal"} className={field}><option value="normal">Normal · noticeboard and Today</option><option value="important">Important · also an in-app alert</option><option value="urgent">Urgent · pinned and eligible for device push</option></select></label><label className="flex min-h-12 items-center gap-3"><input type="checkbox" name="requiresAck" defaultChecked={editor?.requires_ack} className="size-5"/>Require each recipient to acknowledge this revision</label>

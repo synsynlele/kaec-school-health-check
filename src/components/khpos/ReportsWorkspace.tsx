@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TapChoices } from "./TapChoices";
 import { quickReportTemplates, visibleReportFields, visibleReportPayload } from "@/lib/khpos/quick-forms";
+import { composeSchoolReport } from "@/lib/khpos/writing-assistant";
+import type { EvidencePrefill } from "@/lib/khpos/report-prefill";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import type {
@@ -458,6 +460,7 @@ export function ReportsWorkspace({
               </div>
               {chosen && chosen.id === selected ? (
                 <ReportEditor
+                  organisationId={organisationId}
                   key={`${chosen.id}:${chosen.lock_version}`}
                   report={chosen}
                   history={detail?.history ?? []}
@@ -732,12 +735,14 @@ function AnswerField({
   );
 }
 function ReportEditor({
+  organisationId,
   report: n,
   history,
   busy,
   onAction,
 }: {
   report: SchoolReport;
+  organisationId: string;
   history: Workspace["history"];
   busy: boolean;
   onAction: (input: Record<string, unknown>) => Promise<boolean>;
@@ -747,7 +752,56 @@ function ReportEditor({
     [confirmation, setConfirmation] = useState<"withdraw" | "return" | null>(
       null,
     );
+  const [evidence, setEvidence] = useState<EvidencePrefill | null>(null);
+  const [evidenceError, setEvidenceError] = useState("");
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const loadReportEvidence = async () => {
+    setEvidenceLoading(true);setEvidenceError("");
+    try {
+      const client=createBrowserSupabaseClient();
+      const token=(await client?.auth.getSession())?.data.session?.access_token;
+      if(!token)throw new Error("Sign in again to use evidence pre-fill.");
+      const res=await fetch(`/api/khpos/reports/prefill?school=${encodeURIComponent(organisationId)}&report=${encodeURIComponent(n.id)}`,{
+        headers:{Authorization:`Bearer ${token}`},cache:"no-store",
+      });
+      const body=await res.json() as {ok?:boolean;prefill?:EvidencePrefill;error?:string};
+      if(!res.ok||!body.ok||!body.prefill)throw new Error(body.error||"Evidence unavailable.");
+      setEvidence(body.prefill);
+    }catch(error){setEvidence(null);setEvidenceError(error instanceof Error?error.message:"Evidence unavailable.");}
+    finally{setEvidenceLoading(false);}
+  };
+  const applyVerifiedEvidence=()=>{
+    if(!evidence?.suggested.length)return;
+    // Never replace a person's existing or returned-correction answers.
+    setPayload(current=>{
+      const copy={...current};
+      for(const field of evidence.suggested)if(!String(copy[field.key]??"").trim())copy[field.key]=field.value;
+      return copy;
+    });
+    setProfessionalPreview("");setPreviewCopied(false);
+    setEvidenceError("Draft values inserted into empty fields only. Review and save or submit yourself.");
+  };
+  const [professionalPreview, setProfessionalPreview] = useState("");
+  const [professionalError, setProfessionalError] = useState("");
+  const [previewCopied, setPreviewCopied] = useState(false);
   const editable = n.canEdit && ["draft", "returned"].includes(n.status);
+  const prepareProfessionalPreview = () => {
+    try {
+      const fields = visibleReportFields(n.fields, payload);
+      setProfessionalPreview(composeSchoolReport({
+        title: n.title,
+        author: n.ownerName,
+        periodStart: dateOnly(n.period_start),
+        periodEnd: dateOnly(n.period_end),
+        fields,
+        payload: visibleReportPayload(n.fields, payload),
+      }));
+      setProfessionalError("");setPreviewCopied(false);
+    } catch (cause) {
+      setProfessionalPreview("");
+      setProfessionalError(cause instanceof Error?cause.message:"Enter report answers first.");
+    }
+  };
   const act = (mode: string) =>
     onAction({ mode, id: n.id, lockVersion: n.lock_version, payload: visibleReportPayload(n.fields, payload), note });
   return (
@@ -786,15 +840,50 @@ function ReportEditor({
           <strong>Reviewer / withdrawal note:</strong> {n.review_note}
         </p>
       )}
+      {editable && (
+        <section className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <h3 className="font-black text-brand-950">Pre-fill from recorded class sessions · No AI tokens</h3>
+          <p className="mt-2 text-sm text-brand-900">Retrieve only the sessions visible to your school account for the current reporting week. No data is invented, and your existing answers are never overwritten.</p>
+          <button type="button" disabled={busy||evidenceLoading} onClick={()=>void loadReportEvidence()} className={button+" mt-3 bg-white"}>{evidenceLoading?"Checking evidence…":"Check available lesson records"}</button>
+          {evidence&&<div className="mt-3 space-y-2">
+            <p className="whitespace-pre-wrap text-sm">{evidence.narrative||"No matching session records found for this reporting period."}</p>
+            <p className="text-xs leading-5 text-brand-900">{evidence.caveat}</p>
+            <Link href={evidence.sourceHref} className="block text-xs font-bold underline">Review original lesson check-ins</Link>
+            {evidence.suggested.length>0&&<button type="button" disabled={busy} onClick={applyVerifiedEvidence} className={button+" bg-white"}>Insert into empty narrative field (review first)</button>}
+          </div>}
+          {evidenceError&&<p role="status" className="mt-2 text-xs font-semibold text-brand-900">{evidenceError}</p>}
+        </section>
+      )}
       {visibleReportFields(n.fields, payload).map((f) => (
         <AnswerField
           key={f.key}
           field={f}
           value={payload[f.key]}
           disabled={busy || !editable}
-          onChange={(v) => setPayload((p) => ({ ...p, [f.key]: v }))}
+          onChange={(v) => { setPayload((p) => ({ ...p, [f.key]: v })); setProfessionalPreview(""); setPreviewCopied(false); }}
         />
       ))}
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" aria-label="Professional report preview">
+        <h3 className="font-black text-emerald-950">Professional report writer · No AI tokens</h3>
+        <p className="mt-2 text-sm text-emerald-950">
+          Turn your actual form answers into a structured, professional report locally. Nothing is sent to an AI model. Preview and review before sharing; the governed report answers and submission process remain unchanged.
+        </p>
+        <button type="button" className={button+" mt-3 bg-white"} disabled={busy}
+          onClick={prepareProfessionalPreview}>Prepare professional narrative · Free</button>
+        {professionalError&&<p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{professionalError}</p>}
+        {professionalPreview&&(
+          <div className="mt-4 space-y-2">
+            <label className="block text-sm font-bold text-emerald-950">Draft based on recorded answers
+              <textarea rows={12} value={professionalPreview} onChange={e=>{setProfessionalPreview(e.target.value);setPreviewCopied(false);}} className={field+" font-normal"} />
+            </label>
+            <button type="button" className={button+" bg-white"} onClick={async()=>{
+              try { await navigator.clipboard.writeText(professionalPreview); setPreviewCopied(true); setProfessionalError(""); }
+              catch { setProfessionalError("Copy was unavailable. Select the text above and copy it manually."); }
+            }}>{previewCopied?"Copied":"Copy professional narrative"}</button>
+            <p className="text-xs leading-5 text-emerald-950">This is a presentation of your answers, not evidence of independently verified outcomes. Do not share confidential learner or personnel details outside authorised channels.</p>
+          </div>
+        )}
+      </section>
       {editable && (
         <div className="flex flex-wrap gap-3">
           <button
