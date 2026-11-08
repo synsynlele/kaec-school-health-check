@@ -210,3 +210,29 @@ export function composeLeadershipSummary(input: {
   lines.push("","ACCOUNTABILITY","This document is an automatically prepared review draft from current records. Leaders must verify the evidence, assign owners, and confirm outcomes before circulation. KSHC improvement is verified only by valid reassessment.");
   return lines.join("\n").slice(0,14000);
 }
+
+/** A private HQ digest from already-authorised network triage, not a public
+ * leaderboard. The narrative must stay in the governed corporate workspace. */
+export function composeNetworkSupportDigest(input:{
+  generatedAt:string;
+  summary:{schoolsScanned:number;needsHumanReview:number;critical:number};
+  actions:readonly {schoolName:string;priority:string;reasons:readonly string[];proposedNextStep:string}[];
+}):string {
+  const out=[
+    "KAEC NETWORK — PATHFINDER SUPPORT DIGEST",
+    "Generated: "+heading(input.generatedAt,"Date not recorded"),
+    "Schools reviewed: "+input.summary.schoolsScanned,
+    "Schools flagged for human follow-up: "+input.summary.needsHumanReview,
+    "Critical support cases: "+input.summary.critical,
+    "",
+    "RECOMMENDED SUPPORT QUEUE",
+  ];
+  if(!input.actions.length)out.push("No exception-triggered support item is currently flagged by the authorised portfolio measures.");
+  input.actions.slice(0,12).forEach((school,index)=>{
+    out.push(`${index+1}. ${clean(school.schoolName,130)} [${clean(school.priority,30)}]`,
+      "Basis: "+school.reasons.map(x=>clean(x,250)).join("; "),
+      "Proposed next step: "+clean(school.proposedNextStep,400),"");
+  });
+  out.push("Confidential: KAEC platform custodians only. Review school-specific evidence with its appointed leader. Do not distribute raw rankings, or presume that suggestions prove school failure.");
+  return out.join("\n").slice(0,14000);
+}
