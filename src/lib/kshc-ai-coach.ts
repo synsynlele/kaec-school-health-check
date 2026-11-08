@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { recordKshcAiUsage } from "@/lib/kaec-ai-observability";
 import { CHAPTER_MAP } from "./questions";
 import type { CoachMessage, ReportData, SchoolInfo } from "./types";
 
@@ -186,6 +187,7 @@ export async function streamCoachReply(
       temperature: 0.45,
       max_completion_tokens: 600,
       stream: true,
+      stream_options: { include_usage: true },
       messages: [
         { role: "system", content: system },
         ...history.slice(-8).map((message) => ({ role: message.role, content: message.content })),
@@ -195,8 +197,10 @@ export async function streamCoachReply(
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
+        let finalUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
         try {
           for await (const chunk of response) {
+            if (chunk.usage) finalUsage = chunk.usage;
             const delta = chunk.choices[0]?.delta?.content ?? "";
             if (delta) controller.enqueue(encoder.encode(delta));
           }
@@ -206,6 +210,7 @@ export async function streamCoachReply(
           );
           console.error("[kshc][ai_coach] stream interrupted", error);
         } finally {
+          await recordKshcAiUsage("coach", COACH_MODEL, finalUsage);
           controller.close();
         }
       },
