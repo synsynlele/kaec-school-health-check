@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { z } from "zod";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { CHAPTER_MAP, QUESTION_INDEX, RATING_OPTIONS } from "@/lib/questions";
@@ -479,20 +480,43 @@ export async function ensureKhposInterventionIntelligence(
         attempt === 1
           ? ""
           : `\n\nVALIDATION FAILURE ON THE PREVIOUS ATTEMPT\n${lastIssues.join("\n")}\nRegenerate the complete JSON from scratch and correct every issue.`;
-      const completion = await openai.chat.completions.create({
+      const permit = await reserveKhposAi(client, {
+        organisationId: intervention.organisation_id,
+        actorUserId: null, // This system-triggered step is attached to an authorised intervention.
+        feature: "improvement",
         model: KHPOS_INTELLIGENCE_MODEL,
-        temperature: 0.25,
-        max_completion_tokens: 6000,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are KAEC-NG's KHP-OS institutional transformation analyst. You contextualise an already-approved canonical intervention from supplied evidence and output valid JSON only.",
-          },
-          { role: "user", content: `${prompt}${retryInstruction}` },
-        ],
+        inputCharacters: prompt.length + retryInstruction.length + 450,
+        maxOutputTokens: 6000,
       });
+      if (!permit) {
+        lastIssues = ["AI allowance exhausted or budget service unavailable. Keep the system plan."];
+        break;
+      }
+
+      let completion;
+      try {
+        completion = await openai.chat.completions.create({
+          model: KHPOS_INTELLIGENCE_MODEL,
+          temperature: 0.25,
+          max_completion_tokens: 6000,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are KAEC-NG's KHP-OS institutional transformation analyst. You contextualise an already-approved canonical intervention from supplied evidence and output valid JSON only.",
+            },
+            { role: "user", content: `${prompt}${retryInstruction}` },
+          ],
+        });
+        await settleKhposAi(client, permit, completion.usage ? {
+          inputTokens: completion.usage.prompt_tokens,
+          outputTokens: completion.usage.completion_tokens,
+        } : null, true);
+      } catch (error) {
+        await settleKhposAi(client, permit, null, false);
+        throw error;
+      }
 
       const parsed = parseModelOutput(completion.choices[0]?.message?.content ?? "");
       if (parsed.data) {
