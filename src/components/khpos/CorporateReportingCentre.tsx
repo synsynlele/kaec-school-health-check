@@ -6,6 +6,7 @@ import { ActionFeedback } from "./ops/ActionFeedback";
 import Link from "next/link";
 import {TapChoices} from "./TapChoices";
 import {hqProgressOptions,hqWorkOptions,type HqQuickAnswers} from "@/lib/khpos/hq-quick-report";
+import {composeHqReport} from "@/lib/khpos/writing-assistant";
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {CalendarDays,FileCheck2,ClipboardList,ArrowLeft,RefreshCw} from "lucide-react";
 import {createBrowserSupabaseClient} from "@/lib/supabase/client";
@@ -28,6 +29,11 @@ export function CorporateReportingCentre(){
  const [quickMode,setQuickMode]=useState(true);
  const [quick,setQuick]=useState<HqQuickAnswers>({progress:"",areas:[],help:"",followUp:""});
  const [notes,setNotes]=useState("");
+ const [professionalPreview,setProfessionalPreview]=useState("");
+ const [professionalError,setProfessionalError]=useState("");
+ const [previewCopied,setPreviewCopied]=useState(false);
+ useEffect(()=>{setProfessionalPreview("");setProfessionalError("");setPreviewCopied(false);},
+   [achievements,challenges,nextActions,evidence,quick,notes,quickMode]);
  const [decision,setDecision]=useState("accept"),[reviewNote,setReviewNote]=useState("");
  const [filter,setFilter]=useState("all");
  const load=useCallback(async()=>{
@@ -89,6 +95,7 @@ export function CorporateReportingCentre(){
   return()=>{cancelled=true;};
  },[client,canConfigure]);
  function startSubmission(line:HqReportingLine,returnedReport?:HqReportSubmission){
+  setProfessionalPreview("");setProfessionalError("");setPreviewCopied(false);
   setAction({id:line.id,kind:"submit",returnedId:returnedReport?.id});
   setAchievements(returnedReport?.achievements??"");setChallenges(returnedReport?.challenges??"");
   setNextActions(returnedReport?.next_actions??"");setEvidence(returnedReport?.evidence_reference??"");
@@ -206,6 +213,36 @@ export function CorporateReportingCentre(){
        <label className={label}>Next actions, responsible persons and dates<textarea required minLength={10} maxLength={2500} rows={2} className={input} value={nextActions} onChange={e=>setNextActions(e.target.value)}/></label>
        </>}
        <label className={label}>Evidence references (no child/private school records)<input className={input} maxLength={700} value={evidence} onChange={e=>setEvidence(e.target.value)}/></label>
+       <div className="rounded-xl border border-emerald-200 bg-white p-4">
+        <h4 className="font-black text-emerald-950">Professional HQ report preview · No AI tokens</h4>
+        <p className="mt-2 text-xs leading-5 text-emerald-950">Format your actual updates into a polished review narrative locally. This does not change the official report answers or send any data to an AI model.</p>
+        <button type="button" disabled={busy} className="mt-3 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-bold text-emerald-900"
+          onClick={()=>{
+           try{
+             const returned = action.returnedId ? desk.submissions.find(x=>x.id===action.returnedId) : null;
+             const label = returned ? `Period ${returned.cycle_index}, due ${returned.due_on}`
+               : `Period ${line.next_cycle_index}, due ${line.next_due_on}`;
+             const reporter = desk.members.find(m=>m.user_id===line.reporter_user_id)?.display_name;
+             setProfessionalPreview(composeHqReport({
+               title:line.title,periodLabel:label,reporter,
+               progress:quickMode?quick.progress:undefined,areas:quickMode?quick.areas:undefined,
+               achievements:quickMode?undefined:achievements,
+               notes:quickMode?notes:undefined,
+               challenges:quickMode&&quick.help!=="Yes"?undefined:challenges,
+               nextActions:quickMode&&quick.followUp!=="Yes"?undefined:nextActions,evidence,
+             }));
+             setPreviewCopied(false);setProfessionalError("");
+           }catch(e){setProfessionalError(e instanceof Error?e.message:"Enter report details first.");}
+          }}>Prepare professional preview · Free</button>
+        {professionalError&&<p role="alert" className="mt-2 text-sm font-semibold text-rose-800">{professionalError}</p>}
+        {professionalPreview&&<>
+          <textarea aria-label="Professional HQ narrative" readOnly rows={12} value={professionalPreview} className={input+" mt-3 font-normal"} />
+          <button type="button" className="mt-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-bold text-emerald-900"
+           onClick={async()=>{try{await navigator.clipboard.writeText(professionalPreview);setPreviewCopied(true);}catch{setProfessionalError("Copy unavailable. Select the preview and copy manually.");}}}>
+           {previewCopied?"Copied":"Copy professional narrative"}
+          </button>
+        </>}
+       </div>
        <div className="flex gap-2"><button disabled={busy} className="rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white">Send report</button><button type="button" onClick={()=>setAction(null)} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs">Cancel</button></div>
       </form>}
       {history.length>0&&<details className="mt-4 rounded-xl bg-slate-50 p-3" open={false}>
