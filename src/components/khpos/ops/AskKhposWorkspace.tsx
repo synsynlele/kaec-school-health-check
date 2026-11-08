@@ -20,6 +20,9 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposAskResult } from "@/lib/khpos/ops/assistant";
 
 const quickQuestions = [
+  "How do I check in for a class?",
+  "How do I create a timetable?",
+  "Where can I find school attendance records?",
   "What needs my attention today?",
   "What is our process for missed lessons?",
   "Which decisions are waiting for action?",
@@ -97,7 +100,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
             <div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Ask KHP-OS</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Ask what to do, where to find something or what needs your attention. Answers use only the school information your role is allowed to see.
+                Learn how to use any KHP-OS feature, find the right page, or ask about school work. Most how-to guides use no AI tokens. School questions use only information authorised for your role.
               </p>
             </div>
           </div>
@@ -175,13 +178,19 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
                 {result.intent}
               </span>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase text-slate-600">
-                {result.engine === "openai" ? "AI + governed sources" : "governed source engine"}
+                {result.intent === "app_help" ? "Training guide · No AI tokens" : result.engine === "openai" ? "AI + governed sources" : "governed source engine"}
               </span>
             </div>
 
             <div className="mt-5 whitespace-pre-wrap text-[15px] leading-7 text-slate-800">
               {result.answer}
             </div>
+            {result.intent === "app_help" && (
+              <button type="button" onClick={() => setActiveTab("training")}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-900">
+                <BookOpen className="size-4" /> Open the Training Academy
+              </button>
+            )}
 
             {result.sources.length > 0 && (
               <div className="mt-7 border-t border-slate-100 pt-5">
@@ -223,7 +232,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
         {!result && !busy && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
-              [BookOpen, "Governed knowledge", "Approved policies and processes remain the source of truth."],
+              [BookOpen, "How-to guidance", "Step-by-step instructions from the Training Academy, without spending AI tokens."],
               [ShieldCheck, "Role-aware", "You only receive institutional evidence your active role may access."],
               [CalendarDays, "Operational", "Ask about what is due, blocked, awaiting authority or coming next."],
             ].map(([Icon, title, detail]) => {
