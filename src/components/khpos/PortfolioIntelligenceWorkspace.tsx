@@ -16,6 +16,7 @@ import {
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposPortfolioIntelligence } from "@/lib/khpos/benchmarking";
 import type { NetworkAgentPlan } from "@/lib/khpos/agentic/plan";
+import { composeNetworkSupportDigest } from "@/lib/khpos/writing-assistant";
 
 const attentionLabels: Record<string, string> = {
   baseline_required: "Baseline required",
@@ -29,6 +30,9 @@ export function PortfolioIntelligenceWorkspace() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [portfolio, setPortfolio] = useState<KhposPortfolioIntelligence | null>(null);
   const [agentPlan, setAgentPlan] = useState<NetworkAgentPlan | null>(null);
+  const [hqDigest,setHqDigest]=useState("");
+  const [copyMessage,setCopyMessage]=useState("");
+
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
@@ -280,6 +284,23 @@ export function PortfolioIntelligenceWorkspace() {
                   <p className="mt-1 text-2xl font-black">{value}</p>
                 </div>
               ))}
+            </div>
+            <div className="mt-5 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+              <h3 className="font-black text-brand-950">Confidential Pathfinder support digest · No AI tokens</h3>
+              <p className="mt-2 text-xs text-brand-900">Prepare a private HQ follow-up summary using existing network evidence. It is never published or sent to partner schools automatically.</p>
+              <button type="button" className="mt-3 rounded-xl bg-brand-800 px-4 py-2 text-sm font-bold text-white"
+                onClick={()=>{setHqDigest(composeNetworkSupportDigest(agentPlan));setCopyMessage("");}}>
+                Prepare HQ digest
+              </button>
+              {hqDigest&&<div className="mt-3 space-y-2">
+                <textarea aria-label="Editable confidential HQ digest" rows={12} className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm"
+                  value={hqDigest} onChange={e=>setHqDigest(e.target.value)}/>
+                <button type="button" className="rounded-xl border border-brand-300 bg-white px-3 py-2 text-sm font-bold" onClick={async()=>{
+                  try{await navigator.clipboard.writeText(hqDigest);setCopyMessage("Digest copied.");}
+                  catch{setCopyMessage("Copy unavailable. Select the text above to copy manually.");}
+                }}>Copy private digest</button>
+                {copyMessage&&<p role="status" className="text-xs text-brand-900">{copyMessage}</p>}
+              </div>}
             </div>
             <ol className="mt-5 grid gap-3 md:grid-cols-2">
               {agentPlan.actions.map((item,index) => (
