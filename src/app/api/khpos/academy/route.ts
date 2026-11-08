@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
 import { getKhposOpsLibrary } from "@/lib/khpos/ops/library";
 import { getHqSnapshot } from "@/lib/khpos/hq";
-import { ACADEMY_COURSES, academyForRole } from "@/lib/khpos/academy-data";
+import { academyForRole, academyForSchoolRole } from "@/lib/khpos/academy-data";
 import { createAcademyPdf, createAcademyPptx } from "@/lib/khpos/academy-documents";
 import { UUID_RE } from "@/lib/http";
 
@@ -24,10 +24,7 @@ export async function GET(request:Request){
       const organisationId=url.searchParams.get("organisationId")??"";
       if(!UUID_RE.test(organisationId)) return json({ok:false,error:"Invalid school."},400);
       const library=await getKhposOpsLibrary(organisationId,user.id);
-      courses=academyForRole(library.operatingRoleCodes,false);
-      if(/CUSTODIAN|GUARDIAN|INSPECTOR|PROMOTER|ADMIN/i.test(library.membershipRole)){
-        courses=ACADEMY_COURSES.filter(c=>c.id!=="hq");
-      }
+      courses=academyForSchoolRole(library.operatingRoleCodes,library.membershipRole);
     }else return json({ok:false,error:"Choose a school or HQ workspace."},400);
     const courseId=url.searchParams.get("course");
     const format=url.searchParams.get("format");
