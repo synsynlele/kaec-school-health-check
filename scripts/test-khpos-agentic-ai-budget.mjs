@@ -68,4 +68,50 @@ assert.match(migration, /revoke all on function .* from public, anon, authentica
 assert.match(migration, /grant execute on function .* to service_role/i);
 assert.doesNotMatch(migration, /security definer/i);
 
+// Exercise the real migration and atomic quota accounting against an ephemeral Postgres.
+const { PGlite } = await import("@electric-sql/pglite");
+const pg = new PGlite();
+await pg.exec(`
+  create table public.organisations (id uuid primary key);
+  create role anon;
+  create role authenticated;
+  create role service_role;
+  insert into public.organisations (id)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+`);
+await pg.exec(migration);
+const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const actor = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+async function reserveMicro(estimate, limit) {
+  const res = await pg.query(
+    "select public.khpos_ai_budget_reserve($1::uuid,$2::uuid,'ask',$3::bigint,$4::bigint) as id",
+    [org, actor, estimate, limit],
+  );
+  return res.rows[0].id;
+}
+const first = await reserveMicro(2000, 3000);
+assert.ok(first, "first request should be reserved");
+assert.equal(await reserveMicro(2000, 3000), null, "reserved requests count towards budget");
+const settled = await pg.query(
+  "select public.khpos_ai_budget_settle($1::uuid,1000,1000,250,'gpt-4.1-mini',true) as ok",
+  [first],
+);
+assert.equal(settled.rows[0].ok, true);
+const twice = await pg.query(
+  "select public.khpos_ai_budget_settle($1::uuid,1000,1000,250,'gpt-4.1-mini',true) as ok",
+  [first],
+);
+assert.equal(twice.rows[0].ok, false, "settlement must be idempotent");
+assert.ok(await reserveMicro(2000, 3000), "settlement releases unspent reservation");
+assert.equal(await reserveMicro(1, 3000), null, "spent plus reserved reaches the cap");
+const access = await pg.query(`
+  select has_table_privilege('anon', 'public.khpos_ai_usage_months', 'SELECT') as anon_month,
+         has_table_privilege('authenticated', 'public.kaec_ai_usage_events', 'SELECT') as member_kshc,
+         has_function_privilege('anon','public.khpos_ai_budget_reserve(uuid,uuid,text,bigint,bigint)','EXECUTE') as anon_reserve;
+`);
+assert.deepEqual(access.rows[0], {
+  anon_month: false, member_kshc: false, anon_reserve: false,
+}, "AI spend history and spending controls must not be exposed to clients");
+await pg.close();
+
 console.log("KHP-OS agentic AI budget: model pricing, atomic reservation calls, fail-closed fallback, governance and KSHC reuse verified.");
