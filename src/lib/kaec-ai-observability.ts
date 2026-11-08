@@ -21,7 +21,7 @@ export async function recordKshcAiUsage(
   if (!inputTokens && !outputTokens) return;
   try {
     client ??= createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
-    const rates = khposAiRates(model);
+    const rates = khposAiRates(model, false); // KSHC prices must not inherit KHP-OS overrides.
     const { error } = await client.from("kaec_ai_usage_events").insert({
       product: "kshc",
       feature,
