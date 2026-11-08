@@ -68,7 +68,7 @@ A single shared **draft composer** can improve all three experiences without uni
 
 **Tier 2, restricted:** leadership-only sophisticated planning or sensitive analytical narratives, subject to documented benefit, school permission and per-organisation quotas.
 
-The current draft cap is **USD 0.30 per school per month** for supported paid KHP-OS AI routes. This is only a pilot guardrail, not a validated per-school cost or guarantee that combined platform costs will be this low. KSHC report and coach AI calls have separate telemetry but are not included in the KHP-OS cap. Model prices and availability must be rechecked before enabling a new paid polish endpoint; use observed token and provider-invoice costs.
+The current draft cap is **USD 0.30 per school per month** for supported paid KHP-OS AI routes. This is only a pilot guardrail, not a validated per-school cost or guarantee that combined platform costs will be this low. KSHC report and coach AI calls have separate telemetry but are not included in the KHP-OS cap. Model prices and availability must be rechecked before enabling a new paid polish endpoint; use observed token and provider-invoice costs. The legacy GPT-4.1 Mini model currently referenced in cost rules is listed as **deprecated** in the [OpenAI model reference](https://developers.openai.com/api/docs/models/gpt-4.1-mini). Do not rely on it as a durable low-cost writing model without checking current supported replacements, quality, compatibility and pricing.
 
 Do not charge a separate AI fee for default professional writing. A scalable product must be able to serve 100x more staff without paying 100x for generative rewrites of ordinary notices.
 
