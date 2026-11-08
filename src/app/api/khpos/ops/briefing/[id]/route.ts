@@ -29,7 +29,12 @@ export async function GET(
     const token = bearerTokenFromRequest(request);
     if (!token) throw new KhposAuthError("Sign in to continue.", 401);
     const user = await verifyKhposAccessToken(token);
-    const brief = await getKhposLeadershipBrief(id, user.id);
+    const windowParam = new URL(request.url).searchParams.get("days");
+    if (windowParam && windowParam !== "7" && windowParam !== "30") {
+      return NextResponse.json({ok:false,error:"Choose a seven- or thirty-day report."},{status:400});
+    }
+    const days: 7 | 30 = windowParam === "30" ? 30 : 7;
+    const brief = await getKhposLeadershipBrief(id, user.id, days);
     return NextResponse.json(
       { ok: true, brief },
       { headers: { "Cache-Control": "private, no-store" } },
