@@ -55,3 +55,15 @@ export function academyForRole(roleCodes: readonly string[],corporate:boolean):A
  const leadership=roleCodes.some(code=>/CUSTODIAN|GUARDIAN|INSPECTOR|PROMOTER|ADMIN|HEAD|PRINCIPAL/.test(code.toUpperCase()));
  return ACADEMY_COURSES.filter(course=>course.id==="staff"||(course.id==="leadership"&&leadership));
 }
+
+/** Shared school guidance entitlement: the assistant must never show lessons
+ * that the current user cannot open in the Training Academy. */
+export function academyForSchoolRole(
+  roleCodes: readonly string[],
+  membershipRole: string,
+): AcademyCourse[] {
+  if (/CUSTODIAN|GUARDIAN|INSPECTOR|PROMOTER|ADMIN/i.test(membershipRole)) {
+    return ACADEMY_COURSES.filter((course) => course.id !== "hq");
+  }
+  return academyForRole(roleCodes, false);
+}
