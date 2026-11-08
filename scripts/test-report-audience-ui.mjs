@@ -11,6 +11,7 @@ vm.runInNewContext(compiled+"\nexports.TypeEditor=TypeEditor;",{exports,Date,For
  if(name==="react/jsx-runtime")return jsx;
  if(name==="react")return {useState(initial){const i=cursor++;if(!(i in state))state[i]=typeof initial==="function"?initial():initial;return [state[i],v=>{state[i]=typeof v==="function"?v(state[i]):v;}];},useRef:x=>({current:x}),useCallback:f=>f,useEffect:()=>{}};
  if(name==="./TapChoices")return {TapChoices:()=>null};
+ if(name==="@/lib/khpos/writing-assistant")return {composeSchoolReport:()=>""};
  if(name==="@/lib/khpos/quick-forms") {const mod={};vm.runInNewContext(ts.transpileModule(fs.readFileSync("src/lib/khpos/quick-forms.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:mod});return mod;}
  if(name==="next/link")return {default:"a"};
  if(name==="@/lib/supabase/client")return {};
