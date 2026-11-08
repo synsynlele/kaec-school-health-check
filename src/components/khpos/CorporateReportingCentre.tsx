@@ -236,7 +236,7 @@ export function CorporateReportingCentre(){
           }}>Prepare professional preview · Free</button>
         {professionalError&&<p role="alert" className="mt-2 text-sm font-semibold text-rose-800">{professionalError}</p>}
         {professionalPreview&&<>
-          <textarea aria-label="Professional HQ narrative" readOnly rows={12} value={professionalPreview} className={input+" mt-3 font-normal"} />
+          <textarea aria-label="Editable professional HQ narrative" rows={12} value={professionalPreview} onChange={e=>{setProfessionalPreview(e.target.value);setPreviewCopied(false);}} className={input+" mt-3 font-normal"} />
           <button type="button" className="mt-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-bold text-emerald-900"
            onClick={async()=>{try{await navigator.clipboard.writeText(professionalPreview);setPreviewCopied(true);}catch{setProfessionalError("Copy unavailable. Select the preview and copy manually.");}}}>
            {previewCopied?"Copied":"Copy professional narrative"}
