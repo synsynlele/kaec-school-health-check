@@ -3,6 +3,8 @@ import { prepareKhposMeetingAgenda } from "@/lib/khpos/ops/meeting-agenda";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
+import { getKhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import { buildSchoolAgentPlan, type SchoolAgentPlan } from "@/lib/khpos/agentic/plan";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,6 +33,7 @@ export interface KhposLeadershipBrief {
   }>;
   meetingQuestions: string[];
   meetingAgenda: ReturnType<typeof prepareKhposMeetingAgenda>;
+  agentPlan: SchoolAgentPlan;
 }
 
 export class KhposLeadershipBriefError extends Error {
@@ -115,7 +118,22 @@ export async function getKhposLeadershipBrief(
     );
   }
 
+  // KSHC is a separately governed but related evidence source. If it is
+  // unavailable, school operations remain usable and no scores are inferred.
+  let health: Awaited<ReturnType<typeof getKhposImprovementWorkspace>> | null = null;
+  try {
+    health = await getKhposImprovementWorkspace(organisationId, userId);
+  } catch (error) {
+    console.warn("[khpos][agentic] KSHC improvement evidence unavailable", error instanceof Error ? error.name : "unknown");
+  }
+
   const derived = performance.derivedPerformance;
+  const agentPlan = buildSchoolAgentPlan({
+    organisationId,
+    attention,
+    performance: derived,
+    health,
+  });
   const meetingQuestions: string[] = [];
 
   if (attention.summary.critical > 0) {
@@ -193,5 +211,6 @@ export async function getKhposLeadershipBrief(
     upcoming,
     meetingQuestions,
     meetingAgenda: prepareKhposMeetingAgenda(attention.items),
+    agentPlan,
   };
 }
