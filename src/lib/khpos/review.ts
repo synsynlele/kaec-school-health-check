@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { z } from "zod";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KHPOS_SYSTEMS } from "@/lib/khpos/foundation";
@@ -332,12 +333,26 @@ async function enrichReviewNarrative(
     review.status !== "awaiting_decision" ||
     !process.env.OPENAI_API_KEY?.trim() ||
     (review.narrative_provider === "openai" &&
-      review.narrative_prompt_version === REVIEW_PROMPT_VERSION)
+      review.narrative_prompt_version === REVIEW_PROMPT_VERSION) ||
+    (review.narrative_attempted_at !== null &&
+      Number.isFinite(Date.parse(review.narrative_attempted_at)) &&
+      Date.now() - Date.parse(review.narrative_attempted_at) < 60 * 60 * 1000)
   ) {
     return review;
   }
 
   const client = admin();
+  const prompt = reviewPrompt(review, intervention, priority, contract);
+  const permit = await reserveKhposAi(client, {
+    organisationId: review.organisation_id,
+    actorUserId: null,
+    feature: "review",
+    model: REVIEW_MODEL,
+    inputCharacters: prompt.length + 350,
+    maxOutputTokens: 2600,
+  });
+  if (!permit) return review;
+
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const attemptedAt = new Date().toISOString();
 
@@ -351,6 +366,7 @@ async function enrichReviewNarrative(
     .eq("id", review.id)
     .eq("status", "awaiting_decision");
 
+  let modelReturned = false;
   try {
     const response = await openai.chat.completions.create({
       model: REVIEW_MODEL,
@@ -363,9 +379,15 @@ async function enrichReviewNarrative(
           content:
             "You are KAEC-NG's KHP-OS institutional review analyst. Deterministic review rules remain authoritative. You provide evidence-grounded interpretation and output valid JSON only.",
         },
-        { role: "user", content: reviewPrompt(review, intervention, priority, contract) },
+        { role: "user", content: prompt },
       ],
     });
+
+    modelReturned = true;
+    await settleKhposAi(client, permit, response.usage ? {
+      inputTokens: response.usage.prompt_tokens,
+      outputTokens: response.usage.completion_tokens,
+    } : null, true);
 
     const parsed = ReviewNarrativeSchema.safeParse(
       JSON.parse(stripJsonFence(response.choices[0]?.message?.content ?? "{}")),
@@ -417,6 +439,7 @@ async function enrichReviewNarrative(
       updated_at: now,
     };
   } catch (error) {
+    if (!modelReturned) await settleKhposAi(client, permit, null, false);
     const message = error instanceof Error ? error.message : "review_narrative_failed";
     console.error("[khpos] review narrative generation failed; preserving deterministic review:", message);
     await client
