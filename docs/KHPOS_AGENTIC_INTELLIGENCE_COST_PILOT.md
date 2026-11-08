@@ -6,6 +6,16 @@ KSHC and KHP-OS share this repository and database. KSHC is the authoritative sc
 
 **No AI process is allowed to approve, discipline, reassign, alter a policy, change tuition, expose another school's private records, or mark health improvements verified.** The existing controlled workflows enforce decision rights.
 
+## Four-phase coordination now implemented in this branch
+
+The school Leadership Brief now produces a **zero-token intelligence action plan** from the signed-in leader's own attention queue, operational measures and available KSHC reassessment evidence. The plan explains the exception, proposed remedy, source page and evidence needed. The school scores remain untouched.
+
+For significant blockers, the leader can choose **Prepare decision request**. The destination retrieves the proposal again from the authenticated server, using only the opaque action identifier in the URL; it prefills a draft inside the existing Decisions & Approvals workflow. The leader must personally review the proposal, select a valid authority, and submit it. KHP-OS does **not** approve, submit or execute it automatically. Once approved, the existing governed action engine remains authoritative.
+
+The restricted platform-custodian Network Summary now presents a ranked, zero-token Pathfinder support queue derived from existing portfolio observability and KSHC outcomes. It cannot be fetched by an ordinary school account; no learner narratives are included.
+
+These changes coordinate all four phases as a pilot. **They do not constitute unattended autonomous agents.** Automatic external actions, meeting transcription, messaging, delegated sign-off or autonomous cross-school intervention are intentionally excluded until separate permissions and evaluation tests exist.
+
 ## Four phases and acceptance gates
 
 | Phase | Existing foundation | Pilot addition | Acceptance criterion |
@@ -15,7 +25,7 @@ KSHC and KHP-OS share this repository and database. KSHC is the authoritative sc
 | 3 — Improve | KSHC baseline, interventions, evidence and reassessment | Ask reuses authorised KSHC baseline/progress; intervention and review AI enter the school budget | AI cannot change diagnostic scores or declare improvement without reassessment |
 | 4 — Network | HQ portfolio, peer thresholds, network pulse | Future authorised portfolio synthesis and capacity planning, reusing existing aggregated measures | No cross-tenant learner narrative or unapproved raw records in AI prompts |
 
-**This branch delivers a first controlled pilot increment, not full autonomous agents or completed rollout of all four phases.** In particular, automated meeting transcription, autonomous work execution, full HQ portfolio synthesis and KSI data-sharing remain future work subject to permissions and evaluations. Do not advertise those as live.
+**This branch coordinates all four phases through read-only intelligence and human-controlled decision drafting, not unattended autonomous agents or a completed production rollout.** Automated meeting transcription, autonomous execution, network AI narrative synthesis and new KSI data-sharing remain future work subject to permissions and evaluations. Do not advertise those as live.
 
 ## School-level paid-AI cost governor
 
