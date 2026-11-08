@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, verifyKhposAccessToken, KhposAuthError } from "@/lib/khpos/auth";
 import { getReports } from "@/lib/khpos/reports";
-import { getWeeklyClassRecords } from "@/lib/khpos/ops/presence";
+import { getOwnClassRecordsForReport } from "@/lib/khpos/ops/presence";
 import { buildEvidencePrefill } from "@/lib/khpos/report-prefill";
 
 export const runtime = "nodejs";
@@ -24,8 +24,14 @@ export async function GET(request: Request) {
     if(!report) return NextResponse.json({error:"This report is not an editable assignment belonging to you."},{status:403,headers});
     // Fresh logged class data is available only from the signed-in user's
     // authorised visible periods; never query other staff's report answers.
-    const weekly=await getWeeklyClassRecords(school,actor.id);
-    const prefill=buildEvidencePrefill(report,weekly,school);
+    const sessions=await getOwnClassRecordsForReport(school,actor.id,report.period_start,report.period_end);
+    const prefill=buildEvidencePrefill(report,sessions,school);
+    if(sessions.tooMany) {
+      prefill.narrative="";
+      prefill.recordCount=0;
+      prefill.suggested=[];
+      prefill.caveat="This period contains too many logged sessions to summarise accurately here. Review the source attendance history; nothing has been pre-filled.";
+    }
     return NextResponse.json({ok:true,prefill},{headers});
   } catch(cause) {
     const status=cause instanceof KhposAuthError?cause.status:500;
