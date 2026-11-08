@@ -9,7 +9,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type KhposAiFeature = "ask" | "briefing" | "meeting" | "improvement" | "network";
+export type KhposAiFeature = "ask" | "briefing" | "meeting" | "improvement" | "review" | "network";
 
 interface ModelRates {
   input: number; // US dollars per million input tokens
@@ -68,7 +68,7 @@ export async function reserveKhposAi(
   client: SupabaseClient,
   options: {
     organisationId: string;
-    actorUserId: string;
+    actorUserId: string | null;
     feature: KhposAiFeature;
     model: string;
     inputCharacters: number;
