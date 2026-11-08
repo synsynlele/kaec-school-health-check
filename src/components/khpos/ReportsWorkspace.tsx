@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TapChoices } from "./TapChoices";
 import { quickReportTemplates, visibleReportFields, visibleReportPayload } from "@/lib/khpos/quick-forms";
+import { composeSchoolReport } from "@/lib/khpos/writing-assistant";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
 import type {
@@ -747,7 +748,27 @@ function ReportEditor({
     [confirmation, setConfirmation] = useState<"withdraw" | "return" | null>(
       null,
     );
+  const [professionalPreview, setProfessionalPreview] = useState("");
+  const [professionalError, setProfessionalError] = useState("");
+  const [previewCopied, setPreviewCopied] = useState(false);
   const editable = n.canEdit && ["draft", "returned"].includes(n.status);
+  const prepareProfessionalPreview = () => {
+    try {
+      const fields = visibleReportFields(n.fields, payload);
+      setProfessionalPreview(composeSchoolReport({
+        title: n.title,
+        author: n.ownerName,
+        periodStart: dateOnly(n.period_start),
+        periodEnd: dateOnly(n.period_end),
+        fields,
+        payload: visibleReportPayload(n.fields, payload),
+      }));
+      setProfessionalError("");setPreviewCopied(false);
+    } catch (cause) {
+      setProfessionalPreview("");
+      setProfessionalError(cause instanceof Error?cause.message:"Enter report answers first.");
+    }
+  };
   const act = (mode: string) =>
     onAction({ mode, id: n.id, lockVersion: n.lock_version, payload: visibleReportPayload(n.fields, payload), note });
   return (
@@ -792,9 +813,30 @@ function ReportEditor({
           field={f}
           value={payload[f.key]}
           disabled={busy || !editable}
-          onChange={(v) => setPayload((p) => ({ ...p, [f.key]: v }))}
+          onChange={(v) => { setPayload((p) => ({ ...p, [f.key]: v })); setProfessionalPreview(""); setPreviewCopied(false); }}
         />
       ))}
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" aria-label="Professional report preview">
+        <h3 className="font-black text-emerald-950">Professional report writer · No AI tokens</h3>
+        <p className="mt-2 text-sm text-emerald-950">
+          Turn your actual form answers into a structured, professional report locally. Nothing is sent to an AI model. Preview and review before sharing; the governed report answers and submission process remain unchanged.
+        </p>
+        <button type="button" className={button+" mt-3 bg-white"} disabled={busy}
+          onClick={prepareProfessionalPreview}>Prepare professional narrative · Free</button>
+        {professionalError&&<p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{professionalError}</p>}
+        {professionalPreview&&(
+          <div className="mt-4 space-y-2">
+            <label className="block text-sm font-bold text-emerald-950">Draft based on recorded answers
+              <textarea readOnly rows={12} value={professionalPreview} className={field+" font-normal"} />
+            </label>
+            <button type="button" className={button+" bg-white"} onClick={async()=>{
+              try { await navigator.clipboard.writeText(professionalPreview); setPreviewCopied(true); setProfessionalError(""); }
+              catch { setProfessionalError("Copy was unavailable. Select the text above and copy it manually."); }
+            }}>{previewCopied?"Copied":"Copy professional narrative"}</button>
+            <p className="text-xs leading-5 text-emerald-950">This is a presentation of your answers, not evidence of independently verified outcomes. Do not share confidential learner or personnel details outside authorised channels.</p>
+          </div>
+        )}
+      </section>
       {editable && (
         <div className="flex flex-wrap gap-3">
           <button
