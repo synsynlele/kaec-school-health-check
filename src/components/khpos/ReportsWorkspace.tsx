@@ -827,7 +827,7 @@ function ReportEditor({
         {professionalPreview&&(
           <div className="mt-4 space-y-2">
             <label className="block text-sm font-bold text-emerald-950">Draft based on recorded answers
-              <textarea readOnly rows={12} value={professionalPreview} className={field+" font-normal"} />
+              <textarea rows={12} value={professionalPreview} onChange={e=>{setProfessionalPreview(e.target.value);setPreviewCopied(false);}} className={field+" font-normal"} />
             </label>
             <button type="button" className={button+" bg-white"} onClick={async()=>{
               try { await navigator.clipboard.writeText(professionalPreview); setPreviewCopied(true); setProfessionalError(""); }
