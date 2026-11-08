@@ -4,6 +4,7 @@ import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
 import { getKhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import { getKhposKsiWorkspace } from "@/lib/khpos/ksi-integration";
 import { buildSchoolAgentPlan, type SchoolAgentPlan } from "@/lib/khpos/agentic/plan";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -118,21 +119,27 @@ export async function getKhposLeadershipBrief(
     );
   }
 
-  // KSHC is a separately governed but related evidence source. If it is
-  // unavailable, school operations remain usable and no scores are inferred.
-  let health: Awaited<ReturnType<typeof getKhposImprovementWorkspace>> | null = null;
-  try {
-    health = await getKhposImprovementWorkspace(organisationId, userId);
-  } catch (error) {
-    console.warn("[khpos][agentic] KSHC improvement evidence unavailable", error instanceof Error ? error.name : "unknown");
+  // Reuse independent, already-governed KSHC and aggregated KSI evidence.
+  // A failed/optional connector must not block the ordinary leadership brief.
+  const [healthResult, ksiResult] = await Promise.allSettled([
+    getKhposImprovementWorkspace(organisationId, userId),
+    getKhposKsiWorkspace(organisationId, userId),
+  ]);
+  if (healthResult.status === "rejected") {
+    console.warn("[khpos][agentic] KSHC evidence unavailable",
+      healthResult.reason instanceof Error ? healthResult.reason.name : "unknown");
   }
-
+  if (ksiResult.status === "rejected") {
+    console.warn("[khpos][agentic] KSI evidence unavailable",
+      ksiResult.reason instanceof Error ? ksiResult.reason.name : "unknown");
+  }
   const derived = performance.derivedPerformance;
   const agentPlan = buildSchoolAgentPlan({
     organisationId,
     attention,
     performance: derived,
-    health,
+    health: healthResult.status === "fulfilled" ? healthResult.value : null,
+    ksi: ksiResult.status === "fulfilled" ? ksiResult.value : null,
   });
   const meetingQuestions: string[] = [];
 
