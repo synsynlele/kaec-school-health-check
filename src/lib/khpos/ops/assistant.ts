@@ -520,10 +520,10 @@ ${groundedContext}`,
         engine = "openai";
         model = KHPOS_MODEL;
       }
-      await settleKhposAi(admin(), permit, {
-        inputTokens: response.usage?.prompt_tokens,
-        outputTokens: response.usage?.completion_tokens,
-      }, true);
+      await settleKhposAi(admin(), permit, response.usage ? {
+        inputTokens: response.usage.prompt_tokens,
+        outputTokens: response.usage.completion_tokens,
+      } : null, true);
     } catch (error) {
       await settleKhposAi(admin(), permit, null, false);
       console.error("[khpos][ask] AI request failed; grounded fallback used", {
