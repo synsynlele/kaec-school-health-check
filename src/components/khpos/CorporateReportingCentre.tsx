@@ -32,8 +32,9 @@ export function CorporateReportingCentre(){
  const [professionalPreview,setProfessionalPreview]=useState("");
  const [professionalError,setProfessionalError]=useState("");
  const [previewCopied,setPreviewCopied]=useState(false);
- useEffect(()=>{setProfessionalPreview("");setProfessionalError("");setPreviewCopied(false);},
-   [achievements,challenges,nextActions,evidence,quick,notes,quickMode]);
+ const invalidateProfessionalPreview=()=>{
+   setProfessionalPreview("");setProfessionalError("");setPreviewCopied(false);
+ };
  const [decision,setDecision]=useState("accept"),[reviewNote,setReviewNote]=useState("");
  const [filter,setFilter]=useState("all");
  const load=useCallback(async()=>{
@@ -198,21 +199,21 @@ export function CorporateReportingCentre(){
        achievements,challenges,next_actions:nextActions,evidence_reference:evidence,...(quickMode?{quick_answers:quick,notes}:{})
       },"Report submitted to its named recipient.");}}>
        <h3 className="text-sm font-bold">{action.returnedId?"Revise returned report":"Report for period "+line.next_cycle_index}</h3>
-       {!action.returnedId&&<label className="flex min-h-12 items-center gap-3 text-sm"><input type="checkbox" checked={quickMode} onChange={e=>setQuickMode(e.target.checked)}/>Use quick choices</label>}
+       {!action.returnedId&&<label className="flex min-h-12 items-center gap-3 text-sm"><input type="checkbox" checked={quickMode} onChange={e=>{setQuickMode(e.target.checked);invalidateProfessionalPreview();}}/>Use quick choices</label>}
        {quickMode ? <>
-        <TapChoices label="How did your planned work go?" options={hqProgressOptions} value={quick.progress} required disabled={busy} onChange={v=>setQuick(q=>({...q,progress:String(v)}))}/>
-        <TapChoices label="Which work areas apply?" options={hqWorkOptions} value={quick.areas} multiple required disabled={busy} onChange={v=>setQuick(q=>({...q,areas:v as string[]}))}/>
-        <TapChoices label="Do you need help or a decision?" options={["Yes","No"]} value={quick.help} required disabled={busy} onChange={v=>setQuick(q=>({...q,help:String(v)}))}/>
-        {quick.help==="Yes"&&<label className={label}>What help do you need, and by when?<textarea required minLength={10} maxLength={2500} className={input} value={challenges} onChange={e=>setChallenges(e.target.value)}/></label>}
-        <TapChoices label="Is there a next action to follow up?" options={["Yes","No"]} value={quick.followUp} required disabled={busy} onChange={v=>setQuick(q=>({...q,followUp:String(v)}))}/>
-        {quick.followUp==="Yes"&&<label className={label}>Next action, responsible person and date<textarea required minLength={10} maxLength={2500} className={input} value={nextActions} onChange={e=>setNextActions(e.target.value)}/></label>}
-        <label className={label}>Anything else your reviewer should know? {quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?"(explain the other or unfinished work)":"(optional)"}<textarea required={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)} minLength={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?10:undefined} maxLength={1500} rows={2} className={input} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
+        <TapChoices label="How did your planned work go?" options={hqProgressOptions} value={quick.progress} required disabled={busy} onChange={v=>{setQuick(q=>({...q,progress:String(v)}));invalidateProfessionalPreview();}}/>
+        <TapChoices label="Which work areas apply?" options={hqWorkOptions} value={quick.areas} multiple required disabled={busy} onChange={v=>{setQuick(q=>({...q,areas:v as string[]}));invalidateProfessionalPreview();}}/>
+        <TapChoices label="Do you need help or a decision?" options={["Yes","No"]} value={quick.help} required disabled={busy} onChange={v=>{setQuick(q=>({...q,help:String(v)}));invalidateProfessionalPreview();}}/>
+        {quick.help==="Yes"&&<label className={label}>What help do you need, and by when?<textarea required minLength={10} maxLength={2500} className={input} value={challenges} onChange={e=>{setChallenges(e.target.value);invalidateProfessionalPreview();}}/></label>}
+        <TapChoices label="Is there a next action to follow up?" options={["Yes","No"]} value={quick.followUp} required disabled={busy} onChange={v=>{setQuick(q=>({...q,followUp:String(v)}));invalidateProfessionalPreview();}}/>
+        {quick.followUp==="Yes"&&<label className={label}>Next action, responsible person and date<textarea required minLength={10} maxLength={2500} className={input} value={nextActions} onChange={e=>{setNextActions(e.target.value);invalidateProfessionalPreview();}}/></label>}
+        <label className={label}>Anything else your reviewer should know? {quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?"(explain the other or unfinished work)":"(optional)"}<textarea required={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)} minLength={quick.areas.includes("Other")||["Partly completed","Not completed"].includes(quick.progress)?10:undefined} maxLength={1500} rows={2} className={input} value={notes} onChange={e=>{setNotes(e.target.value);invalidateProfessionalPreview();}}/></label>
        </> : <>
-       <label className={label}>Achievements and actual work completed<textarea required minLength={20} maxLength={3000} rows={3} className={input} value={achievements} onChange={e=>setAchievements(e.target.value)}/></label>
-       <label className={label}>Problems, delays or help required<textarea maxLength={2500} rows={2} className={input} value={challenges} onChange={e=>setChallenges(e.target.value)}/></label>
-       <label className={label}>Next actions, responsible persons and dates<textarea required minLength={10} maxLength={2500} rows={2} className={input} value={nextActions} onChange={e=>setNextActions(e.target.value)}/></label>
+       <label className={label}>Achievements and actual work completed<textarea required minLength={20} maxLength={3000} rows={3} className={input} value={achievements} onChange={e=>{setAchievements(e.target.value);invalidateProfessionalPreview();}}/></label>
+       <label className={label}>Problems, delays or help required<textarea maxLength={2500} rows={2} className={input} value={challenges} onChange={e=>{setChallenges(e.target.value);invalidateProfessionalPreview();}}/></label>
+       <label className={label}>Next actions, responsible persons and dates<textarea required minLength={10} maxLength={2500} rows={2} className={input} value={nextActions} onChange={e=>{setNextActions(e.target.value);invalidateProfessionalPreview();}}/></label>
        </>}
-       <label className={label}>Evidence references (no child/private school records)<input className={input} maxLength={700} value={evidence} onChange={e=>setEvidence(e.target.value)}/></label>
+       <label className={label}>Evidence references (no child/private school records)<input className={input} maxLength={700} value={evidence} onChange={e=>{setEvidence(e.target.value);invalidateProfessionalPreview();}}/></label>
        <div className="rounded-xl border border-emerald-200 bg-white p-4">
         <h4 className="font-black text-emerald-950">Professional HQ report preview · No AI tokens</h4>
         <p className="mt-2 text-xs leading-5 text-emerald-950">Format your actual updates into a polished review narrative locally. This does not change the official report answers or send any data to an AI model.</p>
