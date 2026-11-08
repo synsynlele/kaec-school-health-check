@@ -68,7 +68,7 @@ export function calendarPauses(presence: KhposPresenceWorkspace, campusId: strin
  * slot; authorisation and future calendar checks still happen on its date.
  */
 export function nextRegularLessonDay(localDay: string, weekday: number): string | null {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(localDay) || !Number.isInteger(weekday) || weekday < 1 || weekday > 7)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDay) || !Number.isInteger(weekday) || weekday < 1 || weekday > 7)
     return null;
   const date = new Date(localDay + "T12:00:00Z");
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== localDay) return null;
