@@ -8,9 +8,9 @@ KSHC and KHP-OS share this repository and database. KSHC is the authoritative sc
 
 ## Four-phase coordination now implemented in this branch
 
-The school Leadership Brief now produces a **zero-token intelligence action plan** from the signed-in leader's own attention queue, operational measures and available KSHC reassessment evidence. The plan explains the exception, proposed remedy, source page and evidence needed. The school scores remain untouched.
+The school Leadership Brief now produces a **zero-token intelligence action plan** from the signed-in leader's own attention queue, operational measures, KSHC reassessment evidence and optional existing KSI aggregate signals. The plan explains the exception, proposed remedy, source page and evidence needed. The KSHC scores remain untouched. KSI is optional: a disconnected school receives no penalty or fabricated learning diagnosis.
 
-For significant blockers, the leader can choose **Prepare decision request**. The destination retrieves the proposal again from the authenticated server, using only the opaque action identifier in the URL; it prefills a draft inside the existing Decisions & Approvals workflow. The leader must personally review the proposal, select a valid authority, and submit it. KHP-OS does **not** approve, submit or execute it automatically. Once approved, the existing governed action engine remains authoritative.
+Today now displays the three most urgent authorised next steps to any signed-in user, without creating new database records or paid AI calls. For significant blockers, a school leader can choose **Prepare decision request**. The destination retrieves the proposal again from the authenticated server, using only the opaque action identifier in the URL; it prefills a draft inside the existing Decisions & Approvals workflow. The leader must personally review the proposal, select a valid authority, and submit it. KHP-OS does **not** approve, submit or execute it automatically. Once approved, the existing governed action engine remains authoritative.
 
 The restricted platform-custodian Network Summary now presents a ranked, zero-token Pathfinder support queue derived from existing portfolio observability and KSHC outcomes. It cannot be fetched by an ordinary school account; no learner narratives are included.
 
