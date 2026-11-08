@@ -8,6 +8,8 @@ import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
 import { getKhposOpsLibrary, type KhposOpsLibrary } from "@/lib/khpos/ops/library";
 import { getKhposOpsPerformance } from "@/lib/khpos/ops/performance";
 import { getKhposOpsMyWork } from "@/lib/khpos/ops/work";
+import { getKhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import { prepareKhposMeetingAgenda } from "@/lib/khpos/ops/meeting-agenda";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,11 +28,13 @@ export type KhposAskIntent =
   | "decision"
   | "performance"
   | "calendar"
+  | "meeting"
+  | "improvement"
   | "general";
 
 export interface KhposAskSource {
   id: string;
-  category: "process" | "policy" | "work" | "decision" | "performance" | "calendar";
+  category: "process" | "policy" | "work" | "decision" | "performance" | "calendar" | "meeting" | "improvement";
   title: string;
   detail: string;
   href: string;
@@ -93,6 +97,10 @@ function scoreText(questionTokens: string[], text: string) {
 
 function detectIntent(question: string): KhposAskIntent {
   const lower = question.toLowerCase();
+  if (/meeting|agenda|minutes|meeting follow.?up|meeting action/i.test(lower))
+    return "meeting";
+  if (/school health|health check|kshc|reassessment|intervention|transformation|verified improvement/i.test(lower))
+    return "improvement";
   if (/policy|policies|rule|rules|allowed|prohibited|must we|requirement/.test(lower))
     return "policy";
   if (/process|procedure|how do|how should|workflow|steps|sla|escalat/.test(lower))
@@ -411,6 +419,51 @@ export async function askKhpos(
         href: item.href,
       });
     }
+  }
+
+  // Phase 2: compose a follow-up agenda from the signed-in person's own
+  // action queue; never create tasks or approve decisions automatically.
+  if (intent === "meeting") {
+    const attention = await getKhposAttention(organisationId, userId);
+    const agenda = prepareKhposMeetingAgenda(attention.items);
+    context.push([
+      "ROLE-AUTHORISED MEETING FOLLOW-UP",
+      `There are ${agenda.items.length} suggested discussion items and ${agenda.remainingCount} additional items.`,
+      ...agenda.items.slice(0, 10).map(
+        (item) => `- ${item.purpose}: ${item.title}. Evidence: ${item.evidence}. Requested outcome: ${item.requestedOutcome}`,
+      ),
+    ].join("\n"));
+    for (const item of agenda.items.slice(0, 8)) {
+      sources.push({
+        id: item.sourceId,
+        category: "meeting",
+        title: item.title,
+        detail: item.requestedOutcome,
+        href: item.href,
+      });
+    }
+  }
+
+  // Phase 3: reuse the EXISTING KSHC baseline and reassessment conclusions.
+  // This is a read-only, authorised context; never regenerate the health check.
+  if (intent === "improvement") {
+    const health = await getKhposImprovementWorkspace(organisationId, userId);
+    context.push([
+      "KSHC SCHOOL HEALTH AND VERIFIED IMPROVEMENT",
+      `Baseline: ${health.baseline?.overallScore ?? "not assessed"}/100; status: ${health.baseline?.healthRating ?? "not established"}.`,
+      `Latest reassessment: ${health.latest?.reassessmentOverallScore ?? "none"}; change from baseline: ${health.latest?.deltaFromBaseline ?? "not established"}; verified: ${health.latest?.verifiedImprovement ? "yes" : "no"}.`,
+      ...health.priorityOutcomes.slice(0, 8).map(
+        (item) => `- Indicator ${item.sourceIndicatorId}: ${item.outcome}, score change ${item.scoreDelta}; next state: ${item.nextState}.`,
+      ),
+      "A completed task is not proof of institutional improvement; only valid reassessment evidence verifies progress.",
+    ].join("\n"));
+    sources.push({
+      id: "kshc-improvement",
+      category: "improvement",
+      title: "School health and improvement",
+      detail: "KSHC baseline and validated reassessment progress.",
+      href: `/khpos/${organisationId}/improvement`,
+    });
   }
 
   const uniqueSources = Array.from(
