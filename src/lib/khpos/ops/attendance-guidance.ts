@@ -45,12 +45,37 @@ function stamp(nowMs: number, target: number): string {
   return Number.isFinite(target) ? new Date(target).toISOString() : new Date(nowMs).toISOString();
 }
 
-export function calendarPauses(presence: KhposPresenceWorkspace, campusId: string | null, day: string, lessons: boolean) {
-  return presence.calendarClosures?.some(entry =>
+export function calendarPauseForDay(
+  presence: KhposPresenceWorkspace,
+  campusId: string | null,
+  day: string,
+  lessons: boolean,
+) {
+  return presence.calendarClosures?.find(entry =>
     (entry.campus_id === null || entry.campus_id === campusId) &&
     entry.start_day <= day && entry.end_day >= day &&
     (entry.kind === "closure" || lessons)
-  ) ?? false;
+  ) ?? null;
+}
+
+export function calendarPauses(presence: KhposPresenceWorkspace, campusId: string | null, day: string, lessons: boolean) {
+  return Boolean(calendarPauseForDay(presence, campusId, day, lessons));
+}
+
+/**
+ * A recurring weekly slot stays on the timetable even if a particular
+ * historical occurrence was cancelled for midterm. Display the next nominal
+ * slot; authorisation and future calendar checks still happen on its date.
+ */
+export function nextRegularLessonDay(localDay: string, weekday: number): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDay) || !Number.isInteger(weekday) || weekday < 1 || weekday > 7)
+    return null;
+  const date = new Date(localDay + "T12:00:00Z");
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== localDay) return null;
+  const today = date.getUTCDay() || 7;
+  const diff = (weekday - today + 7) % 7;
+  date.setUTCDate(date.getUTCDate() + (diff || 7));
+  return date.toISOString().slice(0, 10);
 }
 
 export function attendanceSteps(

@@ -2,7 +2,7 @@
 
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
-import { calendarPauses } from "@/lib/khpos/ops/attendance-guidance";
+import { calendarPauses, calendarPauseForDay, nextRegularLessonDay } from "@/lib/khpos/ops/attendance-guidance";
 
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -46,6 +46,12 @@ const box = "rounded-2xl border border-slate-200 bg-white p-4 sm:p-5";
 function timeString(iso: string | null | undefined) {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("en-NG",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:true}).format(new Date(iso));
+}
+function schoolDayLabel(day: string) {
+  const value = new Date(day + "T12:00:00Z");
+  return Number.isFinite(value.getTime())
+    ? new Intl.DateTimeFormat("en-NG",{timeZone:"UTC",weekday:"short",day:"numeric",month:"short"}).format(value)
+    : day;
 }
 function dateTime(iso:string|null|undefined) {
   if (!iso) return "—";
@@ -413,22 +419,36 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             <label className="mt-4 block text-sm font-semibold text-slate-700">Find a scheduled class
               <input type="search" className={field} placeholder="Search class, teacher, subject or room" value={lessonQuery} onChange={e=>setLessonQuery(e.target.value)}/>
             </label>
-            <div className="mt-3 space-y-3">
+            {week&&<p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+            Showing attendance status for <strong>{schoolDayLabel(week.from)} – {schoolDayLabel(week.to)}</strong>.
+            Weekly teaching slots remain scheduled across weeks. A break label here describes that dated lesson occurrence, not the whole recurring timetable.
+          </p>}
+          <div className="mt-3 space-y-3">
               {own.map(p=>{
                 const today=possibleToday(data.localDay,p.weekday);
                 const mine=p.teacherUserId===data.userId;
                 const lessonDate = week ? new Date(Date.parse(week.from+"T12:00:00Z") + (p.weekday-1)*86400000).toISOString().slice(0,10) : null;
                 const periodRecords = week?.records.filter(record => record.periodId === p.id) ?? [];
                 const attendance = today ? p.session : periodRecords.find(record => record.date === lessonDate);
-                const paused = (lessonDate || today) && calendarPauses(data,p.campusId,lessonDate ?? data.localDay,true);
+                const calendarBreak = (lessonDate || today)
+                  ? calendarPauseForDay(data,p.campusId,lessonDate ?? data.localDay,true)
+                  : null;
+                const paused = Boolean(calendarBreak);
+                const breakEnded = Boolean(calendarBreak && calendarBreak.end_day < data.localDay);
+                const nextSlot = p.termActive && breakEnded ? nextRegularLessonDay(data.localDay,p.weekday) : null;
+                const breakName = calendarBreak?.title?.trim() || "School calendar break";
                 const passed = lessonDate !== null && (lessonDate < data.localDay || (today && attendanceNow > Date.parse(lessonDate+"T"+p.end+":00+01:00") + 1800000));
                 return <div key={p.id} id={"class-" + p.id} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><h3 className="font-black text-slate-900">{p.subject} · {p.class}</h3>
                       <p className="text-sm text-slate-600">{WEEKDAYS[p.weekday]} {p.start}–{p.end} · {p.room||"Room not set"}</p>
                       <p className="text-xs text-slate-500">{p.teacher}</p></div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{attendance?.administrativelyClosed?"Closed by leader":attendance?.out?"Check-out recorded":attendance?"In progress":paused?"Paused by school calendar":passed?"No check-in recorded":today?"Today":"Scheduled"}</span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{attendance?.administrativelyClosed?"Closed by leader":attendance?.out?"Check-out recorded":attendance?"In progress":paused?(breakEnded?`${breakName} · ended ${schoolDayLabel(calendarBreak!.end_day)}`:`${breakName} · paused for this date`):passed?"No check-in recorded":today?"Today":"Scheduled"}</span>
                   </div>
+                  {nextSlot&&<p className="mt-2 rounded-lg bg-emerald-50 p-2 text-xs font-semibold text-emerald-950">
+                    The break has ended. Next regular class slot: {schoolDayLabel(nextSlot)}, {p.start}–{p.end}.
+                    This is a recurring timetable slot, subject to any newly published school-calendar changes.
+                  </p>}
                   {today&&mine&&p.termActive&&!paused&&!p.session&&<button disabled={Boolean(busy)||!data.todayPresence||Boolean(data.todayPresence.out)}
                     className="mt-3 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                     onClick={()=>void act("class_in",{periodId:p.id},"Class check-in recorded.")}>Record Class Check-in — Start class</button>}

@@ -8,7 +8,7 @@ const output = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const mod = await import("data:text/javascript;base64," + Buffer.from(output).toString("base64"));
-const { attendanceSteps, dueAttendanceSteps, lagosLocalDay } = mod;
+const { attendanceSteps, dueAttendanceSteps, lagosLocalDay, calendarPauses, calendarPauseForDay, nextRegularLessonDay } = mod;
 const now = (time) => Date.parse("2026-10-15T" + time + ":00+01:00");
 const period = {
   id:"00000000-0000-0000-0000-000000000021", streamId:"stream",
@@ -91,4 +91,34 @@ assert.match(notifications,/catch\(\(\) => \[\] as KhposAlert\[\]\)/);
 assert.match(schedule,/cron\.alter_job/);
 assert.match(schedule,/\*\/30 5-16 \* \* 1-6/);
 assert.doesNotMatch(schedule,/cron\.unschedule|drop table|delete from/i);
+// Sunday after a published Friday-ending midterm is NOT another midterm day.
+// The weekly timetable may still display occurrences from the preceding week,
+// so the UI must identify them as historical and show next regular slots.
+const november={
+  ...base,
+  localDay:"2026-11-08",
+  calendarClosures:[{
+    campus_id:null,kind:"closure",title:"Mid-Term Break",
+    start_day:"2026-11-01",end_day:"2026-11-06",
+  }],
+};
+assert.equal(calendarPauseForDay(november,"campus","2026-11-02",true)?.title,"Mid-Term Break");
+assert.equal(calendarPauses(november,"campus","2026-11-06",true),true);
+assert.equal(calendarPauses(november,"campus","2026-11-08",true),false);
+assert.equal(calendarPauses(november,"campus","2026-11-09",true),false);
+assert.equal(nextRegularLessonDay("2026-11-08",1),"2026-11-09");
+assert.equal(nextRegularLessonDay("2026-11-08",5),"2026-11-13");
+assert.equal(nextRegularLessonDay("2026-11-09",1),"2026-11-16");
+assert.equal(nextRegularLessonDay("2026-11-08",8),null);
+assert.equal(nextRegularLessonDay("not-a-day",1),null);
+assert.equal(calendarPauseForDay({...november,calendarClosures:[
+  {campus_id:"other",kind:"no_lessons",title:"Other campus",start_day:"2026-11-08",end_day:"2026-11-09"}]},
+  "campus","2026-11-09",true),null);
+const presenceSource=fs.readFileSync("src/lib/khpos/ops/presence.ts","utf8");
+assert.match(presenceSource,/select\("campus_id,kind,title,start_day,end_day"\)/);
+assert.match(attendanceUI,/Showing attendance status for/);
+assert.match(attendanceUI,/The break has ended\. Next regular class slot/);
+assert.match(attendanceUI,/breakEnded/);
+assert.match(attendanceUI,/nextRegularLessonDay\(data\.localDay,p\.weekday\)/);
+
 console.log("Today attendance and reminders: scheduled windows, duplicate/completed suppression, assigned-teacher privacy, Lagos date boundary, correct action links, and conservative scheduler verified.");

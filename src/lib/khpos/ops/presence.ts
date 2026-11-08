@@ -21,7 +21,7 @@ export interface KhposHqlsObservation {
   coaching: string | null; due: string | null; coachingWorkId: string | null;
   teacherResponse: string | null; acknowledgedAt: string | null; observedAt: string;
 }
-export type SchoolClosure = { campus_id: string | null; kind: "closure" | "no_lessons"; start_day: string; end_day: string };
+export type SchoolClosure = { campus_id: string | null; kind: "closure" | "no_lessons"; title?: string | null; start_day: string; end_day: string };
 
 export interface KhposPresenceWorkspace {
   calendarClosures?: SchoolClosure[];
@@ -91,7 +91,7 @@ export async function getPresenceWorkspace(org: string, actor: string): Promise<
   date.setUTCDate(date.getUTCDate() + 6);
   const to = date.toISOString().slice(0, 10);
   const { data: closures, error: closureError } = await service().from("khpos_school_plan_entries")
-    .select("campus_id,kind,start_day,end_day").eq("organisation_id", org).eq("published", true)
+    .select("campus_id,kind,title,start_day,end_day").eq("organisation_id", org).eq("published", true)
     .in("kind", ["closure", "no_lessons"]).lte("start_day", to).gte("end_day", from);
   if (closureError) fail(closureError.message);
   return { ...workspace, calendarClosures: closures as SchoolClosure[] };
