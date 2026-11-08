@@ -81,7 +81,11 @@ export function matchKhposAppHelp(
     const title = normalized(lesson.title);
     if (q.includes(title) && title.length > 4) score += 30;
     for (const preference of PRIORITIES) {
-      if (preference.pattern.test(q) && preference.title === lesson.title) score += 30;
+      if (preference.pattern.test(q) && preference.title === lesson.title) {
+        // Distinguish historical leadership records from daily check-in
+        // instructions, which naturally share several attendance keywords.
+        score += preference.title === "Attendance leadership overview" ? 70 : 30;
+      }
     }
     // Too little evidence -> do not pretend to know which menu the user meant.
     return {lesson,courseId:course.id,href:hrefForLesson(organisationId,lesson.route),score};
