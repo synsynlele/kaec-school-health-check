@@ -7,6 +7,7 @@
  * supabase/schema.sql). No ORM. No sessions. Just durable records.
  */
 import { Pool } from "pg";
+import { retryFutureIssuedJwtHttpRead } from "@/lib/khpos/ops/retry-transient-auth";
 import type {
   AnswerRecord,
   AssessmentState,
@@ -146,7 +147,7 @@ async function sb<T = Record<string, unknown>>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const makeRequest = () => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: SUPABASE_KEY!,
@@ -155,7 +156,13 @@ async function sb<T = Record<string, unknown>>(
       Prefer: "return=representation",
       ...(init?.headers ?? {}),
     },
+    cache: "no-store",
   });
+  const method = (init?.method ?? "GET").toUpperCase();
+  // Only GET/HEAD may be replayed. Never repeat a potentially committed write.
+  const res = method === "GET" || method === "HEAD"
+    ? await retryFutureIssuedJwtHttpRead(makeRequest)
+    : await makeRequest();
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Supabase ${res.status}: ${body}`);

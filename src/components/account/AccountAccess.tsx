@@ -69,6 +69,12 @@ export function AccountAccess() {
       };
       if (!response.ok || !body.ok || !body.account) {
         setError(body.error ?? "Your account could not be loaded.");
+        if (response.status === 503) {
+          // Infrastructure error is not a revoked/expired session.
+          setLoadFailed(true);
+          setState("ready");
+          return;
+        }
         setState(response.status === 401 ? "signed_out" : "ready");
         return;
       }
