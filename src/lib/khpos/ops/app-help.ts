@@ -29,7 +29,7 @@ export function isKhposAppHelpQuestion(question: string): boolean {
   if (/\b(?:training academy|tutorial|user guide|help guide|how to use|how to navigate|where to click|which button|walk me through|step by step|teach me to use)\b/.test(q)) return true;
   if (!/^(?:how|where|show|guide|teach|help|can i|could i|what steps|which page|which menu|i want to know how)\b/.test(q)) return false;
   if (/\b(?:khpos|app|platform|dashboard|page|screen|menu|button|feature|training|navigate)\b/.test(q)) return true;
-  if (/\b(?:check in|check out|clock in|clock out|sign in|sign out|log in|login|timetable|attendance|invigilation|exam timetable|leave request|cover|reports?|meeting|announcement|notification|assessment|school setup|onboarding|policy|policies|process|approve|approval|staff record|positions?|register staff|teacher assignment|school health check|reassessment|submit evidence|upload evidence|change password|download|export|create a form|my work|view my tasks|find my tasks)\b/.test(q)) return true;
+  if (/\b(?:check in|check out|clock in|clock out|sign in|sign out|log in|login|timetable|attendance|invigilation|exam timetable|leave request|request leave|leave|cover|reports?|meeting|announcement|notification|assessment|school setup|onboarding|policy|policies|process|approve|approval|staff record|positions?|register staff|teacher assignment|school health check|reassessment|submit evidence|upload evidence|change password|download|export|create a form|my work|view my tasks|find my tasks)\b/.test(q)) return true;
   return false;
 }
 
@@ -37,7 +37,7 @@ const PRIORITIES: readonly { pattern: RegExp; title: string }[] = [
   {pattern:/\b(?:create|generate|edit|assign|publish|configure|set up|build)\b.*\b(?:timetable|class assignment|teaching plan)\b/,title:"Teaching plans and class assignments"},
   {pattern:/\b(?:attendance|sign in|sign out|check in|check out)\b.*\b(?:history|record|search|sort|leadership overview)\b/,title:"Attendance leadership overview"},
   {pattern:/\b(?:class|lesson|subject)\b.*\b(?:check in|check out|attendance|timetable)\b|\b(?:check in|check out)\b.*\b(?:class|lesson|subject)\b/,title:"Class timetable and lesson attendance"},
-  {pattern:/\b(?:school|teacher|staff)\b.*\b(?:check in|check out|clock in|clock out)\b|\b(?:check in|check out|clock in|clock out)\b.*\b(?:school|teacher|staff)\b/,title:"School check-in and check-out"},
+  {pattern:/\b(?:school|teacher|staff)\b.*\b(?:check in|check out|clock in|clock out|attendance)\b|\b(?:check in|check out|clock in|clock out)\b.*\b(?:school|teacher|staff)\b/,title:"School check-in and check-out"},
   {pattern:/\b(?:sign in|log in|login)\b.*\b(?:account|khpos|app|school)\b/,title:"Sign in and find your school"},
   {pattern:/\b(?:create|configure|schedule|set up)\b.*\b(?:report|form)\b/,title:"Reporting system and review"},
   {pattern:/\b(?:leave|absence|cover|replacement)\b/,title:"Leave, coverage, staff support and discipline"},
