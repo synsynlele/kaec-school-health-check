@@ -199,7 +199,7 @@ export function LeadershipBriefWorkspace({
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">KHP-OS Intelligence · Phases 1–3</p>
               <h2 className="mt-2 text-2xl font-black">What leadership should address next</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                These recommendations connect operational exceptions, existing approvals and School Health Check progress. They use no AI tokens and cannot change school records by themselves.
+                These recommendations connect operational exceptions, approvals, School Health Check progress and optional aggregated KSI learning signals. They use no AI tokens and cannot change school records by themselves.
               </p>
             </div>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
@@ -223,7 +223,7 @@ export function LeadershipBriefWorkspace({
               <li key={action.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] font-black uppercase text-brand-700">
-                    {index+1}. {action.source === "kshc" ? "School Health Check" : action.source} · {action.priority}
+                    {index+1}. {action.source === "kshc" ? "School Health Check" : action.source === "ksi" ? "KSI learning signal" : action.source} · {action.priority}
                   </p>
                   <span className="text-[11px] font-semibold text-slate-500">Phase {action.phase}</span>
                 </div>
