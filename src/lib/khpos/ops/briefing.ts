@@ -14,7 +14,7 @@ let adminClient: SupabaseClient | null = null;
 export interface KhposLeadershipBrief {
   organisation: { id: string; name: string };
   generatedAt: string;
-  periodDays: 7;
+  periodDays: 7 | 30;
   attention: Awaited<ReturnType<typeof getKhposAttention>>;
   derivedPerformance: Awaited<ReturnType<typeof getKhposOpsPerformance>>["derivedPerformance"];
   progress: {
@@ -62,6 +62,7 @@ function admin() {
 export async function getKhposLeadershipBrief(
   organisationId: string,
   userId: string,
+  periodDays: 7 | 30 = 7,
 ): Promise<KhposLeadershipBrief> {
   const [attention, performance, calendar] = await Promise.all([
     getKhposAttention(organisationId, userId),
@@ -77,7 +78,7 @@ export async function getKhposLeadershipBrief(
   }
 
   const client = admin();
-  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const since = new Date(Date.now() - periodDays * 86_400_000).toISOString();
   const [completedWork, resolvedIssues, implementedDecisions, submittedRecords] =
     await Promise.all([
       client
@@ -206,7 +207,7 @@ export async function getKhposLeadershipBrief(
   return {
     organisation: performance.organisation,
     generatedAt: new Date().toISOString(),
-    periodDays: 7,
+    periodDays,
     attention,
     derivedPerformance: derived,
     progress: {
