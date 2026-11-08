@@ -12,9 +12,9 @@ create table if not exists public.khpos_ai_usage_months (
 create table if not exists public.khpos_ai_usage_requests (
   id uuid primary key default gen_random_uuid(),
   organisation_id uuid not null references public.organisations(id) on delete cascade,
-  actor_user_id uuid not null,
+  actor_user_id uuid,
   month_start date not null,
-  feature text not null check (feature in ('ask','briefing','meeting','improvement','network')),
+  feature text not null check (feature in ('ask','briefing','meeting','improvement','review','network')),
   status text not null default 'reserved' check (status in ('reserved','settled','failed')),
   reserved_micro_usd bigint not null check (reserved_micro_usd >= 0),
   actual_micro_usd bigint not null default 0 check (actual_micro_usd >= 0),
@@ -54,8 +54,8 @@ declare
   v_reserved bigint;
   v_id uuid;
 begin
-  if p_org is null or p_actor is null
-     or p_feature not in ('ask','briefing','meeting','improvement','network')
+  if p_org is null
+     or p_feature not in ('ask','briefing','meeting','improvement','review','network')
      or p_estimate_micro_usd is null or p_estimate_micro_usd <= 0
      or p_limit_micro_usd is null or p_limit_micro_usd <= 0 then
     return null;
