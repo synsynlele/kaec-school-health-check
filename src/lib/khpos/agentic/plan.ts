@@ -56,7 +56,7 @@ const priorityOrder: Record<AgentPriority, number> = { critical: 0, high: 1, med
 function boundedText(value: string, max: number): string {
   return value.replace(/\s+/g, " ").trim().slice(0, max);
 }
-function attentionInstruction(item: KhposAttentionItem): { next: string; evidence: string } {
+export function khposAgentAdviceForAttention(item: KhposAttentionItem): { next: string; evidence: string } {
   switch (item.kind) {
     case "verification": return {
       next: "Open the submitted evidence and independently accept it or return it with an explanation.",
@@ -144,7 +144,7 @@ export function buildSchoolAgentPlan(input: {
 
   // Phase 1 + 2: stay within the signed-in user's already-authorised queue.
   for (const item of attention.items.slice(0, 20)) {
-    const instruction = attentionInstruction(item);
+    const instruction = khposAgentAdviceForAttention(item);
     append({
       id: "attention:" + item.id, phase: 2, priority: item.severity,
       title: boundedText(item.title, 160),
