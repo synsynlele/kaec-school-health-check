@@ -22,17 +22,30 @@ const attention={
    href:"/khpos/"+org+"/work",dueAt:null,actionLabel:"Verify"},
  ],
 };
-const metric=(percent)=>({percent});
 const performance={
  periodDays:30,
- executionCoverage:metric(100),
- workCompletionReliability:metric(45),
- onTimeCompletion:metric(null),
- verificationFirstPass:metric(79),
- issueClosure:metric(95),
- decisionActionClosure:metric(100),
+ executionCoverage:{percent:100,configured:10,approved:10},
+ workCompletionReliability:{percent:45,completed:9,due:20},
+ onTimeCompletion:{percent:null,onTime:0,completedWithDeadline:0},
+ verificationFirstPass:{percent:79,firstPass:15,verified:19},
+ issueClosure:{percent:95,closed:19,opened:20},
+ decisionActionClosure:{percent:100,implemented:10,requiringAction:10},
  recordsSubmitted:7,
 };
+const tinySample=funcs.buildSchoolAgentPlan({
+ organisationId:org,
+ attention:{...attention,items:[]},
+ performance:{
+  ...performance,
+  workCompletionReliability:{percent:0,completed:0,due:1},
+  verificationFirstPass:{percent:0,firstPass:0,verified:1},
+ },
+});
+assert(!tinySample.actions.some(x=>x.id==="performance:workCompletionReliability"),
+  "One observation must not trigger systemic performance recommendations");
+assert(!tinySample.actions.some(x=>x.id==="performance:verificationFirstPass"),
+  "One returned item is not enough evidence for a school-wide conclusion");
+
 const health={
  baseline:{assessmentId:"id",completedAt:now,overallScore:68,healthRating:"Progressing",frameworkVersion:"1.0"},
  latest:{reassessmentOverallScore:62,deltaFromBaseline:-6,verifiedImprovement:false},
