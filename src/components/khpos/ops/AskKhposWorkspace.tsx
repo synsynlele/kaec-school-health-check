@@ -25,6 +25,8 @@ const quickQuestions = [
   "Which decisions are waiting for action?",
   "Are school tasks being completed on time?",
   "What is coming up in the next 30 days?",
+  "What needs follow-up at our next leadership meeting?",
+  "What changed since our last school health check?",
 ];
 
 export function AskKhposWorkspace({ organisationId }: { organisationId: string }) {
