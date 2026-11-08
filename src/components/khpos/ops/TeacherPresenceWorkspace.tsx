@@ -22,6 +22,7 @@ import { needsLocationReview } from "@/lib/khpos/attendance-location";
 
 import { AssessmentTimetable } from "./AssessmentTimetable";
 import { createAttendanceRefreshGate } from "@/lib/khpos/ops/attendance-refresh";
+import { findScheduleCollisions } from "@/lib/khpos/ops/schedule-assist";
 
 type Panel = "day" | "exams" | "lessons" | "hqls" | "leaders";
 type HistoryCategory = "school" | "class";
@@ -277,6 +278,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       (p.session || !data || !calendarPauses(data,p.campusId,data.localDay,true)))
     .sort((a,b)=>a.start.localeCompare(b.start));
   const observed=(data?.observations??[]);
+  const scheduleConflicts=canManage?findScheduleCollisions(data?.periods??[]):[];
   const own=(data?.periods??[])
     .filter(p=>p.termActive && (!timetableCampus || p.campusId===timetableCampus))
     .filter(p=>!lessonDay || p.weekday===Number(lessonDay))
@@ -366,6 +368,14 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
 
         {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
+          {canManage&&scheduleConflicts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Detected timetable clashes">
+            <h2 className="font-black text-amber-950">Timetable clashes detected · {scheduleConflicts.length}</h2>
+            <p className="mt-2 text-sm text-amber-900">These are overlapping active scheduled periods in the records you may see. Inspect both lessons and resolve conflicts through the existing timetable controls. No staff assignment is changed automatically.</p>
+            <ol className="mt-3 space-y-2">{scheduleConflicts.slice(0,10).map(item=><li key={item.id} className="rounded-xl bg-white p-3 text-sm text-slate-900">
+              {WEEKDAYS[item.day]} · {item.detail}
+            </li>)}</ol>
+          </section>}
+
           {(canManage || lessonStreams.length > 0)&&<details className={box}>
             <summary className="cursor-pointer text-xl font-black text-slate-900">Add a weekly lesson</summary>
             <p className="my-2 text-sm text-slate-600">Choose the teaching assignment, day and time. KHP-OS checks for overlaps.</p>
