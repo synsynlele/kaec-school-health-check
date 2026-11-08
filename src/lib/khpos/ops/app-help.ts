@@ -35,7 +35,7 @@ export function isKhposAppHelpQuestion(question: string): boolean {
 
 const PRIORITIES: readonly { pattern: RegExp; title: string }[] = [
   {pattern:/\b(?:create|generate|edit|assign|publish|configure|set up|build)\b.*\b(?:timetable|class assignment|teaching plan)\b/,title:"Teaching plans and class assignments"},
-  {pattern:/\b(?:attendance|sign in|sign out|check in|check out)\b.*\b(?:history|record|search|sort|leadership overview)\b/,title:"Attendance leadership overview"},
+  {pattern:/\b(?:attendance|sign in|sign out|check in|check out)\b.*\b(?:history|records?|search|sort|leadership overview)\b/,title:"Attendance leadership overview"},
   {pattern:/\b(?:class|lesson|subject)\b.*\b(?:check in|check out|attendance|timetable)\b|\b(?:check in|check out)\b.*\b(?:class|lesson|subject)\b/,title:"Class timetable and lesson attendance"},
   {pattern:/\b(?:school|teacher|staff)\b.*\b(?:check in|check out|clock in|clock out|attendance)\b|\b(?:check in|check out|clock in|clock out)\b.*\b(?:school|teacher|staff)\b/,title:"School check-in and check-out"},
   {pattern:/\b(?:sign in|log in|login)\b.*\b(?:account|khpos|app|school)\b/,title:"Sign in and find your school"},
