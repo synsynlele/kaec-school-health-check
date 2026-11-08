@@ -41,6 +41,7 @@ export function khposAiRates(model: string): ModelRates | null {
   const input = positiveNumber(process.env.KHPOS_AI_INPUT_USD_PER_1M);
   const output = positiveNumber(process.env.KHPOS_AI_OUTPUT_USD_PER_1M);
   if (input !== null && output !== null) return { input, output };
+  if (input !== null || output !== null) return null; // incomplete price config: block AI
   return KNOWN_MODEL_RATES[model] ?? null;
 }
 
