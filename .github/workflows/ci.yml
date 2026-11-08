@@ -30,6 +30,9 @@ jobs:
       - name: Agentic costs, four phases, app guides and professional writing
         run: node scripts/test-khpos-agentic-ai-budget.mjs && node scripts/test-khpos-app-help.mjs && node scripts/test-khpos-agentic-phases.mjs && node scripts/test-khpos-writing-assistant.mjs && node scripts/test-khpos-automation-priorities.mjs
 
+      - name: Supabase transient JWT recovery checks
+        run: node scripts/test-transient-auth.mjs
+
       - name: Lint errors
         run: node scripts/lint-errors.mjs
 
