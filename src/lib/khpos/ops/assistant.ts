@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
+import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { getKhposCalendar } from "@/lib/khpos/ops/calendar";
 import { getKhposOpsDecisions } from "@/lib/khpos/ops/decisions";
 import { getKhposOpsLibrary, type KhposOpsLibrary } from "@/lib/khpos/ops/library";
@@ -417,11 +418,21 @@ export async function askKhpos(
   ).slice(0, 10);
   const groundedContext = context.filter(Boolean).join("\n\n").slice(0, 14000);
   const ai = openai();
+  const permit = ai && groundedContext
+    ? await reserveKhposAi(admin(), {
+        organisationId,
+        actorUserId: userId,
+        feature: "ask",
+        model: KHPOS_MODEL,
+        inputCharacters: groundedContext.length + clean.length + orgName.length + 1900,
+        maxOutputTokens: 550,
+      })
+    : null;
   let answer: string;
   let engine: KhposAskResult["engine"] = "grounded_engine";
   let model: string | null = null;
 
-  if (!ai || !groundedContext) {
+  if (!ai || !groundedContext || !permit) {
     answer = deterministicAnswer(clean, intent, uniqueSources);
   } else {
     try {
@@ -450,12 +461,18 @@ ${groundedContext}`,
           { role: "user", content: clean },
         ],
       });
-      answer =
-        response.choices[0]?.message?.content?.trim() ||
-        deterministicAnswer(clean, intent, uniqueSources);
-      engine = "openai";
-      model = KHPOS_MODEL;
+      const generated = response.choices[0]?.message?.content?.trim();
+      answer = generated || deterministicAnswer(clean, intent, uniqueSources);
+      if (generated) {
+        engine = "openai";
+        model = KHPOS_MODEL;
+      }
+      await settleKhposAi(admin(), permit, {
+        inputTokens: response.usage?.prompt_tokens,
+        outputTokens: response.usage?.completion_tokens,
+      }, true);
     } catch (error) {
+      await settleKhposAi(admin(), permit, null, false);
       console.error("[khpos][ask] AI request failed; grounded fallback used", {
         reason: error instanceof Error ? error.name : "unknown_error",
       });
