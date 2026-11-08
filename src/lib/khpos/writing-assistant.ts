@@ -174,3 +174,39 @@ export function composeHqReport(input:HqReportDraftInput): string {
   );
   return out.join("\n\n").slice(0,16000);
 }
+
+/** Institution-level report assembled only from authorised leadership data.
+ * Operating KPI percentages always describe a separate 30-day window. */
+export function composeLeadershipSummary(input: {
+  organisationName: string;
+  generatedAt: string;
+  periodDays: 7 | 30;
+  progress: {workCompleted:number;issuesResolved:number;decisionsImplemented:number;recordsSubmitted:number};
+  attention: { summary: { critical:number;overdue:number;blocked:number;waitingApproval:number } };
+  agentPlan: {actions:Array<{title:string;recommendation:string;source:string;priority:string}>};
+}): string {
+  const lines=[
+    heading(input.organisationName,"School").toUpperCase()+" — LEADERSHIP PERFORMANCE REVIEW",
+    "Reporting window: previous "+input.periodDays+" days (rolling).",
+    "Generated: "+heading(input.generatedAt,"Date unavailable"),
+    "",
+    "REPORTED SYSTEM ACTIVITY",
+    "- Completed work items: "+input.progress.workCompleted,
+    "- Issues resolved: "+input.progress.issuesResolved,
+    "- Decisions implemented: "+input.progress.decisionsImplemented,
+    "- Submitted operating records: "+input.progress.recordsSubmitted,
+    "",
+    "CURRENT EXCEPTIONS",
+    "- Critical matters: "+input.attention.summary.critical,
+    "- Overdue responsibilities: "+input.attention.summary.overdue,
+    "- Blocked responsibilities: "+input.attention.summary.blocked,
+    "- Decisions awaiting approval: "+input.attention.summary.waitingApproval,
+    "",
+    "PRIORITISED RECOMMENDATIONS",
+  ];
+  const actions=input.agentPlan.actions.slice(0,10);
+  if(!actions.length)lines.push("No exception-triggered action identified in the currently authorised records.");
+  else actions.forEach((action,i)=>lines.push(`${i+1}. [${action.priority}] ${clean(action.title,160)} — ${clean(action.recommendation,350)}`));
+  lines.push("","ACCOUNTABILITY","This document is an automatically prepared review draft from current records. Leaders must verify the evidence, assign owners, and confirm outcomes before circulation. KSHC improvement is verified only by valid reassessment.");
+  return lines.join("\n").slice(0,14000);
+}
