@@ -62,6 +62,35 @@ const offline=funcs.buildSchoolAgentPlan({organisationId:org,attention:{...atten
  performance,health:null});
 assert(!offline.actions.some(x=>x.id==="kshc:baseline"),"KSHC outage is not lack of baseline");
 
+const ksi={
+ integration:{status:"active"},
+ latest:{sourceGeneratedAt:now},
+ signals:[
+  {key:"hqls_fidelity",title:"HQLS fidelity",state:"attention",
+   headline:"Review delivery fidelity",detail:"School aggregate only."},
+  {key:"assessment_alignment",title:"Assessment alignment",state:"insufficient",
+   headline:"Not enough verified assessments",detail:"Small sample."},
+  {key:"diagnosis_governance",title:"Diagnosis governance",state:"strong",
+   headline:"Good evidence",detail:"Aggregate quality."},
+ ],
+};
+const integrated=funcs.buildSchoolAgentPlan({
+ organisationId:org,attention:{...attention,items:[]},performance,health,ksi,generatedAt:now,
+});
+assert.equal(integrated.modelTokensUsed,0);
+assert.equal(integrated.summary.ksiAvailable,true);
+assert(integrated.actions.some(x=>x.id==="ksi:hqls_fidelity"));
+assert(integrated.actions.some(x=>x.id==="ksi:assessment_alignment"));
+assert(!integrated.actions.some(x=>x.id==="ksi:diagnosis_governance"));
+assert(integrated.actions.filter(x=>x.source==="ksi").every(x=>
+ x.href==="/khpos/"+org+"/learning-intelligence"));
+const notLinked=funcs.buildSchoolAgentPlan({
+ organisationId:org,attention:{...attention,items:[]},performance,ksi:{
+  integration:{status:"not_connected"},latest:null,signals:[...ksi.signals],
+ },
+});
+assert(!notLinked.actions.some(x=>x.source==="ksi"),"Optional disconnected KSI should not be treated as a failure");
+
 const portfolio={
  generatedAt:now,
  institutions:[
@@ -89,7 +118,7 @@ const api=read("src/app/api/khpos/portfolio/route.ts");
 const decisions=read("src/components/khpos/ops/DecisionsWorkspace.tsx");
 const lead=read("src/components/khpos/ops/LeadershipBriefWorkspace.tsx");
 const ui=read("src/components/khpos/PortfolioIntelligenceWorkspace.tsx");
-assert(server.includes("buildSchoolAgentPlan")&&server.includes("getKhposImprovementWorkspace"));
+assert(server.includes("buildSchoolAgentPlan")&&server.includes("getKhposImprovementWorkspace")&&server.includes("getKhposKsiWorkspace"));
 assert(api.indexOf("getKhposPortfolioIntelligence(user.id)")<api.indexOf("buildNetworkAgentPlan(portfolio)"));
 assert(decisions.includes("payload.brief?.agentPlan?.actions.find("));
 assert(decisions.includes('setDecisionMode("request")'));
