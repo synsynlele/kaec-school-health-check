@@ -1,4 +1,5 @@
 import { canViewKshcLinkedSchoolReport } from "@/lib/kshc-access";
+import { retryFutureIssuedJwtHttpRead } from "@/lib/khpos/ops/retry-transient-auth";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,14 +19,14 @@ async function serviceFetch<T>(path: string): Promise<T> {
     throw new KhposWorkspaceError("KHP-OS workspace is not configured.", 503);
   }
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const response = await retryFutureIssuedJwtHttpRead(() => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
     },
     cache: "no-store",
-  });
+  }));
 
   if (!response.ok) {
     throw new KhposWorkspaceError("The KHP-OS workspace could not be loaded.", 500);
