@@ -12,6 +12,7 @@
 import type { KhposAttentionSnapshot, KhposAttentionItem, KhposAttentionSeverity } from "@/lib/khpos/ops/attention";
 import type { KhposOpsPerformanceWorkspace } from "@/lib/khpos/ops/performance";
 import type { KhposImprovementWorkspace } from "@/lib/khpos/improvement";
+import type { KhposKsiWorkspace } from "@/lib/khpos/ksi-integration";
 import type { KhposPortfolioIntelligence } from "@/lib/khpos/benchmarking";
 
 export type AgentPriority = "critical" | "high" | "medium" | "info";
@@ -34,7 +35,7 @@ export interface SchoolAgentAction {
   recommendation: string;
   evidenceToCheck: string;
   href: string;
-  source: "attention" | "performance" | "kshc";
+  source: "attention" | "performance" | "kshc" | "ksi";
   decisionDraft: AgentDecisionDraft | null;
 }
 
@@ -47,6 +48,7 @@ export interface SchoolAgentPlan {
     critical: number;
     approvalCandidates: number;
     kshcAvailable: boolean;
+    ksiAvailable: boolean;
   };
   actions: SchoolAgentAction[];
   caveat: string;
@@ -131,9 +133,10 @@ export function buildSchoolAgentPlan(input: {
   attention: KhposAttentionSnapshot;
   performance: Performance;
   health?: KhposImprovementWorkspace | null;
+  ksi?: KhposKsiWorkspace | null;
   generatedAt?: string;
 }): SchoolAgentPlan {
-  const { organisationId, attention, performance, health } = input;
+  const { organisationId, attention, performance, health, ksi } = input;
   const actions: SchoolAgentAction[] = [];
   const seen = new Set<string>();
   function append(action: SchoolAgentAction) {
@@ -221,6 +224,38 @@ export function buildSchoolAgentPlan(input: {
     }
   }
 
+  // Phase 3 also reuses already-aggregated KSI signals. Never inspect
+  // individual student diagnoses, names, reports or other protected content.
+  // A missing optional connection is not evidence of poor school performance.
+  if (ksi?.integration.status === "active") {
+    if (!ksi.latest) {
+      append({
+        id:"ksi:awaiting-signal",phase:3,priority:"info",
+        title:"KSI learning signals have not been received",
+        observation:"The school has an active KSI connection but no available aggregated learning snapshot.",
+        recommendation:"Ask the authorised KSI administrator to confirm the integration and sync before using its results.",
+        evidenceToCheck:"KSI connection status and a recent aggregate signal timestamp.",
+        href:`/khpos/${organisationId}/learning-intelligence`,
+        source:"ksi",decisionDraft:null,
+      });
+    } else {
+      for (const signal of ksi.signals.slice(0,4)) {
+        if (signal.state !== "attention" && signal.state !== "insufficient") continue;
+        append({
+          id:"ksi:"+signal.key,phase:3,
+          priority:signal.state === "attention" ? "medium" : "info",
+          title:"KSI: "+boundedText(signal.title,120),
+          observation:boundedText(signal.headline+" · "+signal.detail,280),
+          recommendation:signal.state === "attention"
+            ? "Review the aggregated teaching and assessment evidence with the academic leadership team, and agree a documented corrective action."
+            : "Gather enough validated teaching and assessment evidence before drawing conclusions about this indicator.",
+          evidenceToCheck:"KSI aggregate signals, validation quality and the approved academic improvement plan.",
+          href:`/khpos/${organisationId}/learning-intelligence`,source:"ksi",decisionDraft:null,
+        });
+      }
+    }
+  }
+
   const ranked = actions.sort((a,b) =>
     priorityOrder[a.priority]-priorityOrder[b.priority] ||
     a.phase-b.phase ||
@@ -234,6 +269,7 @@ export function buildSchoolAgentPlan(input: {
       critical: ranked.filter(a => a.priority === "critical").length,
       approvalCandidates: ranked.filter(a => a.decisionDraft !== null).length,
       kshcAvailable: Boolean(health?.baseline),
+      ksiAvailable: ksi?.integration.status === "active" && Boolean(ksi.latest),
     },
     actions:ranked,
     caveat:"Suggestions only. No school record, policy, personnel outcome or verified KSHC assessment is changed without existing authorised workflows.",
