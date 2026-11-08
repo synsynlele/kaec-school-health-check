@@ -36,8 +36,9 @@ function positiveNumber(value: string | undefined): number | null {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
-export function khposAiRates(model: string): ModelRates | null {
+export function khposAiRates(model: string, allowKhposOverride = true): ModelRates | null {
   // Unknown model prices must be explicitly set, never silently treated as free.
+  if (!allowKhposOverride) return KNOWN_MODEL_RATES[model] ?? null;
   const input = positiveNumber(process.env.KHPOS_AI_INPUT_USD_PER_1M);
   const output = positiveNumber(process.env.KHPOS_AI_OUTPUT_USD_PER_1M);
   if (input !== null && output !== null) return { input, output };
