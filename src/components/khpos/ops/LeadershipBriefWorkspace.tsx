@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposLeadershipBrief } from "@/lib/khpos/ops/briefing";
+import { composeLeadershipSummary } from "@/lib/khpos/writing-assistant";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -31,6 +32,10 @@ export function LeadershipBriefWorkspace({
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [brief, setBrief] = useState<KhposLeadershipBrief | null>(null);
+  const [days,setDays]=useState<7|30>(7);
+  const [narrative,setNarrative]=useState("");
+  const [copyError,setCopyError]=useState("");
+
   const [error, setError] = useState(supabase ? "" : "Sign-in is not configured. Please contact your school administrator.");
 
   useEffect(() => {
@@ -45,7 +50,7 @@ export function LeadershipBriefWorkspace({
       }
 
       const response = await fetch(
-        `/api/khpos/ops/briefing/${organisationId}`,
+        `/api/khpos/ops/briefing/${organisationId}?days=${days}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -70,7 +75,7 @@ export function LeadershipBriefWorkspace({
     return () => {
       active = false;
     };
-  }, [organisationId, supabase]);
+  }, [organisationId, supabase, days]);
 
   if (!brief && !error) {
     return <LoadingScreen />;
@@ -119,6 +124,36 @@ export function LeadershipBriefWorkspace({
         </div>
       </section>
 
+      <div className="mx-auto max-w-7xl px-4 pt-7 sm:px-6">
+        <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm">
+          <h2 className="font-black text-slate-950">Professional leadership report · No AI tokens</h2>
+          <p className="mt-2 text-sm text-slate-600">Choose the period for recorded activity. The current exceptions and 30-day operating scorecard are separate from the rolling activity period.</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {([7,30] as const).map(value=><button key={value} type="button" aria-pressed={days===value}
+              onClick={()=>{if(value!==days){setBrief(null);setNarrative("");setCopyError("");setDays(value);}}}
+              className={`rounded-xl border px-4 py-2 text-sm font-bold ${days===value?"bg-brand-700 text-white":"bg-white text-brand-900"}`}>
+              {value===7?"Last 7 days":"Last 30 days"}
+            </button>)}
+            <button type="button" className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white"
+              onClick={()=>{setNarrative(composeLeadershipSummary({
+                organisationName:brief.organisation.name,generatedAt:brief.generatedAt,periodDays:brief.periodDays,
+                progress:brief.progress,attention:brief.attention,agentPlan:brief.agentPlan,
+              }));setCopyError("");}}>
+              Prepare professional review
+            </button>
+          </div>
+          {narrative&&<div className="mt-4 space-y-3">
+            <textarea aria-label="Editable leadership review" rows={14} value={narrative} onChange={e=>setNarrative(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white p-4 text-sm leading-6 text-slate-950"/>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold"
+                onClick={async()=>{try{await navigator.clipboard.writeText(narrative);setCopyError("Copied.");}catch{setCopyError("Copy unavailable. Select the narrative above and copy manually.");}}}>Copy review</button>
+            </div>
+            {copyError&&<p role="status" className="text-xs text-slate-700">{copyError}</p>}
+            <p className="text-xs text-slate-600">This is an evidence-based draft for human verification, not a certified institutional assessment.</p>
+          </div>}
+        </section>
+      </div>
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6">
         <section>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
