@@ -173,7 +173,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             { title: "My day", detail: "Attendance, tasks and follow-ups", href: `/khpos/${organisationId}/work` },
             { title: "Teaching & learning", detail: "Lessons, timetables and assessments", href: `/khpos/${organisationId}/teaching-presence` },
             { title: "Reports & forms", detail: "Write, submit and review reports", href: `/khpos/${organisationId}/reports` },
-            { title: "School setup", detail: "People, roles and operational readiness", href: `/khpos/${organisationId}/activation` },
+            { title: "School updates", detail: "Notices, meetings and announcements", href: `/khpos/${organisationId}/announcements` },
           ].map(item => (
             <Link key={item.href} href={item.href} className="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-500">
               <span className="font-extrabold text-slate-950">{item.title}</span>
