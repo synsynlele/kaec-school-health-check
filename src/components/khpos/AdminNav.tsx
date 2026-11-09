@@ -31,7 +31,7 @@ export function AdminNav() {
         <Link href="/account"
           className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border border-white/20 px-3 text-xs font-black text-white transition hover:bg-white/10">
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Account
+          School Platform
         </Link>
       </div>
       <div className="mx-auto max-w-7xl px-4 pb-2 sm:px-6">
