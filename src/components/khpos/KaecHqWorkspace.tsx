@@ -17,7 +17,7 @@ import type { SchoolDeskSnapshot } from "@/lib/khpos/hq-schools";
 import type { HqReportingDesk } from "@/lib/khpos/hq-reports";
 
 const areas: { id: HqModule; label: string; subtitle: string; icon: LucideIcon }[] = [
-  { id: "command", label: "School overview", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
+  { id: "command", label: "HQ overview", subtitle: "Decisions, risks and deadlines", icon: LayoutDashboard },
   { id: "governance", label: "Governance & Playbooks", subtitle: "Company constitution and controlled ways of working", icon: BookOpen },
   { id: "people", label: "People & Roles", subtitle: "Accountability, appointments and succession", icon: Users },
   { id: "work", label: "Work & Execution", subtitle: "Assigned work, reports and approvals", icon: ClipboardCheck },
@@ -107,6 +107,7 @@ export function KaecHqWorkspace() {
   const [reportNotice, setReportNotice] = useState("");
   const [access, setAccess] = useState<"loading" | "signed_out" | "denied" | "ready">("loading");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [tab, setTab] = useState<HqModule>("command");
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -171,7 +172,7 @@ export function KaecHqWorkspace() {
 
   async function act(action: string, values: Record<string, unknown> = {}) {
     if (!client) return false;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setNotice("");
     try {
       const { data } = await client.auth.getSession();
       const token = data.session?.access_token;
@@ -188,6 +189,7 @@ export function KaecHqWorkspace() {
       }
       setSnapshot(result.snapshot);
       setAccess("ready");
+      setNotice("Corporate action recorded.");
       return true;
     } catch {
       setError("The request failed. Please check your connection.");
@@ -315,38 +317,56 @@ export function KaecHqWorkspace() {
   const privileged = snapshot.viewer.role === "vision_custodian";
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-      <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6">
-          <div className="flex items-center gap-3"><Landmark className="size-8 text-emerald-300" /><div>
-            <p className="text-xs font-bold uppercase tracking-[0.19em] text-emerald-300">KAEC-NG Ltd · Private corporate workspace</p>
-            <h1 className="text-2xl font-black">KAEC HQ</h1></div></div>
-          <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
-            <span>{roleNames[snapshot.viewer.role] ?? snapshot.viewer.role}</span>
-            <span className="rounded-full border border-white/20 px-3 py-1.5">MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}</span>
-            <button disabled={busy} onClick={() => void load()} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-2 disabled:opacity-40"><RefreshCw className="size-3.5"/> Refresh</button>
-            <Link href="/khpos/hq/schools" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/60 bg-emerald-900/40 px-3 py-2 text-emerald-100">School Pathfinders</Link>
-            <Link href="/khpos/hq/ideas" className="rounded-full border border-white/30 px-3 py-2">Ideas &amp; discussions</Link>
-            <Link href="/khpos/hq/meetings" className="rounded-full border border-white/30 px-3 py-2">Meetings</Link>
-            <Link href="/khpos/hq/reports" className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2">Reporting Centre</Link>
-            <Link href="/khpos/hq/ask" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/50 px-3 py-2 text-emerald-100">Ask KHP-OS · Training Academy</Link>
-            <Link href="/account" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-slate-950"><ArrowLeft className="size-3.5"/> Account</Link>
-            <button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-2 disabled:opacity-40"><LogOut className="size-3.5"/> Sign out</button>
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+      <header className="border-b border-slate-800 bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-300 text-slate-950"><Landmark className="size-6" aria-hidden="true" /></span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">KAEC-NG · Private corporate workspace</p>
+                <h1 className="text-xl font-black tracking-tight sm:text-2xl">KAEC HQ</h1>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+              <span className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">{roleNames[snapshot.viewer.role] ?? snapshot.viewer.role}</span>
+              <span className={snapshot.viewer.aal === "aal2"
+                ? "rounded-xl border border-emerald-300/40 bg-emerald-900/40 px-3 py-2 text-emerald-200"
+                : "rounded-xl border border-amber-300/40 bg-amber-900/30 px-3 py-2 text-amber-100"}>
+                MFA: {snapshot.viewer.aal === "aal2" ? "Verified" : "Not verified"}
+              </span>
+              <button disabled={busy} onClick={() => void load()} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3 hover:bg-white/10 disabled:opacity-40"><RefreshCw className="size-4" aria-hidden="true"/> Refresh</button>
+              <Link href="/account" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3 hover:bg-white/10"><ArrowLeft className="size-4" aria-hidden="true"/> Account</Link>
+              <button disabled={busy} onClick={() => void signOut()} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3 hover:bg-white/10 disabled:opacity-40"><LogOut className="size-4" aria-hidden="true"/> Sign out</button>
+            </div>
           </div>
+          <nav aria-label="KAEC HQ tools" className="mt-4 flex gap-2 overflow-x-auto border-t border-white/10 pt-3 pb-1">
+            {([
+              ["/khpos/hq/schools", "School Pathfinders"],
+              ["/khpos/hq/reports", "Reporting Centre"],
+              ["/khpos/hq/meetings", "Meetings"],
+              ["/khpos/hq/ideas", "Ideas & discussions"],
+              ["/khpos/hq/ask", "Help & training"],
+            ] as const).map(([href, label]) => (
+              <Link key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-200 transition-colors hover:border-white/35 hover:bg-white/10 hover:text-white">
+                {label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
-      <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <nav aria-label="KAEC HQ areas" className="grid content-start grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
+      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[242px_minmax(0,1fr)] lg:gap-7">
+        <nav aria-label="KAEC HQ areas" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:self-start">
           {areas.filter((item) => snapshot.allowedModules.includes(item.id)).map((item) => {
             const Icon = item.icon;
             return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}
-              aria-current={tab === item.id ? "page" : undefined}
-              className={"flex min-w-0 items-start gap-2.5 rounded-xl border p-3 text-left text-xs font-bold transition " +
+              aria-pressed={tab === item.id}
+              className={"flex min-w-[10rem] shrink-0 items-start gap-2.5 rounded-xl border p-3 text-left text-xs font-bold transition lg:min-w-0 " +
                 (tab === item.id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white hover:bg-slate-50")}>
-              <Icon className="mt-0.5 size-4 shrink-0"/><span>{item.label}</span>
+              <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true"/><span className="min-w-0"><span className="block">{item.label}</span><span className="mt-1 hidden text-[11px] font-medium leading-4 opacity-75 lg:block">{item.subtitle}</span></span>
             </button>;
           })}
-          <Link href="/khpos/hq/schools" className="col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left text-xs font-bold text-emerald-900 sm:col-span-3 lg:col-span-1">
+          <Link href="/khpos/hq/schools" className="min-w-[12rem] shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left text-xs font-bold text-emerald-900 lg:min-w-0">
             <span className="block">School Pathfinders →</span>
             <span className="mt-1 block font-normal text-emerald-800">Live school commitments, follow-ups, visits and evidence</span>
           </Link>
@@ -359,7 +379,6 @@ export function KaecHqWorkspace() {
             {isDataModule(tab) && <button disabled={busy} onClick={() => { setForm(newForm(tab, snapshot.viewer.userId)); setEditing(null); }}
               className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Plus className="size-4"/> New record</button>}
           </div>
-          {error && <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">{error}</div>}
           {snapshot.hasMore && <p className="rounded-xl bg-amber-50 p-3 text-xs font-medium text-amber-900">The latest 300 accessible records are shown. Older records require additional filtering and pagination.</p>}
 
           {snapshot.viewer.aal !== "aal2" && <section className="rounded-2xl border border-amber-200 bg-white p-5">

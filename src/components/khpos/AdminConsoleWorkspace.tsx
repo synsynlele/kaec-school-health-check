@@ -67,6 +67,7 @@ export function AdminConsoleWorkspace() {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState("");
+  const [notice, setNotice] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
   const [targetRole, setTargetRole] = useState<KhposPlatformRole>("portfolio_admin");
   const [governanceAction, setGovernanceAction] = useState<"grant" | "reactivate" | "suspend">("grant");
@@ -107,6 +108,11 @@ export function AdminConsoleWorkspace() {
       setDashboard(body.dashboard);
       setState("ready");
       setError("");
+    }).catch(() => {
+      if (active) {
+        setState("denied");
+        setError("Admin Console could not be loaded. Check your connection and try again.");
+      }
     });
 
     return () => {
@@ -216,41 +222,46 @@ export function AdminConsoleWorkspace() {
     if (!supabase || !dashboard) return;
     setBusy("governance");
     setError("");
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
+    setNotice("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setState("signed_out");
+        return;
+      }
+      const response = await fetch("/api/khpos/admin", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: governanceAction,
+          targetEmail: targetEmail.trim().toLowerCase(),
+          role: targetRole,
+          reason: reason.trim(),
+        }),
+      });
+      const body = (await response.json()) as {
+        ok?: boolean;
+        dashboard?: KhposAdminDashboard;
+        error?: string;
+      };
+      if (!response.ok || !body.ok || !body.dashboard) {
+        setError(body.error ?? "Platform access could not be changed.");
+        return;
+      }
+      setDashboard(body.dashboard);
+      setTargetEmail("");
+      setReason("");
+      setNotice("Platform access change recorded.");
+    } catch {
+      setError("Platform access could not be saved. Check your connection and try again.");
+    } finally {
       setBusy("");
-      setState("signed_out");
-      return;
     }
-    const response = await fetch("/api/khpos/admin", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: governanceAction,
-        targetEmail: targetEmail.trim().toLowerCase(),
-        role: targetRole,
-        reason: reason.trim(),
-      }),
-    });
-    const body = (await response.json()) as {
-      ok?: boolean;
-      dashboard?: KhposAdminDashboard;
-      error?: string;
-    };
-    setBusy("");
-    if (!response.ok || !body.ok || !body.dashboard) {
-      setError(body.error ?? "Platform access could not be changed.");
-      return;
-    }
-    setDashboard(body.dashboard);
-    setTargetEmail("");
-    setReason("");
   }
-
   if (state === "checking") {
     return <LoadingScreen />;
   }
@@ -343,7 +354,7 @@ export function AdminConsoleWorkspace() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <header className="bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex items-center justify-between gap-4">
