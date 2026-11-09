@@ -142,21 +142,15 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex flex-wrap items-center gap-2">
-            {workspace.canViewHealthReport && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">First health check saved</span>}
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
-            {priorityCount > 0 && (
-              <span className="rounded-full border border-mint-300/40 bg-mint-300/15 px-3 py-1 text-xs font-bold text-mint-200">
-                Focus agenda {priorityCount}/3
-              </span>
-            )}
           </div>
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">{workspace.organisation.name}</h1>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{workspace.organisation.name}</h1>
               <p className="mt-3 text-sm text-brand-100">
                 {[workspace.organisation.schoolType, workspace.organisation.schoolLevel, location].filter(Boolean).join(" · ")}
               </p>
