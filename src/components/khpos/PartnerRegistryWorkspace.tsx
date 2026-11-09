@@ -38,6 +38,7 @@ export function PartnerRegistryWorkspace() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
   const busyRef = useRef(busy);
   busyRef.current = busy;
 
@@ -80,7 +81,7 @@ export function PartnerRegistryWorkspace() {
   // focus to the triggering button when the dialog closes.
   useEffect(() => {
     if (!selected) return;
-    const opener = document.activeElement as HTMLElement | null;
+    const opener = dialogOpenerRef.current;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKeys = (event: KeyboardEvent) => {
@@ -177,7 +178,7 @@ export function PartnerRegistryWorkspace() {
           ) : registry.partners.map((partner) => {
             const Icon = statusIcon[partner.partnerStatus];
             const actions = actionsByStatus[partner.partnerStatus];
-            return <article key={partner.organisationId} className="rounded-[28px] border border-white/10 bg-white/5 p-6"><div className="flex flex-wrap items-start justify-between gap-5"><div className="max-w-2xl"><div className="flex items-center gap-2"><Icon className="size-5 text-mint-300" /><span className="text-xs font-black uppercase tracking-[0.15em] text-mint-300">{partner.partnerStatus}</span></div><h2 className="mt-3 text-2xl font-black">{partner.name}</h2><p className="mt-2 text-sm text-slate-400">{[partner.schoolLevel, partner.state, partner.country].filter(Boolean).join(" · ") || "School context not supplied"}</p><div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400"><span>{partner.memberCount} member{partner.memberCount === 1 ? "" : "s"}</span><span>Core entitlement: {partner.entitlements.includes("khpos_core") ? "configured" : "not configured"}</span>{partner.latestOverallScore !== null && <span>Latest KSHC: {partner.latestOverallScore}</span>}</div>{partner.statusReason && <p className="mt-4 text-sm leading-6 text-slate-300">Last governance note: {partner.statusReason}</p>}</div>{canManage && actions.length > 0 && <div className="flex flex-wrap gap-2">{actions.map((action) => <button key={action} onClick={() => { setSelected({ organisationId: partner.organisationId, name: partner.name, action }); setReason(""); setError(""); }} className="rounded-full border border-white/15 px-4 py-2 text-xs font-black uppercase tracking-wide hover:bg-white/10">{action}</button>)}</div>}</div></article>;
+            return <article key={partner.organisationId} className="rounded-[28px] border border-white/10 bg-white/5 p-6"><div className="flex flex-wrap items-start justify-between gap-5"><div className="max-w-2xl"><div className="flex items-center gap-2"><Icon className="size-5 text-mint-300" /><span className="text-xs font-black uppercase tracking-[0.15em] text-mint-300">{partner.partnerStatus}</span></div><h2 className="mt-3 text-2xl font-black">{partner.name}</h2><p className="mt-2 text-sm text-slate-400">{[partner.schoolLevel, partner.state, partner.country].filter(Boolean).join(" · ") || "School context not supplied"}</p><div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400"><span>{partner.memberCount} member{partner.memberCount === 1 ? "" : "s"}</span><span>Core entitlement: {partner.entitlements.includes("khpos_core") ? "configured" : "not configured"}</span>{partner.latestOverallScore !== null && <span>Latest KSHC: {partner.latestOverallScore}</span>}</div>{partner.statusReason && <p className="mt-4 text-sm leading-6 text-slate-300">Last governance note: {partner.statusReason}</p>}</div>{canManage && actions.length > 0 && <div className="flex flex-wrap gap-2">{actions.map((action) => <button key={action} onClick={() => { dialogOpenerRef.current = document.activeElement as HTMLElement | null; setSelected({ organisationId: partner.organisationId, name: partner.name, action }); setReason(""); setError(""); }} className="rounded-full border border-white/15 px-4 py-2 text-xs font-black uppercase tracking-wide hover:bg-white/10">{action}</button>)}</div>}</div></article>;
           })}
         </section>
       </div>
