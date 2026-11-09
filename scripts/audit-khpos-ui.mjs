@@ -69,10 +69,10 @@ const complexWorkspaceResilience = complexWorkspaces.map(name => {
     ? 'src/components/khpos/ReportsWorkspace.tsx'
     : 'src/components/khpos/ops/' + name + '.tsx';
   const source = read(file);
-  const hasVisibleFeedback = /<ActionFeedback\\b/.test(source) && /notice=\\{(?!""|''|null)/.test(source);
-  const hasLoadErrorRecovery = /\\.catch\\(\\(/.test(source);
-  const hasActionErrorRecovery = /\\bcatch\\s*\\(/.test(source) || /\\bcatch\\s*\\{/.test(source);
-  const hasBusyCleanup = /\\bfinally\\s*\\{/.test(source);
+  const hasVisibleFeedback = /<ActionFeedback\b/.test(source) && /notice=\{(?!""|''|null)/.test(source);
+  const hasLoadErrorRecovery = /\.catch\(\(/.test(source);
+  const hasActionErrorRecovery = /\bcatch\s*\(/.test(source) || /\bcatch\s*\{/.test(source);
+  const hasBusyCleanup = /\bfinally\s*\{/.test(source);
   assert(hasVisibleFeedback, name + ': successful work should have a consistent visible notification');
   assert(hasLoadErrorRecovery, name + ': network load failures must not leave an endless loader');
   assert(hasActionErrorRecovery && hasBusyCleanup, name + ': action failures must clear the busy state');
