@@ -438,12 +438,6 @@ export function MyWorkWorkspace({
           </div>
         )}
 
-        {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            {error}
-          </div>
-        )}
-
         <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
           <a className="rounded-xl border bg-white px-4 py-3" href="#today-attendance">Attendance &amp; lessons</a>
           <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/reports`}>My reports</Link>
