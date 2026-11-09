@@ -386,20 +386,7 @@ export function MyWorkWorkspace({
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <div className="flex items-center justify-between gap-4">
-            <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Today
-            </span>
-            <Link
-              href={`/khpos/${organisationId}`}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white"
-            >
-              <ArrowLeft className="size-4" />
-              School overview
-            </Link>
-          </div>
-
-          <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
             Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
@@ -440,7 +427,6 @@ export function MyWorkWorkspace({
 
         <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
           <a className="rounded-xl border bg-white px-4 py-3" href="#today-attendance">Attendance &amp; lessons</a>
-          <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/reports`}>My reports</Link>
           <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
           {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
         </nav>
