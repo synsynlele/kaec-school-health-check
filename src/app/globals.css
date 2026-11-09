@@ -197,6 +197,33 @@ body {
   }
 }
 
+/* Shared, low-risk readability and interaction polish for every school workspace.
+   These rules do not change workflow ownership, data, permissions or form state. */
+.khpos-school-shell :where(h1, h2, h3) {
+  text-wrap: balance;
+  letter-spacing: -0.015em;
+}
+.khpos-school-shell :where(button, a[href], summary) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.khpos-school-shell :where([role="alert"], [role="status"]) {
+  overflow-wrap: anywhere;
+}
+.khpos-school-shell :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  caret-color: var(--color-brand-700);
+}
+/* Focus must remain obvious on dark school headers, panels and navigation. */
+.khpos-school-shell :where(.bg-slate-950, .bg-slate-900, .bg-brand-950, .bg-brand-900) :where(button, a[href], summary, input, select, textarea):focus-visible {
+  outline-color: var(--color-mint-300);
+}
+@media (prefers-reduced-motion: reduce) {
+  .khpos-school-shell :where(button, a[href], summary) {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+}
+
 /* Render school content immediately during route changes; reserve animation for controls. */
 .khpos-school-shell :is(.animate-fade-in, .animate-fade-up) {
   animation: none;
