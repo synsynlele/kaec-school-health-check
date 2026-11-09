@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Activity,
   ArrowRight,
   Building2,
   CheckCircle2,
@@ -14,7 +13,6 @@ import {
   FileText,
   Gauge,
   Loader2,
-  LogOut,
   ShieldCheck,
   Target,
 } from "lucide-react";
@@ -42,9 +40,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
   const [error, setError] = useState(
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
-  const [signingOut, setSigningOut] = useState(false);
   const [reportError, setReportError] = useState("");
-  const [signOutError, setSignOutError] = useState("");
   const [openingReport, setOpeningReport] = useState(false);
 
   async function openReport(event: React.MouseEvent<HTMLAnchorElement>, assessmentId: string) {
@@ -118,22 +114,6 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
     };
   }, [organisationId, supabase]);
 
-  async function signOut() {
-    if (!supabase || signingOut) return;
-    setSigningOut(true);
-    setSignOutError("");
-    try {
-      const response = await fetch("/api/kshc/session", { method: "DELETE" });
-      if (!response.ok) throw new Error("Session could not be cleared.");
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) throw signOutError;
-      window.location.replace("/khpos");
-    } catch {
-      setSignOutError("Could not finish signing out. Check your connection and try again.");
-      setSigningOut(false);
-    }
-  }
-
   if (!workspace && !error) {
     return <LoadingScreen />;
   }
@@ -161,57 +141,40 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-white/10 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-mint-400 text-slate-950">
-              <Activity className="size-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-mint-300">KHP-OS | Schools</p>
-              <p className="truncate text-sm font-extrabold text-white">School overview</p>
-            </div>
-          </div>
-          <button disabled={signingOut} onClick={signOut} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-xs font-bold text-slate-100 transition hover:bg-white/10">
-            <LogOut className="size-4" /> {signingOut ? "Signing out…" : "Sign out"}
-          </button>
-        </div>
-        {signOutError && <p role="alert" className="mx-auto max-w-7xl px-4 pb-3 text-sm text-rose-200">{signOutError}</p>}
-      </header>
-
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex flex-wrap items-center gap-2">
-            {workspace.canViewHealthReport && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">First health check saved</span>}
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
-            {priorityCount > 0 && (
-              <span className="rounded-full border border-mint-300/40 bg-mint-300/15 px-3 py-1 text-xs font-bold text-mint-200">
-                Focus agenda {priorityCount}/3
-              </span>
-            )}
           </div>
           <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">{workspace.organisation.name}</h1>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{workspace.organisation.name}</h1>
               <p className="mt-3 text-sm text-brand-100">
                 {[workspace.organisation.schoolType, workspace.organisation.schoolLevel, location].filter(Boolean).join(" · ")}
               </p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">Attendance, lessons, staff responsibilities and school follow-up in one place.</p>
             </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-100">Current transformation position</p>
-              <p className="mt-1 text-lg font-black">
-                {priorityCount > 0
-                  ? `${priorityCount} ${priorityCount === 1 ? "priority" : "priorities"} approved → Intervention planning active`
-                  : "Diagnosis interpreted → Prioritisation ready"}
-              </p>
-            </div>
+
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        <nav aria-label="School shortcuts" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { title: "My day", detail: "Attendance, tasks and follow-ups", href: `/khpos/${organisationId}/work` },
+            { title: "Teaching & learning", detail: "Lessons, timetables and assessments", href: `/khpos/${organisationId}/teaching-presence` },
+            { title: "Reports & forms", detail: "Write, submit and review reports", href: `/khpos/${organisationId}/reports` },
+            { title: "School updates", detail: "Notices, meetings and announcements", href: `/khpos/${organisationId}/announcements` },
+          ].map(item => (
+            <Link key={item.href} href={item.href} className="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-500">
+              <span className="font-extrabold text-slate-950">{item.title}</span>
+              <span className="flex items-end justify-between gap-2 text-sm text-slate-600">{item.detail}<ArrowRight aria-hidden="true" className="size-5 shrink-0 text-brand-700 transition group-hover:translate-x-1" /></span>
+            </Link>
+          ))}
+        </nav>
         {attention && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -286,6 +249,12 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
           </section>
         )}
 
+        <details className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-base font-extrabold text-slate-950 marker:hidden hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-brand-500 sm:p-6">
+            <span><span className="block">School health & improvement</span><span className="mt-1 block text-sm font-normal text-slate-600">View diagnostics, school setup and the improvement cycle when needed.</span></span>
+            <span aria-hidden="true" className="text-brand-700 transition group-open:rotate-45">+</span>
+          </summary>
+          <div className="space-y-6 border-t border-slate-200 p-4 sm:p-6">
         <section className="grid gap-4 md:grid-cols-3">
           {workspace.canViewHealthReport && <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <Gauge className="size-6 text-brand-700" />
@@ -441,6 +410,8 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
             </div>
           </section>
         )}
+          </div>
+        </details>
       </div>
     </main>
   );

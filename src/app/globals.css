@@ -197,9 +197,165 @@ body {
   }
 }
 
+/* Shared, low-risk readability and interaction polish for every school workspace.
+   These rules do not change workflow ownership, data, permissions or form state. */
+.khpos-school-shell :where(h1, h2, h3) {
+  text-wrap: balance;
+  letter-spacing: -0.015em;
+}
+.khpos-school-shell :where(button, a[href], summary) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.khpos-school-shell :where([role="alert"], [role="status"]) {
+  overflow-wrap: anywhere;
+}
+.khpos-school-shell :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  caret-color: var(--color-brand-700);
+}
+/* Focus must remain obvious on dark school headers, panels and navigation. */
+.khpos-school-shell :where(.bg-slate-950, .bg-slate-900, .bg-brand-950, .bg-brand-900) :where(button, a[href], summary, input, select, textarea):focus-visible {
+  outline-color: var(--color-mint-300);
+}
+@media (prefers-reduced-motion: reduce) {
+  .khpos-school-shell :where(button, a[href], summary) {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+}
+
 /* Render school content immediately during route changes; reserve animation for controls. */
 .khpos-school-shell :is(.animate-fade-in, .animate-fade-up) {
   animation: none;
   opacity: 1;
   transform: none;
+}
+
+/* KHP-OS institutional design layer. Applied by /khpos/layout.tsx to every
+   school, HQ and platform-admin route; it does not change data or permissions. */
+.khpos-platform-ui {
+  --khpos-surface: #ffffff;
+  --khpos-canvas: #f8fafc;
+  --khpos-border: #dbe4ef;
+  --khpos-focus: #1f55e0;
+  background: var(--khpos-canvas);
+  color-scheme: light;
+  font-feature-settings: "kern";
+  -webkit-font-smoothing: antialiased;
+}
+
+.khpos-platform-ui :where(main, nav, section, article, form, fieldset, aside, header) {
+  min-width: 0;
+}
+
+.khpos-platform-ui :where(h1, h2, h3) {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  letter-spacing: -0.018em;
+}
+
+.khpos-platform-ui :where(p, li, label, th, td, legend, [role="alert"], [role="status"]) {
+  overflow-wrap: anywhere;
+}
+
+.khpos-platform-ui :where(button, summary, a[href]) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.khpos-platform-ui :where(button, a[href], summary, input, select, textarea, [role="tab"]):focus-visible {
+  outline: 3px solid var(--khpos-focus);
+  outline-offset: 3px;
+}
+
+.khpos-platform-ui :where(.bg-slate-950, .bg-slate-900, .bg-brand-950, .bg-brand-900)
+  :where(button, a[href], summary, input, select, textarea, [role="tab"]):focus-visible {
+  outline-color: #6ee7b7;
+}
+
+.khpos-platform-ui :where(button, select, summary) {
+  min-height: 2.75rem;
+}
+
+.khpos-platform-ui :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  cursor: not-allowed;
+}
+
+.khpos-platform-ui :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  caret-color: #1f55e0;
+}
+
+.khpos-platform-ui :where(input, select, textarea)[aria-invalid="true"] {
+  outline: 2px solid #be123c;
+  outline-offset: 1px;
+}
+
+.khpos-platform-ui :where(textarea) {
+  resize: vertical;
+}
+
+.khpos-platform-ui :where(table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.khpos-platform-ui :where(th, td) {
+  vertical-align: top;
+}
+
+/* An unwrapped wide table must scroll inside its card, never push the entire
+   app sideways on a phone. Already-scrolling tables retain their own wrapper. */
+.khpos-platform-ui div:has(> table) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.khpos-platform-ui :where([id]) {
+  scroll-margin-block-start: 7rem;
+}
+
+.khpos-platform-ui :where(.overflow-x-auto) {
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.khpos-platform-ui :where(article.rounded-2xl.border.bg-white, section.rounded-2xl.border.bg-white,
+  div.rounded-2xl.border.bg-white, article.rounded-3xl.border.bg-white,
+  section.rounded-3xl.border.bg-white, div.rounded-3xl.border.bg-white) {
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.035), 0 12px 36px -28px rgb(15 40 105 / 0.26);
+}
+
+@media (max-width: 639px) {
+  .khpos-platform-ui :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    font-size: max(16px, 1em);
+  }
+  .khpos-platform-ui :where(main, article, section, form, fieldset) {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .khpos-platform-ui :where(button, a[href], summary, [role="tab"]) {
+    transition-duration: 0.01ms;
+  }
+  .khpos-platform-ui :where(.animate-fade-in, .animate-fade-up) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media print {
+  .khpos-platform-ui :where(article, section) {
+    break-inside: auto;
+  }
+  .khpos-platform-ui div:has(> table) {
+    overflow-x: visible;
+  }
+  .khpos-hq-shell > header {
+    display: none;
+  }
 }

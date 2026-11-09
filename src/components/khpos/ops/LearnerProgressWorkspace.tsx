@@ -195,6 +195,8 @@ export function LearnerProgressWorkspace({
       setSignalTermId((current) => current || next.terms[0]?.id || "");
       setTermReviewTermId((current) => current || next.terms[0]?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Learner Progress could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -211,35 +213,41 @@ export function LearnerProgressWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setRegisterNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/learner-progress/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/learner-progress/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      learnerProgress?: KhposOpsLearnerProgressWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        learnerProgress?: KhposOpsLearnerProgressWorkspace;
+        error?: string;
+      };
+      if (!response.ok || !body.ok || !body.learnerProgress) {
+        setError(body.error ?? "Learner Progress operation could not be completed.");
+        return false;
+      }
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.learnerProgress) {
-      setError(body.error ?? "Learner Progress operation could not be completed.");
+      setWorkspace(body.learnerProgress);
+      setRegisterNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Learner Progress could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+      setBusyId(null);
     }
-
-    setWorkspace(body.learnerProgress);
-    return true;
   }
-
   if (!workspace && !error) {
     return <LoadingScreen />;
   }

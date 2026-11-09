@@ -90,6 +90,7 @@ export function SkillsDevelopmentWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busy, setBusy] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [pathwayId, setPathwayId] = useState("");
   const [termId, setTermId] = useState("");
@@ -233,6 +234,8 @@ export function SkillsDevelopmentWorkspace({
       );
       setSelectionOfferingId(firstOffering?.id ?? "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Skills Development could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -249,33 +252,40 @@ export function SkillsDevelopmentWorkspace({
 
     setBusy(key);
     setError("");
-    const response = await fetch(
-      "/api/khpos/ops/skills-development/" + organisationId,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + accessToken,
-          "Content-Type": "application/json",
+    setNotice("");
+    try {
+      const response = await fetch(
+        "/api/khpos/ops/skills-development/" + organisationId,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-    const body = (await response.json()) as {
-      ok?: boolean;
-      skills?: KhposOpsSkillsWorkspace;
-      error?: string;
-    };
-    setBusy("");
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        skills?: KhposOpsSkillsWorkspace;
+        error?: string;
+      };
 
-    if (!response.ok || !body.ok || !body.skills) {
-      setError(body.error ?? "Skills Development operation could not be completed.");
+      if (!response.ok || !body.ok || !body.skills) {
+        setError(body.error ?? "Skills Development operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.skills);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Skills Development could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusy("");
     }
-
-    setWorkspace(body.skills);
-    return true;
   }
-
   const learner =
     workspace?.learners.find((item) => item.id === learnerId) ?? null;
   const activeSelection =
@@ -355,7 +365,7 @@ export function SkillsDevelopmentWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-emerald-950 to-brand-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">

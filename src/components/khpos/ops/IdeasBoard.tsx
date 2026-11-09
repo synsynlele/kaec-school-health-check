@@ -19,6 +19,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
   const [anonymous, setAnonymous] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
 
@@ -52,10 +53,12 @@ export function IdeasBoard({ scope }: { scope: string }) {
     pending.current = true;
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       setBoard(await request({ body, anonymous, recipient: privateView && !replyTo ? recipient : null, parent: replyTo }));
       setBody("");
       setReplyTo(null);
+      setNotice(replyTo ? "Reply posted." : privateView ? "Private idea sent." : "Idea posted.");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Try again.");
     } finally {
@@ -64,24 +67,26 @@ export function IdeasBoard({ scope }: { scope: string }) {
     }
   }
 
-  return <main className="mx-auto max-w-3xl space-y-5 p-4 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-    <h1 className="text-2xl font-bold">Ideas &amp; Discussions</h1>
-    <p>Share ideas and discuss suggestions with your team.</p>
-    {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
+  return <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 text-slate-900 sm:px-6">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+    <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">School & HQ collaboration</p>
+      <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Ideas &amp; Discussions</h1>
+      <p className="mt-2 text-sm leading-6 text-slate-600">Share improvements with your team, or send a private suggestion to an authorised leader.</p>
+    </header>
     {!board && !error && <LoadingScreen />}
     {board && <>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Discussion visibility">
         {["Team board", "Private to a leader"].map((label, index) => <button key={label}
           type="button" aria-pressed={privateView === Boolean(index)} disabled={busy}
-          className="rounded-lg border bg-white px-3 py-2 aria-pressed:bg-blue-100"
+          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-brand-500 aria-pressed:border-brand-700 aria-pressed:bg-brand-50 aria-pressed:text-brand-800"
           onClick={() => { if (privateView !== Boolean(index)) { setPrivateView(Boolean(index)); setReplyTo(null); setBody(""); } }}>{label}</button>)}
         <button type="button" disabled={busy} className="ml-auto text-sm underline" onClick={() => {
           setError("");
           void request().then(setBoard).catch(error => setError(error.message));
         }}>Refresh</button>
       </div>
-      <form id="idea-composer" onSubmit={submit} className="space-y-3 rounded-xl border bg-white p-4">
+      <form id="idea-composer" onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <fieldset disabled={busy} className="space-y-3">
           <legend className="font-semibold">{replyTo ? "Reply to discussion" : privateView ? "Send a private idea" : "Post an idea"}</legend>
           {privateView && !replyTo && <label className="block">Choose a leader
@@ -100,7 +105,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
           {replyTo && <button type="button" onClick={() => { setReplyTo(null); setBody(""); }} className="ml-3 text-sm underline">Cancel reply</button>}
         </fieldset>
       </form>
-      {board.posts.filter(post => post.private === privateView).map(post => <article key={post.id} className="space-y-3 rounded-xl border bg-white p-4">
+      {board.posts.filter(post => post.private === privateView).map(post => <article key={post.id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <header className="text-sm"><strong>{post.author}</strong> · {new Date(post.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos" })} WAT</header>
         <p className="whitespace-pre-wrap break-words">{post.body}</p>
         {post.replies.map(reply => <div key={reply.id} className="ml-3 border-l pl-3">

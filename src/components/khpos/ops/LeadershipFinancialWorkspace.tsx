@@ -84,6 +84,7 @@ export function LeadershipFinancialWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const [leadTermId, setLeadTermId] = useState("");
   const [leadCampusId, setLeadCampusId] = useState("");
@@ -176,6 +177,8 @@ export function LeadershipFinancialWorkspace({
       setFinOwnerId((current) => current || mine?.id || "");
       setEvLearnerId((current) => current || learner?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Leadership and Financial Skills could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -192,37 +195,44 @@ export function LeadershipFinancialWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      "/api/khpos/ops/leadership-financial/" + organisationId,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + accessToken,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        "/api/khpos/ops/leadership-financial/" + organisationId,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    const body = (await response.json()) as {
-      ok?: boolean;
-      capability?: KhposOpsLeadershipFinancialWorkspace;
-      error?: string;
-    };
-
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.capability) {
-      setError(
-        body.error ?? "Leadership & money skills operation failed.",
       );
+
+      const body = (await response.json()) as {
+        ok?: boolean;
+        capability?: KhposOpsLeadershipFinancialWorkspace;
+        error?: string;
+      };
+
+      if (!response.ok || !body.ok || !body.capability) {
+        setError(
+          body.error ?? "Leadership & money skills operation failed.",
+        );
+        return false;
+      }
+
+      setWorkspace(body.capability);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Leadership and Financial Skills could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.capability);
-    return true;
   }
-
   const evidenceDimensions =
     evDomain === "leadership" ? leadershipDimensions : financialDimensions;
 
@@ -334,7 +344,7 @@ export function LeadershipFinancialWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">

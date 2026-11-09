@@ -160,6 +160,8 @@ export function AcademicDeliveryWorkspace({
           "",
       );
       setError("");
+    }).catch(() => {
+      if (active) setError("Academic Delivery could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -178,35 +180,40 @@ export function AcademicDeliveryWorkspace({
     setError("");
     setSuccess("");
 
-    const response = await fetch(
-      "/api/khpos/ops/academic-delivery/" + organisationId,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + accessToken,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        "/api/khpos/ops/academic-delivery/" + organisationId,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      academic?: KhposOpsAcademicDeliveryWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        academic?: KhposOpsAcademicDeliveryWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.academic) {
-      setError(body.error ?? "Academic Delivery operation could not be completed.");
+      if (!response.ok || !body.ok || !body.academic) {
+        setError(body.error ?? "Academic Delivery operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.academic);
+      setSuccess(busyKey.startsWith("manage-") ? "Academic record management action completed." : busyKey.startsWith("edit-") ? "Changes saved to the existing record." : "Academic record updated.");
+      return true;
+    } catch {
+      setError("Academic Delivery could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.academic);
-    setSuccess(busyKey.startsWith("manage-") ? "Academic record management action completed." : busyKey.startsWith("edit-") ? "Changes saved to the existing record." : "Academic record updated.");
-    return true;
   }
-
   async function createTerm() {
     if (
       !sessionLabel.trim() ||

@@ -138,3 +138,25 @@ for (const rejected of [false, true]) {
   assert(!errorHtml.includes('aria-busy="true"'));
 }
 console.log('Sign-in loading recovery passed: rejected responses and connection errors release the page loader.');
+
+const feedback = load('src/components/khpos/ops/ActionFeedback.tsx', name => {
+  if (name === 'react/jsx-runtime') return jsx;
+  if (name === 'lucide-react') return { AlertCircle: 'span', CheckCircle2: 'span', LoaderCircle: 'span', X: 'span' };
+  throw new Error(name);
+});
+const close = () => {};
+assert.equal(feedback.ActionFeedback({busy:false,error:'',notice:'',onDismiss:close}),null,'Idle feedback does not cover the school screen');
+const loadingFeedback = renderToStaticMarkup(React.createElement(feedback.ActionFeedback,{busy:true,error:'',notice:'',onDismiss:close}));
+assert.match(loadingFeedback,/role="status"/);
+assert.match(loadingFeedback,/Saving…/);
+assert.doesNotMatch(loadingFeedback,/Dismiss notification/,'Busy actions cannot be dismissed prematurely');
+const savedFeedback = renderToStaticMarkup(React.createElement(feedback.ActionFeedback,{busy:false,error:'',notice:'Changes saved',onDismiss:close}));
+assert.match(savedFeedback,/Action completed/);
+assert.match(savedFeedback,/Changes saved/);
+assert.match(savedFeedback,/Dismiss notification/);
+const failedFeedback = renderToStaticMarkup(React.createElement(feedback.ActionFeedback,{busy:false,error:'Connection unavailable',notice:'',onDismiss:close}));
+assert.match(failedFeedback,/role="alert"/);
+assert.match(failedFeedback,/Connection unavailable/);
+assert.match(failedFeedback,/max-h-/,'Long feedback must stay scrollable instead of covering the mobile page');
+console.log('Shared KHP-OS feedback passed: idle, busy, success, failure, dismiss and constrained mobile display.');
+

@@ -94,6 +94,7 @@ export function DecisionsWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [agentDraftNotice, setAgentDraftNotice] = useState("");
 
@@ -260,6 +261,8 @@ export function DecisionsWorkspace({
           // interfere with the ordinary manual decision workflow.
         }
       }
+    }).catch(() => {
+      if (active) setError("Decisions could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -346,6 +349,7 @@ export function DecisionsWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
     try {
       const response = await fetch(
@@ -373,6 +377,7 @@ export function DecisionsWorkspace({
 
       setWorkspace(body.decisions);
       announceKhposActivityChanged(organisationId);
+      setNotice("Action completed.");
       return true;
     } catch {
       setError("Decision could not be saved. Check your connection and try again.");
@@ -595,7 +600,7 @@ export function DecisionsWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">

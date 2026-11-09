@@ -24,6 +24,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Full KHP-OS route and inner-screen source audit
+        run: node scripts/audit-khpos-ui.mjs
+
+      - name: Upload KHP-OS screen audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: khpos-ui-route-audit
+          path: |
+            artifacts/khpos-ui-route-audit.json
+            artifacts/khpos-ui-surface-coverage.json
+            artifacts/khpos-ui-manual-test-matrix.md
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Foundation and scoring tests
         run: npm test
 

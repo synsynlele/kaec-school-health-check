@@ -219,7 +219,7 @@ function EvidenceCard({ item }: { item: OperationalEvidenceRecord }) {
         <a
           href={item.externalUrl}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="mt-4 inline-flex items-center gap-2 text-sm font-black text-brand-700"
         >
           <Link2 className="size-4" />

@@ -76,6 +76,7 @@ export function PeopleWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPositionStaffId, setSelectedPositionStaffId] = useState("");
   const [joinLinks, setJoinLinks] = useState<Record<string, string>>({});
@@ -165,6 +166,8 @@ export function PeopleWorkspace({
           (account.partnerships ?? []).filter((school) => school.partnerStatus === "active"),
         );
       }
+    }).catch(() => {
+      if (active) setError("People could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -205,36 +208,43 @@ export function PeopleWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/people/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/people/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      people?: KhposOpsPeopleWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        people?: KhposOpsPeopleWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
 
-    if (!response.ok || !body.ok || !body.people) {
-      setError(body.error ?? "People operation could not be completed.");
+      if (!response.ok || !body.ok || !body.people) {
+        setError(body.error ?? "People operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.people);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("People could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.people);
-    return true;
   }
-
   async function createStaff() {
     if (
       !displayName.trim() ||
@@ -393,7 +403,7 @@ export function PeopleWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">

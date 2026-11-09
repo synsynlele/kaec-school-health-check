@@ -6,8 +6,6 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
 
-import { ReportsWorkspace } from "@/components/khpos/ReportsWorkspace";
-import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -386,30 +384,17 @@ export function MyWorkWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={message} onDismiss={() => { setError(""); setMessage(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-          <div className="flex items-center justify-between gap-4">
-            <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-bold text-mint-200">
-              Today
-            </span>
-            <Link
-              href={`/khpos/${organisationId}`}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white"
-            >
-              <ArrowLeft className="size-4" />
-              School overview
-            </Link>
-          </div>
-
-          <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-5xl">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
             Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
             Start with your school arrival and scheduled classes. Then check your assigned work, reports and approvals. Each section shows what to do next.
           </p>
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {([
               ["To do", "all", "today-tasks", openItems.length],
               ["Awaiting review", "all", "today-awaiting", awaitingItems.length],
@@ -425,9 +410,9 @@ export function MyWorkWorkspace({
                   setWorkQuery("");
                   if (anchor === "today-completed") document.querySelector<HTMLDetailsElement>("#today-completed details")?.setAttribute("open", "");
                 }}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
+                className="rounded-xl border border-white/10 bg-white/10 p-3 transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
                 <p className="text-xs font-bold text-brand-100">{label}</p>
-                <p className="mt-1 text-3xl font-black">{value}</p>
+                <p className="mt-1 text-2xl font-black sm:text-3xl">{value}</p>
               </a>
             ))}
           </div>
@@ -435,50 +420,24 @@ export function MyWorkWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        {message && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            {error}
-          </div>
-        )}
-
-        {attention && attention.items.length > 0 && (
-          <section className="rounded-3xl border border-brand-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Suggested next steps">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Your KHP-OS intelligence · No AI tokens</p>
-            <h2 className="mt-2 text-xl font-black">Start with these next steps</h2>
-            <p className="mt-2 text-sm text-slate-600">Only actions from your authorised school responsibilities appear here. Suggestions do not approve or complete work.</p>
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
-              {attention.items.slice(0,3).map((item) => {
-                const advice = khposAgentAdviceForAttention(item);
-                return (
-                  <div key={item.id} className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-black uppercase text-brand-700">{item.severity} · {item.kind.replaceAll("_"," ")}</p>
-                    <h3 className="mt-2 font-black text-slate-950">{item.title}</h3>
-                    <p className="mt-2 flex-1 text-sm leading-6 text-slate-700">{advice.next}</p>
-                    <Link className="mt-4 text-sm font-black text-brand-800" href={item.href}>Open the assigned record →</Link>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
           <a className="rounded-xl border bg-white px-4 py-3" href="#today-attendance">Attendance &amp; lessons</a>
-          <a className="rounded-xl border bg-white px-4 py-3" href="#today-reports">My reports</a>
           <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
           {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
         </nav>
+        <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
         <AssessmentTimetable school={organisationId} todayInvigilation />
         <SchoolPlan school={organisationId} todayOnly />
-        <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
-        <div id="today-reports" className="scroll-mt-24"><ReportsWorkspace organisationId={organisationId} compact /></div>
-        <AnnouncementsWorkspace organisationId={organisationId} compact />
+        <section id="today-reports" aria-label="Reports and school updates" className="grid scroll-mt-24 gap-3 sm:grid-cols-2">
+          <Link href={`/khpos/${organisationId}/reports`} className="group flex min-h-24 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+            <span><span className="block font-extrabold">My reports</span><span className="mt-1 block text-sm text-slate-600">Open reports due, drafts and submitted history.</span></span>
+            <span aria-hidden="true" className="text-xl text-brand-700">→</span>
+          </Link>
+          <Link href={`/khpos/${organisationId}/announcements`} className="group flex min-h-24 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+            <span><span className="block font-extrabold">School updates</span><span className="mt-1 block text-sm text-slate-600">Read notices and announcements in one place.</span></span>
+            <span aria-hidden="true" className="text-xl text-brand-700">→</span>
+          </Link>
+        </section>
 
         {attention && otherActions.length > 0 && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -540,6 +499,9 @@ export function MyWorkWorkspace({
                       </span>
                       <span className="mt-1 block text-sm leading-6 text-slate-600">
                         {item.detail}
+                      </span>
+                      <span className="mt-2 block text-sm leading-6 text-slate-700">
+                        <span className="font-bold">Suggested next step: </span>{khposAgentAdviceForAttention(item).next}
                       </span>
                       <span className="mt-2 block text-xs font-black text-brand-700">
                         {item.actionLabel}

@@ -88,6 +88,7 @@ export function StaffTransitionWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const successionQueue = useRecordQueue(workspace?.successionPlans ?? [], (item) => ["achieved", "withdrawn", "archived"].includes(item.status));
   const successionSearch = useRecordSearch(
     successionQueue.visibleItems,
@@ -191,6 +192,8 @@ export function StaffTransitionWorkspace({
       setPromotionStaffId((current) => current || manageable?.id || "");
       setExitStaffId((current) => current || manageable?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Staff transitions could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -227,35 +230,42 @@ export function StaffTransitionWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/staff-transition/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/staff-transition/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      transition?: KhposOpsStaffTransitionWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        transition?: KhposOpsStaffTransitionWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.transition) {
-      setError(body.error ?? "Staff-transition operation could not be completed.");
+      if (!response.ok || !body.ok || !body.transition) {
+        setError(body.error ?? "Staff-transition operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.transition);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Staff transitions could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.transition);
-    return true;
   }
-
   async function createSuccession() {
     if (
       !successionStaffId ||
@@ -383,7 +393,7 @@ export function StaffTransitionWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link

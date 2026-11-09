@@ -1,3 +1,3 @@
 import { SchoolsCampusesWorkspace } from "@/components/khpos/SchoolsCampusesWorkspace";
-import { AdminNav } from "@/components/khpos/AdminNav";
-export default function Page() { return <><AdminNav /><SchoolsCampusesWorkspace /></>; }
+export const metadata = { title: "Platform schools & campuses · KHP-OS", robots: { index: false, follow: false } };
+export default function Page() { return <><SchoolsCampusesWorkspace /></>; }

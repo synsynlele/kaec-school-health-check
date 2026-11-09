@@ -306,14 +306,6 @@ export function ReportsWorkspace({
           </button>
         </p>
       )}
-      {notice && (
-        <p
-          role="status"
-          className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900"
-        >
-          {notice}
-        </p>
-      )}
       <div className="grid grid-cols-3 gap-3">
         {[
           ["To complete", summary?.open],

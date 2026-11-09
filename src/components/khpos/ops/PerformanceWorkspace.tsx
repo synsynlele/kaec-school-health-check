@@ -203,6 +203,8 @@ export function PerformanceWorkspace({
       setCampusId((current) => current || performance.campuses[0]?.id || "");
       setUnitId((current) => current || performance.units[0]?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Performance could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -468,7 +470,7 @@ export function PerformanceWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={message} onDismiss={() => { setError(""); setMessage(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
@@ -508,18 +510,6 @@ export function PerformanceWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        {message && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            {error}
-          </div>
-        )}
-
         <section>
           <div className="flex items-end justify-between gap-4">
             <div>

@@ -79,6 +79,7 @@ export function YoungCeoWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const [cycleTermId, setCycleTermId] = useState("");
   const [cycleCampusId, setCycleCampusId] = useState("");
@@ -178,6 +179,8 @@ export function YoungCeoWorkspace({
       setEvidenceVentureId((current) => current || openVenture?.id || "");
       setEvidenceLearnerId((current) => current || learner?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Young CEO Hub could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -194,35 +197,42 @@ export function YoungCeoWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      "/api/khpos/ops/young-ceo/" + organisationId,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + accessToken,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        "/api/khpos/ops/young-ceo/" + organisationId,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      youngCeo?: KhposOpsYoungCeoWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        youngCeo?: KhposOpsYoungCeoWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.youngCeo) {
-      setError(body.error ?? "Young CEO Hub operation could not be completed.");
+      if (!response.ok || !body.ok || !body.youngCeo) {
+        setError(body.error ?? "Young CEO Hub operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.youngCeo);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Young CEO Hub could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.youngCeo);
-    return true;
   }
-
   async function createCycle() {
     const ok = await submit(
       {
@@ -307,7 +317,7 @@ export function YoungCeoWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
