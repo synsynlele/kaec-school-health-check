@@ -46,7 +46,7 @@ function evaluate(p) {
 }
 for(const p of comps){const c=evaluate(p);componentInfo.set(p,{...c,lines:read(p).split('\n').length,imports:imports(read(p),p)});}
 const routeInfo=[];
-for(const p of routes){evaluate(p);const s=read(p);const targets=imports(s,p);for(const x of targets)if(!fs.existsSync(x))missing.push({route:p,missing:x});routeInfo.push({route:p.replace('src/app/khpos','/khpos'),components:targets,hasMetadata:/export\s+const\s+metadata\b/.test(s),usesOrganisationId:s.includes('organisationId')});}
+for(const p of routes){evaluate(p);const s=read(p);const targets=imports(s,p);for(const x of targets)if(!fs.existsSync(x))missing.push({route:p,missing:x});routeInfo.push({route:p.replace('src/app/khpos','/khpos').replace(/\/page\.tsx$/,''),components:targets,hasMetadata:/export\s+const\s+metadata\b/.test(s),usesOrganisationId:s.includes('organisationId')});}
 assert.deepEqual(diagnostics,[],'TSX parse errors');
 assert.deepEqual(missing,[],'Unresolved workspace import');
 assert(routeInfo.filter(x=>x.route.startsWith('/khpos/[organisationId]')).every(x=>x.usesOrganisationId),'School page missing organisation binding');
@@ -75,7 +75,7 @@ const matrix = [
 function focusFor(route) {
   const q = route.toLowerCase();
   if(q.includes('safeguarding')) return 'Confidential cases, separate authority, redaction, no leaked summaries';
-  if(q.includes('teaching-presence') || q.endsWith('/work/page.tsx')) return 'Attendance, actual class evidence, overdue actions and linked records';
+  if(q.includes('teaching-presence') || q.endsWith('/work')) return 'Attendance, actual class evidence, overdue actions and linked records';
   if(q.includes('meetings')) return 'Invitations, join/end/cancel, history and decision-to-work';
   if(q.includes('reports')) return 'Report draft, submission, assigned review, return, correction and privacy';
   if(q.includes('academic-')) return 'Timetables, teaching/exam approval, revisions and clash checks';
