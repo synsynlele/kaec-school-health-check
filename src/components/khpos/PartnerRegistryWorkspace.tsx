@@ -48,6 +48,7 @@ export function PartnerRegistryWorkspace() {
       setState("denied");
       return;
     }
+    try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) {
@@ -67,6 +68,10 @@ export function PartnerRegistryWorkspace() {
     setRegistry(body.registry);
     setState("ready");
     setError("");
+    } catch {
+      setError("Partnership Registry could not be loaded. Check your connection and try again.");
+      setState(current => current === "ready" ? current : "denied");
+    }
   }
 
   useEffect(() => {
@@ -160,7 +165,7 @@ export function PartnerRegistryWorkspace() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-12 text-white">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={selected ? "" : error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div><Link href="/khpos/admin" className="text-sm font-bold text-mint-300">← Admin Console</Link><p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-mint-300">KAEC-NG governance</p><h1 className="mt-2 text-4xl font-black tracking-tight">School Partnership Registry</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">Accounts are open. KHP-OS is not. Only institutions explicitly approved here can hold active KHP-OS memberships.</p></div>
@@ -184,11 +189,12 @@ export function PartnerRegistryWorkspace() {
       </div>
 
       {selected && (
-        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="partner-review-title" className="fixed inset-0 z-[90] grid place-items-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="partner-review-title" className="fixed inset-0 z-[65] grid place-items-center bg-black/70 px-4 py-6 backdrop-blur-sm">
           <form onSubmit={applyChange} className="max-h-[calc(100dvh-3rem)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-white p-5 text-slate-950 shadow-2xl sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.15em] text-brand-700">Partnership access</p>
             <h2 id="partner-review-title" className="mt-2 text-2xl font-black">{selected.action} {selected.name}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-500">This changes real KHP-OS access. Administrator MFA (AAL2) is required.</p>
+        {error && <p role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800">{error}</p>}
             <label className="mt-5 block text-xs font-black uppercase tracking-wide text-slate-500" htmlFor="partner-reason">Reason for the change</label>
             <textarea id="partner-reason" autoFocus required minLength={12} value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" placeholder="Why is KAEC-NG making this partnership decision?" />
             <div className="mt-5 flex justify-end gap-3"><button type="button" onClick={() => setSelected(null)} className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-bold">Cancel</button><button disabled={busy} className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">{busy ? "Applying…" : `Confirm ${selected.action}`}</button></div>
