@@ -34,6 +34,7 @@ jobs:
           name: khpos-ui-route-audit
           path: |
             artifacts/khpos-ui-route-audit.json
+            artifacts/khpos-ui-surface-coverage.json
             artifacts/khpos-ui-manual-test-matrix.md
           if-no-files-found: warn
           retention-days: 14
