@@ -376,7 +376,7 @@ export function EvidenceVerificationWorkspace({
                           </div>
                         )}
                         {submission.viewUrl && (
-                          <a href={submission.viewUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:underline">
+                          <a href={submission.viewUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:underline">
                             View private evidence <ExternalLink className="size-3.5" />
                           </a>
                         )}
