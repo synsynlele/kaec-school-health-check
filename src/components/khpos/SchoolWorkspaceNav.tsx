@@ -191,9 +191,10 @@ const schoolAreas = [
 ] as const;
 const navigationGroups = [
   { title: "Everyday work", icon: ListTodo, links: [operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "Staff & teaching", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence"), operation("/potential-development")] },
-  { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents"), operation("/builders-council")] },
+  { title: "Staff & teaching", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
+  { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
   { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
+  { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"Teaching & learning","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
