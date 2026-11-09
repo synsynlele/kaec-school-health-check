@@ -13,6 +13,7 @@ import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard"
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import { needsOwnerWorkAction } from "@/lib/khpos/ops/attention-rules";
+import { khposAgentAdviceForAttention } from "@/lib/khpos/agentic/plan";
 import { focusKhposRecord, khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 import {
   AlertTriangle,
@@ -504,6 +505,9 @@ export function MyWorkWorkspace({
                       </span>
                       <span className="mt-1 block text-sm leading-6 text-slate-600">
                         {item.detail}
+                      </span>
+                      <span className="mt-2 block text-sm leading-6 text-slate-700">
+                        <span className="font-bold">Suggested next step: </span>{khposAgentAdviceForAttention(item).next}
                       </span>
                       <span className="mt-2 block text-xs font-black text-brand-700">
                         {item.actionLabel}
