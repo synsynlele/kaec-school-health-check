@@ -5,7 +5,7 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Building2, CheckCircle2, CircleAlert, Clock3, RefreshCw, ShieldCheck } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type {
@@ -37,6 +37,9 @@ export function PartnerRegistryWorkspace() {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
 
   async function load() {
     if (!supabase) {
@@ -72,6 +75,43 @@ export function PartnerRegistryWorkspace() {
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
+
+  // Keep keyboard users inside a sensitive governance decision and return
+  // focus to the triggering button when the dialog closes.
+  useEffect(() => {
+    if (!selected) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !busyRef.current) {
+        event.preventDefault();
+        setSelected(null);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), a[href]',
+        ) ?? [],
+      ).filter(node => node.getClientRects().length > 0);
+      const first = focusable[0], last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeys);
+    return () => {
+      document.removeEventListener("keydown", handleKeys);
+      document.body.style.overflow = overflow;
+      opener?.focus();
+    };
+  }, [selected]);
 
   async function applyChange(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -143,7 +183,7 @@ export function PartnerRegistryWorkspace() {
       </div>
 
       {selected && (
-        <div role="dialog" aria-modal="true" aria-labelledby="partner-review-title" className="fixed inset-0 z-[90] grid place-items-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="partner-review-title" className="fixed inset-0 z-[90] grid place-items-center bg-black/70 px-4 py-6 backdrop-blur-sm">
           <form onSubmit={applyChange} className="max-h-[calc(100dvh-3rem)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-white p-5 text-slate-950 shadow-2xl sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.15em] text-brand-700">Partnership access</p>
             <h2 id="partner-review-title" className="mt-2 text-2xl font-black">{selected.action} {selected.name}</h2>
