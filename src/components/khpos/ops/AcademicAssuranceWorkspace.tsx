@@ -64,6 +64,7 @@ export function AcademicAssuranceWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [myUserId, setMyUserId] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, boolean>>({});
@@ -108,6 +109,8 @@ export function AcademicAssuranceWorkspace({
       setWorkspace(body.academicAssurance);
       setMyUserId(data.session?.user.id ?? "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Academic Assurance could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -124,34 +127,41 @@ export function AcademicAssuranceWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/academic-assurance/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/academic-assurance/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-    const body = (await response.json()) as {
-      ok?: boolean;
-      academicAssurance?: KhposOpsAcademicAssuranceWorkspace;
-      error?: string;
-    };
-    setBusyId(null);
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        academicAssurance?: KhposOpsAcademicAssuranceWorkspace;
+        error?: string;
+      };
 
-    if (!response.ok || !body.ok || !body.academicAssurance) {
-      setError(body.error ?? "Academic Assurance operation could not be completed.");
+      if (!response.ok || !body.ok || !body.academicAssurance) {
+        setError(body.error ?? "Academic Assurance operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.academicAssurance);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Academic Assurance could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+      setBusyId(null);
     }
-
-    setWorkspace(body.academicAssurance);
-    return true;
   }
-
   function value(key: string) {
     return values[key] ?? "";
   }
@@ -180,7 +190,7 @@ export function AcademicAssuranceWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-7 px-4 py-6 sm:px-6 lg:px-8">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <header>
         <Link
           href={`/khpos/${organisationId}/academic-delivery`}
