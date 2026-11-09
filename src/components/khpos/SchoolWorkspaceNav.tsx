@@ -418,12 +418,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
           </Link>
           <div className="flex shrink-0 gap-2">
             <NotificationBell key={organisationId} organisationId={organisationId} mobile />
-            <Link href="/account" className="rounded-lg border border-white/10 px-2.5 py-2 text-[11px] font-bold text-slate-300">
-              Account
-            </Link>
-            <Link href="/khpos" className="rounded-lg border border-white/10 px-2.5 py-2 text-[11px] font-bold text-slate-300">
-              Entrance
-            </Link>
+            {/* Account and main-entrance links live in the More drawer, not twice in the mobile header. */}
           </div>
         </div>
         <div className="grid grid-cols-5 border-t border-white/10">
@@ -477,10 +472,10 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
-      <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
+      <label className={`mt-3 text-xs font-bold text-slate-600 ${area.routes.length > 4 ? "block" : "block sm:hidden"}`}>Go to a page in {area.title}
         <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
       </label>
-      <nav aria-label={`${area.title} pages`} className="mt-3 hidden flex-wrap gap-2 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-bold ${active ? "border-brand-700 bg-brand-700 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{link.label}</Link>;})}</nav>
+      {area.routes.length <= 4 && <nav aria-label={`${area.title} pages`} className="mt-3 hidden flex-wrap gap-2 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-bold ${active ? "border-brand-700 bg-brand-700 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{link.label}</Link>;})}</nav>}
     </div>
   </section>;
 }
