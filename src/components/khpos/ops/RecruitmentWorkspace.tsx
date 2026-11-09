@@ -61,6 +61,7 @@ export function RecruitmentWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const [roleId, setRoleId] = useState("");
   const [campusId, setCampusId] = useState("");
@@ -142,6 +143,8 @@ export function RecruitmentWorkspace({
       setRoleId((current) => current || body.recruitment?.roles.at(-1)?.id || "");
       setCampusId((current) => current || body.recruitment?.campuses[0]?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Recruitment could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -165,35 +168,42 @@ export function RecruitmentWorkspace({
 
     setBusyId(key);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/recruitment/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/recruitment/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      recruitment?: KhposOpsRecruitmentWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        recruitment?: KhposOpsRecruitmentWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
-    if (!response.ok || !body.ok || !body.recruitment) {
-      setError(body.error ?? "Recruitment operation could not be completed.");
+      if (!response.ok || !body.ok || !body.recruitment) {
+        setError(body.error ?? "Recruitment operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.recruitment);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Recruitment could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.recruitment);
-    return true;
   }
-
   async function createWorkforce() {
     const ok = await submit(
       {
@@ -225,7 +235,7 @@ export function RecruitmentWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link

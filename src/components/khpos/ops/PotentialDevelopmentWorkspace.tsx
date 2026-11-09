@@ -92,6 +92,7 @@ export function PotentialDevelopmentWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busy, setBusy] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [learnerId, setLearnerId] = useState("");
   const [termId, setTermId] = useState("");
@@ -224,6 +225,8 @@ export function PotentialDevelopmentWorkspace({
       );
       setExplorationOwner(body.potential.assignments[0]?.id ?? "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Learner development could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -240,33 +243,40 @@ export function PotentialDevelopmentWorkspace({
 
     setBusy(key);
     setError("");
-    const response = await fetch(
-      `/api/khpos/ops/potential-development/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    setNotice("");
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/potential-development/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-    const body = (await response.json()) as {
-      ok?: boolean;
-      potential?: KhposOpsPotentialDiscoveryWorkspace;
-      error?: string;
-    };
-    setBusy("");
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        potential?: KhposOpsPotentialDiscoveryWorkspace;
+        error?: string;
+      };
 
-    if (!response.ok || !body.ok || !body.potential) {
-      setError(body.error ?? "Learner development operation could not be completed.");
+      if (!response.ok || !body.ok || !body.potential) {
+        setError(body.error ?? "Learner development operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.potential);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Learner development could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusy("");
     }
-
-    setWorkspace(body.potential);
-    return true;
   }
-
   const learner = workspace?.learners.find((item) => item.id === learnerId) ?? null;
   const activeHypotheses = learner?.hypotheses.filter((item) => item.status === "active") ?? [];
   const currentReview =
@@ -302,7 +312,7 @@ export function PotentialDevelopmentWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <header className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">

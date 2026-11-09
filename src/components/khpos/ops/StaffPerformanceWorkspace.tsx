@@ -89,6 +89,7 @@ export function StaffPerformanceWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const reviewQueue = useRecordQueue(workspace?.reviews ?? [], (review) => ["completed", "cancelled"].includes(review.status));
   const reviewSearch = useRecordSearch(
@@ -205,6 +206,8 @@ export function StaffPerformanceWorkspace({
       );
       setStaffId((current) => current || reviewable?.id || "");
       setError("");
+    }).catch(() => {
+      if (active) setError("Staff Performance could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -226,38 +229,45 @@ export function StaffPerformanceWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/staff-performance/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/staff-performance/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    const body = (await response.json()) as {
-      ok?: boolean;
-      performance?: KhposOpsStaffPerformanceWorkspace;
-      error?: string;
-    };
-
-    setBusyId(null);
-
-    if (!response.ok || !body.ok || !body.performance) {
-      setError(
-        body.error ?? "Staff performance operation could not be completed.",
       );
+
+      const body = (await response.json()) as {
+        ok?: boolean;
+        performance?: KhposOpsStaffPerformanceWorkspace;
+        error?: string;
+      };
+
+
+      if (!response.ok || !body.ok || !body.performance) {
+        setError(
+          body.error ?? "Staff performance operation could not be completed.",
+        );
+        return false;
+      }
+
+      setWorkspace(body.performance);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Staff Performance could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.performance);
-    return true;
   }
-
   async function createReview() {
     if (!staffId || !periodStart || !periodEnd) {
       setError("Choose staff and a complete review period.");
@@ -514,7 +524,7 @@ export function StaffPerformanceWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">

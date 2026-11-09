@@ -88,6 +88,7 @@ export function AvailabilityWorkspace({
     supabase ? "" : "KHP-OS sign-in is not configured.",
   );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
   const [staffId, setStaffId] = useState("");
@@ -175,6 +176,8 @@ export function AvailabilityWorkspace({
         setSourceType(self.isSelf ? "self_report" : "leader_record");
       }
       setError("");
+    }).catch(() => {
+      if (active) setError("Availability could not be loaded. Check your connection and try again.");
     });
 
     return () => {
@@ -200,36 +203,43 @@ export function AvailabilityWorkspace({
 
     setBusyId(busyKey);
     setError("");
+    setNotice("");
 
-    const response = await fetch(
-      `/api/khpos/ops/availability/${organisationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `/api/khpos/ops/availability/${organisationId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const body = (await response.json()) as {
-      ok?: boolean;
-      availability?: KhposOpsAvailabilityWorkspace;
-      error?: string;
-    };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        availability?: KhposOpsAvailabilityWorkspace;
+        error?: string;
+      };
 
-    setBusyId(null);
 
-    if (!response.ok || !body.ok || !body.availability) {
-      setError(body.error ?? "Availability operation could not be completed.");
+      if (!response.ok || !body.ok || !body.availability) {
+        setError(body.error ?? "Availability operation could not be completed.");
+        return false;
+      }
+
+      setWorkspace(body.availability);
+      setNotice("Action completed.");
+      return true;
+    } catch {
+      setError("Availability could not be saved. Check your connection and try again.");
       return false;
+    } finally {
+    setBusyId(null);
     }
-
-    setWorkspace(body.availability);
-    return true;
   }
-
   async function createCase() {
     if (!staffId || !startAt || !endAt) {
       setError("Staff and the availability period are required.");
@@ -425,7 +435,7 @@ export function AvailabilityWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-4">
