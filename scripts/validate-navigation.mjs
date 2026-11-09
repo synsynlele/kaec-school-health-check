@@ -90,6 +90,21 @@ requireText(playbooksWorkspace, "/api/khpos/implementation/${organisationId}", "
 
 const commandCentre = read("src/components/khpos/CommandCentre.tsx");
 requireText(commandCentre, "View School Health Check report", "School workspace KSHC report access");
+requireText(commandCentre, 'aria-label="School shortcuts"', "School overview daily shortcuts");
+requireText(commandCentre, "School health & improvement", "Optional school improvement section");
+if (commandCentre.includes("onClick={signOut}") || commandCentre.includes('      <header className="border-b border-white/10 bg-slate-950')) {
+  throw new Error("The school overview must not duplicate navigation shell or sign-out.");
+}
+const todayWorkspace = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
+requireText(todayWorkspace, '<TodayAttendanceCard organisationId={organisationId}', "Today attendance");
+requireText(todayWorkspace, 'My reports</span>', "Direct reports link");
+requireText(todayWorkspace, 'School updates</span>', "Direct announcements link");
+if (todayWorkspace.includes("<ReportsWorkspace") || todayWorkspace.includes("<AnnouncementsWorkspace")) {
+  throw new Error("Today must not embed duplicate reporting and announcements workspaces.");
+}
+if (todayWorkspace.indexOf("<TodayAttendanceCard") > todayWorkspace.indexOf("<AssessmentTimetable")) {
+  throw new Error("Today must show attendance before supplementary timetable panels.");
+}
 requireText(commandCentre, "/report/${baseline.assessmentId}", "School workspace KSHC report route");
 
 const partnershipStatus = read("src/components/khpos/PartnershipStatusWorkspace.tsx");
@@ -165,8 +180,9 @@ console.log(`School navigation validated: ${navigation.workspaceLinks.length} ro
 
 for (const file of [
   "src/components/account/AccountAccess.tsx",
-  "src/components/khpos/CommandCentre.tsx",
   "src/components/khpos/KaecHqWorkspace.tsx",
 ]) {
   requireText(read(file), 'window.location.replace("/khpos")', file + " sign-out returns to the app entrance");
 }
+
+requireText(schoolNav, 'window.location.replace("/khpos")', "Shared school sign-out returns to app entrance");
