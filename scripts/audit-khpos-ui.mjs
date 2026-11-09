@@ -62,7 +62,7 @@ console.log('Watch: '+heavy.length+' components >800 lines; '+warnings.length+' 
 for(const w of warnings.slice(0,25))console.log('CHECK '+w.file+':'+w.line+' '+w.kind);
 console.log('Detailed audit: artifacts/khpos-ui-route-audit.json');
 
-const checks = [
+const matrix = [
   '# KHP-OS — complete authenticated page and inner-workflow acceptance matrix',
   '',
   'Generated from the current repository route inventory. This is a **test plan**, not proof of visual or functional approval. Do not mark a row passed until it has actually been exercised under its intended role.',
