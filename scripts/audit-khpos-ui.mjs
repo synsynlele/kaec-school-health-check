@@ -79,6 +79,84 @@ const complexWorkspaceResilience = complexWorkspaces.map(name => {
   return {file, hasVisibleFeedback, hasLoadErrorRecovery, hasActionErrorRecovery, hasBusyCleanup};
 });
 
+
+// Institutional UI coverage gate: every KHP-OS route inherits the design system,
+// and school, corporate HQ and administration navigation are separate.
+// This is source evidence only; it never marks a screen visually approved.
+const platformLayout = read('src/app/khpos/layout.tsx');
+const schoolLayout = read('src/app/khpos/[organisationId]/layout.tsx');
+const hqLayout = read('src/app/khpos/hq/layout.tsx');
+const adminLayout = read('src/app/khpos/admin/layout.tsx');
+const hqNavigation = read('src/components/khpos/HqSectionNavigation.tsx');
+const adminNavigation = read('src/components/khpos/AdminNav.tsx');
+const platformStyles = read('src/app/globals.css');
+assert(platformLayout.includes('khpos-platform-ui'), 'Every KHP-OS route needs the shared design system');
+assert(schoolLayout.includes('SchoolWorkspaceNav'), 'School-specific navigation must survive the UI overhaul');
+assert(hqLayout.includes('HqSectionNavigation'), 'HQ subpages need a consistent corporate navigation');
+assert(adminLayout.includes('<AdminNav />'), 'Admin pages need the shared admin navigation');
+assert(adminNavigation.includes('School Platform'), 'Do not remove the admin account escape route');
+assert(hqNavigation.includes('aria-current=') && hqNavigation.includes('overflow-x-auto'),
+  'HQ subpage navigation must be accessible on mobile');
+for (const href of ['/khpos/hq/schools','/khpos/hq/reports','/khpos/hq/meetings','/khpos/hq/ideas','/khpos/hq/ask']) {
+  assert(hqNavigation.includes(href), 'HQ navigation missing ' + href);
+}
+for (const rule of ['--khpos-focus:', 'color-scheme: light;', 'scroll-margin-block-start:', 'div:has(> table)', 'prefers-reduced-motion']) {
+  assert(platformStyles.includes(rule), 'KHP-OS cross-app styling missing ' + rule);
+}
+const adminRoutes = routeInfo.filter(item => item.route.startsWith('/khpos/admin'));
+assert.equal(adminRoutes.length, 4, 'Unexpected platform-admin route count');
+for (const route of adminRoutes) {
+  const routeFile = 'src/app' + route.route.replace('/khpos','/khpos') + '/page.tsx';
+  const text = read(routeFile);
+  assert(!text.includes('<AdminNav'), 'Admin route must not render a second navigation: ' + route.route);
+}
+function routeFamily(route) {
+  return route.startsWith('/khpos/[organisationId]') ? 'school'
+    : route.startsWith('/khpos/hq') ? 'hq'
+    : route.startsWith('/khpos/admin') ? 'admin'
+    : 'entry-or-network';
+}
+function componentsForRoute(route) {
+  const seen = new Set();
+  function visit(file) {
+    if (seen.has(file) || !componentInfo.has(file)) return;
+    seen.add(file);
+    for (const child of componentInfo.get(file).imports) visit(child);
+  }
+  for (const file of route.components) visit(file);
+  return [...seen].sort();
+}
+const surfaceCoverage = routeInfo.map(route => {
+  const files = componentsForRoute(route);
+  const components = files.map(file => ({file, ...componentInfo.get(file)}));
+  const total = key => components.reduce((sum, c) => sum + (c[key] || 0), 0);
+  return {
+    route: route.route, family: routeFamily(route.route),
+    inheritedDesignSystem: true, manualVisualStatus: 'not-tested',
+    componentFiles: files,
+    innerScreenIndicators: {
+      formElements: total('forms'), buttons: total('buttons'), inputs: total('inputs'),
+      selects: total('selects'), textareas: total('textareas'), tables: total('tables'),
+      headlines: total('headings'),
+    },
+  };
+});
+assert.equal(surfaceCoverage.length, routes.length, 'Every KHP-OS page must appear in the UI coverage matrix');
+assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 55,
+  'All school pages must be source-reviewed');
+assert.equal(surfaceCoverage.filter(r => r.family === 'hq').length, 6,
+  'All six corporate HQ pages must be source-reviewed');
+const surfaceStats = Object.fromEntries(['school','hq','admin','entry-or-network']
+  .map(family => [family, surfaceCoverage.filter(item => item.family === family).length]));
+fs.writeFileSync('artifacts/khpos-ui-surface-coverage.json',
+  JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    limitation: 'Static JSX and layout inventory. No signed-in screenshot, device testing or role approval has been performed.',
+    surfaceStats, routes: surfaceCoverage,
+  }, null, 2) + '\n');
+console.log('Institutional UI coverage: ' + JSON.stringify(surfaceStats) +
+  ' routes with shared design tokens and dedicated school/HQ/admin shells.');
+
 const output={generatedAt:new Date().toISOString(),limitations:'Source audit only, not authenticated visual or device validation',schoolRouteCount:schoolRoutes.length,khposRouteCount:routes.length,componentCount:comps.length,routeReachableComponentCount:visited.size,routes:routeInfo,components:all,topComplexity:heavy.slice(0,30),complexWorkspaceResilience,warnings,manualAcceptanceRequired:['Per-role signed-in browser interaction','All tabs, dialogs, edit and approval flows','360/390/430px, tablet, desktop, dark and light modes','Keyboard, screenreader, contrast and text zoom','Cross-school authorisation, persistence and no data loss']};
 fs.mkdirSync('artifacts',{recursive:true});fs.writeFileSync('artifacts/khpos-ui-route-audit.json',JSON.stringify(output,null,2)+'\n');
 console.log('KHP-OS full route/source audit: '+schoolRoutes.length+' school pages, '+routes.length+' total routes, '+comps.length+' JSX files, '+visited.size+' reachable inner component files.');
@@ -117,6 +195,14 @@ for(const page of routeInfo) {
   const componentNames=page.components.map(x=>path.basename(x,'.tsx')).join(', ')||'(page layout)';
   matrix.push('| '+page.route+' | '+componentNames+' | '+focusFor(page.route)+' | ☐ | ☐ | ☐ | Untested |');
 }
+matrix.push('', '## Corporate HQ & platform-administration acceptance', '',
+  '- [ ] HQ overview, School Pathfinders, reports, meetings, discussions and Ask KHP-OS each open from both deep links and mobile navigation.',
+  '- [ ] Corporate modules use the correct appointed role, MFA requirements, review authority and self-approval exclusions.',
+  '- [ ] Admin Console, announcements, school/campus directory and partnership governance retain administrator MFA, required reasons and access decisions.',
+  '- [ ] Narrow phones can scroll horizontal HQ/admin navigation without page-width overflow or hidden action buttons.',
+  '- [ ] Partnership confirmation dialog remains readable with large text, keyboard access and long approval reasons.',
+  '- [ ] Verify denied, signed-out, loading, empty, offline, successful and error states independently for HQ and administration.',
+  '');
 matrix.push('', '## Every inner screen must additionally pass', '', '- [ ] All visible tabs, accordions, modals, date pickers, search, sorting, pagination and long lists.', '- [ ] Bright and dark appearance at 360, 390 and 430 CSS px, 200% text zoom, tablet and desktop.', '- [ ] Focus order, Escape, selected state, labels, status feedback, meaningful empty and failure screens.', '- [ ] Staff member can complete assigned action without founder or developer explanation.', '- [ ] No duplicate input when records are already available in the school operating system.', '- [ ] No data loss; approved historic records and correction trails remain retrievable.', '- [ ] Confidentiality and school-campus-role separation; independent approval is preserved.', '- [ ] School Guardian signs off core operations and an authorised HQ tester signs off corporate-only routes.', '', 'A source-level automated pass is not a substitute for these human-verified results.', '');
 fs.writeFileSync('artifacts/khpos-ui-manual-test-matrix.md',matrix.join('\n'));
 console.log('Generated page-by-page human UAT matrix: artifacts/khpos-ui-manual-test-matrix.md');
