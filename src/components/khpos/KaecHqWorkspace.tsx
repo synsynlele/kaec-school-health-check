@@ -341,17 +341,11 @@ export function KaecHqWorkspace() {
             </div>
           </div>
           <nav aria-label="KAEC HQ tools" className="mt-4 flex gap-2 overflow-x-auto border-t border-white/10 pt-3 pb-1">
-            {([
-              ["/khpos/hq/schools", "School Pathfinders"],
-              ["/khpos/hq/reports", "Reporting Centre"],
-              ["/khpos/hq/meetings", "Meetings"],
-              ["/khpos/hq/ideas", "Ideas & discussions"],
-              ["/khpos/hq/ask", "Help & training"],
-            ] as const).map(([href, label]) => (
-              <Link key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-200 transition-colors hover:border-white/35 hover:bg-white/10 hover:text-white">
-                {label}
-              </Link>
-            ))}
+            <Link href="/khpos/hq/schools" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-emerald-300/40 bg-emerald-900/30 px-3 text-xs font-bold text-emerald-100 hover:bg-emerald-900/50">School Pathfinders</Link>
+            <Link href="/khpos/hq/reports" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-200 hover:bg-white/10">Reporting Centre</Link>
+            <Link href="/khpos/hq/meetings" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-200 hover:bg-white/10">Meetings</Link>
+            <Link href="/khpos/hq/ideas" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-white/15 px-3 text-xs font-bold text-slate-200 hover:bg-white/10">Ideas &amp; discussions</Link>
+            <Link href="/khpos/hq/ask" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border border-emerald-300/40 px-3 text-xs font-bold text-emerald-100 hover:bg-white/10">Ask KHP-OS · Training Academy</Link>
           </nav>
         </div>
       </header>
