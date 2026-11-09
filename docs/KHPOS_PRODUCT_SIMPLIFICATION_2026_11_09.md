@@ -24,7 +24,7 @@ These are source-level observations. Actual screen contrast, performance and acc
 ## Immediate change set: implemented on this branch
 
 - School overview uses the shared application chrome; the duplicate local header and sign-out were removed.
-- The overview starts with clear links to daily work, teaching, reports and operational setup.
+- The overview starts with clear links to daily work, teaching, reports and school updates.
 - Detailed school health, improvement cycle, activation and diagnostic content is under an opt-in expandable panel. Records and school-health report access are preserved.
 - Today brings attendance before secondary timetable panels, uses more compact KPI cards and no longer embeds the full Reports or Announcements workspaces.
 - Today provides direct links to existing Reports and Announcements pages; all underlying workflows, permissions and saved URLs remain.
