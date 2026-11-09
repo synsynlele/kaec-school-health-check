@@ -40,7 +40,7 @@ export function PartnerRegistryWorkspace() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const dialogOpenerRef = useRef<HTMLElement | null>(null);
   const busyRef = useRef(busy);
-  busyRef.current = busy;
+  useEffect(() => { busyRef.current = busy; }, [busy]);
 
   async function load() {
     if (!supabase) {
