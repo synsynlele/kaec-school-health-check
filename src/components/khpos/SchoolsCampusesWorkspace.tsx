@@ -11,7 +11,7 @@ type RequestRow = { id: string; organisation_id: string; name: string; address: 
 type Directory = { switchableSchools: {id: string; name: string}[]; canRequest: boolean; canReview: boolean; schools: { id: string; name: string; status: string }[]; campuses: { id: string; organisationId: string; name: string; status: string }[]; requests: RequestRow[] };
 const field = "mt-1 block min-h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base text-slate-950";
 export function SchoolsCampusesWorkspace({ organisationId }: { organisationId?: string }) {
- const [directory, setDirectory] = useState<Directory | null>(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+ const [directory, setDirectory] = useState<Directory | null>(null), [error, setError] = useState(""), [notice, setNotice] = useState(""), [busy, setBusy] = useState(false);
  const [directoryQuery, setDirectoryQuery] = useState("");
  const [selection, setSelection] = useState<{ request: RequestRow; mode: string } | null>(null);
  const endpoint = `/api/khpos/schools-campuses${organisationId ? `?organisationId=${organisationId}` : ""}`;
@@ -27,14 +27,14 @@ export function SchoolsCampusesWorkspace({ organisationId }: { organisationId?: 
  useEffect(() => { let active = true; void fetchDirectory().then(data => { if(active) setDirectory(data); }).catch(cause => { if(active) setError(cause.message); }); return () => { active = false; }; }, [fetchDirectory]);
  const search = useRecordSearch(directory?.requests ?? [], r => `${r.name} ${r.address} ${r.status}`, r => r.name, r => r.created_at);
  async function act(input: Record<string, unknown>, form?: HTMLFormElement) {
-  setBusy(true); setError("");
-  try { setDirectory(await fetchDirectory(input)); setSelection(null); form?.reset(); }
+  setBusy(true); setError(""); setNotice("");
+  try { setDirectory(await fetchDirectory(input)); setSelection(null); form?.reset(); setNotice("Campus request updated."); }
   catch (cause) { setError(cause instanceof Error ? cause.message : "Campus request failed."); }
   finally { setBusy(false); }
  }
  return <main className="mx-auto max-w-6xl space-y-6 p-4 text-slate-950 sm:p-6">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-  <div><h1 className="text-3xl font-bold">Schools & Campuses</h1><p className="mt-2 text-slate-600">Each school keeps its own records. A school can have several campuses. KAEC oversees the network.</p></div>
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+  <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-[11px] font-black uppercase tracking-[0.15em] text-brand-700">Institutional directory</p><h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Schools &amp; Campuses</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Each school keeps its own records. A school can have several campuses. KAEC oversees the network.</p></header>
   <div className="flex flex-wrap gap-3 text-sm font-semibold"><Link href={organisationId ? "/account" : "/khpos/admin/partnerships"} className="rounded-xl border p-3">{organisationId ? "School partnerships & school access" : "Independent school partnerships"}</Link>{organisationId && <><Link href={`/khpos/${organisationId}/people`} className="rounded-xl border p-3">Assign campus leaders</Link><Link href={`/khpos/${organisationId}/campus-readiness`} className="rounded-xl border p-3">Daily campus readiness</Link></>}</div>
   <p className="text-sm text-slate-600">New independent schools join through the existing KSHC partnership process. New campuses require a separate readiness review and KAEC approval. Approval alone does not activate a campus.</p>
   {error && <div role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}<button type="button" disabled={busy} className="ml-3 underline" onClick={() => { setError(""); void fetchDirectory().then(setDirectory).catch(cause => setError(cause.message)); }}>Retry</button></div>}
