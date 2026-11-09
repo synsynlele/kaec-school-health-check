@@ -29,12 +29,13 @@ for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));
 let tree=exports.SchoolAreaNavigation({organisationId:'school'});let all=nodes(tree);
 assert.equal(all.find(x=>x.type==='select').props.value,'/team');
-assert.ok(all.some(x=>x.props.href==='/khpos/school/people'));
-assert.ok(all.some(x=>x.props.href==='/khpos/school/team'&&x.props['aria-current']==='page'));
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/people'), 'Staff & roles includes the Staff page in the compact selector');
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/team'), 'Staff & roles keeps Roles & sections reachable');
+assert.equal(all.find(x=>x.type==='select').props.value,'/team', 'Current staff page remains selected');
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
 currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
-console.log('Simpler experience passed: 54 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
+console.log('Simpler experience passed: 55 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];
 function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
