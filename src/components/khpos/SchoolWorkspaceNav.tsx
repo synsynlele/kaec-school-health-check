@@ -468,7 +468,7 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
     <Link href={base} className="inline-flex min-h-9 items-center font-bold text-brand-700 hover:underline">School overview</Link>
     {current?.suffix && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
-    <Link href="/contact" className="ml-auto inline-flex min-h-9 items-center font-semibold text-brand-700 underline">Help</Link>
+    <Link href={`${base}/ask`} className="ml-auto inline-flex min-h-11 items-center font-semibold text-brand-700 underline" title="Open Ask KHP-OS and Training Academy">Help & training</Link>
   </nav>;
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
