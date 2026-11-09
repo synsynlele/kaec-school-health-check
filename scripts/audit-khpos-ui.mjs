@@ -148,6 +148,7 @@ assert.equal(surfaceCoverage.filter(r => r.family === 'hq').length, 6,
   'All six corporate HQ pages must be source-reviewed');
 const surfaceStats = Object.fromEntries(['school','hq','admin','entry-or-network']
   .map(family => [family, surfaceCoverage.filter(item => item.family === family).length]));
+fs.mkdirSync('artifacts', {recursive: true});
 fs.writeFileSync('artifacts/khpos-ui-surface-coverage.json',
   JSON.stringify({
     generatedAt: new Date().toISOString(),
