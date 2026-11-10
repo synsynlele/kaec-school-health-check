@@ -62,6 +62,76 @@ function possibleToday(date:string,weekday:number) {
 }
 function ratingText(score:number) { return score===3?"Strong":score===2?"Partial":"Weak"; }
 
+
+type TeachingGroupKind = "" | "whole_class" | "department" | "elective" | "custom";
+
+/** A deliberate school-managed declaration, not an inferred subject-to-track map. */
+function TeachingGroupFields({ initial, isNew = false }: {
+  initial?: Pick<KhposPresenceWorkspace["periods"][number],
+    "teachingGroupKind" | "teachingGroupLabel" | "parallelBlockLabel" | "parallelVerified">;
+  isNew?: boolean;
+}) {
+  const [kind, setKind] = useState<TeachingGroupKind>(initial?.teachingGroupKind ?? (isNew ? "whole_class" : ""));
+  const [group, setGroup] = useState(initial?.teachingGroupLabel ?? "");
+  const [block, setBlock] = useState(initial?.parallelBlockLabel ?? "");
+  const [verified, setVerified] = useState(Boolean(initial?.parallelVerified));
+  const split = kind !== "" && kind !== "whole_class";
+  return (
+    <fieldset className="sm:col-span-2 space-y-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4">
+      <legend className="px-1 text-sm font-black text-indigo-950">Learners attending this lesson</legend>
+      <p className="text-xs leading-5 text-indigo-900">
+        Choose whole class or a smaller departmental/elective group. Two subjects may run
+        together only when the school confirms they have different learners, teachers and rooms.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-bold text-slate-800">Teaching group type
+          <select className={field + " mt-1"} name="teachingGroupKind" value={kind}
+            onChange={event => { setKind(event.target.value as TeachingGroupKind); setVerified(false); }}>
+            {!isNew && <option value="">Not classified yet (needs review)</option>}
+            <option value="whole_class">Whole class — all learners</option>
+            <option value="department">Department — Science, Arts, Commercial…</option>
+            <option value="elective">Elective subject group</option>
+            <option value="custom">Other defined learner group</option>
+          </select>
+        </label>
+        {split && <label className="text-sm font-bold text-slate-800">Group name
+          <input className={field + " mt-1"} name="teachingGroupLabel" required minLength={2} maxLength={80}
+            placeholder="e.g. Science, Arts, Biology Group A" value={group}
+            onChange={event => {setGroup(event.target.value); setVerified(false);}} />
+        </label>}
+        {split && <label className="text-sm font-bold text-slate-800 sm:col-span-2">Shared parallel block (optional)
+          <input className={field + " mt-1"} name="parallelBlockLabel" maxLength={60} minLength={2}
+            placeholder="e.g. SS2 Monday period 3" value={block}
+            onChange={event => {setBlock(event.target.value); setVerified(false);}} />
+          <span className="mt-1 block text-xs font-normal text-slate-600">
+            Use exactly the same block name for every lesson running in this parallel session.
+          </span>
+        </label>}
+      </div>
+      {split && block.trim() && <label className="flex items-start gap-3 rounded-xl border border-indigo-200 bg-white p-3 text-xs font-semibold leading-5 text-slate-800">
+        <input type="checkbox" className="mt-1 size-4 shrink-0 accent-indigo-700"
+          name="parallelVerified" checked={verified} onChange={event => setVerified(event.target.checked)} />
+        I have verified that this group has no learners attending another group in this parallel block.
+        This confirmation is recorded against my school leadership account.
+      </label>}
+      {split && <p className="text-xs leading-5 text-indigo-900">
+        Without explicit confirmation on <strong>both lessons</strong>, the overlap stays marked for review.
+        The same teacher or room is always treated as a clash.
+      </p>}
+    </fieldset>
+  );
+}
+function getTeachingGroupFields(form: FormData): Record<string, string | boolean> {
+  const kind = String(form.get("teachingGroupKind") ?? "");
+  if (!kind) return {}; // A legacy, unclassified lesson can still be edited without reclassification.
+  return {
+    teachingGroupKind: kind,
+    teachingGroupLabel: String(form.get("teachingGroupLabel") ?? ""),
+    parallelBlockLabel: String(form.get("parallelBlockLabel") ?? ""),
+    parallelVerified: form.get("parallelVerified") === "on",
+  };
+}
+
 export function TeacherPresenceWorkspace({organisationId}:{organisationId:string}) {
   const refreshGate=useRef(createAttendanceRefreshGate());
   const [attendanceRevision,setAttendanceRevision]=useState(0);
@@ -285,10 +355,12 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
     .sort((a,b)=>a.start.localeCompare(b.start));
   const observed=(data?.observations??[]);
   const scheduleConflicts=canManage?findScheduleCollisions(data?.periods??[]):[];
+  const confirmedClashes=scheduleConflicts.filter(c=>c.severity==="conflict");
+  const overlapsToReview=scheduleConflicts.filter(c=>c.severity==="review");
   const own=(data?.periods??[])
     .filter(p=>p.termActive && (!timetableCampus || p.campusId===timetableCampus))
     .filter(p=>!lessonDay || p.weekday===Number(lessonDay))
-    .filter(p=>[p.class,p.subject,p.teacher,p.room??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()))
+    .filter(p=>[p.class,p.subject,p.teacher,p.room??"",p.teachingGroupLabel??"",p.parallelBlockLabel??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()))
     .sort((a,b)=>a.weekday-b.weekday || a.start.localeCompare(b.start));
   const activeHistory=presenceHistory?.category===historyCategory &&
     presenceHistory.page===currentHistoryFilter.page && presenceHistory.pageSize===historyPageSize &&
@@ -374,28 +446,58 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
 
         {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
-          {canManage&&scheduleConflicts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Detected timetable clashes">
-            <h2 className="font-black text-amber-950">Timetable clashes detected · {scheduleConflicts.length}</h2>
-            <p className="mt-2 text-sm text-amber-900">These are overlapping active scheduled periods in the records you may see. Inspect both lessons and resolve conflicts through the existing timetable controls. No staff assignment is changed automatically.</p>
-            <ol className="mt-3 space-y-2">{scheduleConflicts.slice(0,10).map(item=><li key={item.id} className="rounded-xl bg-white p-3 text-sm text-slate-900">
-              {WEEKDAYS[item.day]} · {item.detail}
-            </li>)}</ol>
+          {canManage&&scheduleConflicts.length>0&&<section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Timetable conflict and group review">
+            <h2 className="text-lg font-black text-amber-950">Timetable checks</h2>
+            <p className="text-sm text-amber-900">
+              <strong>{confirmedClashes.length} confirmed conflict{confirmedClashes.length===1?"":"s"}</strong> ·
+              <strong> {overlapsToReview.length} overlap{overlapsToReview.length===1?"":"s"} needing review</strong>
+            </p>
+            <p className="text-xs leading-5 text-amber-900">
+              Parallel teaching is permitted for different learner groups. Open each affected lesson below
+              and set its teaching group. For matching parallel blocks, authorised academic leaders must confirm
+              that the groups contain different learners. No assignment or historic record is changed automatically.
+            </p>
+            {confirmedClashes.length>0&&<div>
+              <h3 className="text-sm font-black text-rose-900">Resolve these clashes</h3>
+              <ol className="mt-2 space-y-2">{confirmedClashes.map(item=><li key={item.id}
+                className="rounded-xl border border-rose-100 bg-white p-3 text-sm text-slate-900">
+                <span className="font-bold text-rose-800">{WEEKDAYS[item.day]} · {item.kind==="teacher"?"Teacher":item.kind==="room"?"Room":"Learner"} conflict</span>
+                <p className="mt-1">{item.detail}</p>
+              </li>)}</ol>
+            </div>}
+            {overlapsToReview.length>0&&<div>
+              <h3 className="text-sm font-black text-amber-950">Confirm teaching groups</h3>
+              <ol className="mt-2 space-y-2">{overlapsToReview.map(item=><li key={item.id}
+                className="rounded-xl border border-amber-100 bg-white p-3 text-sm text-slate-900">
+                <span className="font-bold text-amber-800">{WEEKDAYS[item.day]} · Group classification needed</span>
+                <p className="mt-1">{item.detail}</p>
+              </li>)}</ol>
+            </div>}
           </section>}
 
           {(canManage || lessonStreams.length > 0)&&<details className={box}>
             <summary className="cursor-pointer text-xl font-black text-slate-900">Add a weekly lesson</summary>
             <p className="my-2 text-sm text-slate-600">Choose the teaching assignment, day and time. KHP-OS checks for overlaps.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2"><label className="text-xs font-bold">Class, subject and teacher</label><select className={field} value={scheduleStream} onChange={e=>setScheduleStream(e.target.value)}>
-                <option value="">Choose an approved teaching assignment</option>{lessonStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
-              </select></div>
-              <div><label className="text-xs font-bold">Weekday</label><select className={field} value={weekday} onChange={e=>setWeekday(e.target.value)}>{WEEKDAYS.slice(1).map((d,i)=><option value={i+1} key={d}>{d}</option>)}</select></div>
-              <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
-              <div><label className="text-xs font-bold">Start</label><input type="time" className={field} value={start} onChange={e=>setStart(e.target.value)}/></div>
-              <div><label className="text-xs font-bold">End</label><input type="time" className={field} value={end} onChange={e=>setEnd(e.target.value)}/></div>
-            </div>
-            <button disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-              onClick={()=>void act("period_add",{streamId:scheduleStream,weekday:Number(weekday),start,end,room},"Weekly class period added.")}>Save lesson</button>
+            <form onSubmit={event=>{
+              event.preventDefault();
+              const form=new FormData(event.currentTarget);
+              void act("period_add",{
+                streamId:scheduleStream,weekday:Number(weekday),start,end,room,
+                ...getTeachingGroupFields(form),
+              },"Weekly class period added.");
+            }}>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2"><label className="text-xs font-bold">Class, subject and teacher</label><select className={field} value={scheduleStream} onChange={e=>setScheduleStream(e.target.value)}>
+                  <option value="">Choose an approved teaching assignment</option>{lessonStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
+                </select></div>
+                <div><label className="text-xs font-bold">Weekday</label><select className={field} value={weekday} onChange={e=>setWeekday(e.target.value)}>{WEEKDAYS.slice(1).map((d,i)=><option value={i+1} key={d}>{d}</option>)}</select></div>
+                <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
+                <div><label className="text-xs font-bold">Start</label><input type="time" className={field} value={start} onChange={e=>setStart(e.target.value)}/></div>
+                <div><label className="text-xs font-bold">End</label><input type="time" className={field} value={end} onChange={e=>setEnd(e.target.value)}/></div>
+                <TeachingGroupFields isNew />
+              </div>
+              <button type="submit" disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Save lesson</button>
+            </form>
             {lessonStreams.length===0&&<Link className="mt-3 block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/academic-delivery"}>Set up a teaching assignment</Link>}
           </details>}
           <section className={box}>
@@ -442,7 +544,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><h3 className="font-black text-slate-900">{p.subject} · {p.class}</h3>
                       <p className="text-sm text-slate-600">{WEEKDAYS[p.weekday]} {p.start}–{p.end} · {p.room||"Room not set"}</p>
-                      <p className="text-xs text-slate-500">{p.teacher}</p></div>
+                      <p className="text-xs text-slate-500">{p.teacher}</p>
+                       <p className="mt-1 text-xs font-semibold text-indigo-800">Group: {p.teachingGroupKind==="whole_class"?"Whole class":p.teachingGroupLabel||"Not classified"}{p.parallelBlockLabel?` · Parallel block: ${p.parallelBlockLabel}`:""}{p.parallelVerified?" · Verified":""}</p></div>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{attendance?.administrativelyClosed?"Closed by leader":attendance?.out?"Check-out recorded":attendance?"In progress":paused?(breakEnded?`${breakName} · ended ${schoolDayLabel(calendarBreak!.end_day)}`:`${breakName} · paused for this date`):passed?"No check-in recorded":today?"Today":"Scheduled"}</span>
                   </div>
                   {nextSlot&&<p className="mt-2 rounded-lg bg-emerald-50 p-2 text-xs font-semibold text-emerald-950">
@@ -483,6 +586,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                         const saved = await act("period_edit", {
                           periodId: p.id, weekday: Number(form.get("weekday")),
                           start: form.get("start"), end: form.get("end"), room: form.get("room"),
+                           ...getTeachingGroupFields(form),
                         }, "Weekly lesson updated.");
                         if (saved) setEditingPeriod("");
                       }}>
@@ -492,6 +596,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                         <label>Room (optional)<input className={field} name="room" maxLength={100} defaultValue={p.room ?? ""} /></label>
                         <label>Start<input className={field} name="start" type="time" required defaultValue={p.start} /></label>
                         <label>End<input className={field} name="end" type="time" required defaultValue={p.end} /></label>
+                        <TeachingGroupFields key={p.id} initial={p} />
                         <button type="submit" disabled={Boolean(busy)} className="rounded-lg bg-brand-700 px-4 py-2 font-bold text-white">Save changes</button>
                       </form>}
                     </div>
