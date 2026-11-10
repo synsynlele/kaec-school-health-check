@@ -135,6 +135,7 @@ try {
  // history, explicit group certification and the existing authorisation rules.
  await db.exec(fs.readFileSync("supabase/migrations/20261105143000_edit_timetables.sql","utf8"));
  await db.exec(fs.readFileSync("supabase/migrations/20261110150000_timetable_teaching_groups.sql","utf8"));
+ await act(guardian,"pilot_enable",{enabled:true});
  const oldPeriod=(await read(guardian)).periods.find(p=>p.id===periodId);
  assert.equal(oldPeriod.teachingGroupKind,null,"Existing lesson must remain unclassified");
  assert.equal(oldPeriod.parallelVerified,false);
