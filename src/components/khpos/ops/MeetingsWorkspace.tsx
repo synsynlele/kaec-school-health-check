@@ -24,6 +24,10 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const [error,setError] = useState(""); const [readError,setReadError]=useState(""); const [busy,setBusy] = useState(false);
  const [notice,setNotice] = useState("");
  const [history,setHistory]=useState(false);
+ const [loadingRoster,setLoadingRoster]=useState(false);
+ const rosterPending=useRef(false);
+ const lastReadAt=useRef(0);
+ const readingRoom=useRef<string|null>(null);
  const [showCreate,setShowCreate] = useState(false); const [search,setSearch] = useState("");
  const [title,setTitle]=useState(""); const [agenda,setAgenda]=useState("");
  const [starts,setStarts]=useState(""); const [hours,setHours]=useState(1);
@@ -32,7 +36,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const [decision,setDecision]=useState(""); const [action,setAction]=useState(""); const [owner,setOwner]=useState(""); const [due,setDue]=useState("");
  const [now,setNow] = useState(Date.now);
  const requestVersion = useRef(0);
- useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return ()=>clearInterval(timer);},[]);
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),15_000);return ()=>clearInterval(timer);},[]);
  const pendingRef = useRef(false); const mounted = useRef(true);
  const request = useCallback(async (input?:Record<string,unknown>, roomId=selectedRef.current) => {
   const version=++requestVersion.current;
@@ -49,21 +53,45 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  useEffect(()=>{
   mounted.current=true; selectedRef.current=selected;
   let stopped=false; let timer:ReturnType<typeof setTimeout>;
-  async function refresh() {
-   if (!stopped&&!pendingRef.current&&document.visibilityState==="visible") {
-    try { await request(undefined,selected); if(!stopped)setReadError(""); }
-    catch(e) { if(!stopped) { setReadError(e instanceof Error?e.message:"Could not refresh meetings."); setData(null); } }
+  async function readOnce() {
+   if (stopped || pendingRef.current || readingRoom.current===selected ||
+       document.visibilityState!=="visible") return;
+   readingRoom.current=selected;
+   try {
+    await request(undefined,selected);
+    if(!stopped && selectedRef.current===selected) {
+     lastReadAt.current=Date.now();
+     setReadError("");
+    }
+   } catch(e) {
+    if(!stopped && selectedRef.current===selected) {
+     setReadError(e instanceof Error?e.message:"Could not refresh meetings.");
+     // Keep the last successful list visible when an intermittent read fails.
+    }
+   } finally {
+    if(readingRoom.current===selected) readingRoom.current=null;
    }
-   if(!stopped)timer=setTimeout(refresh,30000);
+  }
+  async function refresh() {
+   await readOnce();
+   if(!stopped) timer=setTimeout(refresh,30000);
   }
   let resumeTimer:ReturnType<typeof setTimeout>;
   const resume=()=>{
    clearTimeout(resumeTimer);
-   resumeTimer=setTimeout(()=>{if(!stopped&&!pendingRef.current&&document.visibilityState==="visible")void request(undefined,selected).catch(e=>setReadError(e.message));},50);
+   resumeTimer=setTimeout(()=>{
+    if(!stopped && Date.now()-lastReadAt.current>=8000) void readOnce();
+   },500);
   };
-  document.addEventListener("visibilitychange",resume);window.addEventListener("focus",resume);
+  document.addEventListener("visibilitychange",resume);
+  window.addEventListener("focus",resume);
   void refresh();
-  return ()=>{stopped=true;clearTimeout(timer);clearTimeout(resumeTimer);document.removeEventListener("visibilitychange",resume);window.removeEventListener("focus",resume);mounted.current=false;};
+  return ()=>{
+   stopped=true; clearTimeout(timer); clearTimeout(resumeTimer);
+   document.removeEventListener("visibilitychange",resume);
+   window.removeEventListener("focus",resume);
+   mounted.current=false;
+  };
  },[selected,request]);
  useEffect(()=>{
   if(!supabase||!selected)return;
@@ -80,6 +108,32 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   });
   return ()=>subscription?.data.subscription.unsubscribe();
  },[supabase]);
+ async function prepareCreate() {
+  if(showCreate) { setShowCreate(false); return; }
+  setShowCreate(true);
+  if(data?.people.length || rosterPending.current) return;
+  rosterPending.current=true;
+  setLoadingRoster(true);
+  try {
+   const session=await supabase?.auth.getSession();
+   const token=session?.data.session?.access_token;
+   if(!token) throw new Error("Sign in to load meeting recipients.");
+   const response=await fetch(`/api/khpos/ops/meetings/${organisationId}?roster=1`, {
+    headers:{Authorization:`Bearer ${token}`},cache:"no-store",
+   });
+   const body=(await response.json()) as {workspace?:MeetingWorkspace;error?:string};
+   if(!response.ok || !body.workspace) throw new Error(body.error||"Meeting recipients could not be loaded.");
+   if(mounted.current) {
+    setData(previous=>previous?{...previous,people:body.workspace!.people}:body.workspace!);
+    setError("");
+   }
+  } catch(e) {
+   if(mounted.current)setError(e instanceof Error?e.message:"Could not load meeting recipients.");
+  } finally {
+   rosterPending.current=false;
+   if(mounted.current)setLoadingRoster(false);
+  }
+ }
  async function save(input:Record<string,unknown>, done:()=>void) {
   if(pendingRef.current)return; pendingRef.current=true;setBusy(true);setError("");setNotice("");
   try { const updated=await request(input); if(input.mode==="create"&&updated.room){selectedRef.current=updated.room.meeting.id;setSelected(updated.room.meeting.id);setData(previous=>({...updated,people:previous?.people??[]}));} done();setReadError(""); }
@@ -110,9 +164,9 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError("");setNotice(""); }} />
   <Link href={hq?"/khpos/hq":`/khpos/${organisationId}/work`} className="text-blue-700">{hq?"← KAEC HQ":"← Today"}</Link>
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
-  {data?.canCreate&&<button className={button} onClick={()=>setShowCreate(!showCreate)}>Schedule a meeting</button>}</header>
+  {data?.canCreate&&<button className={button} onClick={()=>void prepareCreate()}>{showCreate?"Close form":"Schedule a meeting"}</button>}</header>
   {visibleError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{visibleError}</p>}
-  {!data&&!visibleError&&<LoadingScreen />}
+  {!data&&!visibleError&&<LoadingScreen inline />}
   {showCreate&&<form className="space-y-4 rounded-2xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void save({mode:"create",title,agenda,startsAt:new Date(starts).toISOString(),endsAt:meetingEnd(starts,hours),callUrl:"",callParts:[],participants:invitees},()=>{setShowCreate(false);setTitle("");setAgenda("");setInvitees([]);setHours(1);});}}>
    <h2 className="text-xl font-semibold">Plan a private meeting</h2>
    <label className="block">Meeting title<input required maxLength={160} className={field} value={title} onChange={e=>setTitle(e.target.value)}/></label>
@@ -120,8 +174,9 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <div className="grid gap-4 sm:grid-cols-2"><label>Starts (your local time)<input required type="datetime-local" className={field} value={starts} onChange={e=>setStarts(e.target.value)}/></label><label>Meeting length<select className={field} value={hours} onChange={e=>setHours(Number(e.target.value))}>{[1,2,3,4,5,6].map(h=><option key={h} value={h}>{h} {h===1?"hour":"hours"}</option>)}</select></label></div>
    {starts&&<p className="text-sm">Planned end: {date(meetingEnd(starts,hours))}</p>}
    <p className="rounded-xl bg-blue-50 p-4 text-sm">Voice and video calls open inside this meeting room. You can join with your camera off for an audio meeting. Text discussions and follow-ups remain available here.</p>
-   <MeetingInvitees people={data?.people??[]} userId={data?.userId??""} hq={hq} selected={invitees} onChange={setInvitees} disabled={busy} />
-   <button disabled={busy||!invitees.length} className={button}>Save meeting</button>
+   {loadingRoster && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm font-semibold text-blue-900">Finding permitted meeting recipients</p>}
+   <MeetingInvitees people={data?.people??[]} userId={data?.userId??""} hq={hq} selected={invitees} onChange={setInvitees} disabled={busy||loadingRoster} />
+   <button disabled={busy||loadingRoster||!invitees.length} className={button}>Save meeting</button>
   </form>}
   <p className="text-sm text-slate-600">Meetings move to History when their scheduled time ends, or when the host closes or cancels them.</p>
   {history&&<p className="text-sm text-slate-600">To delete a past meeting you hosted, open it and choose Delete meeting.</p>}

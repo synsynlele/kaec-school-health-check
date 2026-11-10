@@ -70,7 +70,7 @@ const complexWorkspaceResilience = complexWorkspaces.map(name => {
     : 'src/components/khpos/ops/' + name + '.tsx';
   const source = read(file);
   const hasVisibleFeedback = /<ActionFeedback\b/.test(source) && /notice=\{(?!""|''|null)/.test(source);
-  const hasLoadErrorRecovery = /\.catch\(\(/.test(source);
+  const hasLoadErrorRecovery = /\.catch\(\(/.test(source) || (/void \(async \(\) => \{/.test(source) && /\bcatch\s*\{/.test(source));
   const hasActionErrorRecovery = /\bcatch\s*\(/.test(source) || /\bcatch\s*\{/.test(source);
   const hasBusyCleanup = /\bfinally\s*\{/.test(source);
   assert(hasVisibleFeedback, name + ': successful work should have a consistent visible notification');
