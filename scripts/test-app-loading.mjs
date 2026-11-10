@@ -83,7 +83,8 @@ assert(root.includes('<AppBootScreen />'), 'Other KAEC applications must retain 
 assert.match(fs.readFileSync('src/app/globals.css', 'utf8'),
   /body:has\(\.khpos-platform-ui\) \[data-app-boot\]/,
   'KHP-OS route pages must not inherit a second hydration-wide boot cover');
-assert.match(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8'), /loading/, 'The branded route fallback remains available');
+assert.match(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8'), /<LoadingScreen inline \/>/, 'KHP-OS route fallbacks must be branded and nonblocking');
+assert.match(fs.readFileSync('src/app/khpos/[organisationId]/loading.tsx', 'utf8'), /<LoadingScreen inline \/>/, 'School route fallbacks must not cover their navigation shell');
 let destination = '', pathname = '/khpos', query = '';
 const listeners = {};
 let nextTimer = 0;
