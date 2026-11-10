@@ -248,7 +248,7 @@ export function ReportsWorkspace({
             Reports could not load. Open Reports to retry.
           </p>
         ) : !summary ? (
-          <LoadingScreen inline />
+          <p role="status" className="text-sm text-slate-600">Fetching report information.</p>
         ) : (
           <p className="text-sm text-slate-700">
             {summary.open} to complete · {summary.overdue} overdue ·{" "}
@@ -460,7 +460,7 @@ export function ReportsWorkspace({
                   onAction={act}
                 />
               ) : (
-                detail ? <p className="text-sm">This report is unavailable to your current role or school. Refresh the list or contact your school administrator.</p> : <LoadingScreen inline />
+                detail ? <p className="text-sm">This report is unavailable to your current role or school. Refresh the list or contact your school administrator.</p> : <p role="status" className="text-sm text-slate-600">Fetching report information.</p>
               )}
             </section>
           )}

@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { NavigationFeedback } from "@/components/navigation/NavigationFeedback";
 import { AppBootScreen } from "@/components/navigation/AppBootScreen";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -121,7 +119,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <noscript><style>{"[data-app-boot]{display:none!important}"}</style></noscript>
         <AppBootScreen />
         <script dangerouslySetInnerHTML={{ __html: pwaInstallCaptureScript }} />
-        <Suspense fallback={null}><NavigationFeedback /></Suspense>
         {children}
       </body>
     </html>

@@ -1,6 +1,5 @@
 "use client";
 
-import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -150,7 +149,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </form>
     </details>}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-    {!entries && !error && <LoadingScreen inline />}
+    {!entries && !error && <p role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Fetching scheduled tests and exams.</p>}
     {entries?.length === 0 && <p>No tests or exams scheduled for this week.</p>}
     {visibleEntries?.map(item => {
       const canStart = now >= Date.parse(item.starts_at) - 1800000 && now <= Date.parse(item.ends_at) + 1800000;
