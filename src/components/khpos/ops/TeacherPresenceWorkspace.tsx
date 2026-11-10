@@ -718,7 +718,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             </div>
             <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search). Each tab has its own search, sorting and pages.</p>
             {historyError&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{historyError}</p>}
-            {historyBusy&&<LoadingScreen inline message="Opening attendance history…" />}
+            {historyBusy&&<p role="status" className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Fetching attendance history.</p>}
             <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Attendance record type">
               {([["school","School sign-in records"],["class","Class sign-in records"]] as const).map(([category,label])=>
                 <button key={category} type="button" role="tab" aria-selected={historyCategory===category}
