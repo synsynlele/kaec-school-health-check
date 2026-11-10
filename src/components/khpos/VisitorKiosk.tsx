@@ -61,6 +61,16 @@ export function VisitorKiosk(){
     const t=window.setTimeout(()=>reset(),30_000);
     return()=>window.clearTimeout(t);
   },[receipt,departed]);
+  // Protect a shared tablet when a visitor walks away mid-form.
+  // The inactivity timer restarts on every field edit and clears unsent data.
+  useEffect(()=>{
+    if(!state?.active || receipt || departed)return;
+    const timer=window.setTimeout(()=>{
+      setName("");setPhone("");setHost("");setPurpose("parent_guardian");
+      setExitCode("");setError("");setMode("in");
+    },120_000);
+    return()=>window.clearTimeout(timer);
+  },[state?.active,receipt,departed,name,phone,host,purpose,exitCode,mode]);
   function reset(){
     setName("");setPhone("");setHost("");setPurpose("parent_guardian");setExitCode("");
     setReceipt(null);setDeparted(false);setError("");setMode("in");

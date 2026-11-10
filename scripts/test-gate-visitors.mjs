@@ -69,6 +69,7 @@ assert.match(tablet,/auth.signOut\(\)/);
 assert.match(tablet,/autoComplete="off"/);
 assert.match(tablet,/setReceipt\(null\)/);
 assert.match(tablet,/30_000/,"Guest details and receipt must auto-clear from shared tablet");
+assert(tablet.includes('},120_000)'), "Abandoned visitor forms must clear after inactivity.");
 assert(!tablet.includes("GateDeskData"),"Tablet must not embed the staff register");
 assert.match(desk,/visitor_name/);
 assert.match(desk,/Admit visitor/);
