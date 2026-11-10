@@ -317,7 +317,11 @@ export function MyWorkWorkspace({
   useRecordFocus(!!work);
 
   if (!work && !error) {
-    return <LoadingScreen />;
+    return <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <h1 className="mb-2 text-2xl font-black text-slate-950">Today</h1>
+      <p className="mb-5 text-sm text-slate-600">Getting your assignments and school activities ready.</p>
+      <LoadingScreen inline />
+    </main>;
   }
 
   if (!work) {
