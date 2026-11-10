@@ -146,6 +146,25 @@ export async function POST(
       }
 
       const planned = payload.caseType === "planned_leave";
+      // A temporary outing reuses Leave & Cover's independent planned-leave
+      // approval and recorded return. It must not be mistaken for a final
+      // school attendance sign-out or a multi-day leave.
+      if (payload.sourceReference === "KHPOS_TEMPORARY_OUTING") {
+        const from = new Date(payload.startAt!);
+        const until = new Date(payload.endAt!);
+        const day = (date: Date) => new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit",
+        }).format(date);
+        if (!planned || payload.reasonCategory === "not_disclosed" ||
+            until.getTime() <= from.getTime() ||
+            until.getTime() - from.getTime() > 8 * 60 * 60_000 ||
+            day(from) !== day(until)) {
+          return NextResponse.json({
+            ok: false,
+            error: "Temporary outings require a reason and same-day return within eight hours.",
+          }, { status: 400 });
+        }
+      }
       const handover = typeof payload.handover === "string" ? payload.handover.trim() : "";
       const suggestedCover = typeof payload.suggestedCover === "string" ? payload.suggestedCover.trim() : "";
       if (planned && (typeof payload.coverageRequired !== "boolean" ||
