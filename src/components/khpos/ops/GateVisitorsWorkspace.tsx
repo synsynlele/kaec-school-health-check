@@ -59,7 +59,7 @@ export function GateVisitorsWorkspace({organisationId}:{organisationId:string}){
   async function act(input:Record<string,string>,key:string){
     setBusy(key);setError("");setNotice("");
     try{
-      const body=await request(input);
+      const body=await request(input.mode ? input : undefined);
       if(body.desk)setDesk(body.desk);
       if(body.pairing){setPairingCode(body.pairing.code);setNotice("Tablet activation code created. It expires in ten minutes.");}
       else setNotice(key==="revoke"?"Tablet access revoked.":"Visitor register updated.");
