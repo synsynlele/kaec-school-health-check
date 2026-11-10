@@ -161,19 +161,15 @@ export async function activateKiosk(pin:string) {
   return raw;
 }
 async function quota(deviceId:string,kind:"check_in"|"check_out",max:number){
-  const since=new Date(Date.now()-120_000).toISOString();
-  const {count,error}=await db().from("khpos_gate_kiosk_rate_events")
-    .select("id",{count:"exact",head:true}).eq("device_id",deviceId)
-    .eq("event_type",kind).gte("created_at",since);
-  if(error)throw new GateError("The kiosk is temporarily unavailable.",503);
-  if((count??0)>=max)throw new GateError("Too many requests. Please ask reception for help.",429);
-  const {error:insertError}=await db().from("khpos_gate_kiosk_rate_events")
-    .insert({device_id:deviceId,event_type:kind});
-  if(insertError)throw new GateError("The kiosk is temporarily unavailable.",503);
+  const {data,error}=await db().rpc("khpos_gate_consume_rate_limit",{
+    p_device_id:deviceId,p_event_type:kind,p_limit:max,
+  });
+  if(error)throw new GateError("The visitor kiosk is temporarily unavailable.",503);
+  if(data!==true)throw new GateError("Too many submissions. Please ask reception for help.",429);
 }
 export async function kioskCheckIn(raw:string,input:{name:string;phone?:string;purpose:string;host:string}){
   const {device}=await validKiosk(raw);
-  await quota(device.id,"check_in",12);
+  await quota(device.id,"check_in",60);
   const name=input.name.trim().replace(/\s+/g," ");
   const host=input.host.trim().replace(/\s+/g," ");
   const phone=(input.phone??"").trim();
@@ -194,7 +190,7 @@ export async function kioskCheckIn(raw:string,input:{name:string;phone?:string;p
 }
 export async function kioskCheckOut(raw:string,inputCode:string){
   const {device}=await validKiosk(raw);
-  await quota(device.id,"check_out",15);
+  await quota(device.id,"check_out",60);
   const key=inputCode.trim().toUpperCase().replace(/[-\s]/g,"");
   if(!/^[A-HJ-NP-Z2-9]{12}$/.test(key))
     throw new GateError("Check the departure code on your visitor receipt.");

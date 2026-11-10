@@ -143,3 +143,32 @@ drop trigger if exists khpos_gate_visitor_status_audit on public.khpos_gate_visi
 create trigger khpos_gate_visitor_status_audit
 after insert or update of status on public.khpos_gate_visitor_visits
 for each row execute function khpos_private.audit_gate_visitor_status();
+
+-- Atomic, per-device rate limits. The service role is the sole authorised caller.
+create or replace function public.khpos_gate_consume_rate_limit(
+  p_device_id uuid, p_event_type text, p_limit integer
+) returns boolean language plpgsql security invoker set search_path = '' as $$
+declare v_count bigint;
+begin
+  if p_event_type not in ('check_in','check_out') or p_limit not between 1 and 100 then
+    raise exception 'Invalid gate rate limit.';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_device_id::text || ':' || p_event_type, 0)
+  );
+  delete from public.khpos_gate_kiosk_rate_events
+    where device_id = p_device_id
+      and created_at < pg_catalog.now() - interval '7 days';
+  select count(*) into v_count
+    from public.khpos_gate_kiosk_rate_events
+    where device_id=p_device_id and event_type=p_event_type
+      and created_at>=pg_catalog.now()-interval '2 minutes';
+  if v_count >= p_limit then return false; end if;
+  insert into public.khpos_gate_kiosk_rate_events(device_id,event_type)
+    values (p_device_id,p_event_type);
+  return true;
+end $$;
+revoke all on function public.khpos_gate_consume_rate_limit(uuid,text,integer)
+  from public, anon, authenticated;
+grant execute on function public.khpos_gate_consume_rate_limit(uuid,text,integer)
+  to service_role;
