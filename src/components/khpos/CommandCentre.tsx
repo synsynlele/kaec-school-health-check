@@ -64,54 +64,53 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
 
   useEffect(() => {
     if (!supabase) return;
-
     let active = true;
-    void supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      const accessToken = data.session?.access_token;
-      if (!accessToken) {
-        setError("Your session has ended. Sign in again to open your school.");
-        return;
-      }
 
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const [response, attentionResponse] = await Promise.all([
-        fetch(`/api/khpos/workspace/${organisationId}`, {
-          headers,
-          cache: "no-store",
-        }),
-        fetch(`/api/khpos/ops/attention/${organisationId}`, {
-          headers,
-          cache: "no-store",
-        }),
-      ]);
-      const body = (await response.json()) as {
-        ok?: boolean;
-        workspace?: KhposWorkspaceSnapshot;
-        error?: string;
-      };
-      const attentionBody = (await attentionResponse.json()) as {
-        ok?: boolean;
-        attention?: KhposAttentionSnapshot;
-      };
-      if (!active) return;
-      if (!response.ok || !body.ok || !body.workspace) {
-        setError(body.error ?? "The KHP-OS workspace could not be loaded.");
-        return;
-      }
-      setWorkspace(body.workspace);
-      if (
-        attentionResponse.ok &&
-        attentionBody.ok &&
-        attentionBody.attention
-      ) {
-        setAttention(attentionBody.attention);
-      }
-    });
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        const accessToken = data.session?.access_token;
+        if (!accessToken) {
+          setError("Your session has ended. Sign in again to open your school.");
+          return;
+        }
+        const headers = { Authorization: `Bearer ${accessToken}` };
+        // The primary workspace must not wait for the optional attention feed.
+        const response = await fetch(`/api/khpos/workspace/${organisationId}`, {
+          headers, cache: "no-store",
+        });
+        const body = (await response.json()) as {
+          ok?: boolean; workspace?: KhposWorkspaceSnapshot; error?: string;
+        };
+        if (!active) return;
+        if (!response.ok || !body.ok || !body.workspace) {
+          setError(body.error ?? "The KHP-OS workspace could not be loaded.");
+          return;
+        }
+        setWorkspace(body.workspace);
+        setError("");
 
-    return () => {
-      active = false;
-    };
+        // Fetch secondary intelligence after the school is already visible.
+        void fetch(`/api/khpos/ops/attention/${organisationId}`, {
+          headers, cache: "no-store",
+        }).then(async attentionResponse => {
+          if (!attentionResponse.ok) return;
+          const attentionBody = (await attentionResponse.json()) as {
+            ok?: boolean; attention?: KhposAttentionSnapshot;
+          };
+          if (active && attentionBody.ok && attentionBody.attention) {
+            setAttention(attentionBody.attention);
+          }
+        }).catch(() => {
+          // Attention is supplemental; never cover or hide the school overview.
+        });
+      } catch {
+        if (active) setError("The school could not be loaded. Check your connection and try again.");
+      }
+    })();
+
+    return () => { active = false; };
   }, [organisationId, supabase]);
 
   if (!workspace && !error) {

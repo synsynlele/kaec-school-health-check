@@ -169,7 +169,7 @@ export function NotificationBell({
       setTotal(0);
       setError(false);
       void refresh(true);
-    }, 0);
+    }, 1_200);
     // Poll only on the active visible layout; mutations refresh immediately.
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh();

@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { NavigationFeedback } from "@/components/navigation/NavigationFeedback";
-import { AppBootScreen } from "@/components/navigation/AppBootScreen";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { SITE, appUrl } from "@/lib/site";
@@ -118,8 +117,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" style={{ backgroundColor: "#0f172a", minHeight: "100%" }}>
       <body className="bg-slate-50 font-sans text-slate-900 antialiased" style={{ margin: 0, minHeight: "100svh" }}>
-        <noscript><style>{"[data-app-boot]{display:none!important}"}</style></noscript>
-        <AppBootScreen />
         <script dangerouslySetInnerHTML={{ __html: pwaInstallCaptureScript }} />
         <Suspense fallback={null}><NavigationFeedback /></Suspense>
         {children}

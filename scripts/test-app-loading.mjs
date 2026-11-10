@@ -77,9 +77,14 @@ auditLoaders('src');
 assert.deepEqual(legacy, [], 'Page and section loading states must use the shared branded design');
 console.log('App-wide loading audit passed: no separate page spinners or legacy loading screens.');
 
-// Navigation uses the same screen and releases it as soon as its destination commits.
+// Short client navigations must never paint an extra full-screen loader.
+const root = fs.readFileSync('src/app/layout.tsx', 'utf8');
+assert(!root.includes('<AppBootScreen />'), 'Hydration must not hide already-rendered content behind a second boot overlay');
+assert.match(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8'), /loading/, 'The branded route fallback remains available');
 let destination = '', pathname = '/khpos', query = '';
 const listeners = {};
+let nextTimer = 0;
+const timers = new Map();
 class Element { closest() { return this; } }
 class Anchor extends Element {
   constructor(href) { super(); this.href = href; this.target = ''; }
@@ -88,27 +93,39 @@ class Anchor extends Element {
 const location = { origin: 'https://example.invalid', pathname: '/khpos', search: '' };
 const navigation = load('src/components/navigation/NavigationFeedback.tsx', name => {
   if (name === 'react/jsx-runtime') return jsx;
-  if (name === './LoadingScreen') return screen;
   if (name === 'next/navigation') return { usePathname: () => pathname, useSearchParams: () => new URLSearchParams(query) };
   if (name === 'react') return { useState: () => [destination, value => { destination = value; }], useEffect: fn => fn() };
   throw new Error(name);
-}, { URL, Element, HTMLAnchorElement: Anchor, setTimeout: () => 1, clearTimeout() {},
+}, { URL, Element, HTMLAnchorElement: Anchor,
+  setTimeout: (fn, ms) => { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
+  clearTimeout: id => timers.delete(id),
   document: { addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
   window: { location, addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
 });
+const tick = ms => {
+  for (const [id, timer] of Array.from(timers)) if (timer.ms === ms) { timers.delete(id); timer.fn(); }
+};
 assert.equal(navigation.NavigationFeedback(), null);
 listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq') });
-assert.equal(navigation.NavigationFeedback().type, screen.LoadingScreen);
+assert.equal(navigation.NavigationFeedback(), null, 'Short links should keep the old page immediately visible');
+tick(450);
+const indicator = renderToStaticMarkup(navigation.NavigationFeedback());
+assert.match(indicator, /Opening page/);
+assert.match(indicator, /role="status"/);
+assert(!indicator.includes('position:fixed;inset:0'), 'Client navigation is nonblocking');
 pathname = location.pathname = '/khpos/hq';
 assert.equal(navigation.NavigationFeedback(), null);
 listeners.pageshow();
 listeners.click({ button: 0, target: new Anchor('https://outside.invalid/') });
 assert.equal(navigation.NavigationFeedback(), null);
 listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq?view=history') });
-assert.equal(navigation.NavigationFeedback().type, screen.LoadingScreen);
+assert.equal(navigation.NavigationFeedback(), null);
+tick(450);
+assert.match(renderToStaticMarkup(navigation.NavigationFeedback()), /Opening page/);
 query = 'view=history';
 assert.equal(navigation.NavigationFeedback(), null);
-console.log('Navigation loading passed: shared design, route/query completion, page restoration and external links.');
+listeners.pageshow();
+console.log('Navigation loading passed: delayed nonblocking indicator, old page preserved, route/query completion and page restoration.');
 
 // A failed sign-in must show its error instead of leaving a permanent loading cover.
 for (const rejected of [false, true]) {

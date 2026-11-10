@@ -101,75 +101,69 @@ export function MyWorkWorkspace({
     if (!supabase) return;
     let active = true;
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-
-      const token = data.session?.access_token;
-      if (!token) {
-        setError("Your session has ended. Sign in again to continue.");
-        return;
-      }
-
-      const headers = { Authorization: `Bearer ${token}` };
-      const [workResponse, libraryResponse, attentionResponse] = await Promise.all([
-        fetch(`/api/khpos/ops/work/${organisationId}`, {
-          headers,
-          cache: "no-store",
-        }),
-        fetch(`/api/khpos/ops/library/${organisationId}`, {
-          headers,
-          cache: "no-store",
-        }),
-        fetch(`/api/khpos/ops/attention/${organisationId}`, {
-          headers,
-          cache: "no-store",
-        }),
-      ]);
-
-      const workBody = (await workResponse.json()) as {
-        ok?: boolean;
-        work?: KhposOpsMyWork;
-        error?: string;
-      };
-      const libraryBody = (await libraryResponse.json()) as {
-        ok?: boolean;
-        library?: KhposOpsLibrary;
-        error?: string;
-      };
-      const attentionBody = (await attentionResponse.json()) as {
-        ok?: boolean;
-        attention?: KhposAttentionSnapshot;
-      };
-
-      if (!active) return;
-
-      if (!workResponse.ok || !workBody.ok || !workBody.work) {
-        setError(workBody.error ?? "Today could not be loaded.");
-        return;
-      }
-
-      setWork(workBody.work);
-      if (attentionResponse.ok && attentionBody.ok && attentionBody.attention) {
-        setAttention(attentionBody.attention);
-      }
-
-      if (libraryResponse.ok && libraryBody.ok && libraryBody.library) {
-        setLibrary(libraryBody.library);
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        const token = data.session?.access_token;
+        if (!token) {
+          setError("Your session has ended. Sign in again to continue.");
+          return;
+        }
+        const headers = { Authorization: `Bearer ${token}` };
+        // Load the essential Today queue first. The process library and
+        // attention feed are enhancements and must not block its first paint.
+        const workResponse = await fetch(`/api/khpos/ops/work/${organisationId}`, {
+          headers, cache: "no-store",
+        });
+        const workBody = (await workResponse.json()) as {
+          ok?: boolean; work?: KhposOpsMyWork; error?: string;
+        };
+        if (!active) return;
+        if (!workResponse.ok || !workBody.ok || !workBody.work) {
+          setError(workBody.error ?? "Today could not be loaded.");
+          return;
+        }
+        setWork(workBody.work);
         setError("");
-      } else {
-        setLibrary(null);
-        setError(
-          libraryBody.error ??
-            "Your work loaded, but its operating processes could not be loaded.",
-        );
-      }
-    }).catch(() => {
-      if (active) setError("Today could not be loaded. Check your connection and try again.");
-    });
 
-    return () => {
-      active = false;
-    };
+        const [libraryResult, attentionResult] = await Promise.allSettled([
+          fetch(`/api/khpos/ops/library/${organisationId}`, {
+            headers, cache: "no-store",
+          }).then(async response => ({
+            response,
+            body: (await response.json()) as { ok?: boolean; library?: KhposOpsLibrary; error?: string },
+          })),
+          fetch(`/api/khpos/ops/attention/${organisationId}`, {
+            headers, cache: "no-store",
+          }).then(async response => ({
+            response,
+            body: (await response.json()) as { ok?: boolean; attention?: KhposAttentionSnapshot },
+          })),
+        ]);
+        if (!active) return;
+
+        if (libraryResult.status === "fulfilled" &&
+            libraryResult.value.response.ok && libraryResult.value.body.ok &&
+            libraryResult.value.body.library) {
+          setLibrary(libraryResult.value.body.library);
+        } else {
+          setLibrary(null);
+          setError(libraryResult.status === "fulfilled"
+            ? libraryResult.value.body.error ?? "Your work loaded, but its operating processes could not be loaded."
+            : "Your work loaded, but its operating processes are temporarily unavailable.");
+        }
+        if (attentionResult.status === "fulfilled" &&
+            attentionResult.value.response.ok && attentionResult.value.body.ok &&
+            attentionResult.value.body.attention) {
+          setAttention(attentionResult.value.body.attention);
+        }
+      } catch {
+        if (active) setError("Today could not be loaded. Check your connection and try again.");
+      }
+    })();
+
+    return () => { active = false; };
   }, [organisationId, supabase]);
 
   useEffect(() => {
