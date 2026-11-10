@@ -9,6 +9,11 @@ export interface KhposPresencePeriod {
   id: string; streamId: string; weekday: number; start: string; end: string; room: string | null;
   campusId: string; class: string; subject: string; teacher: string;
   teacherUserId: string; termActive: boolean;
+  teachingGroupKind?: "whole_class" | "department" | "elective" | "custom" | null;
+  teachingGroupLabel?: string | null;
+  parallelBlockLabel?: string | null;
+  parallelVerified?: boolean;
+  parallelVerifiedBy?: string | null;
   session: null | { id: string; in: string; out: string | null; outcome: string | null; topic: string | null; administrativelyClosed: boolean };
 }
 export interface KhposHqlsDomain {
