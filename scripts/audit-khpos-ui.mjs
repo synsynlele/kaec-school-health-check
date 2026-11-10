@@ -142,7 +142,7 @@ const surfaceCoverage = routeInfo.map(route => {
   };
 });
 assert.equal(surfaceCoverage.length, routes.length, 'Every KHP-OS page must appear in the UI coverage matrix');
-assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 55,
+assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 56,
   'All school pages must be source-reviewed');
 assert.equal(surfaceCoverage.filter(r => r.family === 'hq').length, 6,
   'All six corporate HQ pages must be source-reviewed');
@@ -178,6 +178,7 @@ const matrix = [
 function focusFor(route) {
   const q = route.toLowerCase();
   if(q.includes('safeguarding')) return 'Confidential cases, separate authority, redaction, no leaked summaries';
+  if(q.includes('visitors') || q.includes('visitor-kiosk')) return 'Pairing, visitor self-check-in, authorised admission and check-out; never disclose visitor register to kiosk';
   if(q.includes('teaching-presence') || q.endsWith('/work')) return 'Attendance, actual class evidence, overdue actions and linked records';
   if(q.includes('meetings')) return 'Invitations, join/end/cancel, history and decision-to-work';
   if(q.includes('reports')) return 'Report draft, submission, assigned review, return, correction and privacy';
