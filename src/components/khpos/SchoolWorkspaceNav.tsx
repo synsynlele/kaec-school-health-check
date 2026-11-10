@@ -183,7 +183,7 @@ const schoolAreas = [
   { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
   { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
   { title: "School attendance & visitors", help: "Staff school sign-in/out, visitor arrival and departure, gate records and attendance oversight.", routes: ["/teaching-presence", "/visitors"] },
-  { title: "Teaching & learning", help: "Plan lessons, manage assessments and support learners.", routes: ["/academic-delivery", "/academic-assurance", "/learner-progress"] },
+  { title: "Teaching & planning", help: "Use the school calendar, organise lessons, manage assessments and support learners.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready"] },
   { title: "Parents", help: "Follow up with current families and track new enquiries through admission.", routes: ["/parents", "/parent-journeys"] },
   { title: "School improvement", help: "Choose priorities, carry out the plan, add proof and review what changed.", routes: ["/priorities", "/implementation", "/evidence", "/reviews", "/improvement", "/playbooks"] },
