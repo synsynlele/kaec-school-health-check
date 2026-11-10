@@ -189,11 +189,7 @@ export async function kioskCheckIn(raw:string,input:{name:string;phone?:string;p
     host_name:host,status:"awaiting_admission",exit_code_hash:digest("exit:"+departureCode),
   }).select("id").single();
   if(error||!data)throw new GateError("Your visit could not be recorded. Please ask reception for help.",503);
-  const {error:eventError}=await db().from("khpos_gate_visit_events").insert({
-    organisation_id:device.organisation_id,campus_id:device.campus_id,visit_id:data.id,
-    device_id:device.id,event_type:"submitted",
-  });
-  if(eventError)console.error("[khpos][gate] visitor submission audit event failed",eventError.code);
+  // The database trigger writes the visit event in the same transaction.
   return {reference,departureCode};
 }
 export async function kioskCheckOut(raw:string,inputCode:string){
@@ -204,17 +200,12 @@ export async function kioskCheckOut(raw:string,inputCode:string){
     throw new GateError("Check the departure code on your visitor receipt.");
   const now=new Date().toISOString();
   const {data,error}=await db().from("khpos_gate_visitor_visits")
-    .update({status:"departed",departed_at:now,check_out_method:"visitor_kiosk"})
+    .update({status:"departed",departed_at:now,check_out_method:"visitor_kiosk",exit_kiosk_device_id:device.id})
     .eq("organisation_id",device.organisation_id).eq("campus_id",device.campus_id)
     .eq("exit_code_hash",digest("exit:"+key)).eq("status","on_campus")
     .select("id").maybeSingle();
   if(error || !data)
     throw new GateError("This code could not be checked out. Please ask reception for help.",400);
-  const {error:eventError}=await db().from("khpos_gate_visit_events").insert({
-    organisation_id:device.organisation_id,campus_id:device.campus_id,visit_id:data.id,
-    event_type:"departed",device_id:device.id,
-  });
-  if(eventError)console.error("[khpos][gate] kiosk check-out audit event failed",eventError.code);
   return {ok:true};
 }
 export async function gateVisitAction(orgId:string,userId:string,visitId:string,
@@ -231,10 +222,5 @@ export async function gateVisitAction(orgId:string,userId:string,visitId:string,
     .in("campus_id",scope.campuses.map(c=>c.id)).eq("status",expected)
     .select("id,campus_id").maybeSingle();
   if(error||!data)throw new GateError("This visit has already changed or is not in your campus.",409);
-  const eventType=action==="admit"?"admitted":action==="depart"?"departed":"declined";
-  const {error:eventError}=await db().from("khpos_gate_visit_events").insert({
-    organisation_id:orgId,campus_id:data.campus_id,visit_id:data.id,
-    event_type:eventType,actor_user_id:userId,
-  });
-  if(eventError)console.error("[khpos][gate] staff gate event audit failed",eventError.code);
+  // Audit trail inserted atomically by the database trigger.
 }
