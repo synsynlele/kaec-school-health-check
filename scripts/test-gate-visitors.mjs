@@ -55,7 +55,7 @@ assert.match(deskApi,/gateVisitAction/,"Only authenticated staff can approve adm
 
 // Visitor self-submission is NOT proof of entering campus.
 assert.match(service,/status:"awaiting_admission"/);
-assert.match(service,/status==="on_campus"/);
+assert.match(service,/\\.eq\\("status","on_campus"\\)/);
 assert.match(service,/\\"status\\",expected/);
 assert.match(service,/quota\(device.id,"check_in"/);
 assert.match(service,/quota\(device.id,"check_out"/);
