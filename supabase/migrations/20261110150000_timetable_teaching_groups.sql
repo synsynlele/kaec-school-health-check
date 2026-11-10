@@ -8,8 +8,12 @@ alter table public.khpos_ops_class_periods
   add column if not exists parallel_verified_by uuid references auth.users(id),
   add column if not exists parallel_verified_at timestamptz;
 
-alter table public.khpos_ops_class_periods
-  add constraint khpos_period_teaching_group_valid check (
+do $constraint$
+begin
+  if not exists (select 1 from pg_constraint where conname='khpos_period_teaching_group_valid'
+    and conrelid='public.khpos_ops_class_periods'::regclass) then
+    alter table public.khpos_ops_class_periods
+      add constraint khpos_period_teaching_group_valid check (
     (teaching_group_kind is null and teaching_group_label is null
       and parallel_block_label is null and parallel_verified = false
       and parallel_verified_by is null and parallel_verified_at is null)
@@ -25,7 +29,10 @@ alter table public.khpos_ops_class_periods
       and (parallel_verified = false or parallel_block_label is not null)
       and (parallel_verified = (parallel_verified_by is not null))
       and (parallel_verified = (parallel_verified_at is not null)))
-  );
+    );
+  end if;
+end;
+$constraint$;
 
 -- Extend the established authenticated RPC without replacing its permission,
 -- tenancy, attendance-lock, same-teacher or audit rules. Each replacement must
@@ -34,6 +41,7 @@ do $migration$
 declare source text; updated text;
 begin
   source := pg_get_functiondef('public.khpos_ops_presence_action_server(uuid,uuid,text,jsonb)'::regprocedure);
+  if position('v_group_kind text;' in source)=0 then
   updated := replace(source,
     $old$v_school_time time;$old$,
     $new$v_school_time time;
@@ -86,8 +94,18 @@ begin
     $new$room_label=nullif(left(trim(coalesce(p_input->>'room','')),100),''),
         teaching_group_kind=v_group_kind, teaching_group_label=v_group_label,
         parallel_block_label=v_parallel_block, parallel_verified=v_parallel_verified,
-        parallel_verified_by=case when v_parallel_verified then p_actor else null end,
-        parallel_verified_at=case when v_parallel_verified then clock_timestamp() else null end
+        parallel_verified_by=case when not v_parallel_verified then null
+          when v_period.parallel_verified
+           and v_group_kind is not distinct from v_period.teaching_group_kind
+           and v_group_label is not distinct from v_period.teaching_group_label
+           and v_parallel_block is not distinct from v_period.parallel_block_label
+          then v_period.parallel_verified_by else p_actor end,
+        parallel_verified_at=case when not v_parallel_verified then null
+          when v_period.parallel_verified
+           and v_group_kind is not distinct from v_period.teaching_group_kind
+           and v_group_label is not distinct from v_period.teaching_group_label
+           and v_parallel_block is not distinct from v_period.parallel_block_label
+          then v_period.parallel_verified_at else clock_timestamp() end
         where id=v_period.id;$new$);
   if updated=source then raise exception 'Timetable edit hook changed; aborting migration'; end if;
   source:=updated;
@@ -105,8 +123,10 @@ begin
           case when v_parallel_verified then clock_timestamp() else null end)$new$);
   if updated=source then raise exception 'Timetable add hook changed; aborting migration'; end if;
   execute updated;
+  end if;
 
   source := pg_get_functiondef('public.khpos_ops_presence_workspace_server(uuid,uuid)'::regprocedure);
+  if position('''teachingGroupKind'',p.teaching_group_kind' in source)=0 then
   updated := replace(source,
     $old$'room',p.room_label,'campusId',s.campus_id$old$,
     $new$'room',p.room_label,
@@ -118,6 +138,7 @@ begin
         'campusId',s.campus_id$new$);
   if updated=source then raise exception 'Presence workspace response hook changed; aborting migration'; end if;
   execute updated;
+  end if;
 end;
 $migration$;
 
