@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, ClipboardCheck, DoorOpen, KeyRound, ShieldCheck, UserRoundPlus } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 type State={active:boolean;school?:string;campus?:string};
 type Receipt={reference:string;departureCode:string};
@@ -91,6 +92,7 @@ export function VisitorKiosk(){
     event.preventDefault();
     void submit("check_in",{name,phone,purpose,host});
   }
+  if (staffSession === null || (!state && !error)) return <LoadingScreen />;
   return <main className="min-h-svh bg-gradient-to-b from-slate-950 via-slate-900 to-blue-950 px-4 py-7 text-white sm:py-12">
     <div className="mx-auto max-w-xl space-y-6">
       <header className="text-center">
@@ -106,13 +108,11 @@ export function VisitorKiosk(){
         </p>}
       </header>
       <section className="overflow-hidden rounded-[28px] bg-white p-5 text-slate-950 shadow-2xl sm:p-8">
-        {staffSession===null&&<p role="status" className="py-8 text-center text-sm text-slate-600">Checking this device for staff access…</p>}
         {staffSession===true&&<div className="space-y-4">
           <h2 className="text-xl font-black">Staff account detected</h2>
           <p className="text-sm leading-6 text-slate-600">For visitor privacy and school security, this shared tablet must not stay signed in to a staff account. Sign out before handing it to visitors. Do not use a staff account as the kiosk.</p>
           <button disabled={busy} type="button" onClick={()=>void signOutStaff()} className="min-h-12 w-full rounded-xl bg-slate-950 px-4 font-bold text-white disabled:opacity-50">Sign out staff account on this device</button>
         </div>}
-        {staffSession===false&&!state&&!error&&<p role="status" className="py-8 text-center text-sm text-slate-600">Checking this school device…</p>}
         {staffSession===false&&state&&!state.active&&<>
           <div className="flex items-center gap-3 text-blue-800"><KeyRound className="size-6"/><h2 className="text-xl font-black">Set up this device once</h2></div>
           <p className="mt-3 text-sm leading-6 text-slate-600">Ask your School Guardian or Custodian to generate a ten-character activation code from Gate & Visitors on their own phone. Visitors will never need a staff login.</p>
