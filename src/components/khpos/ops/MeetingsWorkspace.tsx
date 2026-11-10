@@ -174,7 +174,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <div className="grid gap-4 sm:grid-cols-2"><label>Starts (your local time)<input required type="datetime-local" className={field} value={starts} onChange={e=>setStarts(e.target.value)}/></label><label>Meeting length<select className={field} value={hours} onChange={e=>setHours(Number(e.target.value))}>{[1,2,3,4,5,6].map(h=><option key={h} value={h}>{h} {h===1?"hour":"hours"}</option>)}</select></label></div>
    {starts&&<p className="text-sm">Planned end: {date(meetingEnd(starts,hours))}</p>}
    <p className="rounded-xl bg-blue-50 p-4 text-sm">Voice and video calls open inside this meeting room. You can join with your camera off for an audio meeting. Text discussions and follow-ups remain available here.</p>
-   {loadingRoster && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm font-semibold text-blue-900">Loading permitted meeting recipients…</p>}
+   {loadingRoster && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm font-semibold text-blue-900">Finding permitted meeting recipients</p>}
    <MeetingInvitees people={data?.people??[]} userId={data?.userId??""} hq={hq} selected={invitees} onChange={setInvitees} disabled={busy||loadingRoster} />
    <button disabled={busy||loadingRoster||!invitees.length} className={button}>Save meeting</button>
   </form>}

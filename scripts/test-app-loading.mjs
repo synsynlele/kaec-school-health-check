@@ -113,7 +113,7 @@ listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/h
 assert.equal(navigation.NavigationFeedback(), null, 'Short links should keep the old page immediately visible');
 tick(450);
 const indicator = renderToStaticMarkup(navigation.NavigationFeedback());
-assert.match(indicator, /Opening page/);
+assert.match(indicator, /Moving to another page/);
 assert.match(indicator, /role="status"/);
 assert(!indicator.includes('position:fixed;inset:0'), 'Client navigation is nonblocking');
 pathname = location.pathname = '/khpos/hq';
@@ -124,7 +124,7 @@ assert.equal(navigation.NavigationFeedback(), null);
 listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq?view=history') });
 assert.equal(navigation.NavigationFeedback(), null);
 tick(450);
-assert.match(renderToStaticMarkup(navigation.NavigationFeedback()), /Opening page/);
+assert.match(renderToStaticMarkup(navigation.NavigationFeedback()), /Moving to another page/);
 query = 'view=history';
 assert.equal(navigation.NavigationFeedback(), null);
 listeners.pageshow();

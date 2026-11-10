@@ -62,7 +62,7 @@ export function NavigationFeedback() {
       className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-[85] flex max-w-[min(20rem,calc(100vw-2rem))] items-center gap-2 rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-xl"
     >
       <span aria-hidden="true" className="size-4 shrink-0 animate-spin rounded-full border-2 border-slate-600 border-t-mint-300 motion-reduce:animate-none" />
-      Opening page…
+      Moving to another page
     </div>
   );
 }
