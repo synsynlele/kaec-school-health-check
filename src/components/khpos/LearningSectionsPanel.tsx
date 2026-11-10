@@ -1,6 +1,5 @@
 "use client";
 
-import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
@@ -117,7 +116,7 @@ export function LearningSectionsPanel({
           {notice}
         </p>
       )}
-      {!data && !error && <LoadingScreen inline />}
+      {!data && !error && <p role="status" className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Fetching learning sections.</p>}
       {editor !== false && data && (
         <SectionEditor
           key={editor?.id || "new"}

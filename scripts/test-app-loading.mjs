@@ -99,18 +99,19 @@ for (const path of [
   assert(content.includes('<LoadingScreen />'), path + ': keep the original full-screen branded loader');
   assert(!content.includes('<LoadingScreen inline'), path + ': no reduced-size page loader');
 }
+const miniatureLoaders = [];
 for (const directory of ['src/components/khpos', 'src/app/khpos']) {
   const audit = dir => {
     for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
       const path = dir + '/' + entry.name;
       if (entry.isDirectory()) { audit(path); continue; }
       if (!path.endsWith('.tsx')) continue;
-      assert(!fs.readFileSync(path,'utf8').includes('<LoadingScreen inline'),
-        path + ': do not reintroduce miniature KHP-OS loaders');
+      if (fs.readFileSync(path,'utf8').includes('<LoadingScreen inline')) miniatureLoaders.push(path);
     }
   };
   audit(directory);
 }
+assert.deepEqual(miniatureLoaders, [], 'KHP-OS must not render miniature loaders: ' + miniatureLoaders.join(', '));
 const noticeSource = fs.readFileSync('src/components/khpos/AnnouncementsWorkspace.tsx','utf8');
 assert(noticeSource.includes('Fetching staff notices.'),
   'The compact announcement widget must not trigger an additional page-wide loader');
