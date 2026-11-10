@@ -53,6 +53,7 @@ create table if not exists public.khpos_gate_visitor_visits (
   departed_by uuid references auth.users(id),
   declined_by uuid references auth.users(id),
   check_out_method text check (check_out_method is null or check_out_method in ('visitor_kiosk','staff')),
+  exit_kiosk_device_id uuid references public.khpos_gate_devices(id),
   constraint khpos_gate_visit_flow check (
     (status='awaiting_admission' and admitted_at is null and departed_at is null and declined_at is null)
     or (status='on_campus' and admitted_at is not null and departed_at is null and declined_at is null)
@@ -98,6 +99,47 @@ revoke all on public.khpos_gate_pairing_codes, public.khpos_gate_devices,
 grant select, insert, update, delete on public.khpos_gate_pairing_codes,
   public.khpos_gate_devices, public.khpos_gate_visitor_visits,
   public.khpos_gate_visit_events, public.khpos_gate_kiosk_rate_events to service_role;
-grant usage, select on all sequences in schema public to service_role;
+grant usage, select on sequence public.khpos_gate_kiosk_rate_events_id_seq to service_role;
 comment on table public.khpos_gate_visitor_visits is
   'KHP-OS gate visitors: visitor self-submission is NOT proof of admission. Admission must be confirmed by a campus-authorised member of staff.';
+
+-- Atomic, server-owned event history: updates and audit insertions succeed or fail together.
+-- This removes any possibility of a changed visitor status without its audit event.
+create or replace function khpos_private.audit_gate_visitor_status()
+returns trigger language plpgsql security invoker set search_path = pg_catalog
+as $$
+declare
+  v_action text;
+  v_actor uuid;
+  v_device uuid;
+begin
+  if tg_op='INSERT' then
+    v_action:='submitted';
+    v_actor:=null;
+    v_device:=new.device_id;
+  elsif old.status is distinct from new.status then
+    v_action:=case new.status
+      when 'on_campus' then 'admitted'
+      when 'departed' then 'departed'
+      when 'declined' then 'declined'
+      else null end;
+    v_actor:=case new.status
+      when 'on_campus' then new.admitted_by
+      when 'departed' then new.departed_by
+      when 'declined' then new.declined_by
+      else null end;
+    v_device:=case when new.status='departed' and new.check_out_method='visitor_kiosk'
+      then new.exit_kiosk_device_id else new.device_id end;
+  end if;
+  if v_action is not null then
+    insert into public.khpos_gate_visit_events
+      (organisation_id,campus_id,visit_id,event_type,actor_user_id,device_id)
+    values (new.organisation_id,new.campus_id,new.id,v_action,v_actor,v_device);
+  end if;
+  return new;
+end $$;
+revoke all on function khpos_private.audit_gate_visitor_status() from public, anon, authenticated;
+drop trigger if exists khpos_gate_visitor_status_audit on public.khpos_gate_visitor_visits;
+create trigger khpos_gate_visitor_status_audit
+after insert or update of status on public.khpos_gate_visitor_visits
+for each row execute function khpos_private.audit_gate_visitor_status();
