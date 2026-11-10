@@ -81,7 +81,7 @@ export function GateVisitorsWorkspace({organisationId}:{organisationId:string}){
     <section className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <Link href={`/khpos/${organisationId}/teaching-presence`} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-emerald-200">
-          <ArrowLeft className="size-4"/> Attendance & lessons
+          <ArrowLeft className="size-4"/> School attendance
         </Link>
         <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
           <div>

@@ -432,6 +432,13 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                   className="w-full rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-in</button>
               </>}
             </div>}
+            <div className="mt-5 border-t border-slate-200 pt-4">
+              <h3 className="font-black text-slate-900">Visitors sign-in and sign-out</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Visitors check themselves in on the school tablet. An authorised staff member confirms entry, records departures and reviews the visitor register.</p>
+              <Link href={`/khpos/${organisationId}/visitors`} className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100">
+                Open Gate & Visitors
+              </Link>
+            </div>
           </section>
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Today&apos;s classes</h2>
