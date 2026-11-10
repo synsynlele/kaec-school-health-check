@@ -359,3 +359,8 @@ body {
     display: none;
   }
 }
+
+/* KHP-OS has route-level branded placeholders. Avoid hiding an already-rendered
+   school or HQ page under the additional hydration-wide boot cover. Other
+   KAEC applications retain their existing startup behaviour unchanged. */
+body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }

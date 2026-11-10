@@ -79,7 +79,10 @@ console.log('App-wide loading audit passed: no separate page spinners or legacy 
 
 // Short client navigations must never paint an extra full-screen loader.
 const root = fs.readFileSync('src/app/layout.tsx', 'utf8');
-assert(!root.includes('<AppBootScreen />'), 'Hydration must not hide already-rendered content behind a second boot overlay');
+assert(root.includes('<AppBootScreen />'), 'Other KAEC applications must retain their existing boot cover');
+assert.match(fs.readFileSync('src/app/globals.css', 'utf8'),
+  /body:has\(\.khpos-platform-ui\) \[data-app-boot\]/,
+  'KHP-OS route pages must not inherit a second hydration-wide boot cover');
 assert.match(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8'), /loading/, 'The branded route fallback remains available');
 let destination = '', pathname = '/khpos', query = '';
 const listeners = {};

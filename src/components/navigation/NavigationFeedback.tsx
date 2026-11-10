@@ -54,7 +54,7 @@ export function NavigationFeedback() {
     };
   }, []);
 
-  if (!destination || destination === current) return null;
+  if (!pathname.startsWith("/khpos") || !destination || destination === current) return null;
   return (
     <div
       role="status"
