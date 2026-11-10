@@ -75,7 +75,17 @@ assert.match(desk,/Admit visitor/);
 assert.match(desk,/Record departure/);
 assert.match(desk,/Revoke device/);
 assert.match(nav,/suffix: "\/visitors"/);
-assert.match(nav,/operation\("\/visitors"\)/);
+// Visitors must be alongside school staff sign-in, NOT in Teaching & learning
+// and NOT as an extra primary-menu entrance.
+assert.match(nav, /title: "School attendance & visitors"[^\\n]*routes: \\[ "\/teaching-presence"/);
+assert(nav.includes('routes: ["/teaching-presence", "/visitors"]'),
+  "Visitor register must share the school attendance area.");
+assert(!/title: "Teaching & learning"[^\\n]*"\/visitors"/.test(nav),
+  "Visitor register must never be placed in Teaching & learning.");
+const presence=read("src/components/khpos/ops/TeacherPresenceWorkspace.tsx");
+assert(presence.includes('Visitors sign-in and sign-out') &&
+  presence.includes('${organisationId}/visitors'),
+  "Gate & Visitors must be accessible beside staff school sign-in/out.");
 
 // Temporary outing reuses Leave & Cover approval, never creates a second
 // staff availability authority or a fake end-of-day attendance check-out.
