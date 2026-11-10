@@ -1,0 +1,174 @@
+-- KHP-OS visitor self-check-in (campus-scoped, designated kiosk device).
+-- Visitor devices have no authenticated school session and cannot read visitor records.
+-- All database access is server-side with explicit school/campus authorization.
+create extension if not exists pgcrypto;
+
+create table if not exists public.khpos_gate_pairing_codes (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references public.organisations(id) on delete cascade,
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete cascade,
+  code_hash text not null unique,
+  device_label text not null check (char_length(device_label) between 2 and 80),
+  created_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  redeemed_at timestamptz,
+  constraint khpos_gate_pairing_short_lived check (expires_at > created_at and expires_at <= created_at + interval '15 minutes')
+);
+create index if not exists khpos_gate_pairing_campus on public.khpos_gate_pairing_codes(organisation_id,campus_id,expires_at desc);
+
+create table if not exists public.khpos_gate_devices (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references public.organisations(id) on delete cascade,
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete cascade,
+  device_label text not null check (char_length(device_label) between 2 and 80),
+  token_hash text not null unique,
+  paired_by uuid not null references auth.users(id),
+  paired_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  last_seen_at timestamptz,
+  constraint khpos_gate_device_lifetime check (expires_at > paired_at and expires_at <= paired_at + interval '31 days')
+);
+create index if not exists khpos_gate_device_campus on public.khpos_gate_devices(organisation_id,campus_id,revoked_at);
+
+create table if not exists public.khpos_gate_visitor_visits (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references public.organisations(id) on delete cascade,
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete cascade,
+  device_id uuid references public.khpos_gate_devices(id) on delete set null,
+  reference text not null unique,
+  visitor_name text not null check (char_length(visitor_name) between 3 and 100),
+  phone text check (phone is null or char_length(phone) between 7 and 20),
+  purpose text not null check (purpose in ('parent_guardian','appointment','delivery','contractor','official','other')),
+  host_name text not null check (char_length(host_name) between 2 and 90),
+  status text not null default 'awaiting_admission'
+    check (status in ('awaiting_admission','on_campus','departed','declined')),
+  exit_code_hash text not null unique,
+  submitted_at timestamptz not null default now(),
+  admitted_at timestamptz,
+  departed_at timestamptz,
+  declined_at timestamptz,
+  admitted_by uuid references auth.users(id),
+  departed_by uuid references auth.users(id),
+  declined_by uuid references auth.users(id),
+  check_out_method text check (check_out_method is null or check_out_method in ('visitor_kiosk','staff')),
+  exit_kiosk_device_id uuid references public.khpos_gate_devices(id),
+  constraint khpos_gate_visit_flow check (
+    (status='awaiting_admission' and admitted_at is null and departed_at is null and declined_at is null)
+    or (status='on_campus' and admitted_at is not null and departed_at is null and declined_at is null)
+    or (status='departed' and admitted_at is not null and departed_at is not null and declined_at is null)
+    or (status='declined' and declined_at is not null and admitted_at is null and departed_at is null)
+  )
+);
+create index if not exists khpos_gate_visits_campus_recent
+  on public.khpos_gate_visitor_visits(organisation_id,campus_id,submitted_at desc);
+create index if not exists khpos_gate_visits_open
+  on public.khpos_gate_visitor_visits(organisation_id,campus_id,status)
+  where status in ('awaiting_admission','on_campus');
+
+create table if not exists public.khpos_gate_visit_events (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references public.organisations(id) on delete cascade,
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete cascade,
+  visit_id uuid not null references public.khpos_gate_visitor_visits(id) on delete cascade,
+  event_type text not null check (event_type in ('submitted','admitted','departed','declined')),
+  actor_user_id uuid references auth.users(id),
+  device_id uuid references public.khpos_gate_devices(id),
+  created_at timestamptz not null default now()
+);
+create index if not exists khpos_gate_visit_events_by_visit on public.khpos_gate_visit_events(visit_id,created_at);
+
+create table if not exists public.khpos_gate_kiosk_rate_events (
+  id bigint generated by default as identity primary key,
+  device_id uuid not null references public.khpos_gate_devices(id) on delete cascade,
+  event_type text not null check (event_type in ('check_in','check_out')),
+  created_at timestamptz not null default now()
+);
+create index if not exists khpos_gate_kiosk_rate_recent on public.khpos_gate_kiosk_rate_events(device_id,event_type,created_at desc);
+
+alter table public.khpos_gate_pairing_codes enable row level security;
+alter table public.khpos_gate_devices enable row level security;
+alter table public.khpos_gate_visitor_visits enable row level security;
+alter table public.khpos_gate_visit_events enable row level security;
+alter table public.khpos_gate_kiosk_rate_events enable row level security;
+
+revoke all on public.khpos_gate_pairing_codes, public.khpos_gate_devices,
+  public.khpos_gate_visitor_visits, public.khpos_gate_visit_events,
+  public.khpos_gate_kiosk_rate_events from public, anon, authenticated;
+grant select, insert, update, delete on public.khpos_gate_pairing_codes,
+  public.khpos_gate_devices, public.khpos_gate_visitor_visits,
+  public.khpos_gate_visit_events, public.khpos_gate_kiosk_rate_events to service_role;
+grant usage, select on sequence public.khpos_gate_kiosk_rate_events_id_seq to service_role;
+comment on table public.khpos_gate_visitor_visits is
+  'KHP-OS gate visitors: visitor self-submission is NOT proof of admission. Admission must be confirmed by a campus-authorised member of staff.';
+
+-- Atomic, server-owned event history: updates and audit insertions succeed or fail together.
+-- This removes any possibility of a changed visitor status without its audit event.
+create or replace function khpos_private.audit_gate_visitor_status()
+returns trigger language plpgsql security invoker set search_path = pg_catalog
+as $$
+declare
+  v_action text;
+  v_actor uuid;
+  v_device uuid;
+begin
+  if tg_op='INSERT' then
+    v_action:='submitted';
+    v_actor:=null;
+    v_device:=new.device_id;
+  elsif old.status is distinct from new.status then
+    v_action:=case new.status
+      when 'on_campus' then 'admitted'
+      when 'departed' then 'departed'
+      when 'declined' then 'declined'
+      else null end;
+    v_actor:=case new.status
+      when 'on_campus' then new.admitted_by
+      when 'departed' then new.departed_by
+      when 'declined' then new.declined_by
+      else null end;
+    v_device:=case when new.status='departed' and new.check_out_method='visitor_kiosk'
+      then new.exit_kiosk_device_id else new.device_id end;
+  end if;
+  if v_action is not null then
+    insert into public.khpos_gate_visit_events
+      (organisation_id,campus_id,visit_id,event_type,actor_user_id,device_id)
+    values (new.organisation_id,new.campus_id,new.id,v_action,v_actor,v_device);
+  end if;
+  return new;
+end $$;
+revoke all on function khpos_private.audit_gate_visitor_status() from public, anon, authenticated;
+drop trigger if exists khpos_gate_visitor_status_audit on public.khpos_gate_visitor_visits;
+create trigger khpos_gate_visitor_status_audit
+after insert or update of status on public.khpos_gate_visitor_visits
+for each row execute function khpos_private.audit_gate_visitor_status();
+
+-- Atomic, per-device rate limits. The service role is the sole authorised caller.
+create or replace function public.khpos_gate_consume_rate_limit(
+  p_device_id uuid, p_event_type text, p_limit integer
+) returns boolean language plpgsql security invoker set search_path = '' as $$
+declare v_count bigint;
+begin
+  if p_event_type not in ('check_in','check_out') or p_limit not between 1 and 100 then
+    raise exception 'Invalid gate rate limit.';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_device_id::text || ':' || p_event_type, 0)
+  );
+  delete from public.khpos_gate_kiosk_rate_events
+    where device_id = p_device_id
+      and created_at < pg_catalog.now() - interval '7 days';
+  select count(*) into v_count
+    from public.khpos_gate_kiosk_rate_events
+    where device_id=p_device_id and event_type=p_event_type
+      and created_at>=pg_catalog.now()-interval '2 minutes';
+  if v_count >= p_limit then return false; end if;
+  insert into public.khpos_gate_kiosk_rate_events(device_id,event_type)
+    values (p_device_id,p_event_type);
+  return true;
+end $$;
+revoke all on function public.khpos_gate_consume_rate_limit(uuid,text,integer)
+  from public, anon, authenticated;
+grant execute on function public.khpos_gate_consume_rate_limit(uuid,text,integer)
+  to service_role;

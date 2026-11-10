@@ -93,7 +93,7 @@ export function AvailabilityWorkspace({
 
   const [staffId, setStaffId] = useState("");
   const [caseType, setCaseType] =
-    useState<KhposOpsAvailabilityCaseType>("planned_leave");
+    useState<KhposOpsAvailabilityCaseType | "temporary_outing">("planned_leave");
   const [sourceType, setSourceType] =
     useState<KhposOpsAvailabilitySource>("self_report");
   const [startAt, setStartAt] = useState("");
@@ -251,7 +251,16 @@ export function AvailabilityWorkspace({
       return;
     }
 
-    if (caseType === "planned_leave" && (!plannedCover || (plannedCover === "yes" && !handover.trim()))) {
+    const isPlanned = caseType === "planned_leave" || caseType === "temporary_outing";
+    if (caseType === "temporary_outing") {
+      const sameDay = startAt.slice(0,10) === endAt.slice(0,10);
+      const duration = new Date(endAt).getTime() - new Date(startAt).getTime();
+      if (!sameDay || duration > 8 * 60 * 60_000 || reasonCategory === "not_disclosed") {
+        setError("A temporary outing needs a reason, a return on the same day and a duration of no more than eight hours.");
+        return;
+      }
+    }
+    if (isPlanned && (!plannedCover || (plannedCover === "yes" && !handover.trim()))) {
       setError("Say whether any duties need cover and list those duties if they do.");
       return;
     }
@@ -262,18 +271,17 @@ export function AvailabilityWorkspace({
       {
         mode: "create_case",
         staffId,
-        caseType,
+        caseType: caseType === "temporary_outing" ? "planned_leave" : caseType,
         sourceType: actualSource,
         startAt: toIso(startAt),
         endAt: toIso(endAt),
         reasonCategory,
         reasonNote: reasonNote.trim() || null,
-        sourceReference:
-          actualSource === "third_party_exception"
-            ? sourceReference.trim() || null
-            : null,
-        coverageRequired: caseType === "planned_leave" ? plannedCover === "yes" : coverageRequired,
-        ...(caseType === "planned_leave" && plannedCover === "yes" ? { handover, suggestedCover } : {}),
+        sourceReference: caseType === "temporary_outing"
+          ? "KHPOS_TEMPORARY_OUTING"
+          : actualSource === "third_party_exception" ? sourceReference.trim() || null : null,
+        coverageRequired: isPlanned ? plannedCover === "yes" : coverageRequired,
+        ...(isPlanned && plannedCover === "yes" ? { handover, suggestedCover } : {}),
       },
       "create",
     );
@@ -457,8 +465,8 @@ export function AvailabilityWorkspace({
                 Leave & cover
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-                Request planned leave or report an absence here. Leaders can approve leave,
-                arrange cover and confirm when staff return.
+                Request leave, report an absence or plan a temporary outing. Leaders approve leave,
+                arrange cover and confirm when staff return. School arrival records remain separate.
               </p>
             </div>
 
@@ -582,10 +590,11 @@ export function AvailabilityWorkspace({
                         "unplanned_absence",
                         "late_arrival",
                         "early_departure",
+                        "temporary_outing",
                         "other_availability",
                       ].map((value) => (
                         <option key={value} value={value}>
-                          {readable(value)}
+                          {value === "temporary_outing" ? "Temporary outing — return today" : readable(value)}
                         </option>
                       ))}
                     </select>
@@ -684,7 +693,7 @@ export function AvailabilityWorkspace({
                   </label>
                 </div>
 
-                {caseType === "planned_leave" ? (
+                {(caseType === "planned_leave" || caseType === "temporary_outing") ? (
                   <fieldset className="mt-4 grid gap-3 rounded-2xl border border-slate-200 p-4">
                     <legend className="px-1 font-bold">Cover while you are away</legend>
                     <label className="grid gap-1 text-sm font-bold">Will any classes or duties need cover?
@@ -737,7 +746,7 @@ export function AvailabilityWorkspace({
                     {busyId === "create" && (
                       <Loader2 className="size-4 animate-spin" />
                     )}
-                    Save leave or absence record
+                    Save leave, absence or outing
                   </button>
                   <button
                     type="button"
@@ -760,7 +769,7 @@ export function AvailabilityWorkspace({
                 </h2>
                 <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                   Use the school attendance page for daily sign-in and sign-out.
-                  Use this page when leave, absence or cover needs attention.
+                  Use this page for leave, absence, temporary outings or cover.
                 </p>
               </section>
             ) : (
@@ -794,7 +803,7 @@ export function AvailabilityWorkspace({
                               {readable(availabilityCase.status)}
                             </span>
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold capitalize text-slate-600">
-                              {readable(availabilityCase.caseType)}
+                              {availabilityCase.sourceReference === "KHPOS_TEMPORARY_OUTING" ? "Temporary outing" : readable(availabilityCase.caseType)}
                             </span>
                           </div>
 

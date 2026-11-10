@@ -119,6 +119,7 @@ const operationsLinks = [
   { suffix: "/staff-transition", label: "Staff changes & leaving", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Teaching plans", icon: GraduationCap },
   { suffix: "/teaching-presence", label: "Attendance & lessons", icon: BookOpen },
+  { suffix: "/visitors", label: "Gate & visitors", icon: ShieldCheck },
   { suffix: "/academic-assurance", label: "Assessments & exams", icon: ShieldCheck },
   { suffix: "/learner-progress", label: "Learner support", icon: UserRoundSearch },
   { suffix: "/potential-development", label: "Learner development", icon: Sparkles },
@@ -181,7 +182,8 @@ const schoolAreas = [
   { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings", "/ideas"] },
   { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
   { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
-  { title: "Teaching & learning", help: "Check attendance, plan lessons, manage assessments and support learners.", routes: ["/teaching-presence", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
+  { title: "School attendance & visitors", help: "Staff school sign-in/out, visitor arrival and departure, gate records and attendance oversight.", routes: ["/teaching-presence", "/visitors"] },
+  { title: "Teaching & planning", help: "Use the school calendar, organise lessons, manage assessments and support learners.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready"] },
   { title: "Parents", help: "Follow up with current families and track new enquiries through admission.", routes: ["/parents", "/parent-journeys"] },
   { title: "School improvement", help: "Choose priorities, carry out the plan, add proof and review what changed.", routes: ["/priorities", "/implementation", "/evidence", "/reviews", "/improvement", "/playbooks"] },
@@ -191,17 +193,17 @@ const schoolAreas = [
 ] as const;
 const navigationGroups = [
   { title: "Everyday work", icon: ListTodo, links: [operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "Staff & teaching", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
+  { title: "Staff & school day", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
   { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
   { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
   { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"Teaching & learning","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School attendance & visitors","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }

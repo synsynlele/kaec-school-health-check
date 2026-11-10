@@ -23,7 +23,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
-assert.equal(n.workspaceLinks.length,55);
+assert.equal(n.workspaceLinks.length,56);
 const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,22);assert.equal(new Set(primary.map(x=>x.suffix)).size,22);
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));
@@ -35,7 +35,7 @@ assert.equal(all.find(x=>x.type==='select').props.value,'/team', 'Current staff 
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
 currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
-console.log('Simpler experience passed: 55 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
+console.log('Simpler experience passed: 56 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];
 function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
