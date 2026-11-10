@@ -12,7 +12,7 @@ export interface ScheduleCollision {
   first: string; second: string; day: number; detail: string;
 }
 function minutes(time: string): number {
-  const match = time.match(/^(\\d{1,2}):(\\d{2})$/);
+  const match = time.match(/^(\d{1,2}):(\d{2})$/);
   return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
 }
 function same(a: string | null | undefined, b: string | null | undefined): boolean {
