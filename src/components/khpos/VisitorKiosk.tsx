@@ -31,7 +31,10 @@ export function VisitorKiosk(){
   useEffect(()=>{
     let alive=true;
     const client=createBrowserSupabaseClient();
-    if(!client){setStaffSession(false);return;}
+    if(!client){
+      void Promise.resolve().then(()=>{if(alive)setStaffSession(false);});
+      return()=>{alive=false;};
+    }
     void client.auth.getSession().then(({data})=>{
       if(alive)setStaffSession(Boolean(data.session));
     }).catch(()=>{if(alive)setStaffSession(true);});
