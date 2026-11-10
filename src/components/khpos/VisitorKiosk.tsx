@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, ClipboardCheck, DoorOpen, KeyRound, ShieldCheck, UserRoundPlus } from "lucide-react";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type State={active:boolean;school?:string;campus?:string};
 type Receipt={reference:string;departureCode:string};
@@ -15,6 +16,7 @@ const field="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px
 export function VisitorKiosk(){
   const [state,setState]=useState<State|null>(null);
   const [error,setError]=useState("");
+  const [staffSession,setStaffSession]=useState<boolean|null>(null);
   const [busy,setBusy]=useState(false);
   const [mode,setMode]=useState<"in"|"out">("in");
   const [pin,setPin]=useState("");
@@ -25,6 +27,27 @@ export function VisitorKiosk(){
   const [exitCode,setExitCode]=useState("");
   const [receipt,setReceipt]=useState<Receipt|null>(null);
   const [departed,setDeparted]=useState(false);
+  useEffect(()=>{
+    let alive=true;
+    const client=createBrowserSupabaseClient();
+    if(!client){setStaffSession(false);return;}
+    void client.auth.getSession().then(({data})=>{
+      if(alive)setStaffSession(Boolean(data.session));
+    }).catch(()=>{if(alive)setStaffSession(true);});
+    return()=>{alive=false;};
+  },[]);
+  async function signOutStaff(){
+    const client=createBrowserSupabaseClient();
+    if(!client)return;
+    setBusy(true);
+    try{
+      const {error:authError}=await client.auth.signOut();
+      if(authError)throw authError;
+      setStaffSession(false);
+      setError("");
+    }catch{setError("Could not sign out the staff account. Please contact your school.");}
+    finally{setBusy(false);}
+  }
   useEffect(()=>{
     let alive=true;
     void fetch("/api/khpos/visitor-kiosk",{cache:"no-store",credentials:"same-origin"})
@@ -83,8 +106,14 @@ export function VisitorKiosk(){
         </p>}
       </header>
       <section className="overflow-hidden rounded-[28px] bg-white p-5 text-slate-950 shadow-2xl sm:p-8">
-        {!state&&!error&&<p role="status" className="py-8 text-center text-sm text-slate-600">Checking this school device…</p>}
-        {state&&!state.active&&<>
+        {staffSession===null&&<p role="status" className="py-8 text-center text-sm text-slate-600">Checking this device for staff access…</p>}
+        {staffSession===true&&<div className="space-y-4">
+          <h2 className="text-xl font-black">Staff account detected</h2>
+          <p className="text-sm leading-6 text-slate-600">For visitor privacy and school security, this shared tablet must not stay signed in to a staff account. Sign out before handing it to visitors. Do not use a staff account as the kiosk.</p>
+          <button disabled={busy} type="button" onClick={()=>void signOutStaff()} className="min-h-12 w-full rounded-xl bg-slate-950 px-4 font-bold text-white disabled:opacity-50">Sign out staff account on this device</button>
+        </div>}
+        {staffSession===false&&!state&&!error&&<p role="status" className="py-8 text-center text-sm text-slate-600">Checking this school device…</p>}
+        {staffSession===false&&state&&!state.active&&<>
           <div className="flex items-center gap-3 text-blue-800"><KeyRound className="size-6"/><h2 className="text-xl font-black">Set up this device once</h2></div>
           <p className="mt-3 text-sm leading-6 text-slate-600">Ask your School Guardian or Custodian to generate a ten-character activation code from Gate & Visitors on their own phone. Visitors will never need a staff login.</p>
           <form className="mt-5 space-y-4" onSubmit={e=>{e.preventDefault();void submit("activate",{code:pin});}}>
@@ -98,7 +127,7 @@ export function VisitorKiosk(){
             </button>
           </form>
         </>}
-        {state?.active&&(receipt||departed)?<div className="space-y-5 py-3 text-center">
+        {staffSession===false&&state?.active&&(receipt||departed)?<div className="space-y-5 py-3 text-center">
           <CheckCircle2 className="mx-auto size-14 text-emerald-600" aria-hidden="true"/>
           <h2 className="text-2xl font-black">{departed?"Thank you for visiting!":"Check-in submitted"}</h2>
           {receipt&&<>
@@ -114,7 +143,7 @@ export function VisitorKiosk(){
           {departed&&<p className="text-sm text-slate-600">Your departure was recorded. Have a pleasant day.</p>}
           <button type="button" onClick={reset} className="min-h-12 w-full rounded-xl bg-slate-950 px-5 font-black text-white">Done · Next visitor</button>
           <p className="text-xs text-slate-500">For privacy, this screen clears automatically.</p>
-        </div>:state?.active&&<>
+        </div>:staffSession===false&&state?.active&&<>
           <div role="tablist" aria-label="Visit action" className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
             <button type="button" role="tab" aria-selected={mode==="in"} onClick={()=>{setMode("in");setError("");}}
               className={`min-h-12 rounded-xl px-2 text-sm font-bold ${mode==="in"?"bg-white text-blue-800 shadow-sm":"text-slate-600"}`}>
