@@ -48,7 +48,7 @@ const workspace = read("src/components/khpos/ops/AvailabilityWorkspace.tsx");
 for (const expected of [
   "School operations",
   "Leave & cover",
-  "Request planned leave or report an absence here.",
+  "Request leave, report an absence or plan a temporary outing.",
   "How this works",
   "Duties without cover",
   "private reason is hidden",
