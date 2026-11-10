@@ -31,8 +31,12 @@ async function handle(request: Request, context: { params: Promise<{id: string}>
       if (!result.success) return NextResponse.json({error:result.error.issues[0]?.message || "Check the meeting details."},{status:400});
       mode = result.data.mode; input = result.data;
     } else {
-      const meetingId = new URL(request.url).searchParams.get("meeting");
+      const params = new URL(request.url).searchParams;
+      const meetingId = params.get("meeting");
       if (meetingId) { if (!UUID_RE.test(meetingId)) return NextResponse.json({error:"Invalid meeting."},{status:400}); input = {meetingId}; }
+      // Most visits only read the meeting list or current room. The costly
+      // invitee directory is loaded on demand by the schedule form.
+      if (params.get("roster") !== "1") input.omitRoster = true;
     }
     return NextResponse.json({ok:true, workspace:await meetingOperation(user.id,id,mode,input)}, {headers:{"Cache-Control":"private, no-store"}});
   } catch(error) {

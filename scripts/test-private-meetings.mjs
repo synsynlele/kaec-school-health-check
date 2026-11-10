@@ -206,5 +206,16 @@ try {
  const permissions=await q("select has_function_privilege('anon','public.khpos_meetings_server(uuid,uuid,text,jsonb)','execute') anonymous,has_function_privilege('authenticated','public.khpos_meetings_server(uuid,uuid,text,jsonb)','execute') client,has_table_privilege('authenticated','public.khpos_meetings','delete') direct_delete");
  assert.equal(permissions[0].anonymous,false);assert.equal(permissions[0].client,false);assert.equal(permissions[0].direct_delete,false);
  console.log('History deletion passed: host-only authority, revocation, confirmation, scope isolation, active-room denial, cancelled/expired history, cascading room removal, preserved Today/HQ work and durable audits.');
- console.log('Private meetings: invitations, school isolation, HQ invitation, host authority, revocation, text, decisions, atomic Today actions, retry deduplication, read-only closure database grants, multi-hour plans, sequential shared handoff, retry-safe timers and closed-room protection passed.');
+ 
+// Fast-meeting entry: list requests must skip the expensive invitee directory
+// while the "Schedule a meeting" action fetches recipients on demand.
+const meetingsApiSource = fs.readFileSync('src/app/api/khpos/ops/meetings/[id]/route.ts', 'utf8');
+const meetingsUiSource = fs.readFileSync('src/components/khpos/ops/MeetingsWorkspace.tsx', 'utf8');
+assert.match(meetingsApiSource, /input\.omitRoster = true/, 'Meeting list requests should not fetch the entire recipient directory');
+assert.match(meetingsApiSource, /params\.get\("roster"\) !== "1"/, 'Authorised meeting creator must still load recipients on demand');
+assert.match(meetingsUiSource, /\?roster=1/, 'Meeting creation must request the full authorised invitee directory');
+assert.match(meetingsUiSource, /loadingRoster\|\|!invitees\.length/, 'Do not submit a meeting while invitees are still loading');
+assert(!meetingsUiSource.includes('setData(null); } }'), 'Transient meeting refresh must not blank an already visible list');
+
+console.log('Private meetings: invitations, school isolation, HQ invitation, host authority, revocation, text, decisions, atomic Today actions, retry deduplication, read-only closure database grants, multi-hour plans, sequential shared handoff, retry-safe timers and closed-room protection passed.');
 }finally{await db.close();}
