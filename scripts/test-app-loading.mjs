@@ -29,11 +29,12 @@ assert(!sectionHtml.includes('position:fixed'), 'A section refresh must not bloc
 assert.match(sectionHtml, /KHP-OS/);
 assert.match(sectionHtml, /role="status"/);
 
-let state = true, effect, nextFrame = 0;
+let state = true, effect, nextFrame = 0, bootPath = "/";
 const frames = new Map();
 const boot = load('src/components/navigation/AppBootScreen.tsx', name => {
   if (name === 'react/jsx-runtime') return jsx;
   if (name === './LoadingScreen') return screen;
+  if (name === 'next/navigation') return {usePathname: () => bootPath};
   if (name === 'react') return { useState: () => [state, value => { state = value; }], useEffect: fn => { effect = fn; } };
   throw new Error(name);
 }, {
@@ -51,6 +52,10 @@ assert.equal(state, false);
 assert.equal(boot.AppBootScreen(), null, 'The boot screen must release the usable page');
 cleanup();
 assert(!frames.has(2), 'Pending animation frames are cleaned up on unmount');
+state = true;
+bootPath = "/khpos/12345678-1234-4123-8123-123456789abc";
+assert.equal(boot.AppBootScreen(), null, 'KHP-OS must not mount a second boot loader');
+bootPath = "/"; state = false;
 const manifest = load('src/app/manifest.ts', () => ({})).default();
 assert.equal(manifest.background_color, '#0f172a');
 assert.equal(JSON.parse(fs.readFileSync('android-lite/twa-manifest.production.json')).backgroundColor, manifest.background_color);
