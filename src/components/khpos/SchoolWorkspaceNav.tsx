@@ -192,7 +192,7 @@ const schoolAreas = [
 ] as const;
 const navigationGroups = [
   { title: "Everyday work", icon: ListTodo, links: [operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "Staff & teaching", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence"), operation("/visitors")] },
+  { title: "Staff & teaching", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
   { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
   { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
   { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
