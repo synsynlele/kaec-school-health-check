@@ -354,7 +354,8 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       (p.session || !data || !calendarPauses(data,p.campusId,data.localDay,true)))
     .sort((a,b)=>a.start.localeCompare(b.start));
   const observed=(data?.observations??[]);
-  const scheduleConflicts=canManage?findScheduleCollisions(data?.periods??[]):[];
+  const canSchedule=canManage || sectionalScheduleIds.size>0;
+  const scheduleConflicts=canSchedule?findScheduleCollisions(data?.periods??[]):[];
   const confirmedClashes=scheduleConflicts.filter(c=>c.severity==="conflict");
   const overlapsToReview=scheduleConflicts.filter(c=>c.severity==="review");
   const own=(data?.periods??[])
@@ -446,7 +447,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
 
         {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
-          {canManage&&scheduleConflicts.length>0&&<section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Timetable conflict and group review">
+          {canSchedule&&scheduleConflicts.length>0&&<section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Timetable conflict and group review">
             <h2 className="text-lg font-black text-amber-950">Timetable checks</h2>
             <p className="text-sm text-amber-900">
               <strong>{confirmedClashes.length} confirmed conflict{confirmedClashes.length===1?"":"s"}</strong> ·
@@ -494,7 +495,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
                 <div><label className="text-xs font-bold">Room (optional)</label><input className={field} maxLength={100} value={room} onChange={e=>setRoom(e.target.value)}/></div>
                 <div><label className="text-xs font-bold">Start</label><input type="time" className={field} value={start} onChange={e=>setStart(e.target.value)}/></div>
                 <div><label className="text-xs font-bold">End</label><input type="time" className={field} value={end} onChange={e=>setEnd(e.target.value)}/></div>
-                <TeachingGroupFields isNew />
+                <TeachingGroupFields key={scheduleStream+weekday+start+end} isNew />
               </div>
               <button type="submit" disabled={!scheduleStream||Boolean(busy)} className="mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Save lesson</button>
             </form>

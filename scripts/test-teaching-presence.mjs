@@ -146,7 +146,7 @@ try {
  const groupFields=(name)=>({teachingGroupKind:"department",teachingGroupLabel:name,
    parallelBlockLabel:"SS2 Monday third period",parallelVerified:true});
  await fail("select public.khpos_ops_presence_action_server($1,$2,'period_add',$3)",
-   [teacher,org,{streamId:biology,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")}],/academic leader/i);
+   [teacher,org,{streamId:biology,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")}],/authorised Guardian|Academic Inspector|academic leader/i);
  await act(guardian,"period_add",{streamId:biology,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")});
  await act(guardian,"period_add",{streamId:government,weekday:parallelDay,start:"11:15",end:"12:45",room:"Arts Room",...groupFields("Arts")});
  const parallel=(await read(guardian)).periods.filter(p=>p.class==="SS2");
@@ -189,7 +189,7 @@ try {
    /common parallel block/i);
  await fail("select public.khpos_ops_presence_action_server($1,$2,'period_edit',$3)",
    [teacher,org,{periodId:parallel[0].id,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")}],
-   /academic leader/i);
+   /authorised Guardian|Academic Inspector|academic leader/i);
  // Existing timetable editing still works if an older client omits grouping.
  await act(guardian,"period_edit",{periodId:parallel[0].id,weekday:parallelDay,start:"11:15",end:"12:45",room:"Lab 2"});
  assert.equal((await read(guardian)).periods.find(p=>p.id===parallel[0].id).teachingGroupLabel,"Science");
