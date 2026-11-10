@@ -166,7 +166,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
   {data?.canCreate&&<button className={button} onClick={()=>void prepareCreate()}>{showCreate?"Close form":"Schedule a meeting"}</button>}</header>
   {visibleError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{visibleError}</p>}
-  {!data&&!visibleError&&<LoadingScreen inline />}
+  {!data&&!visibleError&&<LoadingScreen />}
   {showCreate&&<form className="space-y-4 rounded-2xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void save({mode:"create",title,agenda,startsAt:new Date(starts).toISOString(),endsAt:meetingEnd(starts,hours),callUrl:"",callParts:[],participants:invitees},()=>{setShowCreate(false);setTitle("");setAgenda("");setInvitees([]);setHours(1);});}}>
    <h2 className="text-xl font-semibold">Plan a private meeting</h2>
    <label className="block">Meeting title<input required maxLength={160} className={field} value={title} onChange={e=>setTitle(e.target.value)}/></label>

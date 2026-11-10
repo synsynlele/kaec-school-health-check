@@ -77,59 +77,44 @@ auditLoaders('src');
 assert.deepEqual(legacy, [], 'Page and section loading states must use the shared branded design');
 console.log('App-wide loading audit passed: no separate page spinners or legacy loading screens.');
 
-// Short client navigations must never paint an extra full-screen loader.
+// KHP-OS uses only the preferred branded full-screen loader.
+// Root boot remains for the other KAEC applications, but is suppressed on KHP-OS.
 const root = fs.readFileSync('src/app/layout.tsx', 'utf8');
-assert(root.includes('<AppBootScreen />'), 'Other KAEC applications must retain their existing boot cover');
-assert.match(fs.readFileSync('src/app/globals.css', 'utf8'),
-  /body:has\(\.khpos-platform-ui\) \[data-app-boot\]/,
-  'KHP-OS route pages must not inherit a second hydration-wide boot cover');
-assert.match(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8'), /<LoadingScreen inline \/>/, 'KHP-OS route fallbacks must be branded and nonblocking');
-assert.match(fs.readFileSync('src/app/khpos/[organisationId]/loading.tsx', 'utf8'), /<LoadingScreen inline \/>/, 'School route fallbacks must not cover their navigation shell');
-let destination = '', pathname = '/khpos', query = '';
-const listeners = {};
-let nextTimer = 0;
-const timers = new Map();
-class Element { closest() { return this; } }
-class Anchor extends Element {
-  constructor(href) { super(); this.href = href; this.target = ''; }
-  hasAttribute() { return false; }
+assert(root.includes('<AppBootScreen />'), 'Other KAEC apps must keep their existing startup cover');
+assert(!root.includes('<NavigationFeedback />'), 'Do not layer a second navigation loader over the app');
+assert(fs.readFileSync('src/app/globals.css', 'utf8')
+  .includes('body:has(.khpos-platform-ui) [data-app-boot]'),
+  'KHP-OS must not display the root boot cover as a second loader');
+assert(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8').includes('<LoadingScreen />'),
+  'KHP-OS route fallback must be the full-screen branded loader');
+assert(!fs.existsSync('src/app/khpos/[organisationId]/loading.tsx'),
+  'The nested school segment must inherit the one shared route fallback');
+for (const path of [
+  'src/components/khpos/CommandCentre.tsx',
+  'src/components/khpos/ops/MyWorkWorkspace.tsx',
+  'src/components/khpos/ops/MeetingsWorkspace.tsx',
+  'src/components/khpos/AnnouncementsWorkspace.tsx',
+]) {
+  const content = fs.readFileSync(path, 'utf8');
+  assert(content.includes('<LoadingScreen />'), path + ': keep the original full-screen branded loader');
+  assert(!content.includes('<LoadingScreen inline'), path + ': no reduced-size page loader');
 }
-const location = { origin: 'https://example.invalid', pathname: '/khpos', search: '' };
-const navigation = load('src/components/navigation/NavigationFeedback.tsx', name => {
-  if (name === 'react/jsx-runtime') return jsx;
-  if (name === 'next/navigation') return { usePathname: () => pathname, useSearchParams: () => new URLSearchParams(query) };
-  if (name === 'react') return { useState: () => [destination, value => { destination = value; }], useEffect: fn => fn() };
-  throw new Error(name);
-}, { URL, Element, HTMLAnchorElement: Anchor,
-  setTimeout: (fn, ms) => { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
-  clearTimeout: id => timers.delete(id),
-  document: { addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
-  window: { location, addEventListener: (key, fn) => { listeners[key] = fn; }, removeEventListener() {} },
-});
-const tick = ms => {
-  for (const [id, timer] of Array.from(timers)) if (timer.ms === ms) { timers.delete(id); timer.fn(); }
-};
-assert.equal(navigation.NavigationFeedback(), null);
-listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq') });
-assert.equal(navigation.NavigationFeedback(), null, 'Short links should keep the old page immediately visible');
-tick(450);
-const indicator = renderToStaticMarkup(navigation.NavigationFeedback());
-assert.match(indicator, /Moving to another page/);
-assert.match(indicator, /role="status"/);
-assert(!indicator.includes('position:fixed;inset:0'), 'Client navigation is nonblocking');
-pathname = location.pathname = '/khpos/hq';
-assert.equal(navigation.NavigationFeedback(), null);
-listeners.pageshow();
-listeners.click({ button: 0, target: new Anchor('https://outside.invalid/') });
-assert.equal(navigation.NavigationFeedback(), null);
-listeners.click({ button: 0, target: new Anchor('https://example.invalid/khpos/hq?view=history') });
-assert.equal(navigation.NavigationFeedback(), null);
-tick(450);
-assert.match(renderToStaticMarkup(navigation.NavigationFeedback()), /Moving to another page/);
-query = 'view=history';
-assert.equal(navigation.NavigationFeedback(), null);
-listeners.pageshow();
-console.log('Navigation loading passed: delayed nonblocking indicator, old page preserved, route/query completion and page restoration.');
+for (const directory of ['src/components/khpos', 'src/app/khpos']) {
+  const audit = dir => {
+    for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
+      const path = dir + '/' + entry.name;
+      if (entry.isDirectory()) { audit(path); continue; }
+      if (!path.endsWith('.tsx')) continue;
+      assert(!fs.readFileSync(path,'utf8').includes('<LoadingScreen inline'),
+        path + ': do not reintroduce miniature KHP-OS loaders');
+    }
+  };
+  audit(directory);
+}
+const noticeSource = fs.readFileSync('src/components/khpos/AnnouncementsWorkspace.tsx','utf8');
+assert(noticeSource.includes('Fetching staff notices.'),
+  'The compact announcement widget must not trigger an additional page-wide loader');
+console.log('KHP-OS full-screen loading: one shared route fallback, no nested route loader, no mini or extra global navigation overlays.');
 
 // A failed sign-in must show its error instead of leaving a permanent loading cover.
 for (const rejected of [false, true]) {

@@ -1,9 +1,6 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
+/** One full-screen branded route fallback for school, HQ and administration. */
 export default function KhposRouteLoading() {
-  return (
-    <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-      <LoadingScreen inline />
-    </main>
-  );
+  return <LoadingScreen />;
 }
