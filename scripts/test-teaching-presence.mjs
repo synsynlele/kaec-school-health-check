@@ -130,6 +130,72 @@ try {
  const result = (await assessment(guardian,"list"))[0];
  assert.ok(result.checked_in_at && result.checked_out_at && result.marked_at && result.submitted_at);
  assert.equal(result.submitted_to,"Academic Inspector");
+
+ // Real production RPC definitions and new DB columns: validate unclassified
+ // history, explicit group certification and the existing authorisation rules.
+ await db.exec(fs.readFileSync("supabase/migrations/20261105143000_edit_timetables.sql","utf8"));
+ await db.exec(fs.readFileSync("supabase/migrations/20261110150000_timetable_teaching_groups.sql","utf8"));
+ await db.exec(fs.readFileSync("supabase/migrations/20261110150000_timetable_teaching_groups.sql","utf8")); // safe after remote migration history drift
+ await act(guardian,"pilot_enable",{enabled:true});
+ const oldPeriod=(await read(guardian)).periods.find(p=>p.id===periodId);
+ assert.equal(oldPeriod.teachingGroupKind,null,"Existing lesson must remain unclassified");
+ assert.equal(oldPeriod.parallelVerified,false);
+ const parallelDay=(day%7)+1;
+ const biology=id(52), government=id(53);
+ await q("insert into khpos_ops_academic_delivery_streams(id,organisation_id,term_id,campus_id,unit_id,class_label,subject_label,teacher_assignment_id,status) values($1,$2,$3,$4,$5,'SS2','Biology',$6,'active')",[biology,org,term,campus,unit,teacherAssignment]);
+ await q("insert into khpos_ops_academic_delivery_streams(id,organisation_id,term_id,campus_id,unit_id,class_label,subject_label,teacher_assignment_id,status) values($1,$2,$3,$4,$5,'SS2','Government',$6,'active')",[government,org,term,campus,unit,observerAssignment]);
+ const groupFields=(name)=>({teachingGroupKind:"department",teachingGroupLabel:name,
+   parallelBlockLabel:"SS2 Monday third period",parallelVerified:true});
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'period_add',$3)",
+   [teacher,org,{streamId:biology,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")}],/authorised Guardian|Academic Inspector|academic leader/i);
+ await act(guardian,"period_add",{streamId:biology,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")});
+ await act(guardian,"period_add",{streamId:government,weekday:parallelDay,start:"11:15",end:"12:45",room:"Arts Room",...groupFields("Arts")});
+ const parallel=(await read(guardian)).periods.filter(p=>p.class==="SS2");
+ assert.equal(parallel.length,2);
+ assert.equal(parallel[0].parallelVerified,true);
+ assert.equal(parallel[1].parallelVerified,true);
+ assert.equal(parallel[0].parallelVerifiedBy,guardian);
+ assert.equal(parallel[0].teachingGroupKind,"department");
+ const {transpileModule,ModuleKind,ScriptTarget}=await import("typescript");
+ const {runInNewContext}=await import("node:vm");
+ const scheduleSource=fs.readFileSync("src/lib/khpos/ops/schedule-assist.ts","utf8");
+ const js=transpileModule(scheduleSource,{compilerOptions:{module:ModuleKind.CommonJS,target:ScriptTarget.ES2020}}).outputText;
+ const exportsObject={};
+ runInNewContext(js,{exports:exportsObject});
+ const detect=exportsObject.findScheduleCollisions;
+ assert.equal(typeof detect,"function");
+ assert.equal(detect(parallel).length,0,"Approved distinct groups should not create a false clash");
+ assert.equal(detect([parallel[0],{...parallel[1],parallelVerified:false}])[0].severity,"review",
+   "Unconfirmed parallel groups remain under review");
+ assert.equal(detect([parallel[0],{...parallel[1],teachingGroupLabel:"Science"}])[0].severity,"conflict",
+   "Same learner group is a real clash");
+ assert.equal(detect([parallel[0],{...parallel[1],room:"Science Lab"}])[0].kind,"room",
+   "Room clashes are never bypassed");
+ assert.equal(detect([parallel[0],{...parallel[1],teacherUserId:parallel[0].teacherUserId}])[0].kind,"teacher",
+   "Teacher clashes are never bypassed");
+ assert.equal(detect([{...parallel[0],teachingGroupKind:null},{...parallel[1],teachingGroupKind:null}])[0].severity,"review",
+   "Legacy unclassified lessons should require review, not be falsely confirmed");
+ assert.equal(detect([{...parallel[0],teachingGroupKind:"whole_class"},parallel[1]])[0].severity,"conflict",
+   "Whole-class lessons always overlap learner groups");
+
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'period_add',$3)",
+   [guardian,org,{streamId:biology,weekday:parallelDay,start:"11:30",end:"12:30",room:"Another Room",...groupFields("Science B")}],
+   /overlapping scheduled class/i);
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'period_add',$3)",
+   [guardian,org,{streamId:biology,weekday:3,start:"13:00",end:"14:00",teachingGroupKind:"department",teachingGroupLabel:"X"}],
+   /name the teaching group/i);
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'period_add',$3)",
+   [guardian,org,{streamId:biology,weekday:3,start:"13:00",end:"14:00",
+     teachingGroupKind:"department",teachingGroupLabel:"Science",parallelVerified:true}],
+   /common parallel block/i);
+ await fail("select public.khpos_ops_presence_action_server($1,$2,'period_edit',$3)",
+   [teacher,org,{periodId:parallel[0].id,weekday:parallelDay,start:"11:15",end:"12:45",room:"Science Lab",...groupFields("Science")}],
+   /authorised Guardian|Academic Inspector|academic leader/i);
+ // Existing timetable editing still works if an older client omits grouping.
+ await act(guardian,"period_edit",{periodId:parallel[0].id,weekday:parallelDay,start:"11:15",end:"12:45",room:"Lab 2"});
+ assert.equal((await read(guardian)).periods.find(p=>p.id===parallel[0].id).teachingGroupLabel,"Science");
+ console.log("Teaching groups: secure SQL migration, previous periods, parallel blocks and collision rules passed.");
+
  console.log("Assessment timetable: permissions, school isolation and full attendance-to-submission workflow passed.");
  console.log("Teaching presence/HQLS multi-school integration: "+checks+" checks passed.");
 } finally {await db.close();}
