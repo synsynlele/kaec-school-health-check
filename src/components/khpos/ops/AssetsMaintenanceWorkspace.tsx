@@ -19,6 +19,7 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
   const [data, setData] = useState<AssetsWorkspace | null>(null);
   const [actorId, setActorId] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
   const set = (key: string, value: string) => setFields((previous) => ({ ...previous, [key]: value }));
@@ -38,21 +39,21 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
   }, [organisationId, supabase]);
   async function act(mode: string, input: Record<string, unknown>) {
     if (!supabase) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setNotice("");
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.access_token) throw new Error("Sign in to continue.");
       const response = await fetch(`/api/khpos/ops/assets/${organisationId}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.session.access_token}` }, body: JSON.stringify({ mode, ...input }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Asset action failed.");
-      setData(result.assets); setFields({});
+      setData(result.assets); setFields({}); setNotice("Asset register updated.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Asset action failed."); }
     finally { setBusy(false); }
   }
-  const input = (key: string, title: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{title}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const note = (key: string, title: string) => <label className="block text-sm font-medium text-slate-700">{title}<textarea rows={2} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const select = (key: string, title: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{title}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
-  const button = (title: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : title}</button>;
+  const input = (key: string, title: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{title}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const note = (key: string, title: string) => <label className="block text-sm font-medium text-slate-700">{title}<textarea rows={2} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const select = (key: string, title: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{title}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
+  const button = (title: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-50">{busy ? "Saving…" : title}</button>;
   const dueCount = data?.assets.filter((asset) => asset.status === "active" && asset.nextServiceDate <= data.today).length || 0;
   const faultCount = data?.assets.filter((asset) => asset.status === "active" && activeIssue(asset)).length || 0;
   const assetQueue = useRecordQueue(data?.assets ?? [], (asset) => asset.status === "retired");
@@ -63,17 +64,17 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
     (asset) => asset.nextServiceDate,
   );
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><header><h1 className="text-3xl font-bold">Assets & Maintenance</h1><p className="mt-2 text-slate-600">Keep an asset register, see service due dates, and verify maintenance evidence. Faults go to the shared <Link href={`/khpos/${organisationId}/issues`} className="underline">Issues queue</Link> for ownership and closure.</p><p className="mt-2 text-sm font-semibold text-rose-800">For a child safety concern, use the protected <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">Safeguarding pathway</Link>. Keep disclosures out of asset notes.</p></header>
+  return <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 px-4 py-6 text-slate-950 sm:px-6 sm:py-8">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} /><header className="khpos-interface-card space-y-2 p-5 sm:p-7"><p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">School operations</p><h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Assets & Maintenance</h1><p className="mt-2 text-slate-600">Keep an asset register, see service due dates, and verify maintenance evidence. Faults go to the shared <Link href={`/khpos/${organisationId}/issues`} className="underline">Issues queue</Link> for ownership and closure.</p><p className="mt-2 text-sm font-semibold text-rose-800">For a child safety concern, use the protected <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">Safeguarding pathway</Link>. Keep disclosures out of asset notes.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <LoadingScreen />}
     {data && <><div className="flex flex-wrap gap-3 text-sm font-bold"><span className="rounded-lg bg-slate-100 p-3">{data.assets.filter((asset) => asset.status === "active").length} active assets</span><span className={`rounded-lg p-3 ${dueCount ? "bg-amber-50 text-amber-900" : "bg-slate-100"}`}>{dueCount} service due</span><span className={`rounded-lg p-3 ${faultCount ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{faultCount} open faults</span></div>
-      {data.campuses.some((campus) => campus.canManage) && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Register an asset</h2><div className="grid gap-3 md:grid-cols-3">
+      {data.campuses.some((campus) => campus.canManage) && <details className="khpos-interface-card group p-4 sm:p-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-extrabold text-slate-950">Register an asset <span className="text-brand-700 group-open:rotate-45" aria-hidden="true">+</span></summary><p className="mt-2 text-sm text-slate-600">Add a campus asset only once, then track service and faults below.</p><div className="mt-4 grid gap-3 md:grid-cols-3">
         {select("campus", "Campus", data.campuses.filter((campus) => campus.canManage).map((campus) => ({ value: campus.id, label: campus.name })))}
         {input("code", "Campus asset code")}{input("label", "Asset name")}
         {select("category", "Category", categories.map((value) => ({ value, label: value })))}
         {input("location", "Location")}{input("interval", "Service interval (days)", "number")}{input("due", "First service due", "date")}
-      </div>{button("Register asset", () => void act("create", { campusId: fields.campus, code: fields.code, label: fields.label, category: fields.category, location: fields.location, intervalDays: fields.interval, nextServiceDate: fields.due }), !fields.campus || !fields.code?.trim() || !fields.label?.trim() || !fields.category || !fields.location?.trim() || !fields.interval || !fields.due)}</section>}
+      </div>{button("Register asset", () => void act("create", { campusId: fields.campus, code: fields.code, label: fields.label, category: fields.category, location: fields.location, intervalDays: fields.interval, nextServiceDate: fields.due }), !fields.campus || !fields.code?.trim() || !fields.label?.trim() || !fields.category || !fields.location?.trim() || !fields.interval || !fields.due)}</details>}
       <RecordQueueTabs view={assetQueue.view} setView={assetQueue.setView} activeCount={assetQueue.activeCount} historyCount={assetQueue.historyCount} activeLabel="Active assets" />
         <RecordQueueSearchControls query={assetSearch.query} setQuery={assetSearch.setQuery} sort={assetSearch.sort} setSort={assetSearch.setSort} shown={assetSearch.visibleItems.length} total={assetQueue.visibleItems.length} placeholder="Search asset, code, campus or location" />
       {assetSearch.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">{assetSearch.query.trim() ? "No assets match this search." : "No assets recorded on your campuses yet."}</p>}
@@ -83,7 +84,7 @@ export function AssetsMaintenanceWorkspace({ organisationId }: { organisationId:
         const pending = asset.services.find((service) => ["submitted", "returned"].includes(service.status));
         const due = asset.status === "active" && asset.nextServiceDate <= data.today;
         const key = asset.id;
-        return <section key={asset.id} className="space-y-4 rounded-xl border border-slate-200 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="text-xl font-bold">{asset.label} <span className="text-sm text-slate-500">· {asset.code}</span></h2><p className="mt-1 text-sm text-slate-600">{campus?.name} · {asset.location} · {asset.category} · Owner: {asset.ownerRoleTitle} · Every {asset.intervalDays} days</p></div><span className={`rounded-lg px-3 py-2 text-sm font-bold ${asset.status === "retired" ? "bg-slate-100 text-slate-600" : due ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-900"}`}>{asset.status === "retired" ? "Retired" : `${due ? "Service due" : "Next service"} ${asset.nextServiceDate}`}</span></div>
+        return <section key={asset.id} className="khpos-interface-card space-y-4 p-4 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="text-xl font-bold">{asset.label} <span className="text-sm text-slate-500">· {asset.code}</span></h2><p className="mt-1 text-sm text-slate-600">{campus?.name} · {asset.location} · {asset.category} · Owner: {asset.ownerRoleTitle} · Every {asset.intervalDays} days</p></div><span className={`rounded-lg px-3 py-2 text-sm font-bold ${asset.status === "retired" ? "bg-slate-100 text-slate-600" : due ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-900"}`}>{asset.status === "retired" ? "Retired" : `${due ? "Service due" : "Next service"} ${asset.nextServiceDate}`}</span></div>
           {issue && <p className="rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-900">Open fault · {issue.severity} · {issue.status} · <Link href={`/khpos/${organisationId}/issues#issue-${issue.id}`} className="underline">Resolve in Issues</Link></p>}
           {asset.status === "active" && <div className="grid gap-3 lg:grid-cols-2">
             {!pending && <div className="space-y-2 rounded-lg bg-slate-50 p-3"><h3 className="font-bold">Record service completed</h3>{note(`service-${key}`, "Work performed")}{input(`evidence-${key}`, "Service evidence reference")}{button("Submit for verification", () => void act("submit_service", { assetId: key, note: fields[`service-${key}`], evidenceReference: fields[`evidence-${key}`] }), !fields[`service-${key}`]?.trim() || !fields[`evidence-${key}`]?.trim())}</div>}

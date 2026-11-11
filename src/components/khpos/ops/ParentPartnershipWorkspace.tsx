@@ -22,6 +22,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [data, setData] = useState<ParentWorkspace | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
   const set = (key: string, value: string) => setFields((previous) => ({ ...previous, [key]: value }));
@@ -43,7 +44,7 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
 
   async function act(mode: string, input: Record<string, unknown>) {
     if (!supabase) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setNotice("");
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.access_token) throw new Error("Sign in to continue.");
@@ -52,14 +53,14 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Parent case action failed.");
-      setData(result.parents); setFields({});
+      setData(result.parents); setFields({}); setNotice("Parent partnership record saved.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Parent case action failed."); }
     finally { setBusy(false); }
   }
-  const input = (key: string, title: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{title}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const notes = (key: string, title: string) => <label className="block text-sm font-medium text-slate-700">{title}<textarea rows={2} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const select = (key: string, title: string, options: { value: string; title: string }[]) => <label className="block text-sm font-medium text-slate-700">{title}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.title}</option>)}</select></label>;
-  const button = (title: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : title}</button>;
+  const input = (key: string, title: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{title}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const notes = (key: string, title: string) => <label className="block text-sm font-medium text-slate-700">{title}<textarea rows={2} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const select = (key: string, title: string, options: { value: string; title: string }[]) => <label className="block text-sm font-medium text-slate-700">{title}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.title}</option>)}</select></label>;
+  const button = (title: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-50">{busy ? "Saving…" : title}</button>;
   const channelOptions = channels.map((value) => ({ value, title: label(value) }));
   const cases = data?.cases || [];
   const caseQueue = useRecordQueue(cases, (item) => item.status === "closed");
@@ -87,13 +88,13 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
     return <div className="space-y-2 rounded-lg bg-slate-50 p-3">{notes(key, title)}{button(mode === "action" ? "Log action" : mode === "escalate" ? "Send to the school leader" : mode === "return" ? "Return for more work" : "Verify and close", () => void act(mode, { caseId: item.id, note: fields[key] }), !fields[key]?.trim())}</div>;
   }
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-    <header><h1 className="text-3xl font-bold">Parent Partnership</h1><p className="mt-2 text-slate-600">Receive concerns, assign a campus owner, record what parents actually received, and verify resolution.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, use the <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">protected safeguarding pathway</Link> immediately. Keep disclosure details out of this workspace.</p></header>
+  return <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 px-4 py-6 text-slate-950 sm:px-6 sm:py-8">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+    <header className="khpos-interface-card space-y-2 p-5 sm:p-7"><p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">School operations</p><h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Parent Partnership</h1><p className="mt-2 text-slate-600">Receive concerns, assign a campus owner, record what parents actually received, and verify resolution.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, use the <Link href={`/khpos/${organisationId}/safeguarding`} className="underline">protected safeguarding pathway</Link> immediately. Keep disclosure details out of this workspace.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <LoadingScreen />}
     {data && <><div className="flex flex-wrap gap-3 text-sm font-semibold"><span className="rounded-lg bg-slate-100 px-3 py-2">{openCount} open</span><span className={`rounded-lg px-3 py-2 ${overdueCount ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{overdueCount} overdue</span></div>
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Record a parent concern</h2><p className="text-sm text-slate-600">Use an existing school reference for the parent. Do not enter phone numbers or private safeguarding details.</p><div className="grid gap-3 md:grid-cols-3">
+      <details className="khpos-interface-card group p-4 sm:p-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-extrabold text-slate-950">Record a parent concern <span aria-hidden="true" className="text-brand-700 group-open:rotate-45">+</span></summary><p className="text-sm text-slate-600">Use an existing school reference for the parent. Do not enter phone numbers or private safeguarding details.</p><div className="grid gap-3 md:grid-cols-3">
         {select("campus", "Campus", data.campuses.map((campus) => ({ value: campus.id, title: campus.name })))}
         {select("category", "Category", categories.map((value) => ({ value, title: label(value) })))}
         {select("channel", "How the concern arrived", channelOptions)}
@@ -104,11 +105,11 @@ export function ParentPartnershipWorkspace({ organisationId }: { organisationId:
         {select("owner", "Campus leader responsible", data.assignments.filter((assignment) => assignment.campusId === fields.campus || assignment.campusId === null).map((assignment) => ({ value: assignment.id, title: `${assignment.title}${assignment.isMine ? " (me)" : ""}` })))}
         {input("due", "Response due", "date")}
         <div className="md:col-span-2">{notes("summary", "Concern summary")}</div>
-      </div>{button("Record concern", () => void act("record", { campusId: fields.campus, category: fields.category, channel: fields.channel, parentReference: fields.parentReference, learnerId: fields.learner || null, ownerAssignmentId: fields.owner, dueDate: fields.due, summary: fields.summary }), !fields.campus || !fields.category || !fields.channel || !fields.parentReference?.trim() || !fields.owner || !fields.due || !fields.summary?.trim())}</section>
+      </div>{button("Record concern", () => void act("record", { campusId: fields.campus, category: fields.category, channel: fields.channel, parentReference: fields.parentReference, learnerId: fields.learner || null, ownerAssignmentId: fields.owner, dueDate: fields.due, summary: fields.summary }), !fields.campus || !fields.category || !fields.channel || !fields.parentReference?.trim() || !fields.owner || !fields.due || !fields.summary?.trim())}</details>
       <RecordQueueTabs view={caseQueue.view} setView={caseQueue.setView} activeCount={caseQueue.activeCount} historyCount={caseQueue.historyCount} />
         <RecordQueueSearchControls query={caseSearch.query} setQuery={caseSearch.setQuery} sort={caseSearch.sort} setSort={caseSearch.setSort} shown={caseSearch.visibleItems.length} total={caseQueue.visibleItems.length} placeholder="Search parent reference, category or concern" />
       {caseSearch.visibleItems.length === 0 && <p className="rounded-xl border border-slate-200 p-4 text-slate-600">{caseSearch.query.trim() ? "No parent concerns match this search." : "No parent concerns recorded for your campuses yet."}</p>}
-      {caseSearch.visibleItems.map((item) => <section key={item.id} className="space-y-3 rounded-xl border border-slate-200 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-lg font-bold">{item.parentReference} · {label(item.category)}</h2><span className={`rounded-lg px-2 py-1 text-sm font-bold ${item.status !== "closed" && item.dueDate < new Date().toISOString().slice(0, 10) ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{label(item.status)} · Due {item.dueDate}</span></div>
+      {caseSearch.visibleItems.map((item) => <section key={item.id} className="khpos-interface-card space-y-3 p-4 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-lg font-bold">{item.parentReference} · {label(item.category)}</h2><span className={`rounded-lg px-2 py-1 text-sm font-bold ${item.status !== "closed" && item.dueDate < new Date().toISOString().slice(0, 10) ? "bg-rose-50 text-rose-800" : "bg-slate-100"}`}>{label(item.status)} · Due {item.dueDate}</span></div>
         <p>{item.summary}</p><p className="text-sm text-slate-600">{data.campuses.find((campus) => campus.id === item.campusId)?.name} · {data.learners.find((learner) => learner.id === item.learnerId)?.name || "No learner linked"} · Owner: {data.assignments.find((assignment) => assignment.id === item.ownerAssignmentId)?.title || "Assigned leader"}</p>
         {item.escalationReason && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Escalated: {item.escalationReason}</p>}
         {item.responseSummary && <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-900">Response: {item.responseSummary} · Evidence: {item.responseEvidence}</p>}
