@@ -165,10 +165,10 @@ const workspaceLinks = [
 
 // Daily actions stay visible on both desktop and mobile. Setup belongs in More.
 const dailyLinks = [
-  transformLinks[0],
   operationsLinks.find(link => link.suffix === "/work")!,
-  operationsLinks.find(link => link.suffix === "/issues")!,
-  operationsLinks.find(link => link.suffix === "/decisions")!,
+  operationsLinks.find(link => link.suffix === "/teaching-presence")!,
+  operationsLinks.find(link => link.suffix === "/reports")!,
+  operationsLinks.find(link => link.suffix === "/announcements")!,
 ] as const;
 
 // Resolve destinations by route, not array position, so regrouping cannot silently
@@ -192,10 +192,10 @@ const schoolAreas = [
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
 const navigationGroups = [
-  { title: "Everyday work", icon: ListTodo, links: [operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "School day", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
+  { title: "Everyday work", icon: ListTodo, links: [operation("/work"), operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
+  { title: "School day", icon: UsersRound, links: [operation("/teaching-presence"), operation("/availability"), operation("/visitors"), operation("/people")] },
   { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
+  { title: "School management", icon: Building2, links: [transformLinks[0], byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
   { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School attendance & lessons","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
@@ -203,7 +203,7 @@ const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? la
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
@@ -270,7 +270,7 @@ function WorkspaceLink({
       href={href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
+      className={`khpos-nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
         active
           ? "bg-mint-300 text-slate-950 shadow-sm"
           : "text-slate-300 hover:bg-white/8 hover:text-white"
@@ -354,7 +354,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   return (
     <>
       <a href="#school-page" className="sr-only fixed left-3 top-3 z-[100] rounded-xl bg-white p-3 font-bold text-slate-950 focus:not-sr-only">Skip to page content</a>
-      <aside className="fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
+      <aside className="khpos-nav-panel fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-3 flex justify-end"><NotificationBell key={organisationId} organisationId={organisationId} /></div>
           <Link href={base} className="flex items-center gap-3">
@@ -442,7 +442,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   }`}
                 >
                   <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Overview", "Today", "Issues", "Approvals"][dailyLinks.indexOf(item)]}</span>
+                  <span className="w-full truncate text-center">{["Today", "School day", "Reports", "Updates"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
@@ -451,7 +451,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
       </nav>
       {menuOpen && <div className="fixed inset-0 z-[80] xl:hidden">
         <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
-        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Find your way" className="absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
+        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Find your way" className="khpos-nav-panel absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><h2 className="font-bold">Find your way</h2><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
           <nav aria-label="Find your way" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
           {signOutError && <p role="alert" className="px-3 text-xs text-rose-200">{signOutError}</p>}
