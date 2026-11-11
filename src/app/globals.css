@@ -469,3 +469,18 @@ body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* Long school-area tabs keep the selected page visible as the user switches
+   sections. Layout scroll stays inside the tab row rather than widening pages. */
+.khpos-platform-ui .khpos-area-tabs {
+  max-width: 100%;
+  scroll-padding-inline: 1rem;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #bfcee6 transparent;
+}
+@media (max-width: 1279px) {
+  .khpos-platform-ui .khpos-mobile-more-footer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
