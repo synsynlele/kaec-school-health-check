@@ -344,7 +344,7 @@ export function YoungCeoWorkspace({
         </div>
       </header>
 
-      {!workspace.executiveAggregateOnly && (
+      {workspace && !workspace.executiveAggregateOnly && (
         <SectionJumpNav
           label="Young CEO Hub work areas"
           sections={[
