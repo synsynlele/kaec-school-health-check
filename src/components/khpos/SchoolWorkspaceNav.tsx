@@ -476,6 +476,8 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
     {current?.suffix && current.suffix !== "/work" && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
     <Link href={`${base}/ask`} className="ml-auto inline-flex min-h-11 items-center font-semibold text-brand-700 underline" title="Open Ask KHP-OS and Training Academy">Help & training</Link>
   </nav>;
+  // Today is already the school home. Do not repeat its name in a breadcrumb bar.
+  if (pathname === `${base}/work`) return null;
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
