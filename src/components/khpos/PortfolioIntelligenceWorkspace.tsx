@@ -11,10 +11,9 @@ import {
   CircleAlert,
   ShieldCheck,
   TrendingUp,
-  Workflow,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { KhposPortfolioIntelligence } from "@/lib/khpos/benchmarking";
+import type { KhposPortfolioIntelligence, KhposPortfolioObservabilityInstitution } from "@/lib/khpos/benchmarking";
 import type { NetworkAgentPlan } from "@/lib/khpos/agentic/plan";
 import { composeNetworkSupportDigest } from "@/lib/khpos/writing-assistant";
 
@@ -25,6 +24,27 @@ const attentionLabels: Record<string, string> = {
   reassessment_required: "Reassessment required",
   monitor: "Monitor",
 };
+
+const institutionMetrics = [
+  { label: "Failed triggers (7 days)", value: (school: KhposPortfolioObservabilityInstitution) => school.failedTriggers7d },
+  { label: "Overdue work items", value: (school: KhposPortfolioObservabilityInstitution) => school.overdueWork },
+  { label: "Verification overdue", value: (school: KhposPortfolioObservabilityInstitution) => school.staleVerification },
+  { label: "Critical processes unmapped", value: (school: KhposPortfolioObservabilityInstitution) => school.p0Unmapped },
+  { label: "Routines", value: (school: KhposPortfolioObservabilityInstitution) => `${school.activeRoutines} active · ${school.pausedRoutines} paused` },
+];
+
+const standardLabels = {
+  current: "Current",
+  pending_adoption: "Pending adoption",
+  missing: "Missing",
+};
+
+function StandardStatus({ status }: { status: KhposPortfolioObservabilityInstitution["standardStatus"] }) {
+  const color = status === "current" ? "bg-emerald-50 text-emerald-800"
+    : status === "pending_adoption" ? "bg-amber-50 text-amber-900"
+      : "bg-red-50 text-red-800";
+  return <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-bold ${color}`}>{standardLabels[status]}</span>;
+}
 
 export function PortfolioIntelligenceWorkspace() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -181,7 +201,7 @@ export function PortfolioIntelligenceWorkspace() {
               ["Missing standard", portfolio.observability.summary.missingInstallation],
               ["Trigger failures · 7d", portfolio.observability.summary.failedTriggers7d],
               ["P0 processes unmapped", portfolio.observability.summary.p0Unmapped],
-              ["Overdue work", portfolio.observability.summary.overdueWork],
+              ["Overdue work items", portfolio.observability.summary.overdueWork],
               ["Stale verification", portfolio.observability.summary.staleVerification],
               ["Paused routines", portfolio.observability.summary.pausedRoutines],
               ["Active routines", portfolio.observability.summary.activeRoutines],
@@ -196,64 +216,61 @@ export function PortfolioIntelligenceWorkspace() {
             ))}
           </div>
 
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+          <p className="mt-6 text-sm text-slate-600">
+            Overdue work items are open tasks past their due date. Standard adoption is tracked separately.
+          </p>
+
+          <ul aria-label="Institution operations" className="mt-3 grid gap-3 sm:grid-cols-2 lg:hidden">
+            {portfolio.observability.institutions.map((school) => (
+              <li key={school.organisationId} className="min-w-0 rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-base font-black">{school.name}</h3>
+                <dl className="mt-3 grid grid-cols-2 gap-2">
+                  <div>
+                    <dt className="text-xs font-semibold text-slate-600">Standard adoption</dt>
+                    <dd className="mt-1"><StandardStatus status={school.standardStatus} /></dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold text-slate-600">Attention</dt>
+                    <dd className="mt-1 text-sm font-bold capitalize">{school.attention}</dd>
+                  </div>
+                  {institutionMetrics.map(({ label, value }) => (
+                    <div key={label} className="rounded-xl bg-slate-50 p-2.5 last:col-span-2">
+                      <dt className="text-xs font-semibold text-slate-600">{label}</dt>
+                      <dd className="mt-1 text-sm font-black tabular-nums">{value(school)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-3 hidden overflow-x-auto rounded-2xl border border-slate-200 lg:block">
+            <table aria-label="Institution operations" className="w-full min-w-[52rem] text-left text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-600">
                 <tr>
-                  <th className="px-4 py-3 font-black">Institution</th>
-                  <th className="px-4 py-3 font-black">Standard</th>
-                  <th className="px-4 py-3 font-black">Failed triggers</th>
-                  <th className="px-4 py-3 font-black">Overdue</th>
-                  <th className="px-4 py-3 font-black">Verification</th>
-                  <th className="px-4 py-3 font-black">P0 unmapped</th>
-                  <th className="px-4 py-3 font-black">Routines</th>
+                  <th scope="col" className="px-4 py-3">Institution</th>
+                  <th scope="col" className="px-4 py-3">Standard adoption</th>
+                  {institutionMetrics.map(({ label }) => <th key={label} scope="col" className="px-4 py-3">{label}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {portfolio.observability.institutions.map((institution) => (
-                  <tr key={institution.organisationId}>
-                    <td className="px-4 py-4">
+                {portfolio.observability.institutions.map((school) => (
+                  <tr key={school.organisationId}>
+                    <th scope="row" className="px-4 py-4">
                       <div className="flex items-start gap-2">
-                        {institution.attention === "standard" ? (
-                          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-700" />
-                        ) : (
-                          <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-700" />
-                        )}
+                        {school.attention === "standard"
+                          ? <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-700" />
+                          : <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-700" />}
                         <div>
-                          <p className="font-black">{institution.name}</p>
-                          <p className="mt-1 text-[10px] font-black uppercase text-slate-500">
-                            {institution.attention}
-                          </p>
+                          <p className="font-black">{school.name}</p>
+                          <p className="mt-1 text-xs font-semibold capitalize text-slate-600">{school.attention}</p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={
-                          "rounded-full px-2.5 py-1 text-[10px] font-black uppercase " +
-                          (institution.standardStatus === "current"
-                            ? "bg-emerald-50 text-emerald-800"
-                            : institution.standardStatus === "pending_adoption"
-                              ? "bg-amber-50 text-amber-900"
-                              : "bg-red-50 text-red-800")
-                        }
-                      >
-                        {institution.standardStatus.replaceAll("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 font-black">{institution.failedTriggers7d}</td>
-                    <td className="px-4 py-4 font-black">{institution.overdueWork}</td>
-                    <td className="px-4 py-4 font-black">{institution.staleVerification}</td>
-                    <td className="px-4 py-4 font-black">{institution.p0Unmapped}</td>
-                    <td className="px-4 py-4">
-                      <div className="inline-flex items-center gap-2">
-                        <Workflow className="size-4 text-slate-400" />
-                        <span className="font-black">{institution.activeRoutines}</span>
-                        <span className="text-xs text-slate-400">
-                          active · {institution.pausedRoutines} paused
-                        </span>
-                      </div>
-                    </td>
+                    </th>
+                    <td className="px-4 py-4"><StandardStatus status={school.standardStatus} /></td>
+                    {institutionMetrics.map(({ label, value }) => (
+                      <td key={label} className="whitespace-nowrap px-4 py-4 font-bold tabular-nums">{value(school)}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -339,7 +356,7 @@ export function PortfolioIntelligenceWorkspace() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="w-full min-w-[42rem] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-6 py-4 font-black">Institution</th>
