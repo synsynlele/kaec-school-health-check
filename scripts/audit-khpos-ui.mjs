@@ -121,7 +121,7 @@ assert(adminLayout.includes('<AdminNav />'), 'Admin pages need the shared admin 
 assert(adminNavigation.includes('School Platform'), 'Do not remove the admin account escape route');
 assert(hqNavigation.includes('aria-current=') && hqNavigation.includes('overflow-x-auto'),
   'HQ subpage navigation must be accessible on mobile');
-for (const href of ['/khpos/hq/schools','/khpos/hq/reports','/khpos/hq/meetings','/khpos/hq/ideas','/khpos/hq/ask']) {
+for (const href of ['/khpos/hq/schools','/khpos/hq/reports','/khpos/hq/meetings','/khpos/hq/ask']) {
   assert(hqNavigation.includes(href), 'HQ navigation missing ' + href);
 }
 for (const rule of ['--khpos-focus:', 'color-scheme: light;', 'scroll-margin-block-start:', 'div:has(> table)', 'prefers-reduced-motion']) {

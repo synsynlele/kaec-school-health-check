@@ -9,12 +9,13 @@ export type SchoolSection = { view: string; label: string };
  * Only the currently selected module is mounted by its server page.
  */
 export function SchoolSectionTabs({
-  base, title, selected, tabs,
+  base, title, selected, tabs, theme = "school",
 }: {
   base: string;
   title: string;
   selected: string;
   tabs: readonly SchoolSection[];
+  theme?: "school" | "hq";
 }) {
   const ref = useActiveNavScroll<HTMLElement>(selected, '[aria-current="page"]');
   return (
@@ -27,14 +28,15 @@ export function SchoolSectionTabs({
           {tabs.map(tab => {
             const active = tab.view === selected;
             const href = tab.view ? base + "?view=" + encodeURIComponent(tab.view) : base;
+            const palette = theme === "hq"
+              ? (active ? "border-emerald-700 bg-emerald-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50")
+              : (active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50");
             return (
               <Link
                 key={tab.view || "main"}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={"inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 " + (active
-                  ? "border-brand-700 bg-brand-700 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50")}
+                className={"inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current " + palette}
               >
                 {tab.label}
               </Link>

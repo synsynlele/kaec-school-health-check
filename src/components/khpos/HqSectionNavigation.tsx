@@ -11,7 +11,6 @@ const routes = [
   { href: "/khpos/hq/schools", label: "School Pathfinders" },
   { href: "/khpos/hq/reports", label: "Reporting" },
   { href: "/khpos/hq/meetings", label: "Meetings" },
-  { href: "/khpos/hq/ideas", label: "Ideas & discussions" },
   { href: "/khpos/hq/ask", label: "Help & training" },
 ] as const;
 
