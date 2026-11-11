@@ -61,7 +61,7 @@ export function PriorityInterventionWorkspace({
       if (!active) return;
       const accessToken = data.session?.access_token;
       if (!accessToken) {
-        setError("Your session has ended. Return to the School overview and sign in again.");
+        setError("Your session has ended. Return to the Today and sign in again.");
         return;
       }
 
@@ -143,7 +143,7 @@ export function PriorityInterventionWorkspace({
           <h1 className="mt-4 text-2xl font-black">Transformation agenda unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <button onClick={() => router.push(`/khpos/${organisationId}`)} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to School overview
+            Return to Today
           </button>
         </div>
       </main>
@@ -169,8 +169,8 @@ export function PriorityInterventionWorkspace({
               <p className="truncate text-sm font-extrabold text-white">Priority & Intervention Engine</p>
             </div>
           </div>
-          <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10">
-            <ArrowLeft className="size-4" /> School overview
+          <Link href={`/khpos/${organisationId}/work`} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10">
+            <ArrowLeft className="size-4" /> Today
           </Link>
         </div>
       </header>
@@ -361,7 +361,7 @@ export function PriorityInterventionWorkspace({
               <h2 className="mt-2 text-2xl font-black">A recommendation is not a commitment.</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">KHP-OS suggests priorities and plans. An authorised school leader decides what to approve. Approvals and changes are saved in the school history.</p>
             </div>
-            <Link href={`/khpos/${organisationId}`} className="inline-flex items-center gap-2 text-sm font-extrabold text-mint-300">Return to School overview <ArrowRight className="size-4" /></Link>
+            <Link href={`/khpos/${organisationId}/work`} className="inline-flex items-center gap-2 text-sm font-extrabold text-mint-300">Return to Today <ArrowRight className="size-4" /></Link>
           </div>
         </section>
       </div>
