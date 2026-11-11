@@ -140,7 +140,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
@@ -161,14 +161,15 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        <nav aria-label="School shortcuts" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <nav aria-label="School shortcuts" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { title: "My day", detail: "Attendance, tasks and follow-ups", href: `/khpos/${organisationId}/work` },
-            { title: "Teaching & learning", detail: "Lessons, timetables and assessments", href: `/khpos/${organisationId}/teaching-presence` },
+            { title: "Teaching & learning", detail: "Lessons, timetables and assessments", href: `/khpos/${organisationId}/teaching-presence?tab=lessons` },
+            { title: "Movement permission", detail: "Short staff outings with return", href: `/khpos/${organisationId}/availability?request=outing` },
             { title: "Reports & forms", detail: "Write, submit and review reports", href: `/khpos/${organisationId}/reports` },
             { title: "School updates", detail: "Notices, meetings and announcements", href: `/khpos/${organisationId}/announcements` },
           ].map(item => (
-            <Link key={item.href} href={item.href} className="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-500">
+            <Link key={item.href} href={item.href} className="khpos-quick-card group flex min-h-32 flex-col justify-between gap-3 p-4 focus-visible:outline-2 focus-visible:outline-brand-500">
               <span className="font-extrabold text-slate-950">{item.title}</span>
               <span className="flex items-end justify-between gap-2 text-sm text-slate-600">{item.detail}<ArrowRight aria-hidden="true" className="size-5 shrink-0 text-brand-700 transition group-hover:translate-x-1" /></span>
             </Link>
@@ -207,7 +208,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                 ["Blocked", attention.summary.blocked],
                 ["Waiting approval", attention.summary.waitingApproval],
               ].map(([label, value]) => (
-                <div key={String(label)} className="rounded-2xl bg-slate-50 p-4">
+                <div key={String(label)} className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4">
                   <p className="text-xs font-bold text-slate-500">{label}</p>
                   <p className="mt-1 text-3xl font-black">{value}</p>
                 </div>
