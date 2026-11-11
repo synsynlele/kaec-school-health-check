@@ -318,7 +318,9 @@ export function ReportsWorkspace({
           </div>
         ))}
       </div>
-      <nav aria-label="Report views" className="khpos-horizontal-nav">
+      <section className="khpos-interface-card p-3 sm:p-4" aria-label="Report sections">
+        <p className="px-1 text-[11px] font-black uppercase tracking-[0.13em] text-slate-600">Report sections</p>
+        <nav aria-label="Report views" className="khpos-horizontal-nav mt-2 flex-wrap">
         {[
           ["reports", "My reports"],
           ["review", "Reports to review"],
@@ -329,7 +331,7 @@ export function ReportsWorkspace({
             key={key}
             type="button"
             aria-pressed={tab === key}
-            className={tab === key ? primary : button}
+            className={"inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition " + (tab === key ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50")}
             onClick={() => {
               ++listRequest.current;
               setData(null);setStatus("");setOffset(0);
@@ -342,7 +344,8 @@ export function ReportsWorkspace({
             {label}
           </button>
         ))}
-      </nav>
+        </nav>
+      </section>
       {(tab === "reports" || tab === "review") && (
         <>
           <p className="rounded-xl bg-brand-50 p-3 text-sm text-brand-950">{tab === "review" ? "Reviewer inbox: only reports submitted to your authorised reviewer role and scope. Unsubmitted drafts are private to their author." : "Your own assigned reports and submitted history. Reports you review for other staff appear separately in Reports to review."}</p>

@@ -373,8 +373,8 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     {locationCapture.dialog}
     <div className="mx-auto max-w-6xl space-y-5">
-      <Link href={"/khpos/"+organisationId} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-        <ArrowLeft className="size-4"/> School Overview
+      <Link href={"/khpos/"+organisationId+"/work"} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
+        <ArrowLeft className="size-4"/> Today
       </Link>
       <div className="khpos-hero rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & LESSONS</div>
@@ -401,12 +401,12 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
             onClick={()=>{if(window.confirm("Pause new school attendance, class check-ins and HQLS observations for your school? Existing records stay saved."))void act("pilot_enable",{enabled:false},"New attendance and teaching activity paused.");}}>Pause pilot</button>
         </div>}
         {data.pilotEnabled&&<>
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Teaching attendance sections">
+        <div className="khpos-interface-card flex flex-wrap gap-2 p-3 sm:p-4" role="tablist" aria-label="Teaching attendance sections">
           {([["day","School attendance",School],["lessons","Timetable",CalendarClock],["exams","Tests & exams",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
           .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage || data.canEnableHqls)
           .map(([id,title,Icon])=><button key={id} type="button" role="tab" aria-selected={tab===id}
             onClick={()=>{setTab(id);setError("");setNotice("");}}
-            className={"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold "+(tab===id?"bg-slate-900 text-white":"border border-slate-200 bg-white text-slate-700")}>
+            className={"inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition "+(tab===id?"border-brand-700 bg-brand-700 text-white shadow-sm":"border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50")}>
             <Icon className="size-4"/>{title}</button>)}
         </div>
         {tab==="day"&&<div className="grid gap-4 lg:grid-cols-2">
@@ -726,11 +726,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
             <p className="mt-2 text-xs text-slate-500">Last 30 days by default. Choose an earlier period (up to 366 days per search). Each tab has its own search, sorting and pages.</p>
             {historyError&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{historyError}</p>}
             {historyBusy&&<p role="status" className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Fetching attendance history.</p>}
-            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Attendance record type">
+            <div className="khpos-interface-card mt-4 flex flex-wrap gap-2 p-3 sm:p-4" role="tablist" aria-label="Attendance record type">
               {([["school","School sign-in records"],["class","Class sign-in records"]] as const).map(([category,label])=>
                 <button key={category} type="button" role="tab" aria-selected={historyCategory===category}
                   onClick={()=>{setHistoryCategory(category);setPresenceHistory(null);setHistoryError("");}}
-                  className={"rounded-xl border px-4 py-3 text-sm font-bold "+(historyCategory===category?"border-slate-900 bg-slate-900 text-white":"border-slate-300 bg-white text-slate-700")}>{label}</button>
+                  className={"min-h-11 rounded-xl border px-4 py-3 text-sm font-bold "+(historyCategory===category?"border-brand-700 bg-brand-700 text-white shadow-sm":"border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50")}>{label}</button>
               )}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">

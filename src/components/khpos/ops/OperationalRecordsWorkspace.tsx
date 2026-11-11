@@ -406,8 +406,8 @@ export function OperationalRecordsWorkspace({
           </div>
         )}
 
-        <section className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid grid-cols-1 gap-1 rounded-2xl bg-slate-100 p-1 min-[420px]:grid-cols-3">
+        <section className="khpos-interface-card flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Record sections">
             {([
               ["records", "Reports & logs", FileText],
               ["checklists", "Checklists", ClipboardCheck],
@@ -417,8 +417,9 @@ export function OperationalRecordsWorkspace({
                 key={value}
                 type="button"
                 onClick={() => setTab(value)}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition sm:text-sm ${
-                  tab === value ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
+                aria-pressed={tab === value}
+                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
+                  tab === value ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50"
                 }`}
               >
                 <Icon className="size-4" />

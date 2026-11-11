@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NotificationBell } from "@/components/khpos/NotificationBell";
-import { useActiveNavScroll } from "@/components/khpos/useActiveNavScroll";
+import { SchoolSectionTabs } from "@/components/khpos/SchoolSectionTabs";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
   BarChart3,
@@ -440,8 +440,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 }
 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
-  const pathname = usePathname(), router = useRouter(), base = `/khpos/${organisationId}`;
-  const tabsRef = useActiveNavScroll<HTMLElement>(pathname);
+  const pathname = usePathname(), base = `/khpos/${organisationId}`;
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -449,15 +448,22 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
     {current?.suffix && current.suffix !== "/work" && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
     <Link href={`${base}/ask`} className="ml-auto inline-flex min-h-11 items-center font-semibold text-brand-700 underline" title="Open Ask KHP-OS and Training Academy">Help & training</Link>
   </nav>;
-  // Today is already the school home. Do not repeat its name in a breadcrumb bar.
+  // Today is already the school home. Do not repeat a second section selector.
   if (pathname === `${base}/work`) return null;
-  if (!area || area.routes.length === 1) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
-  return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
-    <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
-      <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
-        <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
-      </label>
-      <nav ref={tabsRef} aria-label={`${area.title} pages`} className="khpos-area-tabs mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-bold transition ${active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"}`}>{link.label}</Link>;})}</nav>
-    </div>
-  </section>;
+  const trail = <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
+  if (!area || area.routes.length === 1) return trail;
+  const selected = area.routes.find(route => isActive(pathname, base, route)) ?? area.routes[0];
+  return <>
+    {trail}
+    <SchoolSectionTabs
+      base={base}
+      title={area.title}
+      selected={selected}
+      tabs={area.routes.map(route => ({
+        view: route,
+        label: byRoute(route).label,
+        href: `${base}${route}`,
+      }))}
+    />
+  </>;
 }
