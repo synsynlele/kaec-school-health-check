@@ -259,7 +259,7 @@ export function AccountAccess() {
                       Open Today <ArrowRight aria-hidden="true" className="size-4" />
                     </Link>
                     <Link href={`/khpos/${item.organisationId}`} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-800 hover:bg-brand-100">
-                      School overview
+                      Open KHP-OS
                     </Link>
                   </div>
                   <Link className="text-xs font-bold text-brand-700 hover:underline" href={`/khpos/${item.organisationId}/onboarding`}>Get started / finish setup</Link>
