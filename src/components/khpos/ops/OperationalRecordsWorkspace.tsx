@@ -406,8 +406,8 @@ export function OperationalRecordsWorkspace({
           </div>
         )}
 
-        <section className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid grid-cols-1 gap-1 rounded-2xl bg-slate-100 p-1 min-[420px]:grid-cols-3">
+        <section className="khpos-interface-card flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Record sections">
             {([
               ["records", "Reports & logs", FileText],
               ["checklists", "Checklists", ClipboardCheck],

@@ -384,9 +384,9 @@ export function MyWorkWorkspace({
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={message} onDismiss={() => { setError(""); setMessage(""); }} />
       <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-mint-300">School workspace · {work.organisation.name}</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Today
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-mint-300">School workspace</p>
+          <h1 className="mt-2 max-w-5xl break-words text-3xl font-black leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+            {work.organisation.name}
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
             Sign in, check your lessons and finish the work that needs your attention. Open other tasks using the quick actions below.
