@@ -76,7 +76,7 @@ assert(account.includes('Open Today') && !account.includes('start from your scho
 assert(!account.includes('href={`/khpos/${item.organisationId}`}'), 'Account school chooser must not offer a second overview destination');
 const tabSource=fs.readFileSync('src/components/khpos/SchoolSectionTabs.tsx','utf8');
 assert(tabSource.includes('tab.href ??'), 'Shared card tabs must support full page URLs as well as consolidated view URLs');
-assert(tabSource.includes('tabs.length <= 3 ? " flex-wrap sm:flex-nowrap"'), 'Compact groups must not hide other destinations on mobile');
+assert(tabSource.includes('className="khpos-horizontal-nav mt-2 flex-wrap sm:flex-nowrap"'), 'Compact groups must not hide other destinations on mobile');
 for(const path of ['src/components/khpos/ops/TeacherPresenceWorkspace.tsx','src/components/khpos/ReportsWorkspace.tsx','src/components/khpos/AnnouncementsWorkspace.tsx']) {
   const source=fs.readFileSync(path,'utf8');
   assert(source.includes('khpos-interface-card'), path+' must use the grouped page card style');
