@@ -98,7 +98,13 @@ for(const [route,canonical,view] of [
 const redirects=fs.readFileSync('src/lib/khpos/redirect-legacy-workspace.ts','utf8');
 assert(redirects.includes('UUID_RE.test(organisationId)') && redirects.includes('search') && redirects.includes('query.set(key, text)'), 'Legacy bookmarks and meeting links must keep school-scoped query values');
 assert(n.matchesSearch('/announcements','Updates','private meetings') && n.matchesSearch('/calendar','Calendar','events') && n.matchesSearch('/priorities','School improvement','action plan'), 'Page search must find formerly separate workflows');
-console.log('Simpler experience passed: 56 compatible school routes, 40 user-facing workspaces, 15 safe legacy redirects, consolidated navigation, branded UI and secure school-scoped links.');
+const hqCollab=fs.readFileSync('src/app/khpos/hq/meetings/page.tsx','utf8');
+const hqIdeasLegacy=fs.readFileSync('src/app/khpos/hq/ideas/page.tsx','utf8');
+const hqNav=fs.readFileSync('src/components/khpos/HqSectionNavigation.tsx','utf8');
+assert(hqCollab.includes('HqMeetings') && hqCollab.includes('IdeasBoard') && hqCollab.includes('view === "ideas"'), 'Corporate meetings and discussions must share one context');
+assert(hqIdeasLegacy.includes('redirect("/khpos/hq/meetings?view=ideas")'), 'Old HQ discussion links must redirect safely');
+assert(!hqNav.includes('{ href: "/khpos/hq/ideas"'), 'HQ navigation must not duplicate discussions');
+console.log('Simpler experience passed: 56 compatible school routes, 40 user-facing workspaces, 15 safe school redirects, one unified HQ collaboration area and secure school-scoped links.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];
 function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
