@@ -36,7 +36,7 @@ for (const [slug, { views, modules }] of Object.entries(hubs)) {
   const source = read(root + slug + "/page.tsx");
   assert(source.includes("SchoolSectionTabs"), slug + ": shared in-page navigation missing");
   assert(source.includes("UUID_RE.test(organisationId)"), slug + ": missing school ID validation");
-  for (const module of modules) assert(source.includes("<" + module), slug + ": lost " + module);
+  for (const workspaceName of modules) assert(source.includes("<" + workspaceName), slug + ": lost " + workspaceName);
   for (const view of views) assert(source.includes('selected === "' + view + '"'), slug + ": missing " + view + " view");
 }
 for (const [slug, [destination, view]] of Object.entries(oldRoutes)) {
