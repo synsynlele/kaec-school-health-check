@@ -19,6 +19,7 @@ const integration = fs.readFileSync(required[0], "utf8");
 const receiver = fs.readFileSync(required[2], "utf8");
 const workspace = fs.readFileSync(required[3], "utf8");
 const workspaceNav = fs.readFileSync("src/components/khpos/SchoolWorkspaceNav.tsx", "utf8");
+const resultsPage = fs.readFileSync("src/app/khpos/[organisationId]/performance/page.tsx", "utf8");
 
 for (const needle of [
   "provider in ('ksi','pipupath')",
@@ -58,8 +59,8 @@ for (const needle of [
 if (!receiver.includes("MAX_BODY_BYTES") || !receiver.includes('action?: "pair" | "sync"')) {
   throw new Error("Stage 8 receiver must be bounded and operation-scoped.");
 }
-if (!workspaceNav.includes("human-potential-intelligence") || !workspaceNav.includes("learning-intelligence")) {
-  throw new Error("Stage 8 intelligence workspaces must be reachable from the shared school workspace navigation.");
+if (!workspaceNav.includes('suffix: "/performance"') || !resultsPage.includes('HumanPotentialIntelligenceWorkspace') || !resultsPage.includes('LearningIntelligenceWorkspace') || !resultsPage.includes('selected === "development"') || !resultsPage.includes('selected === "learning"')) {
+  throw new Error("Stage 8 intelligence workspaces must remain accessible through School Results without losing privacy controls.");
 }
 if (integration.includes("resolvePriority") || integration.includes("khpos_reassessments")) {
   throw new Error("PipuPath signals cannot resolve priorities or mutate reassessment authority.");

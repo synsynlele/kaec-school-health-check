@@ -82,8 +82,8 @@ assert.ok(
   "Implementation UI must preserve the human execution/evidence boundary",
 );
 assert.ok(
-  prioritiesPage.includes(`/implementation`),
-  "Transformation Agenda must link into the generated implementation workspace",
+  prioritiesPage.includes('selected === "plan"') && prioritiesPage.includes("ImplementationWorkspace"),
+  "Transformation Agenda must retain its system-governed implementation module within the one School Improvement workspace",
 );
 
 console.log(

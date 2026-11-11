@@ -18,7 +18,7 @@ const ui = readFileSync(
   "utf8",
 );
 const page = readFileSync(
-  new URL("../src/app/khpos/[organisationId]/reviews/page.tsx", import.meta.url),
+  new URL("../src/app/khpos/[organisationId]/priorities/page.tsx", import.meta.url),
   "utf8",
 );
 const evidencePage = readFileSync(
@@ -57,8 +57,8 @@ assert.match(ui, /Complete closes the implementation cycle only/);
 assert.match(ui, /Executive or Transformation Lead/);
 assert.match(ui, /recommended/);
 assert.match(page, /ReviewDecisionWorkspace/);
-assert.match(evidencePage, /\/reviews/);
-assert.match(evidencePage, /Open Review & Decision/);
+assert.match(page, /selected === "reviews"/);
+assert.match(evidencePage, /redirectLegacySchoolWorkspace/);
 
 console.log(
   "KHP-OS Stage 5 structural validation passed: automatic review preparation, deterministic recommendations, governed human decisions and reassessment-safe completion are present.",

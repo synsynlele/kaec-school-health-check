@@ -18,7 +18,7 @@ const ui = readFileSync(
   "utf8",
 );
 const page = readFileSync(
-  new URL("../src/app/khpos/[organisationId]/evidence/page.tsx", import.meta.url),
+  new URL("../src/app/khpos/[organisationId]/priorities/page.tsx", import.meta.url),
   "utf8",
 );
 const implementationPage = readFileSync(
@@ -67,7 +67,8 @@ assert.match(ui, /maximum 8 MB/);
 assert.match(ui, /System-assessed sufficiency is not a claim/);
 assert.doesNotMatch(ui, /requirementId.*select/i);
 assert.match(page, /EvidenceVerificationWorkspace/);
-assert.match(implementationPage, /Evidence & Verification/);
+assert.match(page, /selected === "evidence"/);
+assert.match(implementationPage, /redirectLegacySchoolWorkspace/);
 
 console.log(
   "KHP-OS Stage 4 structural validation passed: private direct uploads, automated evidence matching, conservative sufficiency and review preparation are present.",
