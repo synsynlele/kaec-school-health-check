@@ -429,7 +429,7 @@ export function MyWorkWorkspace({
         </section>
 
         {attention && otherActions.length > 0 && (
-          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <section id="today-actions" aria-label="Items needing attention" className="scroll-mt-24 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
