@@ -286,19 +286,19 @@ export function AccountAccess() {
           {sharedReports.length > 0 && <div className="mt-7"><h3 className="text-lg font-black text-slate-950">School reports shared with leadership</h3><p className="mt-1 text-sm text-slate-600">You can read these completed reports through your active school leadership role.</p><div className="mt-3 grid gap-3">{sharedReports.map((report) => <Link key={report.id} href={`/report/${report.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 hover:border-brand-300"><span><strong className="block text-slate-950">{report.schoolName}</strong><span className="text-sm text-slate-500">{report.completedAt ? new Date(report.completedAt).toLocaleDateString() : "Completed"} · View report</span></span><ArrowRight className="size-5 text-brand-700" /></Link>)}</div></div>}
         </section>
 
-        <section className="mt-10">
-          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Institutional access</p><h2 className="mt-2 text-2xl font-black text-slate-950">Your school partnerships</h2></div></div>
+        {(partnerships.length === 0 || partnerships.some(item => item.partnerStatus !== "active")) && <section className="mt-10">
+          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Institutional access</p><h2 className="mt-2 text-2xl font-black text-slate-950">Partnership status</h2></div></div>
           {partnerships.length === 0 ? (
             <div className="mt-4 rounded-[26px] border border-dashed border-slate-300 bg-white p-7"><Building2 className="size-7 text-slate-500" /><p className="mt-3 font-extrabold text-slate-950">No school workspace is linked yet.</p><p className="mt-2 text-sm leading-6 text-slate-500">If you are a staff member, ask your school leader to add this email to your school. Sign in with that same email. If you represent a new school, complete the School Health Check and request a partnership.</p></div>
           ) : (
             <div className="mt-4 grid gap-4">
-              {partnerships.map((item) => {
+              {partnerships.filter(item => item.partnerStatus !== "active").map((item) => {
                 const copy = statusCopy[item.partnerStatus];
-                return <div key={item.organisationId} className="rounded-[26px] border border-slate-200 bg-white p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-lg font-black text-slate-950">{item.name}</p><p className="mt-1 text-sm font-bold text-brand-700">{copy[0]}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{copy[1]}</p></div>{item.partnerStatus === "active" ? <Link href={`/khpos/${item.organisationId}`} className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-extrabold text-white">Open KHP-OS <ArrowRight className="size-4" /></Link> : <Link href={`/khpos/partnership/${item.organisationId}`} className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-extrabold text-slate-700">View status <ArrowRight className="size-4" /></Link>}</div></div>;
+                return <div key={item.organisationId} className="rounded-[26px] border border-slate-200 bg-white p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-lg font-black text-slate-950">{item.name}</p><p className="mt-1 text-sm font-bold text-brand-700">{copy[0]}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{copy[1]}</p></div><Link href={`/khpos/partnership/${item.organisationId}`} className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-extrabold text-slate-700">View status <ArrowRight className="size-4" /></Link></div></div>;
               })}
             </div>
           )}
-        </section>
+        </section>}
       </div>
     </main>
   );
