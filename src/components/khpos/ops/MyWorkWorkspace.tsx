@@ -10,6 +10,7 @@ import { ActionFeedback } from "./ActionFeedback";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
+import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
 import { needsOwnerWorkAction } from "@/lib/khpos/ops/attention-rules";
@@ -427,10 +428,7 @@ export function MyWorkWorkspace({
             <span><span className="block font-extrabold">My reports</span><span className="mt-1 block text-sm text-slate-600">Open reports due, drafts and submitted history.</span></span>
             <span aria-hidden="true" className="text-xl text-brand-700">→</span>
           </Link>
-          <Link href={`/khpos/${organisationId}/announcements`} className="group flex min-h-24 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm transition hover:border-brand-300 hover:shadow-md">
-            <span><span className="block font-extrabold">School updates</span><span className="mt-1 block text-sm text-slate-600">Read notices and announcements in one place.</span></span>
-            <span aria-hidden="true" className="text-xl text-brand-700">→</span>
-          </Link>
+          <AnnouncementsWorkspace organisationId={organisationId} compact />
         </section>
 
         {attention && otherActions.length > 0 && (
