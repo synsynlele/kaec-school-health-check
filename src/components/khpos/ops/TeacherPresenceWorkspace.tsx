@@ -377,7 +377,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
         <ArrowLeft className="size-4"/> School Overview
       </Link>
       <div className="rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & TEACHING DELIVERY</div>
+        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & LESSONS</div>
         <h1 className="text-2xl font-black sm:text-4xl">My school day</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Record when you arrive at school, when each class starts and finishes, and when you leave school. Keep class teaching records separate from your school attendance. teaching through evidence-led observations.</p>
         <p className="mt-2 text-xs text-slate-300">Recorded using Nigerian local school time (Africa/Lagos). Staff attendance and subject lesson delivery are separate records.</p>
@@ -386,7 +386,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       {!data&&!error&&<LoadingScreen />}
       {data&&<>
         {!data.pilotEnabled&&<section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-          <h2 className="text-xl font-black text-amber-950">School attendance and teaching — ready to activate</h2>
+          <h2 className="text-xl font-black text-amber-950">School attendance and lessons — ready to activate</h2>
           <p className="mt-2 text-sm leading-6 text-amber-900">The new tools are available to every KHP-OS school. School attendance, lesson check-ins and HQLS observations stay inactive at this school until the school owner enables them. Existing school records are not changed.</p>
           {data.canEnablePilot?<button type="button" disabled={Boolean(busy)}
             className="mt-4 rounded-xl bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
@@ -395,7 +395,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
             :<p className="mt-3 text-sm font-semibold text-amber-900">Ask your school owner to activate these tools for your school.</p>}
         </section>}
         {data.pilotEnabled&&data.canEnablePilot&&<div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <span className="text-sm font-semibold text-emerald-900">School attendance and teaching are enabled.</span>
+          <span className="text-sm font-semibold text-emerald-900">School attendance and lessons are enabled.</span>
           <button type="button" disabled={Boolean(busy)}
             className="text-xs font-bold text-emerald-900 underline disabled:opacity-50"
             onClick={()=>{if(window.confirm("Pause new school attendance, class check-ins and HQLS observations for your school? Existing records stay saved."))void act("pilot_enable",{enabled:false},"New attendance and teaching activity paused.");}}>Pause pilot</button>
