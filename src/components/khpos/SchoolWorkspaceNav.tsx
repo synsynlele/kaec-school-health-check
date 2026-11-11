@@ -46,11 +46,6 @@ import {
 
 const transformLinks = [
   { suffix: "/priorities", label: "Priorities", icon: Target },
-  { suffix: "/implementation", label: "Action plan", icon: Workflow },
-  { suffix: "/playbooks", label: "Step-by-step guides", icon: BookOpen },
-  { suffix: "/evidence", label: "Evidence & proof", icon: FileCheck2 },
-  { suffix: "/reviews", label: "Review progress", icon: Gauge },
-  { suffix: "/improvement", label: "Check improvement", icon: Activity },
 ] as const;
 
 const activationLink = {
@@ -63,12 +58,6 @@ const executionControlLink = {
   suffix: "/execution-control",
   label: "Task setup",
   icon: Workflow,
-} as const;
-
-const leadershipBriefLink = {
-  suffix: "/leadership-brief",
-  label: "Meeting brief",
-  icon: BriefcaseBusiness,
 } as const;
 
 const calendarLink = {
@@ -102,8 +91,6 @@ const standardLink = {
 } as const;
 
 const operationsLinks = [
-  { suffix: "/ideas", label: "Ideas & discussions", icon: UsersRound },
-  { suffix: "/meetings", label: "Private meetings", icon: UsersRound },
   { suffix: "/reports", label: "Reports", icon: FileCheck2 },
   { suffix: "/announcements", label: "Announcements", icon: MessageCircle },
   { suffix: "/work", label: "Today", icon: ListTodo },
@@ -136,23 +123,15 @@ const operationsLinks = [
   { suffix: "/schools-campuses", label: "Schools & Campuses", icon: Building2 },
   { suffix: "/campus-readiness", label: "Campus checks", icon: Building2 },
   { suffix: "/assets", label: "Equipment & repairs", icon: Wrench },
-  { suffix: "/events", label: "Events & Programmes", icon: CalendarClock },
-  { suffix: "/parent-journeys", label: "Enquiries & admissions", icon: MessageCircle },
-  { suffix: "/network-pulse", label: "Campus summary", icon: Gauge },
-  { suffix: "/records", label: "Forms & checklists", icon: FileCheck2 },
 ] as const;
 
 const intelligenceLinks = [
-  { suffix: "/benchmarking", label: "School comparisons", icon: Gauge },
-  { suffix: "/learning-intelligence", label: "Learning summary", icon: GraduationCap },
-  { suffix: "/human-potential-intelligence", label: "Development summary", icon: BrainCircuit },
 ] as const;
 
 const workspaceLinks = [
   ...transformLinks,
   activationLink,
   executionControlLink,
-  leadershipBriefLink,
   calendarLink,
   askKhposLink,
   onboardingLink,
@@ -178,16 +157,16 @@ function operation(suffix: (typeof operationsLinks)[number]["suffix"]) {
 // Related pages share one entrance. Existing URLs remain valid, including saved links.
 const byRoute = (suffix: string) => workspaceLinks.find(link => link.suffix === suffix)!;
 const schoolAreas = [
-  { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings", "/ideas"] },
-  { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
+  { title: "Meetings & updates", help: "Announcements, private meetings and staff discussions on one page.", routes: ["/announcements"] },
+  { title: "Reports & forms", help: "Reports, forms and checklists in one workspace.", routes: ["/reports"] },
   { title: "Staff & roles", help: "Manage staff, roles, hiring and professional support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/staff-performance", "/staff-accountability", "/staff-transition"] },
   { title: "School day & gate", help: "Sign in and out, record classes, request movement permission, and register visitors.", routes: ["/teaching-presence", "/availability", "/visitors"] },
-  { title: "Teaching & planning", help: "Use the school calendar, organise lessons, manage assessments and support learners.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
+  { title: "Teaching & planning", help: "Calendar and events, lesson plans, assessments and learner support.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
-  { title: "Parents", help: "Follow up with current families and track new enquiries through admission.", routes: ["/parents", "/parent-journeys"] },
-  { title: "School improvement", help: "Choose priorities, carry out the plan, add proof and review what changed.", routes: ["/priorities", "/implementation", "/evidence", "/reviews", "/improvement", "/playbooks"] },
-  { title: "School results", help: "See progress, prepare leadership meetings and check school-level summaries.", routes: ["/performance", "/leadership-brief", "/network-pulse", "/benchmarking", "/learning-intelligence", "/human-potential-intelligence"] },
-  { title: "Schools & campuses", help: "Find your schools, manage locations, events and equipment, and check campus readiness.", routes: ["/schools-campuses", "/campus-readiness", "/assets", "/events"] },
+  { title: "Parents", help: "Current families, enquiries and admissions in one place.", routes: ["/parents"] },
+  { title: "School improvement", help: "One journey from priorities through implementation, evidence, review and improvement.", routes: ["/priorities"] },
+  { title: "School results", help: "Results, campus status, comparisons, learning and development summaries.", routes: ["/performance"] },
+  { title: "Schools & campuses", help: "Manage locations, campus readiness and equipment; events are in Calendar.", routes: ["/schools-campuses", "/campus-readiness", "/assets"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
 const navigationGroups = [
@@ -198,12 +177,12 @@ const navigationGroups = [
   { title: "Leadership & schools", icon: Building2, description: "Improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/work":"home school dashboard school overview today school home","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"/work":"home school dashboard school overview today school home","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/announcements":"updates meeting meetings private calls discussions ideas official notices","/calendar":"events programmes school diary holidays term activities school calendar","/reports":"checklists forms reports weekly termly logs record templates","/parents":"families admissions enquiries parent journey prospective parents","/performance":"results learning intelligence potential development comparison benchmarking network pulse meeting brief school data","/priorities":"transformation plan action plan implementation playbooks evidence proof verification review improvement school priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
@@ -478,7 +457,7 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   </nav>;
   // Today is already the school home. Do not repeat its name in a breadcrumb bar.
   if (pathname === `${base}/work`) return null;
-  if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
+  if (!area || area.routes.length === 1) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
       <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
