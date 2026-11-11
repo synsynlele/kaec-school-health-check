@@ -96,9 +96,11 @@ for (const token of ['--khpos-control-height:', '--khpos-radius-card:', '.khpos-
 }
 const sharedActiveNav = read('src/components/khpos/useActiveNavScroll.ts');
 assert(sharedActiveNav.includes('row.scrollLeft +='), 'Long navigation must keep the selected destination visible');
-for (const file of ['SchoolWorkspaceNav.tsx', 'HqSectionNavigation.tsx', 'AdminNav.tsx', 'KaecHqWorkspace.tsx']) {
+for (const file of ['SchoolSectionTabs.tsx', 'HqSectionNavigation.tsx', 'AdminNav.tsx', 'KaecHqWorkspace.tsx']) {
   assert(read('src/components/khpos/'+file).includes('useActiveNavScroll'), 'Active navigation is missing from '+file);
 }
+assert(read('src/components/khpos/SchoolWorkspaceNav.tsx').includes('<SchoolSectionTabs'),
+  'Grouped school pages must use the same card-style section navigation on mobile and desktop');
 for (const file of [
   'src/components/khpos/ops/AcademicDeliveryWorkspace.tsx',
   'src/components/khpos/ops/PeopleWorkspace.tsx',
