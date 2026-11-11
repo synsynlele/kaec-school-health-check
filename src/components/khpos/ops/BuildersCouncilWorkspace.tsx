@@ -18,7 +18,7 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
   const set = (key: string, value: string) => setFields((old) => ({ ...old, [key]: value }));
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) { setError("KHP-OS sign-in is temporarily unavailable."); return; }
     let active = true;
     void supabase.auth.getSession().then(async ({ data: session }) => {
       if (!session.session?.access_token) { if (active) setError("Sign in to continue."); return; }
@@ -30,6 +30,8 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
         if (!response.ok) throw new Error(result.error || "Council could not be loaded.");
         if (active) setData(result.council);
       } catch (cause) { if (active) setError(cause instanceof Error ? cause.message : "Council could not be loaded."); }
+    }).catch((cause: unknown) => {
+      if (active) setError(cause instanceof Error ? cause.message : "Unable to load school records. Check your connection and retry.");
     });
     return () => { active = false; };
   }, [organisationId, supabase]);
