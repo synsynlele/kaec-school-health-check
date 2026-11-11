@@ -191,7 +191,7 @@ export function AcademicAssuranceWorkspace({
   return (
     <main className="mx-auto w-full max-w-7xl space-y-7 px-4 py-6 sm:px-6 lg:px-8">
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header>
+      <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
         <Link
           href={`/khpos/${organisationId}/academic-delivery`}
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
