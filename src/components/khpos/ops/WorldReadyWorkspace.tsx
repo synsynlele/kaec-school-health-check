@@ -56,6 +56,7 @@ export function WorldReadyWorkspace({
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [workspace, setWorkspace] = useState<KhposOpsWorldReadyWorkspace | null>(null);
   const [error, setError] = useState(supabase ? "" : "KHP-OS sign-in is not configured.");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [learnerId, setLearnerId] = useState("");
   const [termId, setTermId] = useState("");
@@ -114,6 +115,8 @@ export function WorldReadyWorkspace({
           "",
       );
       setError("");
+    }).catch((cause: unknown) => {
+      if (active) setError(cause instanceof Error ? cause.message : "WorldReady could not be loaded. Check your connection and retry.");
     });
 
     return () => {
@@ -129,26 +132,34 @@ export function WorldReadyWorkspace({
     }
     setBusy(key);
     setError("");
-    const response = await fetch("/api/khpos/ops/worldready/" + organisationId, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const body = (await response.json()) as {
-      ok?: boolean;
-      worldReady?: KhposOpsWorldReadyWorkspace;
-      error?: string;
-    };
-    setBusy(null);
-    if (!response.ok || !body.ok || !body.worldReady) {
-      setError(body.error ?? "WorldReady operation could not be completed.");
+    setNotice("");
+    try {
+      const response = await fetch("/api/khpos/ops/worldready/" + organisationId, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const body = (await response.json()) as {
+        ok?: boolean;
+        worldReady?: KhposOpsWorldReadyWorkspace;
+        error?: string;
+      };
+      if (!response.ok || !body.ok || !body.worldReady) {
+        setError(body.error ?? "WorldReady operation could not be completed.");
+        return false;
+      }
+      setWorkspace(body.worldReady);
+      setNotice("Your WorldReady record was saved.");
+      return true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save your WorldReady record. Check your connection.");
       return false;
+    } finally {
+      setBusy(null);
     }
-    setWorkspace(body.worldReady);
-    return true;
   }
 
   if (!workspace && !error) {
@@ -167,7 +178,7 @@ export function WorldReadyWorkspace({
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
         <Link
           href={"/khpos/" + organisationId}
