@@ -27,11 +27,17 @@ assert.equal(n.workspaceLinks.length,56);
 const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));assert(n.matchesSearch('/availability','Leave & cover','movement permission'));
+assert.deepEqual(n.navigationGroups.map(g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
+assert.deepEqual(n.dailyLinks.map(x=>x.suffix),['/work','/teaching-presence','/reports','/announcements']);
 let tree=exports.SchoolAreaNavigation({organisationId:'school'});let all=nodes(tree);
 assert.equal(all.find(x=>x.type==='select').props.value,'/team');
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/people'), 'Staff & roles includes the Staff page in the compact selector');
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/team'), 'Staff & roles keeps Roles & sections reachable');
 assert.equal(all.find(x=>x.type==='select').props.value,'/team', 'Current staff page remains selected');
+assert.ok(!all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'Temporary outing belongs to School day & gate, not staff administration');
+currentPath='/khpos/school/teaching-presence';tree=exports.SchoolAreaNavigation({organisationId:'school'});all=nodes(tree);
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'School day contains movement permission');
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/visitors'), 'School day contains visitor register');
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
 currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
