@@ -5,10 +5,11 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BookOpen, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleAlert,
-  ClipboardCheck, FolderKanban, Landmark, LayoutDashboard, LockKeyhole,
+  ClipboardCheck, FolderKanban, LayoutDashboard, LockKeyhole,
   Plus, RefreshCw, ShieldCheck, Users, Wallet, LogOut, type LucideIcon,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -318,11 +319,11 @@ export function KaecHqWorkspace() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header className="border-b border-slate-800 bg-slate-950 text-white">
+      <header className="khpos-nav-panel border-b border-slate-800 bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-300 text-slate-950"><Landmark className="size-6" aria-hidden="true" /></span>
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-300 text-slate-950"><Image src="/khpos-icon-192.png" width={44} height={44} alt="" className="size-11 rounded-xl" /></span>
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">KAEC-NG · Private corporate workspace</p>
                 <h1 className="text-xl font-black tracking-tight sm:text-2xl">KAEC HQ</h1>
@@ -355,7 +356,7 @@ export function KaecHqWorkspace() {
             const Icon = item.icon;
             return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}
               aria-pressed={tab === item.id}
-              className={"flex min-w-[10rem] shrink-0 items-start gap-2.5 rounded-xl border p-3 text-left text-xs font-bold transition lg:min-w-0 " +
+              className={"flex min-w-[10rem] shrink-0 items-start gap-2.5 rounded-2xl border p-3.5 text-left text-xs font-bold transition lg:min-w-0 " +
                 (tab === item.id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white hover:bg-slate-50")}>
               <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true"/><span className="min-w-0"><span className="block">{item.label}</span><span className="mt-1 hidden text-[11px] font-medium leading-4 opacity-75 lg:block">{item.subtitle}</span></span>
             </button>;
