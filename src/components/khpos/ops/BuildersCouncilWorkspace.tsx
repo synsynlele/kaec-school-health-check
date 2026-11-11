@@ -12,6 +12,7 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [data, setData] = useState<CouncilWorkspace | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
   const set = (key: string, value: string) => setFields((old) => ({ ...old, [key]: value }));
@@ -35,7 +36,7 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
 
   async function act(mode: string, input: Record<string, unknown>) {
     if (!supabase) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setNotice("");
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.access_token) throw new Error("Sign in to continue.");
@@ -45,24 +46,24 @@ export function BuildersCouncilWorkspace({ organisationId }: { organisationId: s
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Council action failed.");
-      setData(result.council); setFields({});
+      setData(result.council); setFields({}); setNotice("Builder Council record saved.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Council action failed."); }
     finally { setBusy(false); }
   }
 
-  const input = (key: string, label: string, placeholder = "") => <label className="block text-sm font-medium text-slate-700">{label}<input aria-label={label} value={fields[key] || ""} placeholder={placeholder} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const select = (key: string, label: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{label}<select aria-label={label} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
-  const button = (label: string, onClick: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={onClick} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : label}</button>;
+  const input = (key: string, label: string, placeholder = "") => <label className="block text-sm font-medium text-slate-700">{label}<input aria-label={label} value={fields[key] || ""} placeholder={placeholder} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const select = (key: string, label: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{label}<select aria-label={label} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
+  const button = (label: string, onClick: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={onClick} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-50">{busy ? "Saving…" : label}</button>;
   const learners = data?.learners.map((l) => ({ value: l.id, label: `${l.name} · ${l.classLabel}` })) || [];
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-    <div><h1 className="text-3xl font-bold">Builders Council</h1><p className="mt-2 text-slate-600">Student representation, service and accountable leadership. Student voice is recorded with evidence; this is not an online ballot.</p></div>
+  return <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 px-4 py-6 text-slate-950 sm:px-6 sm:py-8">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+    <header className="khpos-interface-card space-y-2 p-5 sm:p-7"><p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">Student leadership</p><h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Builders Council</h1><p className="mt-2 text-slate-600">Student representation, service and accountable leadership. Student voice is recorded with evidence; this is not an online ballot.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <LoadingScreen />}
     {data && !data.canManage && <p>You can view council decisions. Authorised school or section leaders manage council records.</p>}
-    {data?.canManage && <section className="grid gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-3"><h2 className="md:col-span-3 text-xl font-bold">Start a session</h2>{select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}{input("session", "Session", "2026/2027")}{button("Create council cycle", () => void act("create_cycle", { campusId: fields.campus, sessionLabel: fields.session }), !fields.campus || !fields.session)}</section>}
-    {data?.cycles.map((cycle) => <section key={cycle.id} className="space-y-4 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">{cycle.sessionLabel} · {data.campuses.find((c) => c.id === cycle.campusId)?.name || "Campus"}</h2>
+    {data?.canManage && <details className="khpos-interface-card group p-4 sm:p-6"><summary className="cursor-pointer text-lg font-extrabold text-slate-950">Start a session <span className="float-right text-brand-700 group-open:rotate-45" aria-hidden="true">+</span></summary><div className="mt-4 grid gap-3 md:grid-cols-3">{select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}{input("session", "Session", "2026/2027")}{button("Create council cycle", () => void act("create_cycle", { campusId: fields.campus, sessionLabel: fields.session }), !fields.campus || !fields.session)}</div></details>}
+    {data?.cycles.map((cycle) => <section key={cycle.id} className="khpos-interface-card space-y-4 p-4 sm:p-6"><h2 className="text-xl font-bold">{cycle.sessionLabel} · {data.campuses.find((c) => c.id === cycle.campusId)?.name || "Campus"}</h2>
       {data.canManage && cycle.status === "open" && <div className="grid gap-3 rounded-lg bg-slate-50 p-3 md:grid-cols-3">{input(`title-${cycle.id}`, "Seat title", "Community Catalyst")}{select(`type-${cycle.id}`, "Seat type", [{ value: "class_representative", label: "Class representative" }, { value: "senior_leadership", label: "Senior leadership" }])}{input(`class-${cycle.id}`, "Class for representative", "Primary 4 or JSS1")}{input(`mission-${cycle.id}`, "Service mission", "Gather learner concerns and lead a response")}{button("Create seat", () => void act("create_seat", { cycleId: cycle.id, title: fields[`title-${cycle.id}`], seatType: fields[`type-${cycle.id}`], classLabel: fields[`type-${cycle.id}`] === "class_representative" ? fields[`class-${cycle.id}`] : null, mission: fields[`mission-${cycle.id}`] }), !fields[`title-${cycle.id}`] || !fields[`type-${cycle.id}`] || !fields[`mission-${cycle.id}`])}</div>}
       {cycle.seats.map((seat) => <article key={seat.id} className="space-y-3 rounded-lg border border-slate-200 p-3"><h3 className="font-bold">{seat.title} · {seat.status}</h3><p className="text-sm text-slate-600">{seat.mission}{seat.classLabel ? ` · ${seat.classLabel}` : ""}</p>
         {data.canManage && seat.status === "open" && <div className="grid gap-2 md:grid-cols-3">{select(`learner-${seat.id}`, "Nominee", learners.filter((l) => { const student = data.learners.find((x) => x.id === l.value); return student?.campusId === cycle.campusId && (seat.seatType === "class_representative" ? student.classLabel.toLowerCase() === seat.classLabel?.toLowerCase() : /^SS[12]/i.test(student?.classLabel.replace(/[^a-z0-9]/gi, "") || "")); }))}{input(`statement-${seat.id}`, "Why this learner? ")}{input(`evidence-${seat.id}`, "Nomination evidence reference")}{button("Nominate", () => void act("nominate", { seatId: seat.id, learnerId: fields[`learner-${seat.id}`], statement: fields[`statement-${seat.id}`], evidence: fields[`evidence-${seat.id}`] }), !fields[`learner-${seat.id}`] || !fields[`statement-${seat.id}`] || !fields[`evidence-${seat.id}`])}</div>}
