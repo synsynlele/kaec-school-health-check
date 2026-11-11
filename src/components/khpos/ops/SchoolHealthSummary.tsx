@@ -158,6 +158,19 @@ export function SchoolHealthSummary({ organisationId }: { organisationId: string
             </div>)}</div>
           </details>}
 
+          <details className="rounded-2xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-bold text-brand-800">View the school improvement journey</summary>
+            <ol className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {["Diagnose", "Interpret", "Prioritise", "Intervene", "Implement", "Evidence", "Review", "Reassess", "Improve"].map((stage, index) => (
+                <li key={stage} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="text-xs font-black text-brand-700">Step {index + 1}</span>
+                  <span className="mt-1 block text-sm font-bold text-slate-800">{stage}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 text-sm text-slate-600">The sequence guides improvement. Individual steps become complete only when the appropriate evidence and approvals are recorded.</p>
+          </details>
+
           <div className="flex flex-wrap gap-3">
             <Link href={"/khpos/" + organisationId + "/improvement"} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-800 hover:bg-brand-100">Review improvement <ArrowRight className="size-4" aria-hidden="true" /></Link>
             <Link href={"/khpos/" + organisationId + "/playbooks"} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Step-by-step guides</Link>
