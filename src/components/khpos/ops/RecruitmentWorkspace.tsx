@@ -236,7 +236,7 @@ export function RecruitmentWorkspace({
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <header className="khpos-interface-card flex flex-wrap items-start justify-between gap-4 p-5 sm:p-7">
         <div>
           <Link
             href={`/khpos/${organisationId}/people`}
@@ -258,7 +258,7 @@ export function RecruitmentWorkspace({
         <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-xs font-black text-brand-900">
           PEO-001–004 · PEO-P01
         </div>
-      </div>
+      </header>
 
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">

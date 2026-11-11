@@ -3,6 +3,7 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
+import { SectionJumpNav } from "./SectionJumpNav";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
 
@@ -191,7 +192,7 @@ export function AcademicAssuranceWorkspace({
   return (
     <main className="mx-auto w-full max-w-7xl space-y-7 px-4 py-6 sm:px-6 lg:px-8">
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header>
+      <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
         <Link
           href={`/khpos/${organisationId}/academic-delivery`}
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
@@ -217,6 +218,18 @@ export function AcademicAssuranceWorkspace({
           </span>
         </div>
       </header>
+
+      {!workspace.executiveSummaryOnly && (
+        <SectionJumpNav
+          label="Assessment work areas"
+          sections={[
+            { id: "assurance-cycles", label: "Assessment cycles" },
+            { id: "assurance-integrity", label: "Academic integrity" },
+            { id: "assurance-corrections", label: "Result corrections" },
+            ...(workspace.canCoordinate ? [{ id: "assurance-closeout", label: "Term close-out" }] : []),
+          ]}
+        />
+      )}
 
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
@@ -299,7 +312,7 @@ export function AcademicAssuranceWorkspace({
             />
           ) : null}
 
-          <section className="space-y-4">
+          <section id="assurance-cycles" className="scroll-mt-24 space-y-4">
             <SectionHeading
               eyebrow="Assessment cycles"
               title="Plan → moderate → prove readiness → administer → reconcile"
@@ -323,7 +336,7 @@ export function AcademicAssuranceWorkspace({
             )}
           </section>
 
-          <section className="space-y-4">
+          <section id="assurance-integrity" className="scroll-mt-24 space-y-4">
             <SectionHeading
               eyebrow="Academic integrity"
               title="Allegation ≠ finding: evidence + representation + reasoned decision"
@@ -352,7 +365,7 @@ export function AcademicAssuranceWorkspace({
             )}
           </section>
 
-          <section className="space-y-4">
+          <section id="assurance-corrections" className="scroll-mt-24 space-y-4">
             <SectionHeading
               eyebrow="Result correction"
               title="No silent edit: request → approve → external implementation → independent verification"
@@ -381,7 +394,7 @@ export function AcademicAssuranceWorkspace({
           </section>
 
           {workspace.canCoordinate ? (
-            <section className="space-y-4">
+            <section id="assurance-closeout" className="scroll-mt-24 space-y-4">
               <SectionHeading
                 eyebrow="Academic close-out"
                 title="Close the term only after assessment, support and exceptions are reconciled"

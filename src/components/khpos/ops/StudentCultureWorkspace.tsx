@@ -23,11 +23,12 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
   const cultureQueue = useRecordQueue(data?.cases ?? [], (item) => ["closed", "verified"].includes(item.status));
   const cultureSearch = useRecordSearch(cultureQueue.visibleItems,(e)=>[e.category, e.summary, e.status, e.evidenceReference].join(" "),(e)=>e.category,(e)=>e.dueDate);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
   const set = (key: string, value: string) => setFields((old) => ({ ...old, [key]: value }));
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) { setError("KHP-OS sign-in is temporarily unavailable."); return; }
     let active = true;
     void supabase.auth.getSession().then(async ({ data: session }) => {
       if (!session.session?.access_token) { if (active) setError("Sign in to continue."); return; }
@@ -37,13 +38,15 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
         if (!response.ok) throw new Error(result.error || "Student Culture could not be loaded.");
         if (active) setData(result.culture);
       } catch (cause) { if (active) setError(cause instanceof Error ? cause.message : "Student Culture could not be loaded."); }
+    }).catch((cause: unknown) => {
+      if (active) setError(cause instanceof Error ? cause.message : "Unable to load school records. Check your connection and retry.");
     });
     return () => { active = false; };
   }, [organisationId, supabase]);
 
   async function act(mode: string, input: Record<string, unknown>) {
     if (!supabase) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setNotice("");
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.access_token) throw new Error("Sign in to continue.");
@@ -52,20 +55,20 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Culture action failed.");
-      setData(result.culture); setFields({});
+      setData(result.culture); setFields({}); setNotice("Student culture record saved.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Culture action failed."); }
     finally { setBusy(false); }
   }
-  const input = (key: string, label: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{label}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900" /></label>;
-  const select = (key: string, label: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{label}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-slate-900"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
-  const button = (label: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : label}</button>;
+  const input = (key: string, label: string, type = "text") => <label className="block text-sm font-medium text-slate-700">{label}<input type={type} value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950" /></label>;
+  const select = (key: string, label: string, options: { value: string; label: string }[]) => <label className="block text-sm font-medium text-slate-700">{label}<select value={fields[key] || ""} onChange={(event) => set(key, event.target.value)} className="mt-1.5 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950"><option value="">Choose…</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
+  const button = (label: string, action: () => void, disabled = false) => <button type="button" disabled={busy || disabled} onClick={action} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-50">{busy ? "Saving…" : label}</button>;
   const assignments = data?.assignments.map((a) => ({ value: a.id, label: a.title + (a.isMine ? " (me)" : "") })) || [];
 
-  return <main className="mx-auto max-w-6xl space-y-6 p-5 text-slate-900">
-      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} /><div><h1 className="text-3xl font-bold">Student Culture</h1><p className="mt-2 text-slate-600">Record ordinary concerns, student voice and recognition. Assign a response and verify its outcome.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, protect them and report it in Safeguarding immediately. Do not enter confidential disclosure details here.</p></div>
+  return <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 px-4 py-6 text-slate-950 sm:px-6 sm:py-8">
+      <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} /><header className="khpos-interface-card space-y-2 p-5 sm:p-7"><p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">Learner wellbeing</p><h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Student Culture</h1><p className="mt-2 text-slate-600">Record ordinary concerns, student voice and recognition. Assign a response and verify its outcome.</p><p className="mt-2 font-semibold text-rose-800">If a child may be unsafe, protect them and report it in Safeguarding immediately. Do not enter confidential disclosure details here.</p></header>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}
     {!data && !error && <LoadingScreen />}
-    {data && <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h2 className="text-xl font-bold">Report or recognise</h2><div className="grid gap-3 md:grid-cols-3">
+    {data && <details className="khpos-interface-card group p-4 sm:p-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-extrabold text-slate-950">Report or recognise <span aria-hidden="true" className="text-brand-700 group-open:rotate-45">+</span></summary><p className="mt-2 text-sm text-slate-600">Use this for everyday student concerns and recognition. Safety disclosures belong in Safeguarding.</p><div className="mt-4 grid gap-3 md:grid-cols-3">
       {select("campus", "Campus", data.campuses.map((c) => ({ value: c.id, label: c.name })))}
       {select("category", "Category", categories.map(([value, label]) => ({ value, label })))}
       {fields.campus && !data.learners.some(learner => learner.campusId === fields.campus) && <p className="text-sm md:col-span-2">No learners are available for this campus. Ask your learner support lead to <Link className="underline" href={`/khpos/${organisationId}/learner-progress#add-learner`}>add them in the learner register</Link>.</p>}
@@ -73,10 +76,10 @@ export function StudentCultureWorkspace({ organisationId }: { organisationId: st
       {input("summary", "What happened or what was raised?")}{input("evidence", "Evidence or source reference")}
       {select("owner", "Response owner", assignments.filter((a) => { const assignment = data.assignments.find((x) => x.id === a.value); return assignment?.campusId === fields.campus || assignment?.campusId === null; }))}
       {input("due", "Response due", "date")}
-    </div>{button("Record case", () => void act("report", { campusId: fields.campus, learnerId: fields.learner || null, category: fields.category, summary: fields.summary, evidenceReference: fields.evidence, ownerAssignmentId: fields.owner, dueDate: fields.due }), !fields.campus || !fields.category || !fields.summary || !fields.evidence || !fields.owner || !fields.due || (!["student_voice", "recognition"].includes(fields.category) && !fields.learner))}</section>}
+    </div>{button("Record case", () => void act("report", { campusId: fields.campus, learnerId: fields.learner || null, category: fields.category, summary: fields.summary, evidenceReference: fields.evidence, ownerAssignmentId: fields.owner, dueDate: fields.due }), !fields.campus || !fields.category || !fields.summary || !fields.evidence || !fields.owner || !fields.due || (!["student_voice", "recognition"].includes(fields.category) && !fields.learner))}</details>}
     {data && <><RecordQueueTabs view={cultureQueue.view} setView={cultureQueue.setView} activeCount={cultureQueue.activeCount} historyCount={cultureQueue.historyCount} />
     <RecordQueueSearchControls query={cultureSearch.query} setQuery={cultureSearch.setQuery} sort={cultureSearch.sort} setSort={cultureSearch.setSort} shown={cultureSearch.visibleItems.length} total={cultureQueue.visibleItems.length} placeholder="Search case category, summary or status" /></>}
-    {data && cultureSearch.visibleItems.map((item) => <section key={item.id} className="space-y-3 rounded-xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold capitalize">{clean(item.category)} · {clean(item.status)}</h2><span className={item.status !== "verified" && item.status !== "referred_safeguarding" && item.dueDate < new Date().toISOString().slice(0, 10) ? "font-bold text-rose-700" : "text-slate-500"}>Due {item.dueDate}</span></div><p>{item.summary}</p><p className="text-sm text-slate-600">{data.learners.find((l) => l.id === item.learnerId)?.name || "Whole-campus concern"} · Evidence: {item.evidenceReference}</p>
+    {data && cultureSearch.visibleItems.map((item) => <section key={item.id} className="khpos-interface-card space-y-3 p-4 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold capitalize">{clean(item.category)} · {clean(item.status)}</h2><span className={item.status !== "verified" && item.status !== "referred_safeguarding" && item.dueDate < new Date().toISOString().slice(0, 10) ? "font-bold text-rose-700" : "text-slate-500"}>Due {item.dueDate}</span></div><p>{item.summary}</p><p className="text-sm text-slate-600">{data.learners.find((l) => l.id === item.learnerId)?.name || "Whole-campus concern"} · Evidence: {item.evidenceReference}</p>
       {item.canManage && item.status === "open" && button("Start response", () => void act("triage", { caseId: item.id }))}
       {item.canManage && ["open", "in_action"].includes(item.status) && <div className="grid gap-2 rounded-lg bg-slate-50 p-3 md:grid-cols-3"><h3 className="md:col-span-3 font-bold">Assign an action</h3>{input(`action-${item.id}`, "Action")}{input(`change-${item.id}`, "Expected change")}{select(`owner-${item.id}`, "Action owner", assignments.filter((a) => { const assignment = data.assignments.find((x) => x.id === a.value); return assignment?.campusId === item.campusId || assignment?.campusId === null; }))}{input(`date-${item.id}`, "Due date", "date")}{button("Assign", () => void act("create_action", { caseId: item.id, action: fields[`action-${item.id}`], expectedChange: fields[`change-${item.id}`], ownerAssignmentId: fields[`owner-${item.id}`], dueDate: fields[`date-${item.id}`] }), !fields[`action-${item.id}`] || !fields[`change-${item.id}`] || !fields[`owner-${item.id}`] || !fields[`date-${item.id}`])}</div>}
       {item.actions.map((action) => <div key={action.id} className="space-y-2 rounded-lg border border-slate-200 p-3"><p className="font-semibold">{action.action} · {clean(action.status)}</p><p className="text-sm text-slate-600">Target: {action.expectedChange} · Due {action.dueDate}</p>{action.isOwner && ["open", "returned"].includes(action.status) && <div className="grid gap-2 md:grid-cols-3">{input(`note-${action.id}`, "Completion note")}{input(`evidence-${action.id}`, "Completion evidence reference")}{button("Submit evidence", () => void act("submit_action", { actionId: action.id, note: fields[`note-${action.id}`], evidenceReference: fields[`evidence-${action.id}`] }), !fields[`note-${action.id}`] || !fields[`evidence-${action.id}`])}</div>}{item.canManage && action.status === "evidence_submitted" && <div className="space-y-2"><p className="text-sm">{action.completionNote} · {action.completionEvidence}</p>{input(`review-${action.id}`, "Evidence review note")}{button("Verify action", () => void act("verify_action", { actionId: action.id, note: fields[`review-${action.id}`] }), !fields[`review-${action.id}`])} {button("Return for more evidence", () => void act("return_action", { actionId: action.id, note: fields[`review-${action.id}`] }), !fields[`review-${action.id}`])}</div>}</div>)}

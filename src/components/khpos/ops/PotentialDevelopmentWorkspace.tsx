@@ -313,7 +313,7 @@ export function PotentialDevelopmentWorkspace({
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <header className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link

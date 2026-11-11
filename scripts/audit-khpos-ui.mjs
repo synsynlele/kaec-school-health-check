@@ -165,6 +165,81 @@ const surfaceCoverage = routeInfo.map(route => {
     },
   };
 });
+
+// Route-specific review evidence: report each destination and the subcomponents
+// that actually render its controls. A static check cannot assert visual parity.
+const everyScreenReview = surfaceCoverage.map(screen => {
+  const componentPaths = screen.componentFiles;
+  const pagePath = 'src/app' + screen.route + '/page.tsx';
+  const sources = [pagePath, ...componentPaths].filter(file => fs.existsSync(file));
+  const source = sources.map(file => read(file)).join('\n');
+  const directComponents = screen.componentFiles.map(file => path.basename(file, '.tsx'));
+  const controls = screen.innerScreenIndicators;
+  const indicators = {
+    labelledPageHeading: /<h1\b/.test(source),
+    searchOrSort: /RecordQueueSearchControls|type="search"|role="search"|Sort records|searchParams/.test(source),
+    historyOrReview: /RecordQueueTabs|History|history|review/.test(source),
+    formInteraction: controls.inputs + controls.selects + controls.textareas + controls.forms > 0,
+    formFeedback: /ActionFeedback|role="alert"|role="status"|notice\b/.test(source),
+    loadingOrRetry: /LoadingScreen|loading|Loading|Retry|try again/.test(source),
+    surfaceStyling: /khpos-interface-card|khpos-hero|rounded-(?:2xl|3xl)|rounded-\[/.test(source),
+    responsiveComposition: /\b(?:sm|md|lg|xl):/.test(source),
+    mobileGridReview: /(?:^|\s)grid-cols-[3456](?:\s|")/.test(source),
+  };
+  const sourceReviewFlags = [];
+  if (!indicators.labelledPageHeading) sourceReviewFlags.push('Confirm a visible, meaningful page heading');
+  if (indicators.formInteraction && !indicators.formFeedback) sourceReviewFlags.push('Inspect success/error feedback on forms');
+  if (indicators.mobileGridReview) sourceReviewFlags.push('Inspect base-width 3+ column grids on 320px phones');
+  if (!indicators.surfaceStyling) sourceReviewFlags.push('Inspect individual content-card styling');
+  if (!indicators.responsiveComposition) sourceReviewFlags.push('Inspect mobile/tablet layout');
+  return {
+    route: screen.route,
+    family: screen.family,
+    directComponents,
+    reachableComponentCount: componentPaths.length,
+    controls,
+    sourceIndicators: indicators,
+    sourceReviewFlags,
+    codeAuditStatus: 'reviewed-by-structural-audit',
+    authenticatedVisualStatus: 'not-tested',
+    deviceAcceptance: {mobile320:false,mobile390:false,tablet:false,desktop:false},
+    roleWorkflowAcceptance: false,
+  };
+});
+assert.equal(everyScreenReview.length, 71, 'Every school, HQ, admin and other route must have an acceptance record');
+assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 71,
+  'Per-route review has duplicate destinations');
+const screenIssues = everyScreenReview.reduce((sum,row)=>sum+row.sourceReviewFlags.length,0);
+fs.mkdirSync('artifacts', {recursive: true});
+fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
+  JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    scope: 'All 71 KHP-OS routes and their imported workspace components',
+    limits: 'Static structural inspection only. Role-scoped signed-in browser, screenshots, real-device interaction and visual parity are not tested.',
+    routeCount: everyScreenReview.length,
+    flagsNeedingManualInspection: screenIssues,
+    routes: everyScreenReview,
+  },null,2)+'\n');
+const columns = [
+  '# KHP-OS — every page and inner-screen acceptance register',
+  '',
+  'This register audits code composition across all 71 routes. **All signed-in visual/device/role checks are intentionally unapproved** until an authorised school/HQ/admin tester exercises the screens.',
+  '',
+  '| Route | Area | Direct component(s) | Source flags | Mobile | Desktop | Workflow |',
+  '|---|---|---|---|---|---|---|',
+];
+for (const item of everyScreenReview) {
+  const flags = item.sourceReviewFlags.length ? item.sourceReviewFlags.join('; ') : 'No source heuristic flagged';
+  columns.push('| '+item.route+' | '+item.family+' | '+(item.directComponents.join(', ')||'Route component')+' | '+flags+' | ☐ | ☐ | ☐ |');
+}
+columns.push('', '## Acceptance rules', '',
+  'A route is complete only when an authorised tester has checked its full page, inner forms, tabs, filters, modals, search, sorting, history, permission-denied view, error feedback, selected state and mobile overflow.',
+  'Test 320/390px phones, tablet, desktop, keyboard-only and 200% text zoom. Assess teacher, school leader, staff with multiple roles, HQ member and platform administrator as relevant. Preserve safeguarding and cross-school isolation.',
+  '', 'Never interpret codeAuditStatus as a screenshot, accessibility or workflow sign-off.', '');
+fs.writeFileSync('artifacts/khpos-every-screen-acceptance.md', columns.join('\n')+'\n');
+console.log('Every-screen source review: '+everyScreenReview.length+' routes; '+screenIssues+
+  ' targeted human-review flags. Screens remain unapproved for signed-in visual/device QA.');
+
 assert.equal(surfaceCoverage.length, routes.length, 'Every KHP-OS page must appear in the UI coverage matrix');
 assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 56,
   'All school pages must be source-reviewed');

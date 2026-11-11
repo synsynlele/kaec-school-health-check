@@ -36,6 +36,8 @@ jobs:
             artifacts/khpos-ui-route-audit.json
             artifacts/khpos-ui-surface-coverage.json
             artifacts/khpos-ui-manual-test-matrix.md
+            artifacts/khpos-every-screen-source-review.json
+            artifacts/khpos-every-screen-acceptance.md
           if-no-files-found: warn
           retention-days: 14
 

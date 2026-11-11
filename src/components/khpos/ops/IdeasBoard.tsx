@@ -69,7 +69,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
 
   return <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 text-slate-900 sm:px-6">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-    <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <header className="khpos-interface-card p-5 sm:p-6">
       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">School & HQ collaboration</p>
       <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Ideas &amp; Discussions</h1>
       <p className="mt-2 text-sm leading-6 text-slate-600">Share improvements with your team, or send a private suggestion to an authorised leader.</p>

@@ -97,7 +97,7 @@ export function LeadershipBriefWorkspace({
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">

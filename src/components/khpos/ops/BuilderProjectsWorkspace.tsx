@@ -3,6 +3,7 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
+import { SectionJumpNav } from "./SectionJumpNav";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
 
@@ -345,7 +346,7 @@ export function BuilderProjectsWorkspace({
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="khpos-interface-card flex flex-wrap items-center justify-between gap-3 p-5 sm:p-7">
         <div>
           <Link
             href={"/khpos/" + organisationId}
@@ -369,7 +370,18 @@ export function BuilderProjectsWorkspace({
         <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-xs font-bold text-brand-900">
           HPD-P03 · HPD-008 · HPD-009 · HPD-011 · HPD-013
         </div>
-      </div>
+      </header>
+
+      {!workspace.executiveAggregateOnly && (
+        <SectionJumpNav
+          label="Builder project work areas"
+          sections={[
+            ...(workspace.canManage ? [{ id: "builder-project-create", label: "Start a cycle" }] : []),
+            { id: "builder-project-cycles", label: "Project cycles" },
+            { id: "builder-project-records", label: "Builder projects" },
+          ]}
+        />
+      )}
 
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
@@ -430,7 +442,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {workspace.canManage ? (
-        <section className="grid gap-5 xl:grid-cols-2">
+        <section id="builder-project-create" className="scroll-mt-24 grid gap-5 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-600">
               Project Cycle
@@ -629,7 +641,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {!workspace.executiveAggregateOnly ? (
-        <section className="space-y-4">
+        <section id="builder-project-cycles" className="scroll-mt-24 space-y-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-600">
               Project Cycles
@@ -664,7 +676,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {!workspace.executiveAggregateOnly ? (
-        <section className="space-y-5">
+        <section id="builder-project-records" className="scroll-mt-24 space-y-5">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-violet-600">
               Projects

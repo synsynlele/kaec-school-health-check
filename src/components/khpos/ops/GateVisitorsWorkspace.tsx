@@ -78,7 +78,7 @@ export function GateVisitorsWorkspace({organisationId}:{organisationId:string}){
     <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex min-h-11 items-center text-blue-800 underline">School overview</Link>
   </main>;
   return <main className="min-h-screen bg-slate-50 text-slate-950">
-    <section className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white">
+    <section className="khpos-hero bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <Link href={`/khpos/${organisationId}/teaching-presence`} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-emerald-200">
           <ArrowLeft className="size-4"/> School attendance
@@ -103,7 +103,7 @@ export function GateVisitorsWorkspace({organisationId}:{organisationId:string}){
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
       {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">{error}</div>}
       {notice&&<div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">{notice}</div>}
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="khpos-interface-card p-5 sm:p-6">
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-800"><KeyRound className="size-5"/></span>
           <div><h2 className="text-xl font-black">Visitor tablet</h2><p className="mt-1 text-sm leading-6 text-slate-600">Visitors use the designated tablet without signing in as staff. Give the one-time code to the tablet operator, not to visitors.</p></div>
@@ -139,7 +139,7 @@ export function GateVisitorsWorkspace({organisationId}:{organisationId:string}){
           </div>)}</div>
         </details>}
       </section>
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="khpos-interface-card p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div><h2 className="text-xl font-black">Visitor register</h2><p className="mt-1 text-sm text-slate-600">Admission is only confirmed when authorised staff tap Admit.</p></div>
           <p className="text-xs text-slate-500">Recent 150 entries · newest first</p>
