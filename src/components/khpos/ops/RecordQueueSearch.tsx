@@ -70,7 +70,7 @@ export function RecordQueueSearchControls({
   hasPriority?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-stretch gap-3 rounded-2xl sm:flex-row sm:flex-wrap sm:items-end border border-slate-200 bg-white p-3 shadow-sm" role="search" aria-label="Find and sort records">
+    <div className="khpos-interface-card flex flex-col items-stretch gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-end" role="search" aria-label="Find and sort records">
       <label className="min-w-0 sm:flex-[1_1_16rem] text-sm font-semibold text-slate-700">
         Search this list
         <input
