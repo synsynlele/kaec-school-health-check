@@ -79,7 +79,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex items-center justify-between gap-3">
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
@@ -115,7 +115,7 @@ export function AskKhposWorkspace({ organisationId }: { organisationId: string }
             className={"rounded-xl px-5 py-3 text-sm font-bold "+(activeTab==="training"?"bg-slate-950 text-white":"border border-slate-300 bg-white text-slate-800")}>Training Academy</button>
         </div>
         {activeTab==="training"?<TrainingAcademy organisationId={organisationId}/>:<>
-        <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <section className="khpos-interface-card p-5 sm:p-7">
           <label className="block text-sm font-black">
             What do you need to understand?
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
