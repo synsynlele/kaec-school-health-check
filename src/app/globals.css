@@ -484,3 +484,127 @@ body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ── KHP-OS institutional interface standard, November 2026 ──────────────
+   Global, low-risk styles for ALL school, HQ, administration and subpages.
+   Existing workflow state, approval logic and role security stay untouched.
+   Do not use broad !important overrides or replace contextual warning colors. */
+.khpos-platform-ui {
+  --khpos-space-1: .5rem;
+  --khpos-space-2: .75rem;
+  --khpos-space-3: 1rem;
+  --khpos-space-4: 1.5rem;
+  --khpos-space-5: 2rem;
+  --khpos-control-height: 2.75rem;
+  --khpos-radius-control: .75rem;
+  --khpos-radius-card: 1.35rem;
+  --khpos-border-soft: #dbe4ef;
+  --khpos-shadow-soft: 0 1px 3px rgb(17 36 77 / .035), 0 14px 36px -30px rgb(17 36 77 / .25);
+  --khpos-line-height: 1.55;
+}
+.khpos-platform-ui :where(main, article, section, aside, dialog, [role="dialog"], fieldset) {
+  min-width: 0;
+}
+.khpos-platform-ui :where(main p, main li, main dd) {
+  line-height: var(--khpos-line-height);
+}
+.khpos-platform-ui :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  textarea
+) {
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--khpos-radius-control);
+}
+.khpos-platform-ui :where(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]), select) {
+  min-height: var(--khpos-control-height);
+}
+.khpos-platform-ui :where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--color-brand-700);
+}
+.khpos-platform-ui :where(input, textarea)::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+.khpos-platform-ui :where([role="tablist"], .khpos-area-tabs, .khpos-horizontal-nav) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.khpos-platform-ui :where([role="tablist"], .khpos-area-tabs, .khpos-horizontal-nav) > * {
+  flex-shrink: 0;
+}
+.khpos-platform-ui :where([role="dialog"], dialog) {
+  overscroll-behavior-y: contain;
+}
+.khpos-platform-ui :where(table) {
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.khpos-platform-ui :where(table th) {
+  font-weight: 700;
+}
+.khpos-platform-ui :where(table tbody tr) {
+  border-color: var(--khpos-border-soft);
+}
+.khpos-platform-ui :where(main article.rounded-2xl.border.bg-white,
+  main section.rounded-2xl.border.bg-white,
+  main article.rounded-3xl.border.bg-white,
+  main section.rounded-3xl.border.bg-white,
+  main article.rounded-\[28px\].border.bg-white,
+  main section.rounded-\[28px\].border.bg-white,
+  main article.rounded-\[30px\].border.bg-white,
+  main section.rounded-\[30px\].border.bg-white) {
+  box-shadow: var(--khpos-shadow-soft);
+}
+.khpos-platform-ui .khpos-interface-card {
+  min-width: 0;
+  border: 1px solid var(--khpos-border-soft);
+  border-radius: var(--khpos-radius-card);
+  background: #fff;
+  box-shadow: var(--khpos-shadow-soft);
+}
+.khpos-platform-ui .khpos-interface-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--khpos-space-2);
+  min-width: 0;
+}
+.khpos-platform-ui .khpos-horizontal-nav {
+  display: flex;
+  gap: .5rem;
+  padding-bottom: .25rem;
+}
+.khpos-platform-ui .khpos-interface-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 639px) {
+  .khpos-platform-ui :where(main > div, main > section, main > header) {
+    max-width: 100%;
+  }
+  .khpos-platform-ui .khpos-interface-toolbar > :where(button, a[href]) {
+    min-height: 2.75rem;
+  }
+  .khpos-platform-ui :where([role="dialog"]:not(#school-more-menu)) {
+    max-width: 100vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .khpos-platform-ui .khpos-interface-card,
+  .khpos-platform-ui .khpos-horizontal-nav,
+  .khpos-platform-ui :where([role="tablist"]) {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+@media print {
+  .khpos-platform-ui .khpos-interface-card,
+  .khpos-platform-ui :where(main article.rounded-2xl.border.bg-white, main section.rounded-2xl.border.bg-white) {
+    box-shadow: none;
+  }
+}
