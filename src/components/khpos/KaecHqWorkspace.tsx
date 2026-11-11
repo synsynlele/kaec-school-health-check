@@ -3,6 +3,7 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ops/ActionFeedback";
+import { useActiveNavScroll } from "./useActiveNavScroll";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -110,6 +111,7 @@ export function KaecHqWorkspace() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [tab, setTab] = useState<HqModule>("command");
+  const hqAreaRef = useActiveNavScroll<HTMLElement>(tab, '[aria-pressed="true"]');
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<FormFields | null>(null);
@@ -351,7 +353,7 @@ export function KaecHqWorkspace() {
         </div>
       </header>
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[242px_minmax(0,1fr)] lg:gap-7">
-        <nav aria-label="KAEC HQ areas" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:self-start">
+        <nav ref={hqAreaRef} aria-label="KAEC HQ areas" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:self-start">
           {areas.filter((item) => snapshot.allowedModules.includes(item.id)).map((item) => {
             const Icon = item.icon;
             return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}

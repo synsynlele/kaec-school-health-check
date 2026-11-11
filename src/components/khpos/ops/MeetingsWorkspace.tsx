@@ -160,10 +160,10 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
  const followUpDrafts=room ? deriveMeetingFollowUps({
    decisions:room.decisions,messages:room.messages,existingActions:room.actions,
  }) : [];
- return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900">
+ return <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 px-4 py-8 text-slate-900">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError("");setNotice(""); }} />
   <Link href={hq?"/khpos/hq":`/khpos/${organisationId}/work`} className="text-blue-700">{hq?"← KAEC HQ":"← Today"}</Link>
-  <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
+  <header className="khpos-interface-card flex flex-wrap items-start justify-between gap-4 p-5 sm:p-7"><div><h1 className="text-3xl font-black tracking-tight text-slate-950">{hq?"KAEC HQ meetings":"Private meetings"}</h1><p className="mt-2 text-slate-600">Discuss. Agree. Assign. Follow through.</p></div>
   {data?.canCreate&&<button className={button} onClick={()=>void prepareCreate()}>{showCreate?"Close form":"Schedule a meeting"}</button>}</header>
   {visibleError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{visibleError}</p>}
   {!data&&!visibleError&&<LoadingScreen />}
@@ -180,12 +180,12 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   </form>}
   <p className="text-sm text-slate-600">Meetings move to History when their scheduled time ends, or when the host closes or cancels them.</p>
   {history&&<p className="text-sm text-slate-600">To delete a past meeting you hosted, open it and choose Delete meeting.</p>}
-  <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="space-y-3"><div className="flex gap-2"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
+  <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="khpos-interface-card min-w-0 space-y-3 p-4"><div className="khpos-horizontal-nav"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
    {data&&!listedMeetings.length&&<p role="status" className="rounded-xl border bg-white p-4 text-sm text-slate-600">{search?"No meetings match your search.":history?"No past meetings yet.":"No upcoming or active meetings."}</p>}
    {listedMeetings.map(m=><button key={m.id} onClick={()=>{if(!busy){setData(d=>d?{...d,room:null}:d);selectedRef.current=m.id;setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{isCurrentMeeting(m,now)||["closed","cancelled"].includes(m.status)?m.status:"Time ended"}</span></button>)}
    {data&&!data.meetings.length&&<p className="rounded-xl bg-slate-100 p-4">No meetings yet. Your invitations will appear here.</p>}
   </aside>
-  {room?<section className="space-y-5 rounded-2xl border bg-white p-5">
+  {room?<section className="khpos-interface-card space-y-5 p-5">
    <div><p className="text-sm capitalize text-blue-700">{room.meeting.status}</p><h2 className="text-2xl font-bold">{room.meeting.title}</h2><p>{date(room.meeting.starts_at)} – {date(room.meeting.ends_at)}</p><p className="mt-3 whitespace-pre-wrap">{room.meeting.agenda}</p></div>
    <button className="text-blue-700 underline" onClick={()=>void navigator.clipboard.writeText(`${window.location.origin}/khpos/${organisationId}/meetings?meeting=${selected}`).catch(()=>setError("Could not copy the link. Open this meeting using its invitation."))}>Copy meeting link</button>
    {canDelete&&<button disabled={busy} className="ml-4 rounded-xl border border-red-300 px-4 py-3 font-semibold text-red-700 disabled:opacity-50" onClick={deleteMeeting}>Delete meeting</button>}

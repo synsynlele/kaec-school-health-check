@@ -272,9 +272,9 @@ export function ReportsWorkspace({
     );
   const chosen = detail?.items[0];
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 pb-16 sm:p-6">
+    <main className="khpos-interface-page mx-auto max-w-7xl space-y-6 p-4 pb-16 sm:p-6">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice ?? ""} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header className="space-y-3">
+      <header className="khpos-interface-card space-y-3 p-5 sm:p-7">
         <p className="text-xs font-black uppercase tracking-widest text-brand-700">
           School operations
         </p>
@@ -306,7 +306,7 @@ export function ReportsWorkspace({
           </button>
         </p>
       )}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           ["To complete", summary?.open],
           ["Overdue", summary?.overdue],
@@ -318,7 +318,7 @@ export function ReportsWorkspace({
           </div>
         ))}
       </div>
-      <nav aria-label="Report views" className="flex flex-wrap gap-2">
+      <nav aria-label="Report views" className="khpos-horizontal-nav">
         {[
           ["reports", "My reports"],
           ["review", "Reports to review"],

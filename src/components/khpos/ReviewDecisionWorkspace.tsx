@@ -307,7 +307,7 @@ export function ReviewDecisionWorkspace({
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busyReviewId)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-      <header className="bg-slate-950 text-white">
+      <header className="khpos-hero bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
           <Link href={`/khpos/${organisationId}/evidence`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">
             <ArrowLeft className="size-4" /> Evidence & Verification

@@ -18,6 +18,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
  if(name==='next/image')return {default:'img'};
  if(name==='lucide-react')return new Proxy({},{get:()=> 'span'});
  if(name==='@/components/khpos/NotificationBell')return {NotificationBell:'button'};
+ if(name==='@/components/khpos/useActiveNavScroll')return {useActiveNavScroll:()=>({current:null})};
  if(name==='@/lib/supabase/client')return {createBrowserSupabaseClient:()=>null};
  throw new Error(name);
 }});
@@ -56,7 +57,9 @@ assert(home.includes('School shortcuts') && home.includes('Review what needs att
 assert(home.includes('/work#today-actions'), 'School attention numbers must drill into the actionable attention queue rather than unrelated tasks');
 const account=fs.readFileSync('src/components/account/AccountAccess.tsx','utf8');
 assert(account.includes('Open Today') && account.includes('Open KHP-OS'), 'School chooser must distinguish Today from the school overview');
-assert(fs.readFileSync('src/components/khpos/SchoolWorkspaceNav.tsx','utf8').includes('row.scrollLeft +='), 'School-area tab rows must reveal the active page when scrolling horizontally');
+const navFiles=['src/components/khpos/SchoolWorkspaceNav.tsx','src/components/khpos/AdminNav.tsx','src/components/khpos/HqSectionNavigation.tsx','src/components/khpos/KaecHqWorkspace.tsx'];
+for(const file of navFiles) assert(fs.readFileSync(file,'utf8').includes('useActiveNavScroll'), file+' must reveal the active destination when navigation overflows');
+assert(fs.readFileSync('src/components/khpos/useActiveNavScroll.ts','utf8').includes('row.scrollLeft +='), 'All page families must use the shared active-tab scroll behaviour');
 assert(fs.readFileSync('src/app/globals.css','utf8').includes('--color-brand-700: #0f4fd8;'),'Existing KHP-OS brand colour must remain');
 console.log('Simpler experience passed: 56 preserved routes, 21 unique entrances, linked school-day actions, branded UI, secure school-scoped links and accessible page search.');
 // A field must retain its name after placeholder text disappears during typing.

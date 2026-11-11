@@ -91,6 +91,30 @@ const hqNavigation = read('src/components/khpos/HqSectionNavigation.tsx');
 const adminNavigation = read('src/components/khpos/AdminNav.tsx');
 const platformStyles = read('src/app/globals.css');
 assert(platformLayout.includes('khpos-platform-ui'), 'Every KHP-OS route needs the shared design system');
+for (const token of ['--khpos-control-height:', '--khpos-radius-card:', '.khpos-interface-card', '.khpos-horizontal-nav']) {
+  assert(platformStyles.includes(token), 'KHP-OS shared interface system missing '+token);
+}
+const sharedActiveNav = read('src/components/khpos/useActiveNavScroll.ts');
+assert(sharedActiveNav.includes('row.scrollLeft +='), 'Long navigation must keep the selected destination visible');
+for (const file of ['SchoolWorkspaceNav.tsx', 'HqSectionNavigation.tsx', 'AdminNav.tsx', 'KaecHqWorkspace.tsx']) {
+  assert(read('src/components/khpos/'+file).includes('useActiveNavScroll'), 'Active navigation is missing from '+file);
+}
+for (const file of [
+  'src/components/khpos/ops/AcademicDeliveryWorkspace.tsx',
+  'src/components/khpos/ops/PeopleWorkspace.tsx',
+  'src/components/khpos/ops/IssuesWorkspace.tsx',
+  'src/components/khpos/ops/DecisionsWorkspace.tsx',
+  'src/components/khpos/ops/LearnerProgressWorkspace.tsx',
+  'src/components/khpos/ops/StaffAccountabilityWorkspace.tsx',
+  'src/components/khpos/ops/StaffPerformanceWorkspace.tsx',
+  'src/components/khpos/ReportsWorkspace.tsx',
+  'src/components/khpos/ops/MeetingsWorkspace.tsx',
+  'src/components/khpos/AdminConsoleWorkspace.tsx'
+]) {
+  const source = read(file);
+  assert(source.includes('khpos-hero') || source.includes('khpos-interface-card'),
+    'Important workspace lacks the common visual system: '+file);
+}
 assert(schoolLayout.includes('SchoolWorkspaceNav'), 'School-specific navigation must survive the UI overhaul');
 assert(hqLayout.includes('HqSectionNavigation'), 'HQ subpages need a consistent corporate navigation');
 assert(adminLayout.includes('<AdminNav />'), 'Admin pages need the shared admin navigation');

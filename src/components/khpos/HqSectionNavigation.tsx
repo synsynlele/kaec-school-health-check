@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useActiveNavScroll } from "./useActiveNavScroll";
 
 const routes = [
   { href: "/khpos/hq", label: "HQ overview" },
@@ -17,6 +18,7 @@ const routes = [
 /** HQ subpages remain navigable without entering the corporate dashboard first. */
 export function HqSectionNavigation() {
   const pathname = usePathname();
+  const navRef = useActiveNavScroll<HTMLElement>(pathname);
   // The dashboard already has its own fully featured corporate header.
   if (pathname === "/khpos/hq") return null;
 
@@ -36,7 +38,7 @@ export function HqSectionNavigation() {
           <ArrowLeft aria-hidden="true" className="size-4" /> Account
         </Link>
       </div>
-      <nav aria-label="KAEC HQ workspace" className="mx-auto max-w-7xl overflow-x-auto px-4 pb-2 sm:px-6">
+      <nav ref={navRef} aria-label="KAEC HQ workspace" className="mx-auto max-w-7xl overflow-x-auto px-4 pb-2 sm:px-6">
         <div className="flex w-max min-w-full items-center gap-2">
           {routes.map((route) => {
             const active = pathname === route.href || (route.href !== "/khpos/hq" && pathname.startsWith(route.href + "/"));
