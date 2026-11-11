@@ -8,7 +8,6 @@ import { useActiveNavScroll } from "@/components/khpos/useActiveNavScroll";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Activity,
   AlertTriangle,
   BarChart3,
   BookOpen,
@@ -21,7 +20,6 @@ import {
   CheckCircle2,
   Compass,
   FileCheck2,
-  Gauge,
   Gavel,
   Hammer,
   GitBranch,
@@ -125,9 +123,6 @@ const operationsLinks = [
   { suffix: "/assets", label: "Equipment & repairs", icon: Wrench },
 ] as const;
 
-const intelligenceLinks = [
-] as const;
-
 const workspaceLinks = [
   ...transformLinks,
   activationLink,
@@ -138,7 +133,6 @@ const workspaceLinks = [
   systemIntegrityLink,
   standardLink,
   ...operationsLinks,
-  ...intelligenceLinks,
 ] as const;
 
 // Daily actions stay visible on both desktop and mobile. Setup belongs in More.
