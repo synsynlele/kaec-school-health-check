@@ -15,7 +15,9 @@ requireText(nav, 'suffix: "/potential-development"', "workspace navigation");
 requireText(nav, 'label: "Learner development"', "workspace navigation");
 requireText(nav, 'suffix: "/learner-progress"', "O14 navigation continuity");
 requireText(nav, 'suffix: "/academic-assurance"', "O15 navigation continuity");
-requireText(nav, 'suffix: "/human-potential-intelligence"', "Human Potential intelligence continuity");
+requireText(nav, 'suffix: "/performance"', "School results entrance continuity");
+requireText(read("src/app/khpos/[organisationId]/performance/page.tsx"), 'selected === "development"', "Human Potential intelligence remains a separate privacy-safe view within School Results");
+requireText(read("src/app/khpos/[organisationId]/performance/page.tsx"), "HumanPotentialIntelligenceWorkspace", "PipuPath intelligence source remains accessible");
 
 const page = read("src/app/khpos/[organisationId]/potential-development/page.tsx");
 requireText(page, "PotentialDevelopmentWorkspace", "O16 route");
