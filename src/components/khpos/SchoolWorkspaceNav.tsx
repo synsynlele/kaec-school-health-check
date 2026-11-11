@@ -212,7 +212,7 @@ function matchesSearch(suffix:string,label:string,query:string) {
 function NavigationGroup({ group, base, pathname, onNavigate }: {
   group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
 }) {
-  const active = group.links.some(link => workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
+  const active = group.links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
   const Icon = group.icon;
@@ -266,7 +266,7 @@ function WorkspaceLink({
   exactLabel?: boolean;
 }) {
   const href = `${base}${suffix}`;
-  const active = exactLabel ? isActive(pathname, base, suffix) : workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname,base,link.suffix));
+  const active = isActive(pathname, base, suffix) || (!exactLabel && workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname,base,link.suffix)));
 
   return (
     <Link
@@ -479,10 +479,10 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
-      <label className={`mt-3 text-xs font-bold text-slate-600 ${area.routes.length > 4 ? "block" : "block sm:hidden"}`}>Go to a page in {area.title}
+      <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
         <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
       </label>
-      {area.routes.length <= 4 && <nav aria-label={`${area.title} pages`} className="mt-3 hidden flex-wrap gap-2 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-bold ${active ? "border-brand-700 bg-brand-700 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{link.label}</Link>;})}</nav>}
+      <nav aria-label={`${area.title} pages`} className="khpos-area-tabs mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-bold transition ${active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"}`}>{link.label}</Link>;})}</nav>
     </div>
   </section>;
 }
