@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useActiveNavScroll } from "./useActiveNavScroll";
 
 const links = [
   { href: "/khpos/admin/announcements", label: "Network Announcements" },
@@ -15,6 +16,7 @@ const links = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const navRef = useActiveNavScroll<HTMLDivElement>(pathname);
 
   return (
     <nav aria-label="KHP-OS platform administration"
@@ -35,7 +37,7 @@ export function AdminNav() {
         </Link>
       </div>
       <div className="mx-auto max-w-7xl px-4 pb-2 sm:px-6">
-        <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Administration pages">
+        <div ref={navRef} className="flex gap-2 overflow-x-auto pb-1" aria-label="Administration pages">
           {links.map((link) => {
             const active =
               pathname === link.href ||
