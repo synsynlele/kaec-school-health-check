@@ -43,7 +43,8 @@ assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'Scho
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/visitors'), 'School day contains visitor register');
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
-currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school/work'),'Today is the one school-home breadcrumb');
+currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(tree,null,'Today is the home and must not have a redundant breadcrumb or page-area bar');
+currentPath='/khpos/school/people';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school/work'),'Other school pages return directly to Today');
 assert(!nodes(tree).some(x=>x.props.href==='/khpos/school'),'No breadcrumb links back to the removed overview');
 const quick=fs.readFileSync('src/components/khpos/ops/SchoolQuickActions.tsx','utf8');
 const outing=fs.readFileSync('src/components/khpos/ops/AvailabilityWorkspace.tsx','utf8');
