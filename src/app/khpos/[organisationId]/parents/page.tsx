@@ -29,7 +29,9 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Current families"},{"view":"enquiries","label":"Enquiries & admissions"}]}
       />
-      {selected === "enquiries" ? (<ExtendedWorkspace organisationId={organisationId} type="parent-journeys" />) : (<ParentPartnershipWorkspace organisationId={organisationId} />)}
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "enquiries" ? (<ExtendedWorkspace organisationId={organisationId} type="parent-journeys" />) : (<ParentPartnershipWorkspace organisationId={organisationId} />)}
+      </div>
     </>
   );
 }

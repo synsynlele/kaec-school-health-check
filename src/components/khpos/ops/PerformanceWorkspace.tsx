@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -826,7 +827,7 @@ export function PerformanceWorkspace({
         </section>
 
         {showCreate && workspace.canGovernKpis && (
-          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+          <section {...actionDestination} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">

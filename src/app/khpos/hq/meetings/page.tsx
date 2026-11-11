@@ -27,9 +27,11 @@ export default async function Page({
         theme="hq"
         tabs={[{ view: "", label: "Private meetings" }, { view: "ideas", label: "Ideas & discussions" }]}
       />
-      {selected === "ideas"
-        ? <IdeasBoard scope="hq" />
-        : <HqMeetings initialMeeting={initialMeeting} />}
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "ideas"
+          ? <IdeasBoard scope="hq" />
+          : <HqMeetings initialMeeting={initialMeeting} />}
+      </div>
     </>
   );
 }

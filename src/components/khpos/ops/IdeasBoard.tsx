@@ -1,5 +1,6 @@
 "use client";
 
+import { focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -86,7 +87,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
           void request().then(setBoard).catch(error => setError(error.message));
         }}>Refresh</button>
       </div>
-      <form id="idea-composer" onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <form id="idea-composer" tabIndex={-1} onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <fieldset disabled={busy} className="space-y-3">
           <legend className="font-semibold">{replyTo ? "Reply to discussion" : privateView ? "Send a private idea" : "Post an idea"}</legend>
           {privateView && !replyTo && <label className="block">Choose a leader
@@ -115,7 +116,7 @@ export function IdeasBoard({ scope }: { scope: string }) {
         <button type="button" disabled={busy} onClick={() => {
           setReplyTo(post.id);
           setBody("");
-          document.getElementById("idea-composer")?.scrollIntoView({ block: "center" });
+          focusActionDestination(document.getElementById("idea-composer"));
         }} className="text-sm font-semibold text-blue-800">Reply</button>
       </article>)}
       {!board.posts.some(post => post.private === privateView) && <p className="text-sm">No discussions here yet.</p>}

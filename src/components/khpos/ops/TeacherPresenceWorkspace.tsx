@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination, focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { calendarPauses, calendarPauseForDay, nextRegularLessonDay } from "@/lib/khpos/ops/attendance-guidance";
@@ -405,10 +406,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           {([["day","School attendance",School],["lessons","Timetable",CalendarClock],["exams","Tests & exams",CalendarClock],["hqls","HQLS observation",ClipboardCheck],["leaders","Leadership overview",UsersRound]] as const)
           .filter(([id])=>id!=="leaders" || data.teamPresence.length>0 || canManage || data.canEnableHqls)
           .map(([id,title,Icon])=><button key={id} type="button" role="tab" aria-selected={tab===id}
-            onClick={()=>{setTab(id);setError("");setNotice("");}}
+            onClick={()=>{setTab(id);setError("");setNotice("");focusActionDestination(document.getElementById("teaching-attendance-content"));}}
             className={"inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition "+(tab===id?"border-brand-700 bg-brand-700 text-white shadow-sm":"border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50")}>
             <Icon className="size-4"/>{title}</button>)}
         </div>
+        <div id="teaching-attendance-content" tabIndex={-1} />
         {tab==="day"&&<div className="grid gap-4 lg:grid-cols-2">
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
@@ -448,7 +450,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                 <b>{p.subject} · {p.class}</b><p>{p.start}–{p.end} · {p.room||"Room not set"}</p>
                 <p className="text-xs text-slate-500">{p.teacher} · {p.session?.out?"Reported":p.session?"In progress":"Not checked in"}</p>
               </div>)}</div>}
-            <button className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-800" onClick={()=>setTab("lessons")}>Open timetable</button>
+            <button className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-800" onClick={()=>{setTab("lessons");focusActionDestination(document.getElementById("teaching-attendance-content"));}}>Open timetable</button>
           </section>
         </div>}
 
@@ -588,7 +590,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                         className="text-sm font-bold text-brand-700" onClick={() => setEditingPeriod(editingPeriod === p.id ? "" : p.id)}>
                         {editingPeriod === p.id ? "Cancel edit" : "Edit weekly lesson"}
                       </button>
-                      {editingPeriod === p.id && <form className="mt-2 grid gap-2 sm:grid-cols-2" onSubmit={async event => {
+                      {editingPeriod === p.id && <form {...actionDestination} className="mt-2 grid gap-2 sm:grid-cols-2" onSubmit={async event => {
                         event.preventDefault();
                         const form = new FormData(event.currentTarget);
                         const saved = await act("period_edit", {

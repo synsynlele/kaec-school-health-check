@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination, focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -167,7 +168,7 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   {data?.canCreate&&<button className={button} onClick={()=>void prepareCreate()}>{showCreate?"Close form":"Schedule a meeting"}</button>}</header>
   {visibleError&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{visibleError}</p>}
   {!data&&!visibleError&&<LoadingScreen />}
-  {showCreate&&<form className="space-y-4 rounded-2xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void save({mode:"create",title,agenda,startsAt:new Date(starts).toISOString(),endsAt:meetingEnd(starts,hours),callUrl:"",callParts:[],participants:invitees},()=>{setShowCreate(false);setTitle("");setAgenda("");setInvitees([]);setHours(1);});}}>
+  {showCreate&&<form {...actionDestination} className="space-y-4 rounded-2xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void save({mode:"create",title,agenda,startsAt:new Date(starts).toISOString(),endsAt:meetingEnd(starts,hours),callUrl:"",callParts:[],participants:invitees},()=>{setShowCreate(false);setTitle("");setAgenda("");setInvitees([]);setHours(1);});}}>
    <h2 className="text-xl font-semibold">Plan a private meeting</h2>
    <label className="block">Meeting title<input required maxLength={160} className={field} value={title} onChange={e=>setTitle(e.target.value)}/></label>
    <label className="block">Agenda<textarea required maxLength={4000} className={field} value={agenda} onChange={e=>setAgenda(e.target.value)} placeholder="What must we discuss and decide?"/></label>
@@ -182,10 +183,10 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
   {history&&<p className="text-sm text-slate-600">To delete a past meeting you hosted, open it and choose Delete meeting.</p>}
   <div className="grid gap-5 lg:grid-cols-[280px_1fr]"><aside className="khpos-interface-card min-w-0 space-y-3 p-4"><div className="khpos-horizontal-nav"><button className="rounded-xl border p-2" aria-pressed={!history} onClick={()=>setHistory(false)}>Upcoming & active</button><button className="rounded-xl border p-2" aria-pressed={history} onClick={()=>setHistory(true)}>History</button></div><label className="block">Find a meeting<input type="search" className={field} value={search} onChange={e=>setSearch(e.target.value)}/></label>
    {data&&!listedMeetings.length&&<p role="status" className="rounded-xl border bg-white p-4 text-sm text-slate-600">{search?"No meetings match your search.":history?"No past meetings yet.":"No upcoming or active meetings."}</p>}
-   {listedMeetings.map(m=><button key={m.id} onClick={()=>{if(!busy){setData(d=>d?{...d,room:null}:d);selectedRef.current=m.id;setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{isCurrentMeeting(m,now)||["closed","cancelled"].includes(m.status)?m.status:"Time ended"}</span></button>)}
+   {listedMeetings.map(m=><button key={m.id} onClick={()=>{if(!busy){if(selected===m.id){focusActionDestination(document.getElementById("meeting-room"));return;}setData(d=>d?{...d,room:null}:d);selectedRef.current=m.id;setSelected(m.id);}}} className={`w-full rounded-xl border p-4 text-left ${selected===m.id?"border-blue-700 bg-blue-50":"bg-white"}`}><strong className="block">{m.title}</strong><span className="block text-sm">{date(m.starts_at)}</span><span className="text-sm capitalize">{isCurrentMeeting(m,now)||["closed","cancelled"].includes(m.status)?m.status:"Time ended"}</span></button>)}
    {data&&!data.meetings.length&&<p className="rounded-xl bg-slate-100 p-4">No meetings yet. Your invitations will appear here.</p>}
   </aside>
-  {room?<section className="khpos-interface-card space-y-5 p-5">
+  {room?<section id="meeting-room" key={room.meeting.id} {...actionDestination} className="khpos-interface-card space-y-5 p-5">
    <div><p className="text-sm capitalize text-blue-700">{room.meeting.status}</p><h2 className="text-2xl font-bold">{room.meeting.title}</h2><p>{date(room.meeting.starts_at)} – {date(room.meeting.ends_at)}</p><p className="mt-3 whitespace-pre-wrap">{room.meeting.agenda}</p></div>
    <button className="text-blue-700 underline" onClick={()=>void navigator.clipboard.writeText(`${window.location.origin}/khpos/${organisationId}/meetings?meeting=${selected}`).catch(()=>setError("Could not copy the link. Open this meeting using its invitation."))}>Copy meeting link</button>
    {canDelete&&<button disabled={busy} className="ml-4 rounded-xl border border-red-300 px-4 py-3 font-semibold text-red-700 disabled:opacity-50" onClick={deleteMeeting}>Delete meeting</button>}
@@ -202,11 +203,11 @@ export function MeetingsWorkspace({organisationId,initialMeeting=""}:{organisati
    <p className="mt-2 text-sm text-brand-950">Explicitly marked Action:, Task: or Follow-up: in the private meeting's own messages or decisions. Select one to prepare an assignment; then choose the responsible attendee and deadline yourself.</p>
    <div className="mt-3 space-y-2">{followUpDrafts.map(d=><button key={d.id} type="button" disabled={busy}
      className="block w-full rounded-xl border border-brand-200 bg-white p-3 text-left text-sm font-semibold text-brand-950"
-     onClick={()=>{setAction(d.title);setOwner("");setDue("");}}>
+     onClick={()=>{setAction(d.title);setOwner("");setDue("");focusActionDestination(document.getElementById("meeting-follow-up-form"));}}>
       Prepare: {d.title}
    </button>)}</div>
   </aside>}
-  {host&&writable&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void save({mode:"action",meetingId:selected,id:crypto.randomUUID(),title:action,ownerId:owner,dueAt:new Date(due).toISOString()},()=>{setAction("");setOwner("");setDue("");});}}><label className="block">What needs to happen?<input required maxLength={160} className={field} value={action} minLength={hq?4:1} onChange={e=>setAction(e.target.value)}/></label><label className="block">Who is responsible?<select required className={field} value={owner} onChange={e=>setOwner(e.target.value)}><option value="">{hq?"Choose an invited HQ colleague":"Choose an invited school staff member"}</option>{room.participants.filter(p=>!hq||p.is_hq).map(p=><option key={p.user_id} value={p.user_id}>{p.name}</option>)}</select></label><label className="block">Deadline<input required type="datetime-local" className={field} value={due} onChange={e=>setDue(e.target.value)}/></label><button disabled={busy} className={button}>{hq?"Assign in HQ Work":"Assign in Today"}</button></form>}</div>
+  {host&&writable&&<form id="meeting-follow-up-form" tabIndex={-1} className="space-y-3" onSubmit={e=>{e.preventDefault();void save({mode:"action",meetingId:selected,id:crypto.randomUUID(),title:action,ownerId:owner,dueAt:new Date(due).toISOString()},()=>{setAction("");setOwner("");setDue("");});}}><label className="block">What needs to happen?<input required maxLength={160} className={field} value={action} minLength={hq?4:1} onChange={e=>setAction(e.target.value)}/></label><label className="block">Who is responsible?<select required className={field} value={owner} onChange={e=>setOwner(e.target.value)}><option value="">{hq?"Choose an invited HQ colleague":"Choose an invited school staff member"}</option>{room.participants.filter(p=>!hq||p.is_hq).map(p=><option key={p.user_id} value={p.user_id}>{p.name}</option>)}</select></label><label className="block">Deadline<input required type="datetime-local" className={field} value={due} onChange={e=>setDue(e.target.value)}/></label><button disabled={busy} className={button}>{hq?"Assign in HQ Work":"Assign in Today"}</button></form>}</div>
   </section>:<section className="rounded-2xl bg-slate-50 p-6"><h2 className="text-xl font-semibold">A clear record of every commitment</h2><p className="mt-2">Open an invited meeting to discuss the agenda, see decisions and check follow-ups.</p></section>}
   </div>
  </main>;

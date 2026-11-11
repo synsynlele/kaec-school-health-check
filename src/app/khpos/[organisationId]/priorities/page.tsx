@@ -33,7 +33,9 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Priorities"},{"view":"plan","label":"Action plan"},{"view":"evidence","label":"Evidence & proof"},{"view":"reviews","label":"Review progress"},{"view":"improvement","label":"Check improvement"},{"view":"guides","label":"Step-by-step guides"}]}
       />
-      {selected === "plan" ? (<ImplementationWorkspace organisationId={organisationId} />) : (selected === "evidence" ? (<EvidenceVerificationWorkspace organisationId={organisationId} />) : (selected === "reviews" ? (<ReviewDecisionWorkspace organisationId={organisationId} />) : (selected === "improvement" ? (<ImprovementIntelligenceWorkspace organisationId={organisationId} />) : (selected === "guides" ? (<PlaybooksWorkspace organisationId={organisationId} />) : (<PriorityInterventionWorkspace organisationId={organisationId} />)))))}
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "plan" ? (<ImplementationWorkspace organisationId={organisationId} />) : (selected === "evidence" ? (<EvidenceVerificationWorkspace organisationId={organisationId} />) : (selected === "reviews" ? (<ReviewDecisionWorkspace organisationId={organisationId} />) : (selected === "improvement" ? (<ImprovementIntelligenceWorkspace organisationId={organisationId} />) : (selected === "guides" ? (<PlaybooksWorkspace organisationId={organisationId} />) : (<PriorityInterventionWorkspace organisationId={organisationId} />)))))}
+      </div>
     </>
   );
 }

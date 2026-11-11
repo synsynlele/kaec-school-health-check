@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination, focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ops/ActionFeedback";
@@ -355,7 +356,7 @@ export function KaecHqWorkspace() {
         <nav ref={hqAreaRef} aria-label="KAEC HQ areas" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:self-start">
           {areas.filter((item) => snapshot.allowedModules.includes(item.id)).map((item) => {
             const Icon = item.icon;
-            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); }}
+            return <button key={item.id} onClick={() => { setTab(item.id); setForm(null); setEditing(null); setActionRecord(null); setSearch(""); focusActionDestination(document.getElementById("hq-module-content")); }}
               aria-pressed={tab === item.id}
               className={"flex min-w-[10rem] shrink-0 items-start gap-2.5 rounded-2xl border p-3.5 text-left text-xs font-bold transition lg:min-w-0 " +
                 (tab === item.id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white hover:bg-slate-50")}>
@@ -367,7 +368,7 @@ export function KaecHqWorkspace() {
             <span className="mt-1 block font-normal text-emerald-800">Live school commitments, follow-ups, visits and evidence</span>
           </Link>
         </nav>
-        <main className="min-w-0 space-y-6">
+        <main id="hq-module-content" tabIndex={-1} className="min-w-0 space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-700">Corporate operating system</p>
               <h2 className="mt-1 text-3xl font-black tracking-tight">{area.label}</h2>
@@ -406,7 +407,7 @@ export function KaecHqWorkspace() {
               <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs text-blue-900">Due in the next 7 days: <strong>{dueSoon.length}</strong> · Awaiting independent review: <strong>{waitingReview.length}</strong>. Review ownership before assuming another person will act.</p>
               {Array.from(new Map([...overdue, ...reviewable, ...critical, ...dueSoon].map((r) => [r.id, r])).values()).slice(0, 12).map((r) =>
                 <button key={r.id} className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm hover:bg-slate-50"
-                  onClick={() => {setTab(r.module);setSearch(r.title);}}>
+                  onClick={() => {setTab(r.module);setSearch(r.title);focusActionDestination(document.getElementById("hq-module-content"));}}>
                   <span><strong className="block">{r.title}</strong><span className="text-xs text-slate-600">{pretty(r.module)} · {memberLabel(r.owner_user_id)}</span></span>
                   <RoleStatus status={r.status}/>
                 </button>)}
@@ -511,7 +512,7 @@ export function KaecHqWorkspace() {
             {tab === "work" && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900">
               For daily, weekly, monthly, quarterly and yearly work, completing one evidenced cycle creates the next occurrence automatically. Termly work remains a manual scheduling decision. This does not send push alerts or emails.
             </div>}
-            {form && <form onSubmit={(event) => void submitRecord(event)} className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
+            {form && <form key={editing?.id ?? "new"} {...actionDestination} onSubmit={(event) => void submitRecord(event)} className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between"><h3 className="text-lg font-black">{editing ? "Edit corporate record" : "New " + pretty(tab) + " record"}</h3>
                 <button type="button" onClick={() => {setForm(null);setEditing(null);}} className="text-xs font-bold text-slate-500 underline">Close</button></div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -593,7 +594,7 @@ export function KaecHqWorkspace() {
                         <button disabled={busy} onClick={() => startAction(record,"return")} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-40">Return to owner</button>
                       </>}
                   </div>
-                  {actionRecord?.id === record.id && <form onSubmit={(event) => {event.preventDefault(); void confirmAction();}} className="mt-3 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  {actionRecord?.id === record.id && <form {...actionDestination} onSubmit={(event) => {event.preventDefault(); void confirmAction();}} className="mt-3 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <p className="text-sm font-bold">{actionMode === "submit" ? "Submit evidence for independent review" : actionMode === "complete" ? "Attest that your routine work is complete" : actionMode === "approve" ? "Record independent approval" : "Return this work with a clear reason"}</p>
                     <p className="text-xs text-emerald-950">{actionMode === "complete" ? "Only routine, non-critical work may be owner-attested. This is not independent approval." : actionMode === "submit" ? "The author and accountable owner cannot independently verify this record." : "An auditable review note is required. Make your decision based on real evidence."}</p>
                     <label className={clsLabel}>{actionMode === "approve" || actionMode === "return" ? "Reviewer decision and reason" : "Evidence of work completed"}

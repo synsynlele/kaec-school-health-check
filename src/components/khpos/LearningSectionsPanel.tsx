@@ -1,6 +1,7 @@
 "use client";
 
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { ActionFeedback } from "./ops/ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -175,7 +176,7 @@ function SectionEditor({
   const [stage, setStage] = useState<LearningStage>(s?.stage ?? "preschool"),
     [name, setName] = useState(s?.name ?? "Preschool");
   return (
-    <form
+    <form {...actionDestination}
       className="space-y-3 rounded-xl border-2 border-brand-200 bg-slate-50 p-4"
       onSubmit={(e) => {
         e.preventDefault();

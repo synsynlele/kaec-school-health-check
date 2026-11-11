@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination, focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ops/ActionFeedback";
@@ -195,7 +196,7 @@ export function SchoolPathfinderDesk() {
             return <button key={e.id} type="button" className="block w-full rounded-xl border p-3 text-left"
               onClick={() => {
                 setSelectedSchool(e.id); setAgreement(null); setCommitment(null); setCurrentAction(null);
-                document.getElementById("school-rollout-details")?.scrollIntoView({ block: "start" });
+                focusActionDestination(document.getElementById("school-rollout-details"));
               }}>
               <strong>{partnerName(e.organisation_id)}</strong>
               <span className="mt-1 block text-sm text-slate-700">{labelOf(e.engagement_status)} · Pathfinder: {memberName(e.representative_user_id)} · School contact: {e.school_liaison || "Not set"}</span>
@@ -212,7 +213,7 @@ export function SchoolPathfinderDesk() {
           {!visibleSchools.length && <p className="text-sm text-slate-600">No linked schools match.</p>}
         </div>
       </details>
-      <div id="school-rollout-details" className="grid scroll-mt-24 items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
+      <div id="school-rollout-details" tabIndex={-1} className="grid scroll-mt-24 items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
         <aside className="space-y-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="flex items-center gap-2 text-lg font-black"><MapPinned className="size-5 text-emerald-700"/> Partner schools</h2>
@@ -267,7 +268,7 @@ export function SchoolPathfinderDesk() {
               {selected.agreed_scope&&<div className="mt-4 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-700"><strong>Agreed support scope:</strong> {selected.agreed_scope}</div>}
               {(isVision || (canGovern && selected.engagement_status==="setup" && !selected.contract_verified_at))&&<button onClick={()=>{setAgreement(agreementForm(selected));setCommitment(null);}} className="mt-4 rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold">Manage agreement & Pathfinder</button>}
               {!isVision && selected.contract_verified_at && canGovern&&<p className="mt-4 text-xs text-slate-600">Verified agreements may only be revised, paused or ended by the Vision Custodian.</p>}
-              {agreement?.id===selected.id&&<form className="mt-4 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+              {agreement?.id===selected.id&&<form {...actionDestination} className="mt-4 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
                 onSubmit={e=>{e.preventDefault();void act("update_engagement",{
                   ...agreement,representative_user_id:agreement.representative_user_id||null,
                   next_virtual_check_on:agreement.next_virtual_check_on||null,
@@ -304,7 +305,7 @@ export function SchoolPathfinderDesk() {
                 {canGovern&&selected.engagement_status==="active"&&<button onClick={()=>{setCommitment(newCommitment(selected.id));setAgreement(null);}}
                   className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white"><Plus className="mr-1 inline size-3.5"/> Add agreed action</button>}
               </div>
-              {commitment?.engagement_id===selected.id&&<form className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2"
+              {commitment?.engagement_id===selected.id&&<form {...actionDestination} className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2"
                 onSubmit={e=>{e.preventDefault();void act("add_commitment",{
                   ...commitment,due_on:commitment.due_on||null,next_followup_on:commitment.next_followup_on||null
                 },"Agreement-linked school action created.").then(done=>{if(done)setCommitment(null);});}}>
@@ -349,7 +350,7 @@ export function SchoolPathfinderDesk() {
                       </>}
                       {canVerify(c,selected)&&<button type="button" onClick={()=>openAction("verify",c)} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white"><ShieldCheck className="mr-1 inline size-3.5"/> Verify evidence</button>}
                     </div>
-                    {currentAction?.id===c.id&&<form className="mt-3 space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4" onSubmit={e=>{e.preventDefault();void submitAction(c);}}>
+                    {currentAction?.id===c.id&&<form key={currentAction.kind} {...actionDestination} className="mt-3 space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4" onSubmit={e=>{e.preventDefault();void submitAction(c);}}>
                       <p className="text-sm font-black">{currentAction.kind==="followup"?"Record a real virtual contact or site visit":currentAction.kind==="progress"?"Update agreed commitment":"Independent school evidence review"}</p>
                       {currentAction.kind==="progress"&&<label className={label}>Current progress<select className={control} value={actionStatus} onChange={e=>setActionStatus(e.target.value)}>
                         <option value="planned">Planned</option><option value="in_progress">In progress</option>

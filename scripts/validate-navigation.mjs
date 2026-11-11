@@ -212,3 +212,40 @@ for (const file of [
 }
 
 requireText(schoolNav, 'window.location.replace("/khpos")', "Shared school sign-out returns to app entrance");
+
+const groupedTabs = read("src/components/khpos/SchoolSectionTabs.tsx");
+requireText(groupedTabs, 'href.includes("#") ? href : href + "#" + destinationId', "Grouped cards land on content and preserve specific links");
+requireText(schoolNav, 'destinationId="school-route-content"', "School cards target the next workspace");
+requireText(read("src/app/khpos/[organisationId]/layout.tsx"), 'id="school-route-content" tabIndex={-1}', "School workspace landing target");
+for (const page of [
+  ...["announcements", "calendar", "parents", "performance", "priorities", "reports"]
+    .map((route) => `[organisationId]/${route}`),
+  "hq/meetings",
+]) {
+  requireText(read(`src/app/khpos/${page}/page.tsx`), 'id="khpos-section-content" tabIndex={-1}', page + " content target");
+}
+
+const scrollCalls = [];
+let frameCallback;
+const destinationModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(read("src/components/khpos/actionDestination.ts"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText, {
+  exports: destinationModule.exports,
+  requestAnimationFrame: (callback) => { frameCallback = callback; return 1; },
+  cancelAnimationFrame: () => { frameCallback = undefined; },
+});
+const { actionDestination } = destinationModule.exports;
+const form = {
+  focus: (options) => scrollCalls.push(["focus", options.preventScroll]),
+  scrollIntoView: (options) => scrollCalls.push(["scroll", options.block, options.inline]),
+};
+const cleanup = actionDestination.ref(form);
+if (scrollCalls.length) throw new Error("The form must wait for layout before scrolling.");
+frameCallback();
+if (JSON.stringify(scrollCalls) !== JSON.stringify([["focus", true], ["scroll", "start", "nearest"]])) {
+  throw new Error("The revealed form must receive focus and scroll to its start.");
+}
+cleanup();
+if (frameCallback) throw new Error("Removing a form must cancel its pending scroll.");
+console.log("Grouped content anchors and revealed-form focus validated.");
