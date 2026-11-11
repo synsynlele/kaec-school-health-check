@@ -423,12 +423,12 @@ export function MyWorkWorkspace({
         <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
         <AssessmentTimetable school={organisationId} todayInvigilation />
         <SchoolPlan school={organisationId} todayOnly />
-        <section id="today-reports" aria-label="Reports and school updates" className="grid scroll-mt-24 gap-3 sm:grid-cols-2">
+        <section id="today-reports" aria-label="School announcements and reports" className="scroll-mt-24 space-y-3">
+          <AnnouncementsWorkspace organisationId={organisationId} compact />
           <Link href={`/khpos/${organisationId}/reports`} className="group flex min-h-24 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm transition hover:border-brand-300 hover:shadow-md">
             <span><span className="block font-extrabold">My reports</span><span className="mt-1 block text-sm text-slate-600">Open reports due, drafts and submitted history.</span></span>
             <span aria-hidden="true" className="text-xl text-brand-700">→</span>
           </Link>
-          <AnnouncementsWorkspace organisationId={organisationId} compact />
         </section>
 
         {attention && otherActions.length > 0 && (
