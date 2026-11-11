@@ -238,7 +238,7 @@ export function AccountAccess() {
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-brand-700">Your school workspace</p>
                 <h2 id="continue-school-heading" className="mt-1 text-2xl font-black tracking-tight text-slate-950">Welcome back. Pick up where you left off.</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Open today’s work directly, or start from your school overview.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Open Today to manage attendance, tasks, reports and your school’s improvement progress in one place.</p>
               </div>
               <span className="rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-bold text-brand-800">KHP-OS schools</span>
             </div>
@@ -254,14 +254,9 @@ export function AccountAccess() {
                       <p className="mt-1 text-xs font-medium text-slate-500">School operations workspace</p>
                     </div>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Link href={`/khpos/${item.organisationId}/work`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white hover:bg-brand-800">
-                      Open Today <ArrowRight aria-hidden="true" className="size-4" />
-                    </Link>
-                    <Link href={`/khpos/${item.organisationId}`} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-800 hover:bg-brand-100">
-                      Open KHP-OS
-                    </Link>
-                  </div>
+                  <Link href={`/khpos/${item.organisationId}/work`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white hover:bg-brand-800">
+                    Open Today <ArrowRight aria-hidden="true" className="size-4" />
+                  </Link>
                   <Link className="text-xs font-bold text-brand-700 hover:underline" href={`/khpos/${item.organisationId}/onboarding`}>Get started / finish setup</Link>
                 </article>
               ))}
