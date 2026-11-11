@@ -299,7 +299,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const current = workspaceLinks.find((item) => isActive(pathname, base, item.suffix));
-  const moreActive = !dailyLinks.slice(0, 4).some((item) => isActive(pathname, base, item.suffix));
+  const isDailyActive = (suffix: string) => workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname, base, link.suffix));
+  const moreActive = !dailyLinks.some((item) => isDailyActive(item.suffix));
 
   async function signOut() {
     const client = createBrowserSupabaseClient();
@@ -405,7 +406,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 
       <nav
         aria-label="KHP-OS school workspace"
-        className="sticky top-0 z-[60] border-b border-slate-800 bg-slate-950/96 text-white shadow-lg backdrop-blur xl:hidden"
+        className="khpos-mobile-header sticky top-0 z-[60] border-b border-slate-800 bg-slate-950/96 text-white shadow-lg xl:hidden"
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3 sm:px-6">
           <Link href={base} className="flex min-w-0 items-center gap-2.5">
@@ -424,10 +425,10 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             {/* Account and main-entrance links live in the More drawer, not twice in the mobile header. */}
           </div>
         </div>
-        <div className="grid grid-cols-5 border-t border-white/10">
+        <div className="khpos-mobile-tabs fixed inset-x-0 bottom-0 z-[65] grid grid-cols-5 border-t border-white/10 bg-slate-950">
             {dailyLinks.slice(0, 4).map((item) => {
               const href = `${base}${item.suffix}`;
-              const active = isActive(pathname, base, item.suffix);
+              const active = isDailyActive(item.suffix);
               const Icon = item.icon;
               return (
                 <Link
