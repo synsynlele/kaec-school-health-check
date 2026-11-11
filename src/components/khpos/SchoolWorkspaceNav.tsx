@@ -439,28 +439,28 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   href={href}
                   aria-current={active ? "page" : undefined}
                   aria-label={item.label}
-                  className={`flex min-w-0 flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold transition ${
+                  className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 border-t-2 px-1 py-2 text-[11px] font-bold transition ${
                     active
-                      ? "text-mint-300"
-                      : "text-slate-300 hover:text-white"
+                      ? "border-mint-300 bg-white/10 text-mint-300"
+                      : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-5" aria-hidden="true" />
                   <span className="w-full truncate text-center">{["Today", "School day", "Reports", "Updates"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
-            <button type="button" aria-expanded={menuOpen} aria-controls="school-more-menu" onClick={() => setMenuOpen(true)} className={`flex flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold ${moreActive ? "text-mint-300" : "text-slate-300"}`}><Menu className="size-4" />More</button>
+            <button type="button" aria-label="More school areas" aria-expanded={menuOpen} aria-controls="school-more-menu" onClick={() => setMenuOpen(true)} className={`flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-1 py-2 text-[11px] font-bold ${moreActive ? "border-mint-300 bg-white/10 text-mint-300" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}><Menu className="size-5" aria-hidden="true" />More</button>
         </div>
       </nav>
       {menuOpen && <div className="fixed inset-0 z-[80] xl:hidden">
         <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
-        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Find your way" className="khpos-nav-panel absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
+        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Explore KHP-OS" className="khpos-nav-panel absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><div><h2 className="text-lg font-extrabold">Explore KHP-OS</h2><p className="mt-1 text-xs text-slate-400">Find what you need without guessing.</p></div><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
           <nav aria-label="Find your way" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
           {signOutError && <p role="alert" className="px-3 text-xs text-rose-200">{signOutError}</p>}
           <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mx-3 mb-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 text-sm font-bold disabled:opacity-50"><LogOut aria-hidden="true" className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
-          <div className="flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
+          <div className="khpos-mobile-more-footer flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
         </div>
       </div>}
     </>
@@ -469,6 +469,15 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const pathname = usePathname(), router = useRouter(), base = `/khpos/${organisationId}`;
+  const tabsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const row = tabsRef.current;
+    const selected = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!row || !selected) return;
+    const track = row.getBoundingClientRect();
+    const tab = selected.getBoundingClientRect();
+    row.scrollLeft += tab.left - track.left - (track.width - tab.width) / 2;
+  }, [pathname]);
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -482,7 +491,7 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
       <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
         <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
       </label>
-      <nav aria-label={`${area.title} pages`} className="khpos-area-tabs mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-bold transition ${active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"}`}>{link.label}</Link>;})}</nav>
+      <nav ref={tabsRef} aria-label={`${area.title} pages`} className="khpos-area-tabs mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-bold transition ${active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"}`}>{link.label}</Link>;})}</nav>
     </div>
   </section>;
 }
