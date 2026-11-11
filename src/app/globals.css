@@ -364,3 +364,123 @@ body {
    school or HQ page under the additional hydration-wide boot cover. Other
    KAEC applications retain their existing startup behaviour unchanged. */
 body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }
+
+
+/* ── KHP-OS visual refinement: preserves the existing blue, mint and K logo.
+   Reusable across school, corporate HQ and administration without changing
+   workflow state, permissions, records or navigation destinations. ── */
+.khpos-platform-ui {
+  --khpos-card-shadow: 0 2px 8px rgb(21 39 84 / .035), 0 18px 44px -26px rgb(21 39 84 / .22);
+  --khpos-card-shadow-hover: 0 8px 18px -12px rgb(21 39 84 / .14), 0 22px 48px -28px rgb(21 39 84 / .3);
+}
+.khpos-school-shell {
+  background:
+    radial-gradient(circle at 90% 0%, rgb(147 186 252 / .13), transparent 30rem),
+    linear-gradient(180deg, #f7faff 0%, #f8fafc 28rem, #f8fafc 100%);
+}
+.khpos-platform-ui .khpos-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(118deg, #101d39 0%, #152754 55%, #1843b0 120%);
+}
+.khpos-platform-ui .khpos-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -15rem;
+  right: -12rem;
+  width: 39rem;
+  height: 39rem;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(110 231 183 / .13), rgb(147 186 252 / .07) 38%, transparent 72%);
+}
+.khpos-platform-ui .khpos-hero > * { position: relative; z-index: 1; }
+.khpos-platform-ui .khpos-surface-card {
+  border: 1px solid #dfe7f2;
+  border-radius: 1.5rem;
+  background-color: #fff;
+  box-shadow: var(--khpos-card-shadow);
+}
+.khpos-platform-ui .khpos-quick-card {
+  border: 1px solid #dce6f3;
+  border-radius: 1.35rem;
+  background: linear-gradient(146deg, #fff, #fbfdff);
+  box-shadow: var(--khpos-card-shadow);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.khpos-platform-ui .khpos-quick-card:hover {
+  border-color: #93bafc;
+  box-shadow: var(--khpos-card-shadow-hover);
+  transform: translateY(-2px);
+}
+.khpos-platform-ui .khpos-quick-card:focus-visible {
+  outline: 3px solid var(--color-brand-600);
+  outline-offset: 3px;
+}
+.khpos-platform-ui .khpos-stat-card {
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 1.1rem;
+  background: rgb(255 255 255 / .095);
+  backdrop-filter: blur(4px);
+  transition: background .18s ease, border-color .18s ease;
+}
+.khpos-platform-ui .khpos-stat-card:hover,
+.khpos-platform-ui .khpos-stat-card:focus-visible {
+  background: rgb(255 255 255 / .17);
+  border-color: rgb(255 255 255 / .34);
+}
+.khpos-platform-ui .khpos-nav-link {
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.khpos-platform-ui .khpos-nav-link:hover { transform: translateX(2px); }
+.khpos-platform-ui .khpos-nav-panel {
+  background: linear-gradient(180deg, #111f3c 0%, #0c172d 100%);
+}
+.khpos-platform-ui .khpos-hq-shell :where(article.rounded-2xl.border.bg-white, section.rounded-2xl.border.bg-white,
+ div.rounded-2xl.border.bg-white, article.rounded-3xl.border.bg-white,
+ section.rounded-3xl.border.bg-white, div.rounded-3xl.border.bg-white) {
+  box-shadow: var(--khpos-card-shadow);
+}
+@media (prefers-reduced-motion: reduce) {
+  .khpos-platform-ui .khpos-quick-card,
+  .khpos-platform-ui .khpos-stat-card,
+  .khpos-platform-ui .khpos-nav-link { transition: none; }
+  .khpos-platform-ui .khpos-quick-card:hover,
+  .khpos-platform-ui .khpos-nav-link:hover { transform: none; }
+}
+@media print {
+  .khpos-platform-ui .khpos-hero::after { display: none; }
+  .khpos-platform-ui .khpos-surface-card,
+  .khpos-platform-ui .khpos-quick-card { box-shadow: none; }
+}
+
+
+/* Keep primary school destinations reachable with one thumb while the school
+   identity and notification bell remain at the top. Reserve safe area below
+   the content so the fixed bar never hides the final form control. */
+@media (max-width: 1279px) {
+  .khpos-platform-ui .khpos-mobile-tabs {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -8px 30px rgb(12 23 45 / .22);
+  }
+  .khpos-school-shell #school-page {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Long school-area tabs keep the selected page visible as the user switches
+   sections. Layout scroll stays inside the tab row rather than widening pages. */
+.khpos-platform-ui .khpos-area-tabs {
+  max-width: 100%;
+  scroll-padding-inline: 1rem;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #bfcee6 transparent;
+}
+@media (max-width: 1279px) {
+  .khpos-platform-ui .khpos-mobile-more-footer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}

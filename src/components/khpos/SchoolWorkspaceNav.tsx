@@ -165,10 +165,10 @@ const workspaceLinks = [
 
 // Daily actions stay visible on both desktop and mobile. Setup belongs in More.
 const dailyLinks = [
-  transformLinks[0],
   operationsLinks.find(link => link.suffix === "/work")!,
-  operationsLinks.find(link => link.suffix === "/issues")!,
-  operationsLinks.find(link => link.suffix === "/decisions")!,
+  operationsLinks.find(link => link.suffix === "/teaching-presence")!,
+  operationsLinks.find(link => link.suffix === "/reports")!,
+  operationsLinks.find(link => link.suffix === "/announcements")!,
 ] as const;
 
 // Resolve destinations by route, not array position, so regrouping cannot silently
@@ -181,29 +181,30 @@ const byRoute = (suffix: string) => workspaceLinks.find(link => link.suffix === 
 const schoolAreas = [
   { title: "Meetings & updates", help: "Read announcements and join private meetings.", routes: ["/announcements", "/meetings", "/ideas"] },
   { title: "Reports & forms", help: "Complete your reports here. Forms and checklists are saved with the task that requested them.", routes: ["/reports", "/records"] },
-  { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
-  { title: "School attendance & lessons", help: "Record staff arrival and departure, track scheduled lessons and class check-ins, and manage gate and visitor records.", routes: ["/teaching-presence", "/visitors"] },
+  { title: "Staff & roles", help: "Manage staff, roles, hiring and professional support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/staff-performance", "/staff-accountability", "/staff-transition"] },
+  { title: "School day & gate", help: "Sign in and out, record classes, request movement permission, and register visitors.", routes: ["/teaching-presence", "/availability", "/visitors"] },
   { title: "Teaching & planning", help: "Use the school calendar, organise lessons, manage assessments and support learners.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
-  { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready"] },
+  { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
   { title: "Parents", help: "Follow up with current families and track new enquiries through admission.", routes: ["/parents", "/parent-journeys"] },
   { title: "School improvement", help: "Choose priorities, carry out the plan, add proof and review what changed.", routes: ["/priorities", "/implementation", "/evidence", "/reviews", "/improvement", "/playbooks"] },
   { title: "School results", help: "See progress, prepare leadership meetings and check school-level summaries.", routes: ["/performance", "/leadership-brief", "/network-pulse", "/benchmarking", "/learning-intelligence", "/human-potential-intelligence"] },
-  { title: "Schools & campuses", help: "Find your schools, request a campus and check whether a campus is ready.", routes: ["/schools-campuses", "/campus-readiness"] },
+  { title: "Schools & campuses", help: "Find your schools, manage locations, events and equipment, and check campus readiness.", routes: ["/schools-campuses", "/campus-readiness", "/assets", "/events"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
 const navigationGroups = [
-  { title: "Everyday work", icon: ListTodo, links: [operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "School day", icon: UsersRound, links: [operation("/people"), operation("/teaching-presence")] },
-  { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "School management", icon: Building2, links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
-  { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
+  { title: "Work & approvals", icon: CheckCircle2, description: "Tasks that need a decision or follow-up", links: [operation("/issues"), operation("/decisions")] },
+  { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
+  { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
+  { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
+  { title: "Leadership & schools", icon: Building2, description: "Overview, progress and school settings", links: [transformLinks[0], byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School attendance & lessons","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/teaching-presence":"check in check out sign in sign out roll call timetable HQLS","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"":"home school home school dashboard overview","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
@@ -211,15 +212,17 @@ function matchesSearch(suffix:string,label:string,query:string) {
 function NavigationGroup({ group, base, pathname, onNavigate }: {
   group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
 }) {
-  const active = group.links.some(link => workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
+  const active = group.links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
   const Icon = group.icon;
-  return <details ref={detailsRef} className="group rounded-xl border border-transparent open:border-white/10 open:bg-white/5">
-    <summary className={`flex cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold marker:hidden hover:bg-white/8 ${active ? "text-mint-300" : "text-slate-300"}`}>
-      <Icon className="size-4 shrink-0" aria-hidden="true" />{group.title}<ChevronDown className="ml-auto size-4 transition group-open:rotate-180" aria-hidden="true" />
+  return <details ref={detailsRef} className="group rounded-2xl border border-white/8 bg-white/[0.025] open:border-white/15 open:bg-white/[0.055]">
+    <summary className={`flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold marker:hidden hover:bg-white/8 ${active ? "text-mint-300" : "text-slate-200"}`}>
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5"><Icon className="size-4" aria-hidden="true" /></span>
+      <span className="min-w-0 flex-1"><span className="block">{group.title}</span><span className="mt-0.5 block text-[11px] font-medium leading-4 text-slate-400">{group.description}</span></span>
+      <ChevronDown className="size-4 shrink-0 transition group-open:rotate-180" aria-hidden="true" />
     </summary>
-    <div className="space-y-0.5 px-2 pb-2 pl-5">{group.links.map((item) => <WorkspaceLink key={item.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...item} />)}</div>
+    <div className="space-y-0.5 px-2 pb-2 pl-4">{group.links.map((item) => <WorkspaceLink key={item.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...item} />)}</div>
   </details>;
 }
 
@@ -227,11 +230,11 @@ function NavigationGroups({ base, pathname, onNavigate }: {
   base: string; pathname: string; onNavigate?: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const results = workspaceLinks.filter(link => link.suffix && matchesSearch(link.suffix,link.label,query));
+  const results = workspaceLinks.filter(link => (link.suffix || query.trim()) && matchesSearch(link.suffix,link.label,query));
   return <div className="space-y-3">
     <label className="block px-1 text-xs font-bold text-slate-300">Find a page
       <span className="relative mt-2 block"><Search aria-hidden="true" className="absolute left-3 top-3 size-4 text-slate-400" />
-        <input type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Try reports, leave or lessons" className="min-h-11 w-full rounded-xl border border-white/20 bg-white/5 py-2 pl-9 pr-3 text-base text-white placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-mint-300" />
+        <input type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Search pages, movement, visitors…" className="min-h-11 w-full rounded-xl border border-white/20 bg-white/5 py-2 pl-9 pr-3 text-base text-white placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-mint-300" />
       </span>
     </label>
     {query.trim() ? <div aria-live="polite"><p className="px-3 py-2 text-xs text-slate-400">{results.length} pages found</p>{results.map(link=><WorkspaceLink key={link.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...link} exactLabel />)}{!results.length && <p className="p-3 text-sm text-slate-300">No page found. Try a shorter word, or clear your search to browse.</p>}</div> : navigationGroups.map(group=><NavigationGroup key={group.title} group={group} base={base} pathname={pathname} onNavigate={onNavigate} />)}
@@ -263,14 +266,14 @@ function WorkspaceLink({
   exactLabel?: boolean;
 }) {
   const href = `${base}${suffix}`;
-  const active = exactLabel ? isActive(pathname, base, suffix) : workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname,base,link.suffix));
+  const active = isActive(pathname, base, suffix) || (!exactLabel && workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname,base,link.suffix)));
 
   return (
     <Link
       href={href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
+      className={`khpos-nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
         active
           ? "bg-mint-300 text-slate-950 shadow-sm"
           : "text-slate-300 hover:bg-white/8 hover:text-white"
@@ -299,7 +302,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const current = workspaceLinks.find((item) => isActive(pathname, base, item.suffix));
-  const moreActive = !dailyLinks.slice(0, 4).some((item) => isActive(pathname, base, item.suffix));
+  const isDailyActive = (suffix: string) => workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname, base, link.suffix));
+  const moreActive = !dailyLinks.some((item) => isDailyActive(item.suffix));
 
   async function signOut() {
     const client = createBrowserSupabaseClient();
@@ -354,7 +358,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   return (
     <>
       <a href="#school-page" className="sr-only fixed left-3 top-3 z-[100] rounded-xl bg-white p-3 font-bold text-slate-950 focus:not-sr-only">Skip to page content</a>
-      <aside className="fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
+      <aside className="khpos-nav-panel fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-3 flex justify-end"><NotificationBell key={organisationId} organisationId={organisationId} /></div>
           <Link href={base} className="flex items-center gap-3">
@@ -373,10 +377,10 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         </div>
 
         <nav aria-label="KHP-OS school workspace" className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Daily</p>
+          <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Your everyday tools</p>
           <div className="mt-2 space-y-1">{dailyLinks.map((item) => <WorkspaceLink key={item.suffix || "home"} base={base} pathname={pathname} {...item} />)}</div>
           <div className="my-4 border-t border-white/10" />
-          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">School areas</p>
+          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Browse school areas</p>
           <NavigationGroups base={base} pathname={pathname} />
         </nav>
 
@@ -405,7 +409,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 
       <nav
         aria-label="KHP-OS school workspace"
-        className="sticky top-0 z-[60] border-b border-slate-800 bg-slate-950/96 text-white shadow-lg backdrop-blur xl:hidden"
+        className="khpos-mobile-header sticky top-0 z-[60] border-b border-slate-800 bg-slate-950/96 text-white shadow-lg xl:hidden"
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3 sm:px-6">
           <Link href={base} className="flex min-w-0 items-center gap-2.5">
@@ -424,10 +428,10 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
             {/* Account and main-entrance links live in the More drawer, not twice in the mobile header. */}
           </div>
         </div>
-        <div className="grid grid-cols-5 border-t border-white/10">
+        <div className="khpos-mobile-tabs fixed inset-x-0 bottom-0 z-[65] grid grid-cols-5 border-t border-white/10 bg-slate-950">
             {dailyLinks.slice(0, 4).map((item) => {
               const href = `${base}${item.suffix}`;
-              const active = isActive(pathname, base, item.suffix);
+              const active = isDailyActive(item.suffix);
               const Icon = item.icon;
               return (
                 <Link
@@ -435,28 +439,28 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                   href={href}
                   aria-current={active ? "page" : undefined}
                   aria-label={item.label}
-                  className={`flex min-w-0 flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold transition ${
+                  className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 border-t-2 px-1 py-2 text-[11px] font-bold transition ${
                     active
-                      ? "text-mint-300"
-                      : "text-slate-300 hover:text-white"
+                      ? "border-mint-300 bg-white/10 text-mint-300"
+                      : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <Icon className="size-4" />
-                  <span className="w-full truncate text-center">{["Overview", "Today", "Issues", "Approvals"][dailyLinks.indexOf(item)]}</span>
+                  <Icon className="size-5" aria-hidden="true" />
+                  <span className="w-full truncate text-center">{["Today", "School day", "Reports", "Updates"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
             })}
-            <button type="button" aria-expanded={menuOpen} aria-controls="school-more-menu" onClick={() => setMenuOpen(true)} className={`flex flex-col items-center gap-1 px-1 py-2 text-[10px] font-bold ${moreActive ? "text-mint-300" : "text-slate-300"}`}><Menu className="size-4" />More</button>
+            <button type="button" aria-label="More school areas" aria-expanded={menuOpen} aria-controls="school-more-menu" onClick={() => setMenuOpen(true)} className={`flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-1 py-2 text-[11px] font-bold ${moreActive ? "border-mint-300 bg-white/10 text-mint-300" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}><Menu className="size-5" aria-hidden="true" />More</button>
         </div>
       </nav>
       {menuOpen && <div className="fixed inset-0 z-[80] xl:hidden">
         <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
-        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Find your way" className="absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><h2 className="font-bold">Find your way</h2><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
+        <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Explore KHP-OS" className="khpos-nav-panel absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><div><h2 className="text-lg font-extrabold">Explore KHP-OS</h2><p className="mt-1 text-xs text-slate-400">Find what you need without guessing.</p></div><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
           <nav aria-label="Find your way" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
           {signOutError && <p role="alert" className="px-3 text-xs text-rose-200">{signOutError}</p>}
           <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mx-3 mb-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 text-sm font-bold disabled:opacity-50"><LogOut aria-hidden="true" className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
-          <div className="flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="rounded-lg border border-white/15 p-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
+          <div className="khpos-mobile-more-footer flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
         </div>
       </div>}
     </>
@@ -465,6 +469,15 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const pathname = usePathname(), router = useRouter(), base = `/khpos/${organisationId}`;
+  const tabsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const row = tabsRef.current;
+    const selected = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!row || !selected) return;
+    const track = row.getBoundingClientRect();
+    const tab = selected.getBoundingClientRect();
+    row.scrollLeft += tab.left - track.left - (track.width - tab.width) / 2;
+  }, [pathname]);
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -475,10 +488,10 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>
-      <label className={`mt-3 text-xs font-bold text-slate-600 ${area.routes.length > 4 ? "block" : "block sm:hidden"}`}>Go to a page in {area.title}
+      <label className="mt-3 block text-xs font-bold text-slate-600 sm:hidden">Go to a page in {area.title}
         <select aria-label={`${area.title} pages`} value={area.routes.find(route=>isActive(pathname,base,route))} onChange={event=>router.push(`${base}${event.target.value}`)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950">{area.routes.map(route=><option key={route} value={route}>{byRoute(route).label}</option>)}</select>
       </label>
-      {area.routes.length <= 4 && <nav aria-label={`${area.title} pages`} className="mt-3 hidden flex-wrap gap-2 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-bold ${active ? "border-brand-700 bg-brand-700 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{link.label}</Link>;})}</nav>}
+      <nav ref={tabsRef} aria-label={`${area.title} pages`} className="khpos-area-tabs mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex">{area.routes.map(route=>{const link=byRoute(route), active=isActive(pathname,base,route);return <Link key={route} href={`${base}${route}`} aria-current={active ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-bold transition ${active ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50"}`}>{link.label}</Link>;})}</nav>
     </div>
   </section>;
 }

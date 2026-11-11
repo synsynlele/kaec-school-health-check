@@ -98,10 +98,15 @@ if (commandCentre.includes("onClick={signOut}") || commandCentre.includes('     
 const todayWorkspace = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
 requireText(todayWorkspace, '<TodayAttendanceCard organisationId={organisationId}', "Today attendance");
 requireText(todayWorkspace, 'My reports</span>', "Direct reports link");
-requireText(todayWorkspace, 'School updates</span>', "Direct announcements link");
-if (todayWorkspace.includes("<ReportsWorkspace") || todayWorkspace.includes("<AnnouncementsWorkspace")) {
-  throw new Error("Today must not embed duplicate reporting and announcements workspaces.");
+requireText(todayWorkspace, '<AnnouncementsWorkspace organisationId={organisationId} compact />', "Current announcements preview");
+if (todayWorkspace.includes("<ReportsWorkspace") || todayWorkspace.includes("<AnnouncementsWorkspace organisationId={organisationId} />")) {
+  throw new Error("Today must not embed full duplicate reporting or announcement workspaces.");
 }
+if (todayWorkspace.indexOf("<AnnouncementsWorkspace organisationId={organisationId} compact />") > todayWorkspace.indexOf('My reports</span>')) {
+  throw new Error("Today must show live announcements above My reports.");
+}
+requireText(todayWorkspace, '<SchoolQuickActions organisationId={organisationId} reviewCount={verificationItems.length} />', "School-day quick actions");
+if (todayWorkspace.includes('aria-label="Daily shortcuts"')) throw new Error("Today must have one consolidated quick-action area, not repeated shortcut rows.");
 if (todayWorkspace.indexOf("<TodayAttendanceCard") > todayWorkspace.indexOf("<AssessmentTimetable")) {
   throw new Error("Today must show attendance before supplementary timetable panels.");
 }
@@ -166,8 +171,22 @@ for (const link of navigation.workspaceLinks) {
   const page = path.join(root, "src/app/khpos/[organisationId]", link.suffix, "page.tsx");
   if (!fs.existsSync(page)) throw new Error(`School navigation has no page for ${link.suffix}.`);
 }
-if (navigation.dailyLinks.map((link) => link.suffix).join(",") !== ",/work,/issues,/decisions") {
-  throw new Error("School daily navigation must expose overview, work, issues and approvals.");
+if (navigation.dailyLinks.map((link) => link.suffix).join(",") !== "/work,/teaching-presence,/reports,/announcements") {
+  throw new Error("Mobile navigation must expose Today, School Day, Reports and Updates.");
+}
+if (!navigation.matchesSearch("/availability","Leave & cover","movement permission")) {
+  throw new Error("Users must be able to search movement permission and find Leave & cover.");
+}
+const schoolDayArea = navigation.schoolAreas.find(area => area.routes[0] === "/teaching-presence");
+if (!schoolDayArea || schoolDayArea.routes.join(",") !== "/teaching-presence,/availability,/visitors") {
+  throw new Error("School-day attendance, movement and visitor register must remain together.");
+}
+const staffArea = navigation.schoolAreas.find(area => area.routes[0] === "/people");
+if (staffArea?.routes.includes("/availability")) {
+  throw new Error("Movement permission belongs with school-day sign-in, not staff administration.");
+}
+if (navigation.navigationGroups.length !== 6) {
+  throw new Error("More must present six task-based school areas.");
 }
 if (destinations.length > 22) throw new Error("Keep the main menu at 22 entrances or fewer.");
 const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);

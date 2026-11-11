@@ -10,11 +10,14 @@ export const metadata: Metadata = {
 
 export default async function KhposOperationsAvailabilityPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<{ request?: string }>;
 }) {
-  const { organisationId } = await params;
+  const [{ organisationId }, { request }] = await Promise.all([params, searchParams]);
   if (!UUID_RE.test(organisationId)) notFound();
 
-  return <AvailabilityWorkspace organisationId={organisationId} />;
+  const initialOuting = request === "outing";
+  return <AvailabilityWorkspace key={initialOuting ? "outing" : "standard"} organisationId={organisationId} initialOuting={initialOuting} />;
 }

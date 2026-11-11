@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Landmark } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const routes = [
   { href: "/khpos/hq", label: "HQ overview" },
@@ -20,11 +21,11 @@ export function HqSectionNavigation() {
   if (pathname === "/khpos/hq") return null;
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950 text-white">
+    <header className="khpos-nav-panel border-b border-slate-800 bg-slate-950 text-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <Link href="/khpos/hq" className="inline-flex min-h-11 items-center gap-2.5 rounded-lg focus-visible:outline-offset-4">
           <span className="grid size-9 place-items-center rounded-xl bg-emerald-300 text-slate-950">
-            <Landmark aria-hidden="true" className="size-5" />
+            <Image src="/khpos-icon-192.png" alt="" width={36} height={36} className="size-9 rounded-lg" />
           </span>
           <span className="min-w-0">
             <strong className="block text-sm leading-5">KAEC HQ</strong>

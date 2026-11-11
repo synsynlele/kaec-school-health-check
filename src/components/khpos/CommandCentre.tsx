@@ -7,12 +7,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
+  ArrowUpRight,
+  BookOpenCheck,
   Building2,
+  CalendarCheck2,
   CheckCircle2,
   Circle,
+  DoorOpen,
+  FileCheck2,
   FileText,
   Gauge,
   Loader2,
+  MessageCircle,
   ShieldCheck,
   Target,
 } from "lucide-react";
@@ -140,40 +146,69 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-9 lg:py-11">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize">
+            <span className="rounded-full border border-mint-300/25 bg-mint-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-mint-200">
+              School workspace
+            </span>
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold capitalize text-white">
               {workspace.membership.role.replaceAll("_", " ")}
             </span>
           </div>
-          <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{workspace.organisation.name}</h1>
-              <p className="mt-3 text-sm text-brand-100">
+          <div className="mt-5 grid items-end gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10">
+            <div className="max-w-3xl">
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">{workspace.organisation.name}</h1>
+              <p className="mt-3 text-sm font-medium text-brand-100">
                 {[workspace.organisation.schoolType, workspace.organisation.schoolLevel, location].filter(Boolean).join(" · ")}
               </p>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">Attendance, lessons, staff responsibilities and school follow-up in one place.</p>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-200 sm:text-base">
+                One clear place for your school day, assigned work, reports and school progress.
+              </p>
             </div>
-
+            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+              <Link href={`/khpos/${organisationId}/work`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-mint-300 px-6 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-mint-950/10 transition hover:bg-mint-200">
+                Open Today <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+              <Link href={`/khpos/${organisationId}/teaching-presence`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
+                <CalendarCheck2 className="size-4" aria-hidden="true" /> School day
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        <nav aria-label="School shortcuts" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { title: "My day", detail: "Attendance, tasks and follow-ups", href: `/khpos/${organisationId}/work` },
-            { title: "Teaching & learning", detail: "Lessons, timetables and assessments", href: `/khpos/${organisationId}/teaching-presence` },
-            { title: "Reports & forms", detail: "Write, submit and review reports", href: `/khpos/${organisationId}/reports` },
-            { title: "School updates", detail: "Notices, meetings and announcements", href: `/khpos/${organisationId}/announcements` },
-          ].map(item => (
-            <Link key={item.href} href={item.href} className="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-500">
-              <span className="font-extrabold text-slate-950">{item.title}</span>
-              <span className="flex items-end justify-between gap-2 text-sm text-slate-600">{item.detail}<ArrowRight aria-hidden="true" className="size-5 shrink-0 text-brand-700 transition group-hover:translate-x-1" /></span>
-            </Link>
-          ))}
-        </nav>
+      <div className="mx-auto max-w-7xl space-y-7 px-4 py-7 sm:px-6 sm:py-9">
+        <section aria-labelledby="school-start-heading" className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Get things done</p>
+              <h2 id="school-start-heading" className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Where would you like to go?</h2>
+            </div>
+            <Link href={`/khpos/${organisationId}/ask`} className="text-sm font-bold text-brand-700 hover:underline">Need help? Ask KHP-OS</Link>
+          </div>
+          <nav aria-label="School shortcuts" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { title: "Attendance & lessons", detail: "Arrival, classes and timetable", href: `/khpos/${organisationId}/teaching-presence`, icon: BookOpenCheck },
+              { title: "Movement permission", detail: "Ask to leave and return", href: `/khpos/${organisationId}/availability?request=outing`, icon: DoorOpen },
+              { title: "My reports", detail: "Write, submit and review", href: `/khpos/${organisationId}/reports`, icon: FileCheck2 },
+              { title: "School updates", detail: "Announcements and meetings", href: `/khpos/${organisationId}/announcements`, icon: MessageCircle },
+            ].map(({ title, detail, href, icon: Icon }) => (
+              <Link key={href} href={href} className="khpos-quick-card group flex min-h-36 flex-col justify-between gap-4 p-4 sm:p-5">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-700 group-hover:text-white">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <ArrowUpRight className="size-4 text-slate-400 group-hover:text-brand-700" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block text-sm font-extrabold text-slate-950 sm:text-base">{title}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-600">{detail}</span>
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </section>
         {attention && (
           <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -192,27 +227,27 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                 </p>
               </div>
               <Link
-                href={`/khpos/${organisationId}/work`}
-                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white"
+                href={`/khpos/${organisationId}/work#today-actions`}
+                className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-brand-100"
               >
-                Open Today
+                Review what needs attention
                 <ArrowRight className="size-4" />
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {attention.summary.actionRequired > 0 && <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                ["Critical", attention.summary.critical],
-                ["Overdue", attention.summary.overdue],
-                ["Blocked", attention.summary.blocked],
-                ["Waiting approval", attention.summary.waitingApproval],
-              ].map(([label, value]) => (
-                <div key={String(label)} className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-bold text-slate-500">{label}</p>
-                  <p className="mt-1 text-3xl font-black">{value}</p>
-                </div>
+                { label: "Critical", value: attention.summary.critical, href: `/khpos/${organisationId}/work#today-actions` },
+                { label: "Overdue", value: attention.summary.overdue, href: `/khpos/${organisationId}/work#today-actions` },
+                { label: "Blocked", value: attention.summary.blocked, href: `/khpos/${organisationId}/work#today-actions` },
+                { label: "Waiting approval", value: attention.summary.waitingApproval, href: `/khpos/${organisationId}/decisions` },
+              ].map(({ label, value, href }) => (
+                <Link href={href} key={label} className="group rounded-2xl border border-slate-200/80 bg-slate-50 p-4 transition hover:border-brand-300 hover:bg-brand-50/50">
+                  <span className="flex items-start justify-between gap-2"><span className="text-xs font-bold text-slate-600">{label}</span><ArrowUpRight className="size-4 text-slate-400 group-hover:text-brand-700" aria-hidden="true" /></span>
+                  <span className="mt-2 block text-3xl font-black text-slate-950">{value}</span>
+                </Link>
               ))}
-            </div>
+            </div>}
 
             {attention.items.length > 0 && (
               <div className="mt-6 grid gap-3 lg:grid-cols-2">

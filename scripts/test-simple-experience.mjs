@@ -24,18 +24,41 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
 assert.equal(n.workspaceLinks.length,56);
-const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,22);assert.equal(new Set(primary.map(x=>x.suffix)).size,22);
+const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
-assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));
+assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));assert(n.matchesSearch('/availability','Leave & cover','movement permission'));
+assert.deepEqual(Array.from(n.navigationGroups,g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
+assert.deepEqual(Array.from(n.dailyLinks,x=>x.suffix),['/work','/teaching-presence','/reports','/announcements']);
 let tree=exports.SchoolAreaNavigation({organisationId:'school'});let all=nodes(tree);
 assert.equal(all.find(x=>x.type==='select').props.value,'/team');
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/people'), 'Staff & roles includes the Staff page in the compact selector');
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/team'), 'Staff & roles keeps Roles & sections reachable');
 assert.equal(all.find(x=>x.type==='select').props.value,'/team', 'Current staff page remains selected');
+assert.ok(!all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'Temporary outing belongs to School day & gate, not staff administration');
+currentPath='/khpos/school/teaching-presence';tree=exports.SchoolAreaNavigation({organisationId:'school'});all=nodes(tree);
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'School day contains movement permission');
+assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/visitors'), 'School day contains visitor register');
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
 currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
-console.log('Simpler experience passed: 56 preserved routes, 22 distinct entrances, grouped search, current tab, mobile page switching, school-scoped links and plain display labels.');
+const quick=fs.readFileSync('src/components/khpos/ops/SchoolQuickActions.tsx','utf8');
+const outing=fs.readFileSync('src/components/khpos/ops/AvailabilityWorkspace.tsx','utf8');
+const presence=fs.readFileSync('src/components/khpos/ops/TeacherPresenceWorkspace.tsx','utf8');
+const today=fs.readFileSync('src/components/khpos/ops/MyWorkWorkspace.tsx','utf8');
+assert(quick.includes('availability?request=outing') && outing.includes('initialOuting ? "temporary_outing"') && fs.readFileSync('src/app/khpos/[organisationId]/availability/page.tsx','utf8').includes('request === "outing"'),'Movement quick action must open the existing permission form');
+assert(quick.includes('teaching-presence?tab=lessons') && presence.includes('useState<Panel>(initialTab)') && fs.readFileSync('src/app/khpos/[organisationId]/teaching-presence/page.tsx','utf8').includes('tab === "lessons"'),'Lesson shortcut must open the lesson tab');
+assert(today.indexOf('<AnnouncementsWorkspace organisationId={organisationId} compact />') < today.indexOf('My reports</span>'),'Current announcements appear above My reports');
+assert(today.includes('id="today-actions"') && !today.includes('aria-label="Daily shortcuts"'), 'The Today page has one action group and a stable attention destination');
+assert(today.includes('reviewCount={verificationItems.length}'), 'Relevant reviews appear in the shared quick-action group');
+assert(quick.includes('reviewCount > 0') && quick.includes('Raise an issue'), 'Quick actions preserve issue and review access without duplicated shortcut rows');
+const home=fs.readFileSync('src/components/khpos/CommandCentre.tsx','utf8');
+assert(home.includes('School shortcuts') && home.includes('Review what needs attention'), 'School overview must lead users directly to action');
+assert(home.includes('/work#today-actions'), 'School attention numbers must drill into the actionable attention queue rather than unrelated tasks');
+const account=fs.readFileSync('src/components/account/AccountAccess.tsx','utf8');
+assert(account.includes('Open Today') && account.includes('Open KHP-OS'), 'School chooser must distinguish Today from the school overview');
+assert(fs.readFileSync('src/components/khpos/SchoolWorkspaceNav.tsx','utf8').includes('row.scrollLeft +='), 'School-area tab rows must reveal the active page when scrolling horizontally');
+assert(fs.readFileSync('src/app/globals.css','utf8').includes('--color-brand-700: #0f4fd8;'),'Existing KHP-OS brand colour must remain');
+console.log('Simpler experience passed: 56 preserved routes, 21 unique entrances, linked school-day actions, branded UI, secure school-scoped links and accessible page search.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];
 function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
