@@ -430,6 +430,8 @@ export function MyWorkWorkspace({
           </Link>
         </section>
 
+        <SchoolHealthSummary organisationId={organisationId} />
+
         {attention && otherActions.length > 0 && (
           <section id="today-actions" aria-label="Items needing attention" className="scroll-mt-24 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1205,7 +1207,6 @@ export function MyWorkWorkspace({
           </details>
         )}
         </div>
-        <SchoolHealthSummary organisationId={organisationId} />
       </div>
     </main>
   );
