@@ -78,7 +78,7 @@ assert.match(desk,/Revoke device/);
 assert.match(nav,/suffix: "\/visitors"/);
 // Visitors must be alongside school staff sign-in, NOT in Teaching & learning
 // and NOT as an extra primary-menu entrance.
-assert(nav.includes('title: "School attendance & visitors"'), "School-day visitors must have their own attendance area.");
+assert(nav.includes('title: "School attendance & lessons"'), "School-day visitor register stays beside attendance and lessons.");
 assert(nav.includes('routes: ["/teaching-presence", "/visitors"]'),
   "Visitor register must share the school attendance area.");
 assert(!/title: "Teaching & learning"[^\\n]*"\/visitors"/.test(nav),
