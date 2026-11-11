@@ -39,8 +39,8 @@ const quick=fs.readFileSync('src/components/khpos/ops/SchoolQuickActions.tsx','u
 const outing=fs.readFileSync('src/components/khpos/ops/AvailabilityWorkspace.tsx','utf8');
 const presence=fs.readFileSync('src/components/khpos/ops/TeacherPresenceWorkspace.tsx','utf8');
 const today=fs.readFileSync('src/components/khpos/ops/MyWorkWorkspace.tsx','utf8');
-assert(quick.includes('availability?request=outing') && outing.includes('get("request") === "outing"'),'Movement quick action must open the existing permission form');
-assert(quick.includes('teaching-presence?tab=lessons') && presence.includes('requested === "lessons"'),'Lesson shortcut must open the lesson tab');
+assert(quick.includes('availability?request=outing') && outing.includes('initialOuting ? "temporary_outing"') && fs.readFileSync('src/app/khpos/[organisationId]/availability/page.tsx','utf8').includes('request === "outing"'),'Movement quick action must open the existing permission form');
+assert(quick.includes('teaching-presence?tab=lessons') && presence.includes('useState<Panel>(initialTab)') && fs.readFileSync('src/app/khpos/[organisationId]/teaching-presence/page.tsx','utf8').includes('tab === "lessons"'),'Lesson shortcut must open the lesson tab');
 assert(today.indexOf('<AnnouncementsWorkspace organisationId={organisationId} compact />') < today.indexOf('My reports</span>'),'Current announcements appear above My reports');
 assert(fs.readFileSync('src/app/globals.css','utf8').includes('--color-brand-700: #0f4fd8;'),'Existing KHP-OS brand colour must remain');
 console.log('Simpler experience passed: 56 preserved routes, 21 unique entrances, linked school-day actions, branded UI, secure school-scoped links and accessible page search.');
