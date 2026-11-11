@@ -29,7 +29,7 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Calendar"},{"view":"events","label":"Events & programmes"}]}
       />
-      {<InstitutionalCalendarWorkspace organisationId={organisationId} />}
+      {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace organisationId={organisationId} />)}
     </>
   );
 }

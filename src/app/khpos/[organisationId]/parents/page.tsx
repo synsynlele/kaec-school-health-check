@@ -29,7 +29,7 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Current families"},{"view":"enquiries","label":"Enquiries & admissions"}]}
       />
-      {<ParentPartnershipWorkspace organisationId={organisationId} />}
+      {selected === "enquiries" ? (<ExtendedWorkspace organisationId={organisationId} type="parent-journeys" />) : (<ParentPartnershipWorkspace organisationId={organisationId} />)}
     </>
   );
 }

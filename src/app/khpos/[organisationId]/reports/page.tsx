@@ -29,7 +29,7 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Reports"},{"view":"forms","label":"Forms & checklists"}]}
       />
-      {<ReportsWorkspace key={organisationId} organisationId={organisationId} />}
+      {selected === "forms" ? (<OperationalRecordsWorkspace organisationId={organisationId} />) : (<ReportsWorkspace key={organisationId} organisationId={organisationId} />)}
     </>
   );
 }

@@ -32,7 +32,7 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Announcements"},{"view":"meetings","label":"Private meetings"},{"view":"ideas","label":"Discussions"}]}
       />
-      {<AnnouncementsWorkspace key={organisationId} organisationId={organisationId} />}
+      {selected === "meetings" ? (<MeetingsWorkspace organisationId={organisationId} initialMeeting={initialMeeting} />) : (selected === "ideas" ? (<IdeasBoard scope={organisationId} />) : (<AnnouncementsWorkspace key={organisationId} organisationId={organisationId} />))}
     </>
   );
 }
