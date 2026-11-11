@@ -126,7 +126,7 @@ export function LearningIntelligenceWorkspace({ organisationId }: { organisation
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={""} onDismiss={() => { setError(""); }} />
-      <header className="bg-slate-950 text-white">
+      <header className="khpos-hero bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link href={`/khpos/${organisationId}/improvement`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white">
             <ArrowLeft className="size-4" /> Improvement Intelligence

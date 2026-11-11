@@ -355,7 +355,7 @@ export function AdminConsoleWorkspace() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-      <header className="bg-slate-950 text-white">
+      <header className="khpos-hero bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <Link href="/account" className="text-xs font-bold text-slate-300 hover:text-white">

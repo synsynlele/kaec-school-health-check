@@ -214,7 +214,7 @@ export function BenchmarkingWorkspace({ organisationId }: { organisationId: stri
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="bg-slate-950 text-white">
+      <header className="khpos-hero bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link
             href={`/khpos/${organisationId}`}
