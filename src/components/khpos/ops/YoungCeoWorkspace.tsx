@@ -3,6 +3,7 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
+import { SectionJumpNav } from "./SectionJumpNav";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
 
@@ -343,6 +344,18 @@ export function YoungCeoWorkspace({
         </div>
       </header>
 
+      {!workspace.executiveAggregateOnly && (
+        <SectionJumpNav
+          label="Young CEO Hub work areas"
+          sections={[
+            ...((workspace.canManage || workspace.canFacilitate) ? [{ id: "ceo-create", label: "Plan programme" }] : []),
+            { id: "ceo-cycles", label: "Cycles and sessions" },
+            { id: "ceo-ventures", label: "Learner ventures" },
+            ...(((workspace.canFacilitate || workspace.canManage) && workspace.ventures.length > 0 && workspace.learners.length > 0) ? [{ id: "ceo-evidence", label: "Individual evidence" }] : []),
+          ]}
+        />
+      )}
+
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
           {error}
@@ -422,7 +435,7 @@ export function YoungCeoWorkspace({
 
           {!workspace.executiveAggregateOnly &&
           (workspace.canManage || workspace.canFacilitate) ? (
-            <section className="grid gap-5 xl:grid-cols-3">
+            <section id="ceo-create" className="scroll-mt-24 grid gap-5 xl:grid-cols-3">
               {workspace.canManage ? (
                 <CreateCard title="Create Hub cycle" eyebrow="Programme">
                   <Select
@@ -556,7 +569,7 @@ export function YoungCeoWorkspace({
 
           {!workspace.executiveAggregateOnly ? (
             <>
-              <section className="space-y-4">
+              <section id="ceo-cycles" className="scroll-mt-24 space-y-4">
                 <SectionHeading
                   eyebrow="Cycles & sessions"
                   title="Delivery that cannot quietly disappear"
@@ -593,7 +606,7 @@ export function YoungCeoWorkspace({
                 )}
               </section>
 
-              <section className="space-y-4">
+              <section id="ceo-ventures" className="scroll-mt-24 space-y-4">
                 <SectionHeading
                   eyebrow="Ventures"
                   title="Milestone-gated value creation"
@@ -634,7 +647,7 @@ export function YoungCeoWorkspace({
               {(workspace.canFacilitate || workspace.canManage) &&
               workspace.ventures.length > 0 &&
               workspace.learners.length > 0 ? (
-                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <section id="ceo-evidence" className="scroll-mt-24 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                   <SectionHeading
                     eyebrow="Individual evidence"
                     title="Team success does not become automatic evidence for every learner"
