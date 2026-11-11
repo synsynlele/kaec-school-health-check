@@ -210,6 +210,7 @@ assert.equal(everyScreenReview.length, 71, 'Every school, HQ, admin and other ro
 assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 71,
   'Per-route review has duplicate destinations');
 const screenIssues = everyScreenReview.reduce((sum,row)=>sum+row.sourceReviewFlags.length,0);
+fs.mkdirSync('artifacts', {recursive: true});
 fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
   JSON.stringify({
     generatedAt: new Date().toISOString(),
