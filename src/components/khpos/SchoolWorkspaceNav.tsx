@@ -184,19 +184,19 @@ const schoolAreas = [
   { title: "Staff & roles", help: "Add staff, assign positions and help your team get started. Use the other tabs for hiring, leave and staff support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/availability", "/staff-performance", "/staff-accountability", "/staff-transition"] },
   { title: "School attendance & lessons", help: "Record staff arrival and departure, track scheduled lessons and class check-ins, and manage gate and visitor records.", routes: ["/teaching-presence", "/visitors"] },
   { title: "Teaching & planning", help: "Use the school calendar, organise lessons, manage assessments and support learners.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
-  { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready"] },
+  { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
   { title: "Parents", help: "Follow up with current families and track new enquiries through admission.", routes: ["/parents", "/parent-journeys"] },
   { title: "School improvement", help: "Choose priorities, carry out the plan, add proof and review what changed.", routes: ["/priorities", "/implementation", "/evidence", "/reviews", "/improvement", "/playbooks"] },
   { title: "School results", help: "See progress, prepare leadership meetings and check school-level summaries.", routes: ["/performance", "/leadership-brief", "/network-pulse", "/benchmarking", "/learning-intelligence", "/human-potential-intelligence"] },
-  { title: "Schools & campuses", help: "Find your schools, request a campus and check whether a campus is ready.", routes: ["/schools-campuses", "/campus-readiness"] },
+  { title: "Schools & campuses", help: "Find your schools, manage locations, events and equipment, and check campus readiness.", routes: ["/schools-campuses", "/campus-readiness", "/assets", "/events"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
 const navigationGroups = [
-  { title: "Everyday work", icon: ListTodo, links: [operation("/work"), operation("/reports"), operation("/announcements"), calendarLink, operation("/library"), askKhposLink] },
-  { title: "School day", icon: UsersRound, links: [operation("/teaching-presence"), operation("/availability"), operation("/visitors"), operation("/people")] },
+  { title: "Everyday work", icon: ListTodo, links: [operation("/issues"), operation("/decisions"), calendarLink, operation("/library"), askKhposLink] },
+  { title: "School day", icon: UsersRound, links: [operation("/availability"), operation("/visitors"), operation("/people")] },
   { title: "Care & families", icon: ShieldCheck, links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "School management", icon: Building2, links: [transformLinks[0], byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), operation("/assets"), operation("/events"), activationLink] },
-  { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development"), operation("/builders-council")] },
+  { title: "School management", icon: Building2, links: [transformLinks[0], byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "School programmes", icon: GraduationCap, links: [operation("/potential-development")] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School attendance & lessons","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
