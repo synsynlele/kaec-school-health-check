@@ -24,7 +24,7 @@ export function SchoolSectionTabs({
         <p className="px-1 text-[11px] font-black uppercase tracking-[0.13em] text-slate-600">
           {title}
         </p>
-        <nav ref={ref} aria-label={title + " sections"} className={"khpos-horizontal-nav mt-2" + (tabs.length <= 3 ? " flex-wrap sm:flex-nowrap" : "")}>
+        <nav ref={ref} aria-label={title + " sections"} className="khpos-horizontal-nav mt-2 flex-wrap sm:flex-nowrap">
           {tabs.map(tab => {
             const active = tab.view === selected;
             const href = tab.href ?? (tab.view ? base + "?view=" + encodeURIComponent(tab.view) : base);
