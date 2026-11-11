@@ -24,7 +24,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
-assert.equal(n.workspaceLinks.length,55);
+assert.equal(n.workspaceLinks.length,40);
 const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,20);assert.equal(new Set(primary.map(x=>x.suffix)).size,20);
 assert(!n.workspaceLinks.some(x=>x.suffix===""),'School Overview must not appear in More');
 assert(n.matchesSearch('/work','Today','school overview'),'Search for old School Overview leads to Today');
@@ -69,7 +69,36 @@ const navFiles=['src/components/khpos/SchoolWorkspaceNav.tsx','src/components/kh
 for(const file of navFiles) assert(fs.readFileSync(file,'utf8').includes('useActiveNavScroll'), file+' must reveal the active destination when navigation overflows');
 assert(fs.readFileSync('src/components/khpos/useActiveNavScroll.ts','utf8').includes('row.scrollLeft +='), 'All page families must use the shared active-tab scroll behaviour');
 assert(fs.readFileSync('src/app/globals.css','utf8').includes('--color-brand-700: #0f4fd8;'),'Existing KHP-OS brand colour must remain');
-console.log('Simpler experience passed: 56 preserved routes, 21 unique entrances, linked school-day actions, branded UI, secure school-scoped links and accessible page search.');
+const consolidated = {
+ '/announcements':['meetings','ideas'],
+ '/reports':['forms'],
+ '/calendar':['events'],
+ '/parents':['enquiries'],
+ '/priorities':['plan','evidence','reviews','improvement','guides'],
+ '/performance':['campuses','compare','learning','development','brief']
+};
+for (const [route,views] of Object.entries(consolidated)) {
+ const content=fs.readFileSync('src/app/khpos/[organisationId]'+route+'/page.tsx','utf8');
+ assert(content.includes('SchoolSectionTabs'), route+' must expose a single, tabbed work area');
+ for(const view of views) assert(content.includes('selected === "'+view+'"'), route+' must render '+view+' only when selected');
+}
+for(const [route,canonical,view] of [
+ ['meetings','announcements','meetings'],['ideas','announcements','ideas'],
+ ['records','reports','forms'],['events','calendar','events'],
+ ['parent-journeys','parents','enquiries'],['implementation','priorities','plan'],
+ ['evidence','priorities','evidence'],['reviews','priorities','reviews'],
+ ['improvement','priorities','improvement'],['playbooks','priorities','guides'],
+ ['network-pulse','performance','campuses'],['benchmarking','performance','compare'],
+ ['learning-intelligence','performance','learning'],['human-potential-intelligence','performance','development'],
+ ['leadership-brief','performance','brief']
+]) {
+ const content=fs.readFileSync('src/app/khpos/[organisationId]/'+route+'/page.tsx','utf8');
+ assert(content.includes('redirectLegacySchoolWorkspace(organisationId, "'+canonical+'", "'+view+'"'), route+' must redirect to existing work area preserving query');
+}
+const redirects=fs.readFileSync('src/lib/khpos/redirect-legacy-workspace.ts','utf8');
+assert(redirects.includes('UUID_RE.test(organisationId)') && redirects.includes('search') && redirects.includes('query.set(key, text)'), 'Legacy bookmarks and meeting links must keep school-scoped query values');
+assert(n.matchesSearch('/announcements','Updates','private meetings') && n.matchesSearch('/calendar','Calendar','events') && n.matchesSearch('/priorities','School improvement','action plan'), 'Page search must find formerly separate workflows');
+console.log('Simpler experience passed: 56 compatible school routes, 40 user-facing workspaces, 15 safe legacy redirects, consolidated navigation, branded UI and secure school-scoped links.');
 // A field must retain its name after placeholder text disappears during typing.
 const missing=[];
 function auditFields(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){

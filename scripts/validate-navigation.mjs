@@ -54,18 +54,11 @@ for (const href of [
 }
 
 const schoolNav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
-for (const suffix of [
-  "/priorities",
-  "/implementation",
-  "/playbooks",
-  "/evidence",
-  "/reviews",
-  "/improvement",
-  "/benchmarking",
-  "/learning-intelligence",
-  "/human-potential-intelligence",
-]) {
-  requireText(schoolNav, `suffix: "${suffix}"`, "School workspace navigation");
+for (const suffix of ["/priorities", "/performance", "/announcements", "/reports", "/calendar", "/parents"]) {
+  requireText(schoolNav, `suffix: "${suffix}"`, "One entrance for consolidated school workspaces");
+}
+for (const suffix of ["/implementation", "/playbooks", "/evidence", "/reviews", "/improvement", "/benchmarking", "/learning-intelligence", "/human-potential-intelligence", "/leadership-brief", "/meetings", "/ideas", "/records", "/events", "/parent-journeys", "/network-pulse"]) {
+  if (schoolNav.includes(`suffix: "${suffix}"`)) throw new Error(`Duplicate secondary workspace is still in navigation: ${suffix}`);
 }
 requireText(schoolNav, 'href="/account"', "School workspace account access");
 requireText(schoolNav, 'href="/khpos"', "School workspace secure access hub");
@@ -80,7 +73,8 @@ requireText(schoolLayout, "SchoolWorkspaceNav", "School workspace layout");
 requireText(schoolLayout, "khpos-school-shell", "School workspace shell");
 
 const playbooksPage = read("src/app/khpos/[organisationId]/playbooks/page.tsx");
-requireText(playbooksPage, "PlaybooksWorkspace", "School playbooks route");
+requireText(playbooksPage, "redirectLegacySchoolWorkspace", "Old playbooks link redirects to the School Improvement workspace");
+requireText(read("src/app/khpos/[organisationId]/priorities/page.tsx"), "PlaybooksWorkspace", "Guides remain inside School Improvement");
 const playbooksLibrary = read("src/lib/khpos/playbooks.ts");
 requireText(playbooksLibrary, "transformation-leadership", "Universal playbook library");
 requireText(playbooksLibrary, "sustainability-institutionalisation", "Universal playbook library");
@@ -201,7 +195,14 @@ for (const area of navigation.schoolAreas) for (const route of area.routes) {
   if (navigation.primarySuffix(route)!==area.routes[0]) throw new Error(`Wrong area entrance for ${route}`);
 }
 if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
-console.log(`School navigation validated: ${navigation.workspaceLinks.length} routes reachable through ${destinations.length} unique main entrances, with related pages grouped and searchable.`);
+if (navigation.workspaceLinks.length !== 40) throw new Error("Expected 40 unique school destinations after merging fifteen secondary pages.");
+for (const [route,term] of [
+  ["/announcements","meetings"], ["/announcements","discussions"], ["/reports","checklists"],
+  ["/calendar","events"], ["/parents","admissions"], ["/priorities","implementation"], ["/performance","learning"]
+]) {
+  if (!navigation.matchesSearch(route, "", term)) throw new Error(`Consolidated section missing search term ${term} at ${route}`);
+}
+console.log(`School navigation validated: ${navigation.workspaceLinks.length} distinct school destinations via ${destinations.length} unique main entrances, with related views grouped and searchable.`);
 
 for (const file of [
   "src/components/account/AccountAccess.tsx",
