@@ -175,7 +175,7 @@ export function PriorityInterventionWorkspace({
         </div>
       </header>
 
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-end lg:py-14">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-mint-200">
