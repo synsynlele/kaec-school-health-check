@@ -3,6 +3,7 @@
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
+import { SectionJumpNav } from "./SectionJumpNav";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
 
@@ -371,6 +372,17 @@ export function BuilderProjectsWorkspace({
         </div>
       </header>
 
+      {!workspace.executiveAggregateOnly && (
+        <SectionJumpNav
+          label="Builder project work areas"
+          sections={[
+            ...(workspace.canManage ? [{ id: "builder-project-create", label: "Start a cycle" }] : []),
+            { id: "builder-project-cycles", label: "Project cycles" },
+            { id: "builder-project-records", label: "Builder projects" },
+          ]}
+        />
+      )}
+
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
           {error}
@@ -430,7 +442,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {workspace.canManage ? (
-        <section className="grid gap-5 xl:grid-cols-2">
+        <section id="builder-project-create" className="scroll-mt-24 grid gap-5 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-600">
               Project Cycle
@@ -629,7 +641,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {!workspace.executiveAggregateOnly ? (
-        <section className="space-y-4">
+        <section id="builder-project-cycles" className="scroll-mt-24 space-y-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand-600">
               Project Cycles
@@ -664,7 +676,7 @@ export function BuilderProjectsWorkspace({
       ) : null}
 
       {!workspace.executiveAggregateOnly ? (
-        <section className="space-y-5">
+        <section id="builder-project-records" className="scroll-mt-24 space-y-5">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-violet-600">
               Projects
