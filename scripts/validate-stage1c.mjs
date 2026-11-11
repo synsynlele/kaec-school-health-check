@@ -6,7 +6,7 @@ const required = [
   "src/lib/khpos/auth.ts",
   "src/lib/khpos/workspace.ts",
   "src/components/khpos/ActivationFlow.tsx",
-  "src/components/khpos/CommandCentre.tsx",
+  "src/components/khpos/ops/SchoolHealthSummary.tsx",
   "src/components/khpos/ReportActivationCard.tsx",
   "src/app/activate/[id]/page.tsx",
   "src/app/auth/callback/page.tsx",
@@ -49,6 +49,11 @@ assert.match(migration, /claim_kshc_assessment_server/);
 assert.match(migration, /email_confirmed_at is not null/i);
 assert.match(migration, /grant execute .* to service_role/i);
 assert.match(migration, /drop function if exists public\.claim_kshc_assessment\(uuid\)/i);
+
+const schoolHome = readFileSync("src/app/khpos/[organisationId]/page.tsx", "utf8");
+assert.match(schoolHome, /redirect\(\`\/khpos\/\$\{organisationId\}\/work\`\)/, "Old school home redirects to Today");
+const health = readFileSync("src/components/khpos/ops/SchoolHealthSummary.tsx", "utf8");
+assert.match(health, /canViewHealthReport/, "School health remains role-gated");
 
 const workspace = readFileSync("src/lib/khpos/workspace.ts", "utf8");
 assert.match(workspace, /organisation_memberships\?/);
