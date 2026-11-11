@@ -176,6 +176,17 @@ if (navigation.dailyLinks.map((link) => link.suffix).join(",") !== "/work,/teach
 if (!navigation.matchesSearch("/availability","Leave & cover","movement permission")) {
   throw new Error("Users must be able to search movement permission and find Leave & cover.");
 }
+const schoolDayArea = navigation.schoolAreas.find(area => area.routes[0] === "/teaching-presence");
+if (!schoolDayArea || schoolDayArea.routes.join(",") !== "/teaching-presence,/availability,/visitors") {
+  throw new Error("School-day attendance, movement and visitor register must remain together.");
+}
+const staffArea = navigation.schoolAreas.find(area => area.routes[0] === "/people");
+if (staffArea?.routes.includes("/availability")) {
+  throw new Error("Movement permission belongs with school-day sign-in, not staff administration.");
+}
+if (navigation.navigationGroups.length !== 6) {
+  throw new Error("More must present six task-based school areas.");
+}
 if (destinations.length > 22) throw new Error("Keep the main menu at 22 entrances or fewer.");
 const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);
 if (new Set(secondaryRoutes).size !== secondaryRoutes.length) throw new Error("A page must belong to only one work area.");
