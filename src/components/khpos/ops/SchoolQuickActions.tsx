@@ -5,7 +5,7 @@ import { ArrowUpRight, BookOpenCheck, ClipboardCheck, DoorOpen, School } from "l
  * Four common school-day actions with existing, permission-checked destinations.
  * No parallel attendance or leave workflow is created here.
  */
-export function SchoolQuickActions({ organisationId }: { organisationId: string }) {
+export function SchoolQuickActions({ organisationId, reviewCount = 0 }: { organisationId: string; reviewCount?: number }) {
   const base = `/khpos/${organisationId}`;
   const actions = [
     { label: "School attendance", description: "Arrive or leave school", href: `${base}/teaching-presence?tab=day`, icon: School },
@@ -21,7 +21,10 @@ export function SchoolQuickActions({ organisationId }: { organisationId: string 
           <p className="text-xs font-black uppercase tracking-[0.15em] text-brand-700">Quick actions</p>
           <h2 className="mt-1 text-lg font-extrabold text-slate-950 sm:text-xl">What would you like to do?</h2>
         </div>
-        <p className="text-xs text-slate-500">Common tasks, one tap away</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold sm:text-sm">
+          <Link className="text-brand-700 underline-offset-4 hover:underline" href={`${base}/issues`}>Raise an issue</Link>
+          {reviewCount > 0 && <a className="text-brand-700 underline-offset-4 hover:underline" href="#today-reviews">Review work ({reviewCount})</a>}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {actions.map(({ label, description, href, icon: Icon }) => (
