@@ -27,8 +27,8 @@ assert.equal(n.workspaceLinks.length,56);
 const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));assert(n.matchesSearch('/availability','Leave & cover','movement permission'));
-assert.deepEqual(n.navigationGroups.map(g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
-assert.deepEqual(n.dailyLinks.map(x=>x.suffix),['/work','/teaching-presence','/reports','/announcements']);
+assert.deepEqual(Array.from(n.navigationGroups,g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
+assert.deepEqual(Array.from(n.dailyLinks,x=>x.suffix),['/work','/teaching-presence','/reports','/announcements']);
 let tree=exports.SchoolAreaNavigation({organisationId:'school'});let all=nodes(tree);
 assert.equal(all.find(x=>x.type==='select').props.value,'/team');
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/people'), 'Staff & roles includes the Staff page in the compact selector');
