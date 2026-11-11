@@ -90,17 +90,20 @@ export function AvailabilityWorkspace({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  // A shortcut opens this existing permission request instead of creating a second workflow.
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("request") === "outing") {
-      setCaseType("temporary_outing");
-      setShowCreate(true);
-    }
-  }, []);
-
   const [staffId, setStaffId] = useState("");
   const [caseType, setCaseType] =
     useState<KhposOpsAvailabilityCaseType | "temporary_outing">("planned_leave");
+  // Read the external URL after hydration; never synchronously set state in an effect.
+  // The same Leave & Cover submission and approval flow handles temporary outings.
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (new URLSearchParams(window.location.search).get("request") === "outing") {
+        setCaseType("temporary_outing");
+        setShowCreate(true);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const [sourceType, setSourceType] =
     useState<KhposOpsAvailabilitySource>("self_report");
   const [startAt, setStartAt] = useState("");
