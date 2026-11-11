@@ -455,3 +455,17 @@ body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }
   .khpos-platform-ui .khpos-surface-card,
   .khpos-platform-ui .khpos-quick-card { box-shadow: none; }
 }
+
+
+/* Keep primary school destinations reachable with one thumb while the school
+   identity and notification bell remain at the top. Reserve safe area below
+   the content so the fixed bar never hides the final form control. */
+@media (max-width: 1279px) {
+  .khpos-platform-ui .khpos-mobile-tabs {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -8px 30px rgb(12 23 45 / .22);
+  }
+  .khpos-school-shell #school-page {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
