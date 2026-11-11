@@ -96,7 +96,7 @@ export function SchoolHealthSummary({ organisationId }: { organisationId: string
         <span aria-hidden="true" className="shrink-0 text-xl font-black text-brand-700 transition group-open:rotate-45">+</span>
       </summary>
       <div className="space-y-5 border-t border-slate-200 p-4 sm:p-6">
-        {busy && <p role="status" className="flex items-center gap-2 text-sm font-semibold text-slate-600"><Loader2 className="size-4 animate-spin" aria-hidden="true" />Loading school information…</p>}
+        {busy && <p role="status" className="flex items-center gap-2 text-sm font-semibold text-slate-600"><Loader2 className="size-4 animate-spin" aria-hidden="true" />Retrieving school health details…</p>}
         {error && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p role="alert" className="text-sm font-semibold text-amber-900">{error}</p>
           <button type="button" onClick={() => void loadSummary()} className="mt-3 min-h-11 rounded-xl bg-brand-700 px-4 py-2 text-sm font-bold text-white">Try again</button>
