@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -211,7 +212,6 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           {entry.can_edit && <div className="flex flex-wrap gap-2">
             {!entry.archived_at && <button type="button" className={button} disabled={busy} onClick={() => {
               setKind(entry.kind); setEditing(entry);
-              document.getElementById("school-plan")?.scrollIntoView({block:"start"});
             }}>Edit</button>}
             {entry.published && <button type="button" className={button} disabled={busy} onClick={() => {
               if (window.confirm("Unpublish this entry?")) void mutate({action:"remove",id:entry.id},"Entry unpublished.");
@@ -242,7 +242,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(Boolean(plan?.canManage)); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
       }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
     </>}
-    {editing === "document" && plan && (plan.canManage || (selectedGroup === 2 && plan.canManageInvigilation)) && <form className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
+    {editing === "document" && plan && (plan.canManage || (selectedGroup === 2 && plan.canManageInvigilation)) && <form {...actionDestination} className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Exam plan"}</legend>
         {selectedGroup === 2 && plan.canManage && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Include an exam period</label>}
@@ -286,7 +286,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
       </div>
     </form>}
-    {editing && editing !== "document" && plan && (plan.canManage || (record?.can_edit && kind === "invigilation")) && <form key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
+    {editing && editing !== "document" && plan && (plan.canManage || (record?.can_edit && kind === "invigilation")) && <form {...actionDestination} key={record?.id ?? "new"} className="space-y-3 rounded-xl border p-4" onSubmit={event => {
       const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
       save(event, submitter?.value === "publish");
     }}>
@@ -325,7 +325,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </button>;
       })}
     </div>}
-    {plan && !todayOnly && group && <section aria-label={group.label} className="space-y-4">
+    {plan && !todayOnly && group && <section {...actionDestination} aria-label={group.label} className="space-y-4">
       <button type="button" className={button}
         onClick={() => { setSelectedGroup(null); setEditing(null); }}>← All planner groups</button>
       <h3 className="text-lg font-black">{group.label}</h3>

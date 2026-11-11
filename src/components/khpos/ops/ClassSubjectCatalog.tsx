@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ActionFeedback } from "./ActionFeedback";
@@ -101,7 +102,7 @@ export function ClassSubjectSetup({ catalog, campuses }: {
     <p className="my-2 text-sm text-slate-600">Save classes by campus and subjects for the whole school. Use the same names when setting up teaching assignments.</p>
     {catalog.error && <p role="alert" className="text-sm text-rose-900">{catalog.error}</p>}
     <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
-    <form key={editing?.id ?? kind} onSubmit={save}>
+    <form {...(editing ? actionDestination : {})} key={editing?.id ?? kind} onSubmit={save}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
         <label>List<select className={field} value={kind} disabled={Boolean(editing)} onChange={event => setKind(event.target.value)}>
           <option value="class">Class</option><option value="subject">Subject</option>

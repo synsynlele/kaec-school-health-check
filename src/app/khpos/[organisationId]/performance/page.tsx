@@ -33,7 +33,9 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Overview"},{"view":"campuses","label":"Campus summary"},{"view":"compare","label":"Comparisons"},{"view":"learning","label":"Learning summary"},{"view":"development","label":"Development summary"},{"view":"brief","label":"Meeting brief"}]}
       />
-      {selected === "campuses" ? (<ExtendedWorkspace organisationId={organisationId} type="network-pulse" />) : (selected === "compare" ? (<BenchmarkingWorkspace organisationId={organisationId} />) : (selected === "learning" ? (<LearningIntelligenceWorkspace organisationId={organisationId} />) : (selected === "development" ? (<HumanPotentialIntelligenceWorkspace organisationId={organisationId} />) : (selected === "brief" ? (<LeadershipBriefWorkspace organisationId={organisationId} />) : (<PerformanceWorkspace organisationId={organisationId} />)))))}
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "campuses" ? (<ExtendedWorkspace organisationId={organisationId} type="network-pulse" />) : (selected === "compare" ? (<BenchmarkingWorkspace organisationId={organisationId} />) : (selected === "learning" ? (<LearningIntelligenceWorkspace organisationId={organisationId} />) : (selected === "development" ? (<HumanPotentialIntelligenceWorkspace organisationId={organisationId} />) : (selected === "brief" ? (<LeadershipBriefWorkspace organisationId={organisationId} />) : (<PerformanceWorkspace organisationId={organisationId} />)))))}
+      </div>
     </>
   );
 }

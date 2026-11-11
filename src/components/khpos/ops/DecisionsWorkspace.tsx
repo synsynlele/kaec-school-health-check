@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -672,7 +673,7 @@ export function DecisionsWorkspace({
         )}
 
         {showCreate && workspace.actorAssignments.length > 0 && (
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+          <section {...actionDestination} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             {agentDraftNotice && (
               <p className="mb-5 rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm font-semibold text-brand-900">{agentDraftNotice}</p>
             )}

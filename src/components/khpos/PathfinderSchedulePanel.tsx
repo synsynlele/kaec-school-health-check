@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { ActionFeedback } from "./ops/ActionFeedback";
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {CalendarCheck2,CheckCircle2,ClipboardCheck,Clock3,MapPin,Video,AlertTriangle} from "lucide-react";
@@ -95,7 +96,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
   {assigned&&<label className={lbl+" mt-3"}>Attendance location explanation (optional)<input maxLength={500} className={ctrl+" !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>}
   <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={exceptionsOnly} onChange={e=>setExceptionsOnly(e.target.checked)}/>Show records with location issues ({sessions.filter(s=>needsLocationReview(s.check_in_location)||needsLocationReview(s.check_out_location)).length})</label>
   {error&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-900">{error}</p>}
-  {showSchedule&&lead&&<form className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"
+  {showSchedule&&lead&&<form {...actionDestination} className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"
    onSubmit={e=>{e.preventDefault();if(!start)return;void act("schedule_session",{
     engagement_id:engagement.id,mode,campus_id:campusId,title,objective,
     scheduled_start_at:new Date(start).toISOString(),
@@ -150,7 +151,7 @@ export function PathfinderSchedulePanel({engagement,viewer,members}:{
      {reviewer&&s.status==="completed"&&!s.reviewed_at&&s.representative_user_id!==viewer.userId&&s.created_by!==viewer.userId&&
       <button onClick={()=>actionFor(s,"review_session")} className="rounded-lg border border-slate-900 px-3 py-2 text-xs font-bold">Review result</button>}
     </div>
-    {acting?.id===s.id&&<form className="mt-3 space-y-3 rounded-xl bg-blue-50 p-4"
+    {acting?.id===s.id&&<form {...actionDestination} className="mt-3 space-y-3 rounded-xl bg-blue-50 p-4"
      onSubmit={e=>{e.preventDefault();void act(acting.action,{id:s.id,...(acting.action==="cancel_session"?{cancellation_reason:cancelReason}:
       acting.action==="review_session"?{review_note:reviewNote}:{
        outcome_note:outcome,issues_note:issues,resolution_note:resolution,

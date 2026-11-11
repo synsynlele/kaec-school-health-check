@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -997,7 +998,7 @@ function PackageRow({
       }} className="mt-3 rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
         {editing ? "Cancel editing" : "Edit assessment package"}
       </button>}
-      {editing && canEdit && <div className="mt-3 space-y-2 rounded-xl border border-brand-200 bg-white p-3">
+      {editing && canEdit && <div {...actionDestination} className="mt-3 space-y-2 rounded-xl border border-brand-200 bg-white p-3">
         <p className="text-xs font-black">Edit saved package before moderation</p>
         <label className="block text-xs">Assessment source
           <select value={source} onChange={(event) => setSource(event.target.value)} className="mt-1 w-full rounded-lg border p-2">
@@ -1985,7 +1986,7 @@ function CloseoutCard({
           className="rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-black text-brand-700">
           {editing ? "Cancel editing" : "Edit academic close-out draft"}
         </button>
-        {editing && <div className="mt-3 space-y-3 rounded-xl border border-brand-200 bg-white p-3">
+        {editing && <div {...actionDestination} className="mt-3 space-y-3 rounded-xl border border-brand-200 bg-white p-3">
           <p className="text-xs text-slate-600">Update your saved draft. The submitted or approved record stays protected.</p>
           {([
             ["curriculumSummary", "Curriculum delivery summary"],

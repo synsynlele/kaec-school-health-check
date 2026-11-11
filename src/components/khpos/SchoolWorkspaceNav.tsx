@@ -459,6 +459,7 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
       base={base}
       title={area.title}
       selected={selected}
+      destinationId="school-route-content"
       tabs={area.routes.map(route => ({
         view: route,
         label: byRoute(route).label,

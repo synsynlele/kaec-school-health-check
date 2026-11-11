@@ -9,13 +9,14 @@ export type SchoolSection = { view: string; label: string; href?: string };
  * Only the currently selected module is mounted by its server page.
  */
 export function SchoolSectionTabs({
-  base, title, selected, tabs, theme = "school",
+  base, title, selected, tabs, theme = "school", destinationId = "khpos-section-content",
 }: {
   base: string;
   title: string;
   selected: string;
   tabs: readonly SchoolSection[];
   theme?: "school" | "hq";
+  destinationId?: string;
 }) {
   const ref = useActiveNavScroll<HTMLElement>(selected, '[aria-current="page"]');
   return (
@@ -34,7 +35,7 @@ export function SchoolSectionTabs({
             return (
               <Link
                 key={tab.view || "main"}
-                href={href}
+                href={href.includes("#") ? href : href + "#" + destinationId}
                 aria-current={active ? "page" : undefined}
                 className={"inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current " + palette}
               >

@@ -1,6 +1,7 @@
 "use client";
 
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -132,7 +133,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     </label>}
     {assignments.length > 0 && <details className="rounded-xl border p-3" open={editing ? true : undefined}>
       <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
-      <form id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">
+      <form {...(editing ? actionDestination : {})} id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">
         <fieldset disabled={busy || entries === null} className="grid gap-3 sm:grid-cols-2">
           <label>Class, subject and teacher<select name="streamId" className={field} required defaultValue={editing?.stream_id ?? ""}>
             <option value="">Choose teaching assignment</option>
@@ -184,7 +185,6 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
         {!todayInvigilation && item.submitted_at && <p>Submitted to {item.submitted_to} · {stamp(item.submitted_at)}</p>}
         {!todayInvigilation && item.can_edit && assignments.length > 0 && <button type="button" disabled={busy} className={button} onClick={() => {
           setEditing(item);
-          document.getElementById("assessment-schedule-form")?.parentElement?.scrollIntoView({ block: "nearest" });
         }}>Edit schedule</button>}
         {!todayInvigilation && item.mine && !item.checked_in_at && canStart && <button disabled={busy} className={button} onClick={() => void save({ mode: "start", id: item.id })}>Check in</button>}
         {!todayInvigilation && item.mine && item.checked_in_at && !item.checked_out_at && <button disabled={busy} className={button} onClick={() => void save({ mode: "finish", id: item.id })}>Check out</button>}

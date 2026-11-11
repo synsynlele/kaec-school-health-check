@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ActionFeedback";
@@ -624,7 +625,7 @@ export function StaffPerformanceWorkspace({
         ) : (
           <>
             {showCreate && reviewableStaff.length > 0 && (
-              <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+              <section {...actionDestination} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">
                   Evidence-based review
                 </p>

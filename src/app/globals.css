@@ -608,3 +608,7 @@ body:has(.khpos-platform-ui) [data-app-boot] { display: none !important; }
     box-shadow: none;
   }
 }
+
+.khpos-platform-ui [data-khpos-destination] {
+  scroll-margin-block-start: 7rem;
+}

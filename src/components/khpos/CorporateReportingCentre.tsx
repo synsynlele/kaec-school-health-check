@@ -1,5 +1,6 @@
 "use client";
 
+import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { ActionFeedback } from "./ops/ActionFeedback";
@@ -142,7 +143,7 @@ export function CorporateReportingCentre(){
     {canConfigure&&<button onClick={()=>setShowLine(!showLine)}
      className="rounded-lg bg-slate-950 px-4 py-2 text-xs font-bold text-white">+ Assign reporting line</button>}
    </div>
-   {showLine&&canConfigure&&<form className="grid gap-3 rounded-2xl border border-emerald-200 bg-white p-5 sm:grid-cols-2"
+   {showLine&&canConfigure&&<form {...actionDestination} className="grid gap-3 rounded-2xl border border-emerald-200 bg-white p-5 sm:grid-cols-2"
     onSubmit={e=>{e.preventDefault();void act("create_line",{
      title,purpose,reporter_user_id:reporter,reviewer_user_id:reviewer,engagement_id:schoolId||null,
      cadence,anchor_due_on:firstDue
@@ -194,7 +195,7 @@ export function CorporateReportingCentre(){
        {returns.map(s=><button key={s.id} className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900"
         onClick={()=>startSubmission(line,s)}>Correct returned period {s.cycle_index}</button>)}
       </div>
-      {action?.id===line.id&&action.kind==="submit"&&<form className="mt-4 space-y-3 rounded-xl bg-emerald-50 p-4" onSubmit={e=>{e.preventDefault();void act("submit_report",{
+      {action?.id===line.id&&action.kind==="submit"&&<form {...actionDestination} className="mt-4 space-y-3 rounded-xl bg-emerald-50 p-4" onSubmit={e=>{e.preventDefault();void act("submit_report",{
        line_id:line.id,...(action.returnedId?{returned_submission_id:action.returnedId}:{}),
        achievements,challenges,next_actions:nextActions,evidence_reference:evidence,...(quickMode?{quick_answers:quick,notes}:{})
       },"Report submitted to its named recipient.");}}>
@@ -258,7 +259,7 @@ export function CorporateReportingCentre(){
          {s.review_note&&<p className="mt-2 rounded-lg bg-blue-50 p-2"><strong>Reviewer response:</strong> {s.review_note}</p>}
          {s.status==="submitted"&&line.reviewer_user_id===viewer?.userId&&<div className="mt-3">
           <button className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white" onClick={()=>{setAction({id:s.id,kind:"review"});setReviewNote("");setDecision("accept");}}>Review submitted report</button>
-          {action?.id===s.id&&action.kind==="review"&&<form className="mt-3 space-y-2 rounded-lg bg-blue-50 p-3"
+          {action?.id===s.id&&action.kind==="review"&&<form {...actionDestination} className="mt-3 space-y-2 rounded-lg bg-blue-50 p-3"
            onSubmit={e=>{e.preventDefault();void act("review_report",{id:s.id,decision,review_note:reviewNote},"Recipient decision recorded.");}}>
            <label className={label}>Decision<select className={input} value={decision} onChange={e=>setDecision(e.target.value)}>
             <option value="accept">Accept</option><option value="return">Return for correction</option></select></label>

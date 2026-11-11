@@ -1,5 +1,6 @@
 "use client";
 
+import { focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { plainLabel } from "@/lib/khpos/plain-language";
@@ -416,7 +417,7 @@ export function OperationalRecordsWorkspace({
               <button
                 key={value}
                 type="button"
-                onClick={() => setTab(value)}
+                onClick={() => { setTab(value); focusActionDestination(document.getElementById("operational-records-content")); }}
                 aria-pressed={tab === value}
                 className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
                   tab === value ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50"
@@ -449,6 +450,7 @@ export function OperationalRecordsWorkspace({
           </label>
         </section>
 
+        <div id="operational-records-content" tabIndex={-1} />
         {tab === "records" && (
           <section className="space-y-4">
             {records.length ? (

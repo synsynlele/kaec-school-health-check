@@ -29,7 +29,9 @@ export default async function Page({
         selected={selected}
         tabs={[{"view":"","label":"Reports"},{"view":"forms","label":"Forms & checklists"}]}
       />
-      {selected === "forms" ? (<OperationalRecordsWorkspace organisationId={organisationId} />) : (<ReportsWorkspace key={organisationId} organisationId={organisationId} />)}
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "forms" ? (<OperationalRecordsWorkspace organisationId={organisationId} />) : (<ReportsWorkspace key={organisationId} organisationId={organisationId} />)}
+      </div>
     </>
   );
 }
