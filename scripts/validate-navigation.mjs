@@ -88,13 +88,17 @@ const playbooksWorkspace = read("src/components/khpos/PlaybooksWorkspace.tsx");
 requireText(playbooksWorkspace, "Current action guides", "School playbooks workspace");
 requireText(playbooksWorkspace, "/api/khpos/implementation/${organisationId}", "Playbook implementation data source");
 
-const commandCentre = read("src/components/khpos/CommandCentre.tsx");
-requireText(commandCentre, "View School Health Check report", "School workspace KSHC report access");
-requireText(commandCentre, 'aria-label="School shortcuts"', "School overview daily shortcuts");
-requireText(commandCentre, "School health & improvement", "Optional school improvement section");
-if (commandCentre.includes("onClick={signOut}") || commandCentre.includes('      <header className="border-b border-white/10 bg-slate-950')) {
-  throw new Error("The school overview must not duplicate navigation shell or sign-out.");
+const legacySchoolHome = read("src/app/khpos/[organisationId]/page.tsx");
+requireText(legacySchoolHome, "redirect(`/khpos/${organisationId}/work`)", "Old school-home URL must lead to Today");
+if (legacySchoolHome.includes("CommandCentre")) {
+  throw new Error("A second school dashboard must no longer render.");
 }
+const healthPanel = read("src/components/khpos/ops/SchoolHealthSummary.tsx");
+requireText(healthPanel, "School health & improvement", "Unique school-health content must be retained inside Today");
+requireText(healthPanel, "View health report", "Authorised School Health Check access");
+requireText(healthPanel, '"/report/" + baseline.assessmentId', "School Health Check report route");
+requireText(healthPanel, "canViewHealthReport", "Diagnostic records remain role-restricted");
+requireText(healthPanel, "onToggle", "School-health details must load only when opened");
 const todayWorkspace = read("src/components/khpos/ops/MyWorkWorkspace.tsx");
 requireText(todayWorkspace, '<TodayAttendanceCard organisationId={organisationId}', "Today attendance");
 requireText(todayWorkspace, 'My reports</span>', "Direct reports link");
@@ -110,7 +114,7 @@ if (todayWorkspace.includes('aria-label="Daily shortcuts"')) throw new Error("To
 if (todayWorkspace.indexOf("<TodayAttendanceCard") > todayWorkspace.indexOf("<AssessmentTimetable")) {
   throw new Error("Today must show attendance before supplementary timetable panels.");
 }
-requireText(commandCentre, "/report/${baseline.assessmentId}", "School workspace KSHC report route");
+requireText(todayWorkspace, '<SchoolHealthSummary organisationId={organisationId} />', "School health & improvement is inside Today");
 
 const partnershipStatus = read("src/components/khpos/PartnershipStatusWorkspace.tsx");
 requireText(partnershipStatus, "Open KHP-OS", "Partnership primary action");
@@ -188,7 +192,9 @@ if (staffArea?.routes.includes("/availability")) {
 if (navigation.navigationGroups.length !== 6) {
   throw new Error("More must present six task-based school areas.");
 }
-if (destinations.length > 22) throw new Error("Keep the main menu at 22 entrances or fewer.");
+if (destinations.length !== 20) throw new Error("Today replaces School Overview: keep exactly 20 distinct main entrances.");
+if (navigation.workspaceLinks.some(link => link.suffix === "")) throw new Error("Remove the School Overview entry from More.");
+if (!navigation.matchesSearch("/work", "Today", "school overview")) throw new Error("Users searching for the former overview must find Today.");
 const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);
 if (new Set(secondaryRoutes).size !== secondaryRoutes.length) throw new Error("A page must belong to only one work area.");
 for (const area of navigation.schoolAreas) for (const route of area.routes) {
