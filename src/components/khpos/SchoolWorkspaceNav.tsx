@@ -26,7 +26,6 @@ import {
   Hammer,
   GitBranch,
   GraduationCap,
-  LayoutDashboard,
   LibraryBig,
   Rocket,
   ListTodo,
@@ -46,7 +45,6 @@ import {
 } from "lucide-react";
 
 const transformLinks = [
-  { suffix: "", label: "School overview", icon: LayoutDashboard },
   { suffix: "/priorities", label: "Priorities", icon: Target },
   { suffix: "/implementation", label: "Action plan", icon: Workflow },
   { suffix: "/playbooks", label: "Step-by-step guides", icon: BookOpen },
@@ -197,7 +195,7 @@ const navigationGroups = [
   { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "Leadership & schools", icon: Building2, description: "Overview, progress and school settings", links: [transformLinks[0], byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "Leadership & schools", icon: Building2, description: "Improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/activation":"School settings"};
@@ -205,7 +203,7 @@ const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? la
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"":"home school home school dashboard overview","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
+  const aliases: Record<string,string> = {"/work":"home school dashboard school overview today school home","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/priorities":"transformation plan school improvement priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
@@ -231,7 +229,7 @@ function NavigationGroups({ base, pathname, onNavigate }: {
   base: string; pathname: string; onNavigate?: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const results = workspaceLinks.filter(link => (link.suffix || query.trim()) && matchesSearch(link.suffix,link.label,query));
+  const results = workspaceLinks.filter(link => matchesSearch(link.suffix,link.label,query));
   return <div className="space-y-3">
     <label className="block px-1 text-xs font-bold text-slate-300">Find a page
       <span className="relative mt-2 block"><Search aria-hidden="true" className="absolute left-3 top-3 size-4 text-slate-400" />
@@ -362,7 +360,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
       <aside className="khpos-nav-panel fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-3 flex justify-end"><NotificationBell key={organisationId} organisationId={organisationId} /></div>
-          <Link href={base} className="flex items-center gap-3">
+          <Link href={`${base}/work`} className="flex items-center gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-mint-300 text-slate-950 shadow-sm">
               <Image src="/khpos-icon-192.png" alt="" width={40} height={40} className="rounded-xl" />
             </span>
@@ -413,7 +411,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
         className="khpos-mobile-header sticky top-0 z-[60] border-b border-slate-800 bg-slate-950/96 text-white shadow-lg xl:hidden"
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3 sm:px-6">
-          <Link href={base} className="flex min-w-0 items-center gap-2.5">
+          <Link href={`${base}/work`} className="flex min-w-0 items-center gap-2.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-mint-300 text-slate-950">
               <Image src="/khpos-icon-192.png" alt="" width={32} height={32} className="rounded-lg" />
             </span>
@@ -474,10 +472,12 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-    <Link href={base} className="inline-flex min-h-9 items-center font-bold text-brand-700 hover:underline">School overview</Link>
-    {current?.suffix && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
+    <Link href={`${base}/work`} className="inline-flex min-h-9 items-center font-bold text-brand-700 hover:underline">Today</Link>
+    {current?.suffix && current.suffix !== "/work" && <><span aria-hidden="true">/</span><span aria-current="page" className="font-semibold text-slate-700">{current.label}</span></>}
     <Link href={`${base}/ask`} className="ml-auto inline-flex min-h-11 items-center font-semibold text-brand-700 underline" title="Open Ask KHP-OS and Training Academy">Help & training</Link>
   </nav>;
+  // Today is already the school home. Do not repeat its name in a breadcrumb bar.
+  if (pathname === `${base}/work`) return null;
   if (!area) return <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   return <section className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6" aria-label={area.title}>
     <div className="mx-auto max-w-7xl">{breadcrumb}<p className="text-sm font-bold text-slate-950">{area.title}</p><p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{area.help}</p>

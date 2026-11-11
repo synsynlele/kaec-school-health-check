@@ -155,10 +155,10 @@ export function HumanPotentialIntelligenceWorkspace({
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to School overview
+            Return to Today
           </Link>
         </div>
       </main>
@@ -174,10 +174,10 @@ export function HumanPotentialIntelligenceWorkspace({
       <header className="khpos-hero bg-slate-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
           >
-            <ArrowLeft className="size-4" /> School overview
+            <ArrowLeft className="size-4" /> Today
           </Link>
           <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>

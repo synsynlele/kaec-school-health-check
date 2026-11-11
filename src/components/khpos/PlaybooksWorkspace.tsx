@@ -93,10 +93,10 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
           <h1 className="mt-4 text-2xl font-black">Playbook access could not be confirmed</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
-            Return to School overview
+            Return to Today
           </Link>
         </div>
       </main>
@@ -117,10 +117,10 @@ export function PlaybooksWorkspace({ organisationId }: { organisationId: string 
             </div>
           </div>
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
           >
-            <ArrowLeft className="size-4" /> School overview
+            <ArrowLeft className="size-4" /> Today
           </Link>
         </div>
       </header>

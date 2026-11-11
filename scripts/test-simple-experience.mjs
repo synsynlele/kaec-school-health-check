@@ -24,8 +24,10 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
-assert.equal(n.workspaceLinks.length,56);
-const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
+assert.equal(n.workspaceLinks.length,55);
+const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,20);assert.equal(new Set(primary.map(x=>x.suffix)).size,20);
+assert(!n.workspaceLinks.some(x=>x.suffix===""),'School Overview must not appear in More');
+assert(n.matchesSearch('/work','Today','school overview'),'Search for old School Overview leads to Today');
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));assert(n.matchesSearch('/availability','Leave & cover','movement permission'));
 assert.deepEqual(Array.from(n.navigationGroups,g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
@@ -41,7 +43,9 @@ assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/availability'), 'Scho
 assert.ok(all.some(x=>x.type==='option'&&x.props.value==='/visitors'), 'School day contains visitor register');
 all.find(x=>x.type==='select').props.onChange({target:{value:'/availability'}});assert.deepEqual(pushes,['/khpos/school/availability']);
 currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisationId:'other'});assert(nodes(tree).filter(x=>x.props.href && x.props.href !== '/contact').every(x=>(x.props.href === '/khpos/other' || x.props.href.startsWith('/khpos/other/'))),'Area links preserve school boundaries');
-currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(nodes(tree).some(x=>x.type==='select'),false,'Today has no extra area menu');assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school'),'Today includes a school overview breadcrumb');
+currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(tree,null,'Today is the home and must not have a redundant breadcrumb or page-area bar');
+currentPath='/khpos/school/people';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school/work'),'Other school pages return directly to Today');
+assert(!nodes(tree).some(x=>x.props.href==='/khpos/school'),'No breadcrumb links back to the removed overview');
 const quick=fs.readFileSync('src/components/khpos/ops/SchoolQuickActions.tsx','utf8');
 const outing=fs.readFileSync('src/components/khpos/ops/AvailabilityWorkspace.tsx','utf8');
 const presence=fs.readFileSync('src/components/khpos/ops/TeacherPresenceWorkspace.tsx','utf8');
@@ -52,11 +56,15 @@ assert(today.indexOf('<AnnouncementsWorkspace organisationId={organisationId} co
 assert(today.includes('id="today-actions"') && !today.includes('aria-label="Daily shortcuts"'), 'The Today page has one action group and a stable attention destination');
 assert(today.includes('reviewCount={verificationItems.length}'), 'Relevant reviews appear in the shared quick-action group');
 assert(quick.includes('reviewCount > 0') && quick.includes('Raise an issue'), 'Quick actions preserve issue and review access without duplicated shortcut rows');
-const home=fs.readFileSync('src/components/khpos/CommandCentre.tsx','utf8');
-assert(home.includes('School shortcuts') && home.includes('Review what needs attention'), 'School overview must lead users directly to action');
-assert(home.includes('/work#today-actions'), 'School attention numbers must drill into the actionable attention queue rather than unrelated tasks');
+const home=fs.readFileSync('src/app/khpos/[organisationId]/page.tsx','utf8');
+assert(home.includes('redirect(`/khpos/${organisationId}/work`)'), 'Old school home redirects directly to Today');
+const health=fs.readFileSync('src/components/khpos/ops/SchoolHealthSummary.tsx','utf8');
+assert(health.includes('School health & improvement') && health.includes('canViewHealthReport'), 'Today preserves role-scoped school diagnostics and improvement details');
+assert(health.includes('onToggle') && health.includes('"/report/" + baseline.assessmentId'), 'Health details are lazy while School Health Check reports remain accessible');
+assert(today.includes('<SchoolHealthSummary organisationId={organisationId} />'), 'Today contains the only school health and improvement panel');
 const account=fs.readFileSync('src/components/account/AccountAccess.tsx','utf8');
-assert(account.includes('Open Today') && account.includes('Open KHP-OS'), 'School chooser must distinguish Today from the school overview');
+assert(account.includes('Open Today') && !account.includes('start from your school overview'), 'School chooser has one direct Today entry');
+assert(!account.includes('href={`/khpos/${item.organisationId}`}'), 'Account school chooser must not offer a second overview destination');
 const navFiles=['src/components/khpos/SchoolWorkspaceNav.tsx','src/components/khpos/AdminNav.tsx','src/components/khpos/HqSectionNavigation.tsx','src/components/khpos/KaecHqWorkspace.tsx'];
 for(const file of navFiles) assert(fs.readFileSync(file,'utf8').includes('useActiveNavScroll'), file+' must reveal the active destination when navigation overflows');
 assert(fs.readFileSync('src/components/khpos/useActiveNavScroll.ts','utf8').includes('row.scrollLeft +='), 'All page families must use the shared active-tab scroll behaviour');

@@ -300,10 +300,10 @@ export function PotentialDevelopmentWorkspace({
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950"
           >
-            School overview
+            Today
           </Link>
         </div>
       </main>
@@ -317,10 +317,10 @@ export function PotentialDevelopmentWorkspace({
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
-              href={`/khpos/${organisationId}`}
+              href={`/khpos/${organisationId}/work`}
               className="inline-flex items-center gap-2 text-xs font-bold text-brand-100"
             >
-              <ArrowLeft className="size-4" /> School overview
+              <ArrowLeft className="size-4" /> Today
             </Link>
             <span className="rounded-full border border-mint-300/30 bg-mint-300/10 px-3 py-1 text-xs font-black text-mint-200">
               School operations

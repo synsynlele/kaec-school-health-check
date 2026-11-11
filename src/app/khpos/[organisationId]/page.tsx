@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CommandCentre } from "@/components/khpos/CommandCentre";
+import { redirect } from "next/navigation";
 import { UUID_RE } from "@/lib/http";
 
 export const metadata: Metadata = {
-  title: "KHP-OS | Schools",
+  title: "Today · KHP-OS",
   robots: { index: false, follow: false },
 };
 
@@ -16,5 +16,6 @@ export default async function KhposWorkspacePage({
   const { organisationId } = await params;
   if (!UUID_RE.test(organisationId)) notFound();
 
-  return <CommandCentre organisationId={organisationId} />;
+  // Existing school-home bookmarks now open Today. Never render a second dashboard.
+  redirect(`/khpos/${organisationId}/work`);
 }

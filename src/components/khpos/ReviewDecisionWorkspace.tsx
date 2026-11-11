@@ -291,8 +291,8 @@ export function ReviewDecisionWorkspace({
           <ShieldCheck className="mx-auto size-9 text-amber-300" />
           <h1 className="mt-4 text-2xl font-black">Review workspace unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
-          <Link href={`/khpos/${organisationId}`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
-            Return to School overview
+          <Link href={`/khpos/${organisationId}/work`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950">
+            Return to Today
           </Link>
         </div>
       </main>

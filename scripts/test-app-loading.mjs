@@ -95,7 +95,6 @@ assert(fs.readFileSync('src/app/khpos/loading.tsx', 'utf8').includes('<LoadingSc
 assert(!fs.existsSync('src/app/khpos/[organisationId]/loading.tsx'),
   'The nested school segment must inherit the one shared route fallback');
 for (const path of [
-  'src/components/khpos/CommandCentre.tsx',
   'src/components/khpos/ops/MyWorkWorkspace.tsx',
   'src/components/khpos/ops/MeetingsWorkspace.tsx',
   'src/components/khpos/AnnouncementsWorkspace.tsx',

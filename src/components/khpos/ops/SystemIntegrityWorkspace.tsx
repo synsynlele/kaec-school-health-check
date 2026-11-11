@@ -104,11 +104,11 @@ export function SystemIntegrityWorkspace({
               Leadership-only school control
             </span>
             <Link
-              href={`/khpos/${organisationId}`}
+              href={`/khpos/${organisationId}/work`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              School overview
+              Today
             </Link>
           </div>
 

@@ -62,9 +62,11 @@ assert.match(ui, /Approve priority & intervention/);
 assert.match(ui, /Based on School Health Check results/);
 assert.match(ui, /Archive from active agenda/);
 
-const commandCentre = readFileSync("src/components/khpos/CommandCentre.tsx", "utf8");
-assert.match(commandCentre, /Build transformation agenda/);
-assert.match(commandCentre, /\/priorities/);
-assert.match(commandCentre, /activePriorityCount/);
+const todayHealth = readFileSync("src/components/khpos/ops/SchoolHealthSummary.tsx", "utf8");
+assert.match(todayHealth, /View priorities/);
+assert.match(todayHealth, /\/priorities/);
+assert.match(todayHealth, /activePriorityCount/);
+const schoolEntry = readFileSync("src/app/khpos/[organisationId]/page.tsx", "utf8");
+assert.match(schoolEntry, /redirect/);
 
 console.log("KHP-OS Stage 2 structural validation passed: deterministic priority ranking, human approval and mapped interventions are present.");

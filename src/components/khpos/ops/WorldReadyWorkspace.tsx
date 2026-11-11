@@ -181,11 +181,11 @@ export function WorldReadyWorkspace({
       <ActionFeedback busy={Boolean(busy)} error={error ?? ""} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
       <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
         <Link
-          href={"/khpos/" + organisationId}
+          href={"/khpos/" + organisationId + "/work"}
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500"
         >
           <ArrowLeft className="size-3.5" />
-          School overview
+          Today
         </Link>
         <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
           School operations

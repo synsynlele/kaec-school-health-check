@@ -150,11 +150,11 @@ export function OperationsTeamWorkspace({
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={`/khpos/${organisationId}`}
+            href={`/khpos/${organisationId}/work`}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            School overview
+            Today
           </Link>
         </div>
       </main>
@@ -188,11 +188,11 @@ export function OperationsTeamWorkspace({
             </div>
 
             <Link
-              href={`/khpos/${organisationId}`}
+              href={`/khpos/${organisationId}/work`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-black text-white transition hover:bg-white/15"
             >
               <ArrowLeft className="size-4" />
-              School overview
+              Today
             </Link>
           </div>
         </div>

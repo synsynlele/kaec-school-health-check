@@ -146,10 +146,12 @@ assert.match(workspace,/canViewHealthReport,/);
 checks+=3;
 const account=fs.readFileSync("src/app/api/account/route.ts","utf8");
 assert.match(account,/filterKshcOwnedAssessments\(user.id, partnerships, assessments\)/);checks++;
-const command=fs.readFileSync("src/components/khpos/CommandCentre.tsx","utf8");
-assert.match(command,/workspace.canViewHealthReport && <div[^>]+>[\s\S]*?View School Health Check report/);
-assert.match(command,/workspace.canViewHealthReport && <section className="grid gap-6/);
-checks+=2;
+const health=fs.readFileSync("src/components/khpos/ops/SchoolHealthSummary.tsx","utf8");
+assert.match(health,/workspace.canViewHealthReport && <article/, "The school report card stays hidden from unauthorised roles");
+assert.match(health,/workspace.canViewHealthReport && workspace.priorityAreas.length/, "Diagnostic priorities are leadership-only");
+assert.match(health,/workspace.canViewHealthReport && workspace.departmentScores.length/, "Detailed scores are leadership-only");
+assert.match(health,/\/api\/kshc\/session/, "Opening a school report must establish the authenticated report session");
+checks+=4;
 const pdf=fs.readFileSync("src/app/api/report/[id]/pdf/route.ts","utf8");
 assert.match(pdf,/Cache-Control": "private, no-store"/);checks++;
 
