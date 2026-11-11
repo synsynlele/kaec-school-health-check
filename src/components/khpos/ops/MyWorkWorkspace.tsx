@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
 import { SchoolQuickActions } from "@/components/khpos/ops/SchoolQuickActions";
+import { SchoolHealthSummary } from "@/components/khpos/ops/SchoolHealthSummary";
 import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
@@ -330,11 +331,11 @@ export function MyWorkWorkspace({
           <h1 className="mt-4 text-2xl font-black">Today is unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <Link
-            href={`/khpos/${organisationId}`}
+            href="/khpos"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
           >
             <ArrowLeft className="size-4" />
-            School overview
+            Return to KHP-OS entrance
           </Link>
         </div>
       </main>
@@ -383,7 +384,8 @@ export function MyWorkWorkspace({
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={message} onDismiss={() => { setError(""); setMessage(""); }} />
       <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-mint-300">School workspace · {work.organisation.name}</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
@@ -1203,6 +1205,7 @@ export function MyWorkWorkspace({
           </details>
         )}
         </div>
+        <SchoolHealthSummary organisationId={organisationId} />
       </div>
     </main>
   );
