@@ -143,6 +143,10 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
   const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | null>(null);
   const [tab,setTab]=useState<Panel>("day");
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested === "day" || requested === "lessons") setTab(requested);
+  }, []);
   const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
   const [error,setError]=useState("");
@@ -376,10 +380,10 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
       <Link href={"/khpos/"+organisationId} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
         <ArrowLeft className="size-4"/> School Overview
       </Link>
-      <div className="rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
+      <div className="khpos-hero rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & LESSONS</div>
         <h1 className="text-2xl font-black sm:text-4xl">My school day</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Record when you arrive at school, when each class starts and finishes, and when you leave school. Keep class teaching records separate from your school attendance. teaching through evidence-led observations.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">Record when you arrive at school, when each class starts and finishes, and when you leave school. Keep class teaching records separate from your school attendance. Lesson observations are recorded separately.</p>
         <p className="mt-2 text-xs text-slate-300">Recorded using Nigerian local school time (Africa/Lagos). Staff attendance and subject lesson delivery are separate records.</p>
       </div>
       <ActionFeedback busy={Boolean(busy)} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
