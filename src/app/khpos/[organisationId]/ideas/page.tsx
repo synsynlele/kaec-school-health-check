@@ -1,10 +1,17 @@
-import { notFound } from "next/navigation";
-import { IdeasBoard } from "@/components/khpos/ops/IdeasBoard";
-import { UUID_RE } from "@/lib/http";
+import type { Metadata } from "next";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
-export const metadata = { title: "Ideas & discussions · KHP-OS", robots: { index: false, follow: false } };
-export default async function Page({ params }: { params: Promise<{ organisationId: string }> }) {
+export const metadata: Metadata = {
+  title: "ideas · KHP-OS",
+  robots: { index: false, follow: false },
+};
+
+export default async function Page({
+  params, searchParams,
+}: {
+  params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <IdeasBoard scope={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "announcements", "ideas", await searchParams);
 }

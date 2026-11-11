@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { UUID_RE } from "@/lib/http";
-import { ExtendedWorkspace } from "@/components/khpos/ops/ExtendedWorkspace";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
-export const metadata: Metadata = { title: "Parent Journey · KHP-OS", robots: { index: false, follow: false } };
-export default async function Page({ params }: { params: Promise<{ organisationId: string }> }) {
+export const metadata: Metadata = {
+  title: "parent journeys · KHP-OS",
+  robots: { index: false, follow: false },
+};
+
+export default async function Page({
+  params, searchParams,
+}: {
+  params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <ExtendedWorkspace organisationId={organisationId} type="parent-journeys" />;
+  redirectLegacySchoolWorkspace(organisationId, "parents", "enquiries", await searchParams);
 }

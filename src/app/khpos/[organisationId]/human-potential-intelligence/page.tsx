@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { HumanPotentialIntelligenceWorkspace } from "@/components/khpos/HumanPotentialIntelligenceWorkspace";
-import { UUID_RE } from "@/lib/http";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
 export const metadata: Metadata = {
-  title: "PipuPath Human Potential Intelligence | KHP-OS",
+  title: "human potential intelligence · KHP-OS",
   robots: { index: false, follow: false },
 };
 
-export default async function KhposHumanPotentialIntelligencePage({
-  params,
+export default async function Page({
+  params, searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <HumanPotentialIntelligenceWorkspace organisationId={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "performance", "development", await searchParams);
 }

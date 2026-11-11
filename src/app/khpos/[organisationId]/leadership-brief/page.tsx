@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { LeadershipBriefWorkspace } from "@/components/khpos/ops/LeadershipBriefWorkspace";
-import { UUID_RE } from "@/lib/http";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
 export const metadata: Metadata = {
-  title: "Leadership Brief · KHP-OS",
+  title: "leadership brief · KHP-OS",
   robots: { index: false, follow: false },
 };
 
-export default async function LeadershipBriefPage({
-  params,
+export default async function Page({
+  params, searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <LeadershipBriefWorkspace organisationId={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "performance", "brief", await searchParams);
 }
