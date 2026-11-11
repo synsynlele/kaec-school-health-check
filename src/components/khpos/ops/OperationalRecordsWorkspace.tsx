@@ -417,8 +417,9 @@ export function OperationalRecordsWorkspace({
                 key={value}
                 type="button"
                 onClick={() => setTab(value)}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition sm:text-sm ${
-                  tab === value ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
+                aria-pressed={tab === value}
+                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
+                  tab === value ? "border-brand-700 bg-brand-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50"
                 }`}
               >
                 <Icon className="size-4" />
