@@ -144,8 +144,11 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | null>(null);
   const [tab,setTab]=useState<Panel>("day");
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("tab");
-    if (requested === "day" || requested === "lessons") setTab(requested);
+    const frame = window.requestAnimationFrame(() => {
+      const requested = new URLSearchParams(window.location.search).get("tab");
+      if (requested === "day" || requested === "lessons") setTab(requested);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
   const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
