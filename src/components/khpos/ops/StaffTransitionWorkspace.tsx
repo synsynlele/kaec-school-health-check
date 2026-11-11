@@ -700,7 +700,7 @@ export function StaffTransitionWorkspace({
                   Exit & handover
                 </p>
                 <h2 className="mt-1 text-lg font-black text-slate-950">
-                  Record an school exit
+                  Record a school exit
                 </h2>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
                   KHP-OS records the basis and clearance. It does not invent
