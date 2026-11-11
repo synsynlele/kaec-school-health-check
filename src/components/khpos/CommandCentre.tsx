@@ -227,7 +227,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                 </p>
               </div>
               <Link
-                href={`/khpos/${organisationId}/work#today-tasks`}
+                href={`/khpos/${organisationId}/work#today-actions`}
                 className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-brand-100"
               >
                 Review what needs attention
@@ -235,11 +235,11 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {attention.summary.actionRequired > 0 && <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: "Critical", value: attention.summary.critical, href: `/khpos/${organisationId}/work#today-tasks` },
-                { label: "Overdue", value: attention.summary.overdue, href: `/khpos/${organisationId}/work#today-tasks` },
-                { label: "Blocked", value: attention.summary.blocked, href: `/khpos/${organisationId}/work#today-tasks` },
+                { label: "Critical", value: attention.summary.critical, href: `/khpos/${organisationId}/work#today-actions` },
+                { label: "Overdue", value: attention.summary.overdue, href: `/khpos/${organisationId}/work#today-actions` },
+                { label: "Blocked", value: attention.summary.blocked, href: `/khpos/${organisationId}/work#today-actions` },
                 { label: "Waiting approval", value: attention.summary.waitingApproval, href: `/khpos/${organisationId}/decisions` },
               ].map(({ label, value, href }) => (
                 <Link href={href} key={label} className="group rounded-2xl border border-slate-200/80 bg-slate-50 p-4 transition hover:border-brand-300 hover:bg-brand-50/50">
@@ -247,7 +247,7 @@ export function CommandCentre({ organisationId }: { organisationId: string }) {
                   <span className="mt-2 block text-3xl font-black text-slate-950">{value}</span>
                 </Link>
               ))}
-            </div>
+            </div>}
 
             {attention.items.length > 0 && (
               <div className="mt-6 grid gap-3 lg:grid-cols-2">
