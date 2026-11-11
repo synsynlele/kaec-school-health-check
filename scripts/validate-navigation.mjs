@@ -105,7 +105,8 @@ if (todayWorkspace.includes("<ReportsWorkspace") || todayWorkspace.includes("<An
 if (todayWorkspace.indexOf("<AnnouncementsWorkspace organisationId={organisationId} compact />") > todayWorkspace.indexOf('My reports</span>')) {
   throw new Error("Today must show live announcements above My reports.");
 }
-requireText(todayWorkspace, '<SchoolQuickActions organisationId={organisationId} />', "School-day quick actions");
+requireText(todayWorkspace, '<SchoolQuickActions organisationId={organisationId} reviewCount={verificationItems.length} />', "School-day quick actions");
+if (todayWorkspace.includes('aria-label="Daily shortcuts"')) throw new Error("Today must have one consolidated quick-action area, not repeated shortcut rows.");
 if (todayWorkspace.indexOf("<TodayAttendanceCard") > todayWorkspace.indexOf("<AssessmentTimetable")) {
   throw new Error("Today must show attendance before supplementary timetable panels.");
 }
