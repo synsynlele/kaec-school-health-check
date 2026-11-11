@@ -61,7 +61,7 @@ export function PriorityInterventionWorkspace({
       if (!active) return;
       const accessToken = data.session?.access_token;
       if (!accessToken) {
-        setError("Your session has ended. Return to the Today and sign in again.");
+        setError("Your session has ended. Return to Today and sign in again.");
         return;
       }
 
