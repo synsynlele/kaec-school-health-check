@@ -18,6 +18,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
  if(name==='next/image')return {default:'img'};
  if(name==='lucide-react')return new Proxy({},{get:()=> 'span'});
  if(name==='@/components/khpos/NotificationBell')return {NotificationBell:'button'};
+ if(name==='@/components/khpos/useActiveNavScroll')return {useActiveNavScroll:()=>({current:null})};
  if(name==='@/lib/supabase/client')return {createBrowserSupabaseClient:()=>null};
  throw new Error(name);
 }});
