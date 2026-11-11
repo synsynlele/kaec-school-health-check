@@ -120,7 +120,7 @@ expectContains("src/components/account/AccountAccess.tsx", [
   "not",
   "grant KHP-OS access",
   'item.partnerStatus === "active"',
-  "Open KHP-OS",
+  "Open Today",
 ]);
 expectContains("src/components/khpos/PartnershipStatusWorkspace.tsx", [
   "KHP-OS access:",
