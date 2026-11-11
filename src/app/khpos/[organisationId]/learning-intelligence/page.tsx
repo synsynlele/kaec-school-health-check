@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { UUID_RE } from "@/lib/http";
-import { LearningIntelligenceWorkspace } from "@/components/khpos/LearningIntelligenceWorkspace";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
 export const metadata: Metadata = {
-  title: "KSI Learning Intelligence | KHP-OS",
+  title: "learning intelligence · KHP-OS",
   robots: { index: false, follow: false },
 };
 
-export default async function KhposLearningIntelligencePage({
-  params,
+export default async function Page({
+  params, searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <LearningIntelligenceWorkspace organisationId={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "performance", "learning", await searchParams);
 }

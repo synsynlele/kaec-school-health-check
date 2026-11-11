@@ -75,8 +75,12 @@ expectContains("src/components/khpos/PortfolioIntelligenceWorkspace.tsx", [
 ]);
 
 expectContains("src/components/khpos/SchoolWorkspaceNav.tsx", [
-  "/benchmarking",
-  "School comparisons",
+  'suffix: "/performance"',
+  "School results",
+]);
+expectContains("src/app/khpos/[organisationId]/performance/page.tsx", [
+  "BenchmarkingWorkspace",
+  'selected === "compare"',
 ]);
 
 expectContains("scripts/test-core.mjs", ["scripts/validate-stage9.mjs"]);

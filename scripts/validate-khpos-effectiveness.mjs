@@ -83,13 +83,16 @@ for (const expected of [
 
 const nav = read("src/components/khpos/SchoolWorkspaceNav.tsx");
 for (const expected of [
-  'suffix: "/leadership-brief"',
+  'suffix: "/performance"',
   'suffix: "/calendar"',
-  'label: "Meeting brief"',
   'label: "Calendar"',
 ]) {
   requireText(nav, expected, "workspace navigation");
 }
+const results = read("src/app/khpos/[organisationId]/performance/page.tsx");
+requireText(results, "LeadershipBriefWorkspace", "Leadership brief still runs inside School Results");
+requireText(results, 'selected === "brief"', "Meeting brief remains an independently selected view");
+requireText(results, 'label":"Meeting brief"', "Meeting brief remains discoverable");
 
 console.log(
   "KHP-OS effectiveness Wave 2 validated: derived performance, verified decision outcomes, institutional calendar, leadership brief and exception notifications are present.",

@@ -8,7 +8,7 @@ const integration = readFileSync(new URL("../src/lib/khpos/ksi-integration.ts", 
 const receiver = readFileSync(new URL("../src/app/api/khpos/integrations/ksi/receive/route.ts", import.meta.url), "utf8");
 const route = readFileSync(new URL("../src/app/api/khpos/integrations/ksi/[id]/route.ts", import.meta.url), "utf8");
 const ui = readFileSync(new URL("../src/components/khpos/LearningIntelligenceWorkspace.tsx", import.meta.url), "utf8");
-const page = readFileSync(new URL("../src/app/khpos/[organisationId]/learning-intelligence/page.tsx", import.meta.url), "utf8");
+const page = readFileSync(new URL("../src/app/khpos/[organisationId]/performance/page.tsx", import.meta.url), "utf8");
 
 assert.match(migration, /create table if not exists public\.khpos_integrations/);
 assert.match(migration, /create table if not exists public\.khpos_ksi_signal_snapshots/);
@@ -43,5 +43,6 @@ assert.match(route, /createKhposKsiPairing/);
 assert.match(ui, /KSI context does not resolve KSHC priorities/);
 assert.match(ui, /Private student records, teacher rankings/);
 assert.match(page, /LearningIntelligenceWorkspace/);
+assert.match(page, /selected === "learning"/);
 
 console.log("KHP-OS Stage 7 KSI integration validation passed: hashed token pairing, atomic bounded signal ingestion, privacy controls, governed signal states and reassessment authority boundary are present.");

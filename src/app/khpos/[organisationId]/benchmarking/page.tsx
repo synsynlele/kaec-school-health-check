@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { BenchmarkingWorkspace } from "@/components/khpos/BenchmarkingWorkspace";
-import { UUID_RE } from "@/lib/http";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
 export const metadata: Metadata = {
-  title: "Benchmark Intelligence | KHP-OS",
+  title: "benchmarking · KHP-OS",
   robots: { index: false, follow: false },
 };
 
-export default async function KhposBenchmarkingPage({
-  params,
+export default async function Page({
+  params, searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-  return <BenchmarkingWorkspace organisationId={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "performance", "compare", await searchParams);
 }

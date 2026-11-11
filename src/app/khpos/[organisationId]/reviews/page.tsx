@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { UUID_RE } from "@/lib/http";
-import { ReviewDecisionWorkspace } from "@/components/khpos/ReviewDecisionWorkspace";
+import { redirectLegacySchoolWorkspace } from "@/lib/khpos/redirect-legacy-workspace";
 
 export const metadata: Metadata = {
-  title: "Review & Decision | KHP-OS",
+  title: "reviews · KHP-OS",
   robots: { index: false, follow: false },
 };
 
-export default async function KhposReviewsPage({
-  params,
+export default async function Page({
+  params, searchParams,
 }: {
   params: Promise<{ organisationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { organisationId } = await params;
-  if (!UUID_RE.test(organisationId)) notFound();
-
-  return <ReviewDecisionWorkspace organisationId={organisationId} />;
+  redirectLegacySchoolWorkspace(organisationId, "priorities", "reviews", await searchParams);
 }
