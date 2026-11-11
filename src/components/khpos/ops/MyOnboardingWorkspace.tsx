@@ -222,11 +222,11 @@ export function MyOnboardingWorkspace({
               A clear start, one step at a time
             </span>
             <Link
-              href={`/khpos/${organisationId}`}
+              href={`/khpos/${organisationId}/work`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-black"
             >
               <ArrowLeft className="size-4" />
-              School overview
+              Today
             </Link>
           </div>
           <h1 className="mt-5 text-3xl font-black sm:text-5xl">Get started</h1>

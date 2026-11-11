@@ -349,11 +349,11 @@ export function BuilderProjectsWorkspace({
       <header className="khpos-interface-card flex flex-wrap items-center justify-between gap-3 p-5 sm:p-7">
         <div>
           <Link
-            href={"/khpos/" + organisationId}
+            href={"/khpos/" + organisationId + "/work"}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <ArrowLeft className="size-3.5" />
-            School overview
+            Today
           </Link>
           <p className="mt-4 text-[11px] font-black uppercase tracking-[0.18em] text-brand-600">
             School operations
