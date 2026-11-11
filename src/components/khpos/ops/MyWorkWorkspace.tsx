@@ -387,7 +387,7 @@ export function MyWorkWorkspace({
             Today
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
-            Start with your school arrival and scheduled classes. Then check your assigned work, reports and approvals. Each section shows what to do next.
+            Sign in, check your lessons and finish the work that needs your attention. Open other tasks using the quick actions below.
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -416,12 +416,7 @@ export function MyWorkWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        <SchoolQuickActions organisationId={organisationId} />
-        <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
-          <a className="rounded-xl border bg-white px-4 py-3" href="#today-reports">Announcements &amp; reports</a>
-          <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
-          {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
-        </nav>
+        <SchoolQuickActions organisationId={organisationId} reviewCount={verificationItems.length} />
         <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
         <AssessmentTimetable school={organisationId} todayInvigilation />
         <SchoolPlan school={organisationId} todayOnly />
