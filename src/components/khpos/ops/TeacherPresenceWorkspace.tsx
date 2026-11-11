@@ -132,7 +132,7 @@ function getTeachingGroupFields(form: FormData): Record<string, string | boolean
   };
 }
 
-export function TeacherPresenceWorkspace({organisationId}:{organisationId:string}) {
+export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{organisationId:string;initialTab?:"day"|"lessons"}) {
   const refreshGate=useRef(createAttendanceRefreshGate());
   const [attendanceRevision,setAttendanceRevision]=useState(0);
   const locationCapture=useAttendanceLocation();
@@ -142,14 +142,7 @@ export function TeacherPresenceWorkspace({organisationId}:{organisationId:string
   const [data,setData]=useState<KhposPresenceWorkspace|null>(null);
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
   const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | null>(null);
-  const [tab,setTab]=useState<Panel>("day");
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      const requested = new URLSearchParams(window.location.search).get("tab");
-      if (requested === "day" || requested === "lessons") setTab(requested);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  const [tab,setTab]=useState<Panel>(initialTab);
   const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
   const [error,setError]=useState("");
