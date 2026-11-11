@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NotificationBell } from "@/components/khpos/NotificationBell";
+import { useActiveNavScroll } from "@/components/khpos/useActiveNavScroll";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -469,15 +470,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const pathname = usePathname(), router = useRouter(), base = `/khpos/${organisationId}`;
-  const tabsRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const row = tabsRef.current;
-    const selected = row?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!row || !selected) return;
-    const track = row.getBoundingClientRect();
-    const tab = selected.getBoundingClientRect();
-    row.scrollLeft += tab.left - track.left - (track.width - tab.width) / 2;
-  }, [pathname]);
+  const tabsRef = useActiveNavScroll<HTMLElement>(pathname);
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
