@@ -10,6 +10,7 @@ import { ActionFeedback } from "./ActionFeedback";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
+import { SchoolQuickActions } from "@/components/khpos/ops/SchoolQuickActions";
 import { AnnouncementsWorkspace } from "@/components/khpos/AnnouncementsWorkspace";
 import { useRecordFocus } from "@/components/khpos/ops/useRecordFocus";
 import { announceKhposActivityChanged } from "@/lib/khpos/ops/action-events";
@@ -380,7 +381,7 @@ export function MyWorkWorkspace({
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <ActionFeedback busy={Boolean(busyId)} error={error ?? ""} notice={message} onDismiss={() => { setError(""); setMessage(""); }} />
-      <section className="bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
+      <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
             Today
@@ -405,7 +406,7 @@ export function MyWorkWorkspace({
                   setWorkQuery("");
                   if (anchor === "today-completed") document.querySelector<HTMLDetailsElement>("#today-completed details")?.setAttribute("open", "");
                 }}
-                className="rounded-xl border border-white/10 bg-white/10 p-3 transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white">
+                className="khpos-stat-card p-3 focus-visible:ring-2 focus-visible:ring-white">
                 <p className="text-xs font-bold text-brand-100">{label}</p>
                 <p className="mt-1 text-2xl font-black sm:text-3xl">{value}</p>
               </a>
@@ -415,8 +416,9 @@ export function MyWorkWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        <SchoolQuickActions organisationId={organisationId} />
         <nav aria-label="Daily shortcuts" className="flex flex-wrap gap-3 text-sm font-bold text-brand-700">
-          <a className="rounded-xl border bg-white px-4 py-3" href="#today-attendance">Attendance &amp; lessons</a>
+          <a className="rounded-xl border bg-white px-4 py-3" href="#today-reports">Announcements &amp; reports</a>
           <Link className="rounded-xl border bg-white px-4 py-3" href={`/khpos/${organisationId}/issues`}>Raise an issue</Link>
           {verificationItems.length > 0 && <a className="rounded-xl border bg-white px-4 py-3" href="#today-reviews">Review work ({verificationItems.length})</a>}
         </nav>
@@ -425,7 +427,7 @@ export function MyWorkWorkspace({
         <SchoolPlan school={organisationId} todayOnly />
         <section id="today-reports" aria-label="School announcements and reports" className="scroll-mt-24 space-y-3">
           <AnnouncementsWorkspace organisationId={organisationId} compact />
-          <Link href={`/khpos/${organisationId}/reports`} className="group flex min-h-24 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+          <Link href={`/khpos/${organisationId}/reports`} className="khpos-surface-card group flex min-h-24 items-center justify-between gap-3 p-5 text-slate-950 transition hover:border-brand-300 hover:shadow-md">
             <span><span className="block font-extrabold">My reports</span><span className="mt-1 block text-sm text-slate-600">Open reports due, drafts and submitted history.</span></span>
             <span aria-hidden="true" className="text-xl text-brand-700">→</span>
           </Link>
