@@ -3,7 +3,7 @@ import { getReportAlerts } from "@/lib/khpos/reports";
 import { getAnnouncementAlerts } from "@/lib/khpos/announcements";
 import { getKhposAttention } from "@/lib/khpos/ops/attention";
 import { getAssessmentAlerts, getPresenceWorkspace } from "@/lib/khpos/ops/presence";
-import { attendanceSteps, dueAttendanceSteps, lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
+import { attendanceSteps, calendarPauses, dueAttendanceSteps, lagosLocalDay, missedClassCheckouts, schoolClockMs } from "@/lib/khpos/ops/attendance-guidance";
 
 export type KhposAlert = {
   id: string;
@@ -46,8 +46,8 @@ export async function getKhposAlerts(
     retryClockSkew(() => getKhposAttention(organisationId, userId, nowMs)),
     retryClockSkew(() =>
     getPresenceWorkspace(organisationId, userId)
-  ).then((presence) =>
-    dueAttendanceSteps(attendanceSteps(presence, nowMs)).map((step) => ({
+  ).then((presence) => {
+    const alerts: KhposAlert[] = dueAttendanceSteps(attendanceSteps(presence, nowMs)).map((step) => ({
       id: step.id,
       title: step.title,
       detail: step.instruction,
@@ -56,8 +56,28 @@ export async function getKhposAlerts(
       urgent: step.urgent,
       level: step.urgent ? "urgent" as const : "action" as const,
       category: "attendance",
-    }))
-  ).catch(() => [] as KhposAlert[]),
+    }));
+    // The presence service returns these records only to authorised school leaders.
+    const weekday = new Date(presence.localDay + "T12:00:00Z").getUTCDay() || 7;
+    const schoolDay = (weekday < 7 || presence.periods.some(period => period.weekday === weekday && period.termActive))
+      && !calendarPauses(presence, null, presence.localDay, false);
+    const missed = presence.pilotEnabled && schoolDay && presence.localDay === lagosLocalDay(nowMs)
+      ? missedClassCheckouts(presence) : [];
+    const due = schoolClockMs(presence.localDay, "00:00");
+    if (missed.length && Number.isFinite(due)) {
+      alerts.push({
+        id: `attendance:missed-checkouts:${organisationId}:${presence.localDay}`,
+        title: "Review missed class checkouts",
+        detail: `${missed.length} class session${missed.length === 1 ? " is" : "s are"} still open from previous school dates.`,
+        href: `/khpos/${organisationId}/teaching-presence?tab=leaders&review=missed-checkouts`,
+        dueAt: new Date(due).toISOString(),
+        urgent: false,
+        level: "action",
+        category: "attendance",
+      });
+    }
+    return alerts;
+  }).catch(() => [] as KhposAlert[]),
     getAnnouncementAlerts(organisationId, userId).catch(() => []),
     getReportAlerts(organisationId, userId).catch(() => []),
     getMeetingAlerts(organisationId, userId, nowMs).catch(() => []),

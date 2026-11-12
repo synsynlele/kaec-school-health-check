@@ -3,7 +3,7 @@
 import { actionDestination, focusActionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
-import { calendarPauses, calendarPauseForDay, nextRegularLessonDay } from "@/lib/khpos/ops/attendance-guidance";
+import { calendarPauses, calendarPauseForDay, nextRegularLessonDay, openClassToday, missedClassCheckouts } from "@/lib/khpos/ops/attendance-guidance";
 
 import { ActionFeedback } from "./ActionFeedback";
 
@@ -142,7 +142,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   const supabase=useMemo(()=>createBrowserSupabaseClient(),[]);
   const [data,setData]=useState<KhposPresenceWorkspace|null>(null);
   const [academic,setAcademic]=useState<KhposOpsAcademicDeliveryWorkspace|null>(null);
-  const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | null>(null);
+  const [correctionCategory, setCorrectionCategory] = useState<"class" | "school" | "missed" | null>(null);
   const [tab,setTab]=useState<Panel>(initialTab);
   const [editingPeriod, setEditingPeriod] = useState("");
   const [busy,setBusy]=useState("");
@@ -239,7 +239,9 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   },[authToken,organisationId]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const selected = new URLSearchParams(window.location.search).get("tab");
+      const query = new URLSearchParams(window.location.search);
+      const selected = query.get("tab");
+      if (selected === "leaders" && query.get("review") === "missed-checkouts") setCorrectionCategory("missed");
       if (selected === "day" || selected === "exams" || selected === "lessons" || selected === "hqls" || selected === "leaders") setTab(selected);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -251,6 +253,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
     const timer = window.setTimeout(() => document.getElementById("class-" + selected)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     return () => window.clearTimeout(timer);
   }, [data, tab]);
+  useEffect(() => {
+    if (tab !== "leaders" || correctionCategory !== "missed" || !data?.pilotEnabled) return;
+    const frame = requestAnimationFrame(() => focusActionDestination(document.getElementById("attendance-corrections")));
+    return () => cancelAnimationFrame(frame);
+  }, [tab, correctionCategory, data?.pilotEnabled]);
   useEffect(()=>{
     let active=true;
     void Promise.resolve().then(()=>{if(active)void load();});
@@ -280,11 +287,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
         method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
         body:JSON.stringify({mode,...payload})
       });
-      const body=await response.json() as {ok?:boolean;error?:string;workspace?:KhposPresenceWorkspace};
+      const body=await response.json() as {ok?:boolean;error?:string;workspace?:KhposPresenceWorkspace;alreadyRecorded?:boolean};
       if(!response.ok||!body.ok)throw new Error(body.error??"The request could not be completed.");
       if(body.workspace)setData(body.workspace);
       setAttendanceRevision(v=>v+1);
-      setNotice(label);
+      setNotice(body.alreadyRecorded ? (mode === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") : label);
       announceKhposActivityChanged(organisationId);
       return true;
     }catch(e){setError(e instanceof Error?e.message:"Unable to complete action.");}
@@ -315,6 +322,15 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   }
 
   const localDay=data?.localDay??"";
+  const openClass = data ? openClassToday(data) : undefined;
+  function finishPreviousClass(periodId: string) {
+    setTab("lessons");
+    setTimetableCampus("");
+    setLessonDay("");
+    setLessonQuery("");
+    requestAnimationFrame(() => focusActionDestination(document.getElementById("class-" + periodId)));
+  }
+  const missedCheckouts = data ? missedClassCheckouts(data) : [];
   const defaultStart=localDay ? (()=>{const date=new Date(localDay+"T12:00:00Z");date.setUTCDate(date.getUTCDate()-29);return date.toISOString().slice(0,10);})() : "";
   const selectedFrom=historyFrom||defaultStart;
   const selectedTo=historyTo||localDay;
@@ -360,7 +376,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   const confirmedClashes=scheduleConflicts.filter(c=>c.severity==="conflict");
   const overlapsToReview=scheduleConflicts.filter(c=>c.severity==="review");
   const own=(data?.periods??[])
-    .filter(p=>p.termActive && (!timetableCampus || p.campusId===timetableCampus))
+    .filter(p=>(p.termActive || p.id===openClass?.id) && (!timetableCampus || p.campusId===timetableCampus))
     .filter(p=>!lessonDay || p.weekday===Number(lessonDay))
     .filter(p=>[p.class,p.subject,p.teacher,p.room??"",p.teachingGroupLabel??"",p.parallelBlockLabel??"",WEEKDAYS[p.weekday]].join(" ").toLowerCase().includes(lessonQuery.trim().toLowerCase()))
     .sort((a,b)=>a.weekday-b.weekday || a.start.localeCompare(b.start));
@@ -424,7 +440,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                 <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><b>School check-in recorded:</b> {dateTime(data.todayPresence.in)}<br/><b>School check-out recorded:</b> {dateTime(data.todayPresence.out)}{data.todayPresence.administrativelyClosed?" (administratively closed)":""}</p>
                 <AttendanceLocationEvidence location={data.todayPresence.checkInLocation} label="Arrival location"/>
                 {data.todayPresence.out&&<AttendanceLocationEvidence location={data.todayPresence.checkOutLocation} label="Departure location"/>}
-                {!data.todayPresence.out&&<button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-out</button>}
+                {!data.todayPresence.out&&(openClass ? <div>
+                  <p className="text-sm text-slate-700">Finish {openClass.subject} · {openClass.class} before leaving school.</p>
+                  <button type="button" className="mt-2 rounded-lg border px-4 py-2 text-sm font-bold"
+                    onClick={() => finishPreviousClass(openClass.id)}>Finish previous class</button>
+                </div> : <button disabled={Boolean(busy)} onClick={()=>void act("school_out",{},"School check-out recorded.")} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-out</button>)}
               </>:<>
                 <label className="block text-sm font-bold text-slate-800" htmlFor="schoolCampus">Campus</label>
                 <select id="schoolCampus" className={field} value={campusId} onChange={e=>setCampusId(e.target.value)}>
@@ -550,7 +570,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                 const nextSlot = p.termActive && breakEnded ? nextRegularLessonDay(data.localDay,p.weekday) : null;
                 const breakName = calendarBreak?.title?.trim() || "School calendar break";
                 const passed = lessonDate !== null && (lessonDate < data.localDay || (today && attendanceNow > Date.parse(lessonDate+"T"+p.end+":00+01:00") + 1800000));
-                return <div key={p.id} id={"class-" + p.id} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
+                return <div key={p.id} id={"class-" + p.id} tabIndex={-1} className="scroll-mt-6 rounded-xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><h3 className="font-black text-slate-900">{p.subject} · {p.class}</h3>
                       <p className="text-sm text-slate-600">{WEEKDAYS[p.weekday]} {p.start}–{p.end} · {p.room||"Room not set"}</p>
@@ -562,9 +582,14 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                     The break has ended. Next regular class slot: {schoolDayLabel(nextSlot)}, {p.start}–{p.end}.
                     This is a recurring timetable slot, subject to any newly published school-calendar changes.
                   </p>}
-                  {today&&mine&&p.termActive&&!paused&&!p.session&&<button disabled={Boolean(busy)||!data.todayPresence||Boolean(data.todayPresence.out)}
+                  {today&&mine&&p.termActive&&!paused&&!p.session&&(openClass ?
+                    <div className="mt-3">
+                      <p className="text-sm text-slate-700">Finish {openClass.subject} · {openClass.class} before starting this class.</p>
+                      <button type="button" className="mt-2 rounded-lg border px-4 py-2 text-sm font-bold"
+                        onClick={() => finishPreviousClass(openClass.id)}>Finish previous class</button>
+                    </div> : <button disabled={Boolean(busy)||!data.todayPresence||Boolean(data.todayPresence.out)}
                     className="mt-3 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                    onClick={()=>void act("class_in",{periodId:p.id},"Class check-in recorded.")}>Record Class Check-in — Start class</button>}
+                    onClick={()=>void act("class_in",{periodId:p.id},"Class check-in recorded.")}>Record Class Check-in — Start class</button>)}
                   {today&&mine&&p.session&&!p.session.out&&<div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div><label className="text-xs font-bold">What happened in this class?</label>
                       <select className={field} value={lessonOutcome[p.id]||"completed"} onChange={e=>setLessonOutcome(old=>({...old,[p.id]:e.target.value}))}>
@@ -758,7 +783,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
               </label>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <a href="#attendance-corrections" onClick={() => { setCorrectionCategory("class"); document.querySelector<HTMLDetailsElement>("#attendance-corrections")?.setAttribute("open",""); }} className="block rounded-xl bg-slate-50 p-3 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600"><p className="text-xs text-slate-600">Unclosed class sessions (last 14 days)</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></a>
+              <a href="#attendance-corrections" onClick={() => { setCorrectionCategory("class"); document.querySelector<HTMLDetailsElement>("#attendance-corrections")?.setAttribute("open",""); }} className="block rounded-xl bg-slate-50 p-3 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600"><p className="text-xs text-slate-600">Unclosed class sessions</p><p className="text-2xl font-black">{data.openClassSessions.length}</p></a>
               <a href="#attendance-corrections" onClick={() => { setCorrectionCategory("school"); document.querySelector<HTMLDetailsElement>("#attendance-corrections")?.setAttribute("open",""); }} className="block rounded-xl bg-slate-50 p-3 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600"><p className="text-xs text-slate-600">Unclosed school attendance (last 14 days)</p><p className="text-2xl font-black">{data.openSchoolAttendance.length}</p></a>
             </div>
           </section>
@@ -798,19 +823,20 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                 className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
             </div>
           </div>
-          <details id="attendance-corrections" className={box + " scroll-mt-24"}>
+          <details id="attendance-corrections" open={correctionCategory === "missed" ? true : undefined} tabIndex={-1} className={box + " scroll-mt-24"}>
             <summary className="cursor-pointer text-lg font-black text-slate-900">Administrative corrections ({data.openClassSessions.length+data.openSchoolAttendance.length} open)</summary>
-          {(data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          {correctionCategory === "missed" && missedCheckouts.length === 0 && <p className="mt-3 text-sm text-slate-600">No missed class checkouts need review.</p>}
+          {(correctionCategory === "missed" ? missedCheckouts.length > 0 : data.openClassSessions.length>0||data.openSchoolAttendance.length>0)&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 className="font-black text-amber-900">Correct an attendance record with supporting information</h3>
             <p className="my-2 text-sm text-amber-900">An authorised leader can close an unfinished session. A corrected lesson is marked unverified, not as proof that teaching occurred. Staff should explain missed check-outs through Issues &amp; Escalations.</p>
             <label className="block text-xs font-bold">Correction reason and supporting reference (at least 15 characters)</label>
             <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Reason, verified information and issue reference.</span><textarea className={field} rows={2} maxLength={1000} value={reconcileReason} onChange={e=>setReconcileReason(e.target.value)} placeholder="Reason, verified information and issue reference."/></label>
-            {correctionCategory && <p className="text-sm">Showing {correctionCategory} records · <button type="button" className="underline" onClick={() => setCorrectionCategory(null)}>Show all</button></p>}
-            {correctionCategory !== "school" && data.openClassSessions.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+            {correctionCategory && <p className="text-sm">{correctionCategory === "missed" ? "Showing missed class checkouts from previous school dates." : `Showing ${correctionCategory} records`} · <button type="button" className="underline" onClick={() => setCorrectionCategory(null)}>Show all</button></p>}
+            {correctionCategory !== "school" && (correctionCategory === "missed" ? missedCheckouts : data.openClassSessions).map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
               <span><b>{x.teacher}</b> · {x.class} · {x.subject} · School date: {x.date} · Class check-in: {dateTime(x.in)}</span>
               <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("class_reconcile",{classSessionId:x.id,reason:reconcileReason},"Class administratively closed as unverified.")}>Close as unverified</button>
             </div>)}
-            {correctionCategory !== "class" && data.openSchoolAttendance.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
+            {correctionCategory !== "class" && correctionCategory !== "missed" && data.openSchoolAttendance.map(x=><div key={x.id} className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-3 text-sm">
               <span><b>{x.teacher}</b> · School date: {x.date} · School check-in: {dateTime(x.in)}</span>
               <button disabled={Boolean(busy)||reconcileReason.trim().length<15} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" onClick={()=>void act("school_reconcile",{presenceId:x.id,reason:reconcileReason},"School attendance administratively closed.")}>Record admin closure</button>
             </div>)}

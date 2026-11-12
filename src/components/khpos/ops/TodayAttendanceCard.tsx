@@ -1,6 +1,7 @@
 "use client";
 
 
+import { focusActionDestination } from "@/components/khpos/actionDestination";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -78,9 +79,18 @@ function AttendanceRow({
               className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
               {busy ? "Saving attendance…" : "Record school departure"}
             </button>}
-          {step.kind === "class_out" && step.periodId && onFinish ? (
-            <details className="w-full">
-              <summary className="cursor-pointer text-sm font-bold text-brand-800">Finish lesson</summary>
+          {step.previousClass ? (
+            <button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-800"
+              onClick={() => {
+                const checkout = document.getElementById(`finish-class-${step.previousClass?.id}`);
+                if (checkout instanceof HTMLDetailsElement) {
+                  checkout.open = true;
+                  focusActionDestination(checkout);
+                }
+              }}>Finish previous class</button>
+          ) : step.kind === "class_out" && step.periodId && onFinish ? (
+            <details id={`finish-class-${step.periodId}`} tabIndex={-1} className="w-full">
+              <summary className="cursor-pointer text-sm font-bold text-brand-800">{step.urgent ? "Finish previous class" : "Finish lesson"}</summary>
               <form className="mt-3 grid gap-2" onSubmit={event => {
                 event.preventDefault();
                 const fields = new FormData(event.currentTarget);
@@ -183,11 +193,12 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
         body: JSON.stringify({ mode: kind, ...(location ? { location } : {}), ...(kind === "school_in" ? { campusId } : {}),
           ...(periodId ? { periodId } : {}), ...lesson }),
       });
-      const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string };
+      const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string; alreadyRecorded?: boolean };
       if (!response.ok || !body.ok || !body.workspace) throw new Error(body.error || "Attendance could not be recorded.");
       setPresence(body.workspace);
       setNowMs(Date.now());
-      setNotice(kind === "school_in" ? "School arrival saved with date and time." :
+      setNotice(body.alreadyRecorded ? (kind === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") :
+        kind === "school_in" ? "School arrival saved with date and time." :
         kind === "school_out" ? "School departure saved with date and time." : kind === "class_out" ? "Class finish saved." : "Class start saved with date and time.");
       announceKhposActivityChanged(organisationId);
     } catch (cause) {
@@ -203,7 +214,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
     const finish = finishByPeriod.get(start.periodId);
     const current = start.status === "done" && finish ? finish : start;
     return { ...current, title: current.classLabel ?? current.title };
-  });
+  }).sort((a, b) => Number(b.kind === "class_out" && b.urgent) - Number(a.kind === "class_out" && a.urgent));
   const due = steps.filter((step) => step.status === "due").length;
   const done = steps.filter((step) => step.status === "done").length;
   const classCount = classSteps.length;

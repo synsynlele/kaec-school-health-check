@@ -105,7 +105,37 @@ export async function actOnPresence(org: string, actor: string, mode: string, in
   const { error } = await service().rpc("khpos_ops_presence_action_server", {
     p_actor: actor, p_org: org, p_mode: mode, p_input: input
   });
-  if (error) fail(error.message);
+  if (!error) return;
+
+  const duplicateStart = mode === "class_in" && error.code === "23505";
+  const missingOpenSession = mode === "class_out" &&
+    error.message === "You do not have an open class session for this period.";
+  if (!duplicateStart && !missingOpenSession) fail(error.message);
+
+  const workspace = await getPresenceWorkspace(org, actor);
+  const session = workspace.periods.find(period =>
+    period.id === input.periodId && period.teacherUserId === actor
+  )?.session;
+
+  // A retry can follow a saved write whose response never reached the phone.
+  // Confirm the requested state from the authorised snapshot without another write.
+  if (session?.in && (duplicateStart || (session.out && !session.administrativelyClosed))) {
+    const { data: ownSession, error: lookupError } = await service().from("khpos_ops_class_sessions")
+      .select("id").eq("id", session.id).eq("organisation_id", org)
+      .eq("teacher_user_id", actor).eq("local_day", workspace.localDay).maybeSingle();
+    if (lookupError) fail(lookupError.message);
+    if (ownSession) return workspace;
+  }
+  if (duplicateStart) {
+    const message = error.message.includes("khpos_one_open_class_per_teacher")
+      ? "You already have a class in progress. Finish that class first. If you cannot find it, ask your School Guardian to review unfinished sessions."
+      : "Attendance already exists for this lesson. Refresh the timetable. If it still looks wrong, ask your School Guardian to review the record.";
+    throw new KhposPresenceError(message, 409);
+  }
+  if (session?.administrativelyClosed) {
+    throw new KhposPresenceError("A school leader already closed this class session. Ask your School Guardian if it needs review.", 409);
+  }
+  fail(error.message);
 }
 
 export type WeeklyClassRecord = { periodId: string; date: string; in: string; out: string | null; outcome: string | null; administrativelyClosed: boolean };

@@ -8,7 +8,7 @@ const output = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const mod = await import("data:text/javascript;base64," + Buffer.from(output).toString("base64"));
-const { attendanceSteps, dueAttendanceSteps, lagosLocalDay, calendarPauses, calendarPauseForDay, nextRegularLessonDay } = mod;
+const { attendanceSteps, dueAttendanceSteps, lagosLocalDay, calendarPauses, calendarPauseForDay, nextRegularLessonDay, missedClassCheckouts } = mod;
 const now = (time) => Date.parse("2026-10-15T" + time + ":00+01:00");
 const period = {
   id:"00000000-0000-0000-0000-000000000021", streamId:"stream",
@@ -51,7 +51,19 @@ const session={id:"lesson",in:new Date(now("07:58")).toISOString(),out:null,outc
 x=result({...base,todayPresence:arrival,periods:[{...period,session}]},now("09:15"));
 assert.equal(find(x,"class_in").status,"done");
 assert.equal(find(x,"class_out").status,"due");
+assert.equal(find(x,"class_out").urgent,false);
+assert.equal(dueAttendanceSteps(x).some(step => step.kind === "class_out"), false);
+const nextPeriod = { ...period, id: "next-lesson", start: "09:30", end: "10:30" };
+x=result({...base,todayPresence:arrival,periods:[{...period,session},nextPeriod]},now("09:30"));
 assert.equal(find(x,"class_out").urgent,true);
+assert.equal(dueAttendanceSteps(x).some(step => step.kind === "class_out"), true);
+const nextStart = x.find(step => step.kind === "class_in" && step.periodId === nextPeriod.id);
+assert.equal(nextStart.status, "blocked");
+assert.equal(nextStart.previousClass.id, period.id);
+assert.equal(find(x,"school_out").previousClass.id, period.id);
+assert.deepEqual(missedClassCheckouts({
+  ...base, openClassSessions: [{ date: "2026-10-14" }, { date: base.localDay }],
+}), [{ date: "2026-10-14" }]);
 assert.equal(find(x,"school_out").status,"blocked");
 const complete={...session,out:new Date(now("09:20")).toISOString(),outcome:"completed",topic:"Fractions"};
 x=result({...base,todayPresence:arrival,periods:[{...period,session:complete}]},now("16:40"));
