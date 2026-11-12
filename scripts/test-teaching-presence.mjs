@@ -199,3 +199,55 @@ try {
  console.log("Assessment timetable: permissions, school isolation and full attendance-to-submission workflow passed.");
  console.log("Teaching presence/HQLS multi-school integration: "+checks+" checks passed.");
 } finally {await db.close();}
+
+const { default: ts } = await import("typescript");
+const { default: vm } = await import("node:vm");
+const presenceExports = {};
+const periodId = id(700);
+let writeError;
+let visibleSession;
+let belongsToTeacher = true;
+let writes = 0;
+const presenceClient = {
+  async rpc(name) {
+    if (name === "khpos_ops_presence_action_server") {
+      writes++;
+      return { error: writeError };
+    }
+    assert.equal(name, "khpos_ops_presence_workspace_server");
+    return { data: { localDay: "2026-11-12", periods: [{ id: periodId, teacherUserId: teacher, session: visibleSession }] } };
+  },
+  from(table) {
+    return {
+      select() { return this; }, eq() { return this; }, in() { return this; }, lte() { return this; },
+      async gte() { return { data: [] }; },
+      async maybeSingle() {
+        assert.equal(table, "khpos_ops_class_sessions");
+        return { data: belongsToTeacher ? { id: visibleSession.id } : null };
+      },
+    };
+  },
+};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync("src/lib/khpos/ops/presence.ts", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, {
+  exports: presenceExports,
+  require: () => ({ createClient: () => presenceClient }),
+  process: { env: { NEXT_PUBLIC_SUPABASE_URL: "https://test.invalid", SUPABASE_SERVICE_ROLE_KEY: "test-only" } },
+});
+const retry = mode => presenceExports.actOnPresence(org, teacher, mode, { periodId });
+writeError = { code: "23505", message: 'duplicate key violates "khpos_one_open_class_per_teacher"' };
+visibleSession = { id: id(701), in: "08:00", out: null };
+assert.equal((await retry("class_in")).periods[0].session.in, "08:00");
+belongsToTeacher = false;
+await assert.rejects(retry("class_in"), { status: 409, message: /Finish that class first/ });
+belongsToTeacher = true;
+visibleSession = null;
+await assert.rejects(retry("class_in"), { status: 409, message: /Finish that class first/ });
+writeError = { code: "P0001", message: "You do not have an open class session for this period." };
+visibleSession = { id: id(701), in: "08:00", out: "10:00", administrativelyClosed: false };
+assert.equal((await retry("class_out")).periods[0].session.out, "10:00");
+visibleSession.administrativelyClosed = true;
+await assert.rejects(retry("class_out"), { status: 409, message: /school leader already closed/ });
+assert.equal(writes, 5, "Retry recovery never submits a second write");
+console.log("Class attendance retries: existing check-in and check-out recovered; conflicting and administratively closed sessions explained.");

@@ -40,6 +40,7 @@ vm.runInNewContext(compile("src/components/khpos/ops/TodayAttendanceCard.tsx"),{
  if(name==="@/lib/khpos/ops/attendance-guidance")return guidance;
  if(name==="@/lib/khpos/ops/attendance-refresh")return gateModule;
  if(name==="@/components/khpos/useAttendanceLocation")return {useAttendanceLocation:()=>({capture:async()=>({status:"captured",latitude:6.55,longitude:3.25,accuracy:5}),dialog:null})};
+ if(name==="@/components/khpos/actionDestination")return {focusActionDestination:()=>{}};
  if(name==="@/components/khpos/AttendanceLocationEvidence")return {AttendanceLocationEvidence:"div"};
  if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
  if(name==="@/components/navigation/LoadingScreen")return {LoadingScreen:"div"};

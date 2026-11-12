@@ -80,8 +80,8 @@ export async function POST(request: Request, context: { params: Promise<{ id:str
       if (!Array.isArray(data) || data.length>8 || data.length===0) throw new KhposPresenceError("Select the observed HQLS stages.");
       if (JSON.stringify(body).length>12000) throw new KhposPresenceError("Observation notes are too long.");
     }
-    await actOnPresence(id,user.id,body.mode,body);
-    return NextResponse.json({ok:true,workspace:await getPresenceWorkspace(id,user.id)},
+    const recorded = await actOnPresence(id,user.id,body.mode,body);
+    return NextResponse.json({ok:true,workspace:recorded ?? await getPresenceWorkspace(id,user.id),alreadyRecorded:Boolean(recorded)},
       {headers:{"Cache-Control":"private, no-store"}});
   } catch(cause) { return responseError(cause); }
 }

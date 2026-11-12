@@ -16,6 +16,7 @@ export interface AttendanceStep {
   classLabel: string | null;
   schedule: string | null;
   urgent: boolean;
+  previousClass?: { id: string; label: string };
 }
 
 const LAGOS = "Africa/Lagos";
@@ -78,6 +79,16 @@ export function nextRegularLessonDay(localDay: string, weekday: number): string 
   return date.toISOString().slice(0, 10);
 }
 
+export function openClassToday(presence: KhposPresenceWorkspace) {
+  return presence.periods.find(period =>
+    period.teacherUserId === presence.userId && period.session && !period.session.out
+  );
+}
+
+export function missedClassCheckouts(presence: KhposPresenceWorkspace) {
+  return presence.openClassSessions.filter(session => session.date < presence.localDay);
+}
+
 export function attendanceSteps(
   presence: KhposPresenceWorkspace,
   nowMs: number,
@@ -87,7 +98,7 @@ export function attendanceSteps(
 
   const today = presence.localDay;
   const myPeriods = presence.periods
-    .filter((period) => period.teacherUserId === presence.userId && period.termActive &&
+    .filter((period) => period.teacherUserId === presence.userId && (period.termActive || period.session) &&
       isToday(today, period.weekday) &&
       (period.session || !calendarPauses(presence, period.campusId, today, true)))
     .sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
@@ -106,7 +117,8 @@ export function attendanceSteps(
   const arrival = presence.todayPresence;
   const checkedIn = Boolean(arrival?.in);
   const checkedOut = Boolean(arrival?.out);
-  const ongoing = myPeriods.some((period) => period.session && !period.session.out);
+  const openClass = openClassToday(presence);
+  const previousClass = openClass ? { id: openClass.id, label: `${openClass.subject} · ${openClass.class}` } : undefined;
 
   const result: AttendanceStep[] = [];
   result.push({
@@ -133,7 +145,7 @@ export function attendanceSteps(
     if (checkedClassIn) inStatus = "done";
     else if (nowMs > end + HALF_HOUR) inStatus = "missed";
     else if (nowMs < start - HALF_HOUR) inStatus = "upcoming";
-    else if (checkedOut || !checkedIn) inStatus = "blocked";
+    else if (checkedOut || !checkedIn || previousClass) inStatus = "blocked";
     else inStatus = "due";
     result.push({
       id: `attendance:class-in:${today}:${period.id}`,
@@ -141,12 +153,14 @@ export function attendanceSteps(
       title: `Class check-in · ${label}`,
       instruction: checkedClassIn ? "The time you started this class is saved." :
         inStatus === "missed" ? "The class check-in time has passed. Tell your School Guardian." :
-        inStatus === "blocked" ? "Record your school arrival before starting this class." :
+        inStatus === "blocked" ? (previousClass ? `Finish ${previousClass.label} before starting this class.` :
+          "Record your school arrival before starting this class.") :
         "When you begin this scheduled class, record the actual starting time.",
       actionLabel: checkedClassIn ? "Class start recorded" : "Start this class",
       status: inStatus, dueAt: stamp(nowMs, start - HALF_HOUR),
       recordedAt: session?.in ?? null, periodId: period.id,
       classLabel: label, schedule: `${period.start}–${period.end}`,
+      previousClass: inStatus === "blocked" ? previousClass : undefined,
       urgent: inStatus === "due" && nowMs > start + 10 * 60_000,
     });
 
@@ -166,27 +180,28 @@ export function attendanceSteps(
       status: outStatus, dueAt: stamp(nowMs, end),
       recordedAt: session?.out ?? null, periodId: period.id,
       classLabel: label, schedule: `${period.start}–${period.end}`,
-      urgent: outStatus === "due" && nowMs > end + 10 * 60_000,
+      urgent: outStatus === "due" && nowMs >= end + HALF_HOUR,
     });
   }
 
   const schoolOutStatus: AttendanceStepStatus = checkedOut ? "done" :
-    !checkedIn || ongoing ? "blocked" : schoolEnd === null ? "ready" : nowMs >= schoolEnd ? "due" : "upcoming";
+    !checkedIn || openClass ? "blocked" : schoolEnd === null ? "ready" : nowMs >= schoolEnd ? "due" : "upcoming";
   result.push({
     id: `attendance:school-out:${today}`,
     kind: "school_out", title: "School check-out",
     instruction: checkedOut ? "Your departure time has been saved." :
-      ongoing ? "Finish the class that is still in progress before leaving school." :
+      previousClass ? `Finish ${previousClass.label} before leaving school.` :
       !checkedIn ? "Record your school arrival first." :
       "Before you leave school, record your departure. Finish any open class first.",
     actionLabel: checkedOut ? "Departure recorded" : "Record school departure",
     status: schoolOutStatus, dueAt: schoolEnd === null ? null : stamp(nowMs, schoolEnd),
     recordedAt: arrival?.out ?? null, periodId: null, classLabel: null, schedule: null,
+    previousClass: schoolOutStatus === "blocked" ? previousClass : undefined,
     urgent: schoolOutStatus === "due" && schoolEnd !== null && nowMs > schoolEnd + HALF_HOUR,
   });
   return result;
 }
 
 export function dueAttendanceSteps(steps: AttendanceStep[]) {
-  return steps.filter((step) => step.status === "due");
+  return steps.filter((step) => step.status === "due" && (step.kind !== "class_out" || step.urgent));
 }
