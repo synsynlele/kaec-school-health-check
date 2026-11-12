@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { NotificationBell } from "@/components/khpos/NotificationBell";
 import { SchoolSectionTabs } from "@/components/khpos/SchoolSectionTabs";
+import type { KhposPartnerSnapshot } from "@/lib/khpos/partnership";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { usePathname } from "next/navigation";
 import {
@@ -273,7 +274,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   const [menuOpen, setMenuOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const current = workspaceLinks.find((item) => isActive(pathname, base, item.suffix));
+  const [school, setSchool] = useState<{ id: string; name: string } | null>(null);
+  const schoolName = school?.id === organisationId ? school.name : "School workspace";
   const isDailyActive = (suffix: string) => workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname, base, link.suffix));
   const moreActive = !dailyLinks.some((item) => isDailyActive(item.suffix));
 
@@ -298,16 +300,61 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
     const client = createBrowserSupabaseClient();
     if (!client) return;
     let mounted = true;
-    const sync = async (token: string | undefined) => {
+    let schoolRequest: AbortController | undefined;
+    let pendingSync: number | undefined;
+    let authChanged = false;
+
+    const sync = (token: string | undefined) => {
       if (!mounted || !token) return;
-      await fetch("/api/kshc/session", { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
+      const headers = { Authorization: `Bearer ${token}` };
+      void fetch("/api/kshc/session", { method: "POST", headers }).catch(() => undefined);
+
+      schoolRequest?.abort();
+      const request = new AbortController();
+      schoolRequest = request;
+      void fetch(`/api/khpos/partnership/${organisationId}`, {
+        headers,
+        cache: "no-store",
+        signal: request.signal,
+      }).then(async (response) => {
+        if (!response.ok) {
+          if (!request.signal.aborted && (response.status === 401 || response.status === 403 || response.status === 404)) {
+            setSchool(null);
+          }
+          return;
+        }
+        const { partnership } = await response.json() as { partnership?: KhposPartnerSnapshot };
+        if (request.signal.aborted) return;
+        const name = partnership?.name.trim();
+        setSchool(partnership?.organisationId === organisationId &&
+          partnership.membershipStatus === "active" && partnership.partnerStatus === "active" && name
+          ? { id: organisationId, name }
+          : null);
+      }).catch(() => undefined);
     };
-    void client.auth.getSession().then(({ data }) => sync(data.session?.access_token));
-    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") window.setTimeout(() => void sync(session?.access_token), 0);
+
+    void client.auth.getSession().then(({ data }) => {
+      if (!authChanged) sync(data.session?.access_token);
     });
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
-  }, []);
+    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        authChanged = true;
+        window.clearTimeout(pendingSync);
+        schoolRequest?.abort();
+        setSchool(null);
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        authChanged = true;
+        window.clearTimeout(pendingSync);
+        pendingSync = window.setTimeout(() => sync(session?.access_token), 0);
+      }
+    });
+    return () => {
+      mounted = false;
+      window.clearTimeout(pendingSync);
+      schoolRequest?.abort();
+      listener.subscription.unsubscribe();
+    };
+  }, [organisationId]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -341,8 +388,8 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
               <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-mint-300">
                 KHP-OS | Schools
               </span>
-              <span className="mt-0.5 block truncate text-sm font-extrabold text-white">
-                My school
+              <span className="mt-0.5 block wrap-anywhere text-sm font-extrabold text-white">
+                {schoolName}
               </span>
             </span>
           </Link>
@@ -392,7 +439,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
               <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-mint-300">
                 KHP-OS | Schools
               </span>
-              <span className="block truncate text-xs font-extrabold">{current?.label || "My school"}</span>
+              <span className="block wrap-anywhere text-sm font-extrabold leading-tight">{schoolName}</span>
             </span>
           </Link>
           <div className="flex shrink-0 gap-2">
@@ -428,7 +475,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
       {menuOpen && <div className="fixed inset-0 z-[80] xl:hidden">
         <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-slate-950/70" />
         <div ref={dialogRef} id="school-more-menu" role="dialog" aria-modal="true" aria-label="Explore KHP-OS" className="khpos-nav-panel absolute inset-y-0 right-0 flex w-[min(90vw,22rem)] flex-col bg-slate-950 text-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-4"><div><h2 className="text-lg font-extrabold">Explore KHP-OS</h2><p className="mt-1 text-xs text-slate-400">Find what you need without guessing.</p></div><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4"><div className="min-w-0"><h2 className="text-lg font-extrabold">{schoolName}</h2><p className="mt-1 text-xs text-slate-400">Find what you need without guessing.</p></div><button ref={closeRef} type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="min-h-11 min-w-11 shrink-0 rounded-lg border border-white/15 p-2"><X className="size-5" /></button></div>
           <nav aria-label="Find your way" className="flex-1 overflow-y-auto p-3"><NavigationGroups base={base} pathname={pathname} onNavigate={() => setMenuOpen(false)} /></nav>
           {signOutError && <p role="alert" className="px-3 text-xs text-rose-200">{signOutError}</p>}
           <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mx-3 mb-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 text-sm font-bold disabled:opacity-50"><LogOut aria-hidden="true" className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
