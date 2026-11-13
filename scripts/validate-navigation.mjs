@@ -149,7 +149,7 @@ for (const expected of [
 // than asserting that a route merely appears somewhere in the component.
 const declarations = schoolNav.slice(
   schoolNav.indexOf("const transformLinks"),
-  schoolNav.indexOf("function NavigationGroup("),
+  schoolNav.indexOf("type SchoolMenuAccess"),
 );
 const iconNames = schoolNav.match(/import \{([^}]*?)\} from "lucide-react"/)[1]
   .split(",").map((name) => name.trim()).filter(Boolean);

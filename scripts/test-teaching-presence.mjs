@@ -196,6 +196,45 @@ try {
  assert.equal((await read(guardian)).periods.find(p=>p.id===parallel[0].id).teachingGroupLabel,"Science");
  console.log("Teaching groups: secure SQL migration, previous periods, parallel blocks and collision rules passed.");
 
+ // Exercise the new migration against the production function definitions.
+ const academicSql = fs.readFileSync("supabase/migrations/20260924172154_khpos_ops_o12_academic_delivery.sql", "utf8");
+ for (const name of ["public.khpos_ops_create_academic_stream_server", "public.khpos_ops_get_academic_delivery_server"]) {
+   const start = academicSql.indexOf("create or replace function " + name + "(");
+   assert.ok(start >= 0);
+   await db.exec(academicSql.slice(start, academicSql.indexOf("\n$$;", start) + 4));
+ }
+ await db.exec(`
+   create function khpos_private.ops_academic_can_plan(uuid,uuid) returns boolean language sql as $$select false$$;
+   alter table khpos_ops_academic_delivery_streams
+     alter id set default gen_random_uuid(),
+     add section_label text, add subject_code text, add scheme_source text, add scheme_reference text,
+     add scheme_version text, add timetable_reference text, add expected_weeks int, add created_by uuid;
+   create table khpos_ops_academic_events(organisation_id uuid,term_id uuid,stream_id uuid,actor_user_id uuid,event_type text,to_state text,note text);
+ `);
+ const sectionalSql = fs.readFileSync("supabase/migrations/20261106190000_sectional_scheduling.sql", "utf8");
+ await db.exec(sectionalSql.slice(0, sectionalSql.indexOf("create or replace function public.khpos_assessment_timetable_server")));
+ await db.exec(fs.readFileSync("supabase/migrations/20261113120000_sectional_subject_streams.sql", "utf8"));
+ const promoter = id(800), promoterRole = id(801), otherUnit = id(802);
+ await q("insert into auth.users(id) values($1)",[promoter]);
+ await q("insert into organisation_memberships(organisation_id,user_id,status) values($1,$2,'active')",[org,promoter]);
+ await q("insert into khpos_ops_roles(id,organisation_id,code,title) values($1,$2,'SECTIONAL_PROMOTER','Sectional Promoter')",[promoterRole,org]);
+ await q("insert into khpos_ops_role_assignments(role_id,user_id,campus_id,unit_id) values($1,$2,$3,$4)",[promoterRole,promoter,campus,unit]);
+ await q("insert into khpos_ops_units(id,organisation_id,campus_id,name) values($1,$2,$3,'Other section')",[otherUnit,org,campus]);
+ const createStream = "select public.khpos_ops_create_academic_stream_server($1,$2,$3,$4,$5,'JSS1',null,'English',null,$6,'manual','Scheme',null,'Timetable',10) as id";
+ await fail(createStream,[teacher,org,term,campus,unit,teacherAssignment],/assigned Sectional Promoter/);
+ await fail(createStream,[promoter,org,term,campus,otherUnit,teacherAssignment],/assigned Sectional Promoter/);
+ await fail(createStream,[promoter,org,term,otherCampus,unit,teacherAssignment],/assigned Sectional Promoter/);
+ const draftId = (await q(createStream,[promoter,org,term,campus,unit,teacherAssignment]))[0].id;
+ assert.equal((await q("select status from khpos_ops_academic_delivery_streams where id=$1",[draftId]))[0].status,"draft");
+ await assert.rejects(act(promoter,"period_add",{streamId:draftId,weekday:parallelDay,start:"17:00",end:"18:00",...groupFields("English")}),/Approve the Academic Delivery stream/);
+ await act(promoter,"period_add",{streamId:stream,weekday:parallelDay,start:"17:00",end:"18:00",teachingGroupKind:"whole_class"});
+ assert.ok((await read(promoter)).sectionalScheduleStreamIds.includes(stream));
+ await q("update khpos_ops_role_assignments set end_date=current_date-1 where user_id=$1",[promoter]);
+ await fail(createStream,[promoter,org,term,campus,unit,teacherAssignment],/assigned Sectional Promoter/);
+ assert.deepEqual((await read(promoter)).sectionalScheduleStreamIds,[]);
+ await assert.rejects(act(promoter,"period_add",{streamId:stream,weekday:parallelDay,start:"18:00",end:"19:00",teachingGroupKind:"whole_class"}),/authorised academic leader/);
+ console.log("Sectional Promoter: scoped stream drafts and approved-stream timetable creation passed.");
+
  console.log("Assessment timetable: permissions, school isolation and full attendance-to-submission workflow passed.");
  console.log("Teaching presence/HQLS multi-school integration: "+checks+" checks passed.");
 } finally {await db.close();}

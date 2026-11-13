@@ -15,8 +15,12 @@ export default async function KhposOrganisationLayout({
 
   return (
     <div className="khpos-school-shell min-h-screen bg-slate-50">
-      <SchoolWorkspaceNav organisationId={organisationId} />
-      <div id="school-page" tabIndex={-1} className="min-w-0 xl:pl-72"><SchoolAreaNavigation organisationId={organisationId} /><div id="school-route-content" tabIndex={-1}>{children}</div></div>
+      <SchoolWorkspaceNav organisationId={organisationId}>
+        <div id="school-page" tabIndex={-1} className="min-w-0 xl:pl-72">
+          <SchoolAreaNavigation organisationId={organisationId} />
+          <div id="school-route-content" tabIndex={-1}>{children}</div>
+        </div>
+      </SchoolWorkspaceNav>
     </div>
   );
 }

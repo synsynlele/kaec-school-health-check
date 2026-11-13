@@ -251,7 +251,19 @@ export function AcademicDeliveryWorkspace({
     }
   }
 
+  const sectionalUnits = workspace?.units.filter(unit => workspace.sectionalStreamUnitIds?.includes(unit.id)) ?? [];
+  const selectedSectionalUnit = sectionalUnits.find(unit => unit.id === streamUnitId);
+  const streamTeachers = (workspace?.teacherAssignments ?? []).filter(teacher =>
+    workspace?.canPlan || (selectedSectionalUnit &&
+      (!teacher.unitId || teacher.unitId === selectedSectionalUnit.id) &&
+      (!teacher.campusId || teacher.campusId === selectedSectionalUnit.campusId))
+  );
+
   async function createStream() {
+    if (!workspace?.canPlan && (!selectedSectionalUnit || !streamTeachers.some(teacher => teacher.id === teacherAssignmentId))) {
+      setError("Choose your section and an eligible teacher before creating the stream.");
+      return;
+    }
     if (
       !streamTermId ||
       !classLabel.trim() ||
@@ -277,7 +289,7 @@ export function AcademicDeliveryWorkspace({
         mode: editingStreamId ? "update_stream" : "create_stream",
         ...(editingStreamId ? { streamId: editingStreamId } : {}),
         termId: streamTermId,
-        campusId: (editingStreamId ? streamCampusId : workspace?.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId) || null,
+        campusId: !workspace?.canPlan ? selectedSectionalUnit?.campusId ?? null : (editingStreamId ? streamCampusId : workspace?.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId) || null,
         unitId: streamUnitId || null,
         classLabel: classLabel.trim(),
         sectionLabel: sectionLabel.trim() || null,
@@ -469,9 +481,9 @@ export function AcademicDeliveryWorkspace({
         </section>
 
         {workspace.canPlan && <ClassSubjectSetup catalog={catalog} campuses={workspace.campuses} />}
-        {workspace.canPlan && (
+        {(workspace.canPlan || sectionalUnits.length > 0) && (
           <section className="grid gap-5 xl:grid-cols-2">
-            <div id="academic-term-editor" className="scroll-mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+            {workspace.canPlan && <div id="academic-term-editor" className="scroll-mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">
                 Academic term
               </p>
@@ -540,7 +552,7 @@ export function AcademicDeliveryWorkspace({
                 {editingTermId ? "Save term changes" : "Create draft term"}
               </button>
               {editingTermId && <button type="button" disabled={busyId !== null} onClick={() => setEditingTermId(null)} className="ml-3 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700">Cancel editing</button>}
-            </div>
+            </div>}
 
             <div id="academic-stream-editor" className="scroll-mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">
@@ -557,6 +569,19 @@ export function AcademicDeliveryWorkspace({
               ) : (
                 <>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {!workspace.canPlan && <label className="grid gap-1 text-sm font-semibold">
+                      Your section
+                      <select value={streamUnitId} onChange={event => {
+                        setStreamUnitId(event.target.value);
+                        setStreamTermId("");
+                        setTeacherAssignmentId("");
+                      }} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                        <option value="">Choose section</option>
+                        {sectionalUnits.map(unit => <option key={unit.id} value={unit.id}>
+                          {unit.name}{unit.campusId ? " · " + (workspace.campuses.find(campus => campus.id === unit.campusId)?.name ?? "") : ""}
+                        </option>)}
+                      </select>
+                    </label>}
                     <select
                       value={streamTermId}
                       disabled={Boolean(editingStreamId)}
@@ -565,7 +590,8 @@ export function AcademicDeliveryWorkspace({
                     >
                       <option value="">Choose term</option>
                       {workspace.terms
-                        .filter((term) => !["closed", "cancelled", "archived", "removed"].includes(term.status))
+                        .filter(term => ["draft", "active"].includes(term.status) || term.id === streamTermId)
+                        .filter(term => workspace.canPlan || !term.campusId || term.campusId === selectedSectionalUnit?.campusId)
                         .map((term) => (
                           <option key={term.id} value={term.id}>
                             {term.sessionLabel} · {term.termName}
@@ -579,15 +605,16 @@ export function AcademicDeliveryWorkspace({
                       }
                       className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                     >
-                      {workspace.teacherAssignments.map((teacher) => (
+                      <option value="">Choose teacher</option>
+                      {streamTeachers.map((teacher) => (
                         <option key={teacher.id} value={teacher.id}>
                           {teacher.displayName}
                         </option>
                       ))}
                     </select>
-                    <Link href={`/khpos/${organisationId}/team#learning-sections`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline sm:col-span-2">Missing a preschool or primary section? Manage learning sections</Link>
+                    {workspace.canPlan && <Link href={`/khpos/${organisationId}/team#learning-sections`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline sm:col-span-2">Missing a preschool or primary section? Manage learning sections</Link>}
                     <CatalogClassPicker entries={catalog.entries}
-                      campusId={workspace.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId}
+                      campusId={selectedSectionalUnit?.campusId ?? workspace.terms.find(term => term.id === streamTermId)?.campusId ?? streamCampusId}
                       onPick={(label, section) => { setClassLabel(label); setSectionLabel(section); }} />
                     <input
                       value={classLabel}

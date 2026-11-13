@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LinkPending } from "@/components/navigation/LinkPending";
 import { useActiveNavScroll } from "@/components/khpos/useActiveNavScroll";
 
 export type SchoolSection = { view: string; label: string; href?: string };
@@ -37,9 +38,9 @@ export function SchoolSectionTabs({
                 key={tab.view || "main"}
                 href={href.includes("#") ? href : href + "#" + destinationId}
                 aria-current={active ? "page" : undefined}
-                className={"inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current " + palette}
+                className={"inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current " + palette}
               >
-                {tab.label}
+                {tab.label}<LinkPending />
               </Link>
             );
           })}

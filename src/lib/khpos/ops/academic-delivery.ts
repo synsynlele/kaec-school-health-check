@@ -157,6 +157,7 @@ export interface KhposOpsAcademicObservation {
 export interface KhposOpsAcademicDeliveryWorkspace {
   organisation: { id: string; name: string };
   membershipRole: string;
+  sectionalStreamUnitIds?: string[];
   generatedAt: string;
   canPlan: boolean;
   canMonitor: boolean;
