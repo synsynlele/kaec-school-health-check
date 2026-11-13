@@ -8,12 +8,13 @@ const language={};vm.runInNewContext(compile('src/lib/khpos/plain-language.ts'),
 for(const [code,label] of [['awaiting_verification','Waiting for review'],['manual_on_demand','Start when needed'],['role_charter','Role guide'],['under_review','Being reviewed']])assert.equal(language.plainLabel(code),label);
 assert.equal(language.plainLabel('SCHOOL_CUSTODIAN'),'SCHOOL CUSTODIAN','Role identity remains recognisable');
 assert.equal(language.plainLabel(null),'Not set');
-const pushes=[], effects=[],refs=[],state=[];let currentPath='/khpos/school/team',stateCursor=0,refCursor=0;
+const pushes=[], effects=[],refs=[],state=[];let menuAccess={membership:"executive",roles:[]},currentPath='/khpos/school/team',stateCursor=0,refCursor=0;
 const exports={};
-vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexports.navigation={workspaceLinks,dailyLinks,navigationGroups,schoolAreas,matchesSearch,primarySuffix};',{exports,require(name){
+vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexports.navigation={workspaceLinks,dailyLinks,navigationGroups,schoolAreas,matchesSearch,primarySuffix,canShowSchoolMenu};',{exports,require(name){
  if(name==='react/jsx-runtime')return jsx;
- if(name==='react')return {useState(initial){const i=stateCursor++;if(!(i in state))state[i]=initial;return [state[i],v=>state[i]=v];},useRef(initial){const i=refCursor++;return refs[i]??={current:initial};},useEffect:fn=>effects.push(fn)};
+ if(name==='react')return {createContext:()=>({}),useContext:()=>menuAccess,useState(initial){const i=stateCursor++;if(!(i in state))state[i]=initial;return [state[i],v=>state[i]=v];},useRef(initial){const i=refCursor++;return refs[i]??={current:initial};},useEffect:fn=>effects.push(fn)};
  if(name==='next/navigation')return {usePathname:()=>currentPath,useRouter:()=>({push:path=>pushes.push(path)})};
+ if(name==='@/components/navigation/LinkPending')return {LinkPending:'span'};
  if(name==='next/link')return {default:'a'};
  if(name==='next/image')return {default:'img'};
  if(name==='lucide-react')return new Proxy({},{get:()=> 'span'});
@@ -53,6 +54,20 @@ currentPath='/khpos/other/reports';tree=exports.SchoolAreaNavigation({organisati
 currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.equal(tree,null,'Today is the home and must not have a redundant breadcrumb or page-area bar');
 currentPath='/khpos/school/people';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school/work'),'Other school pages return directly to Today');
 assert(!nodes(tree).some(x=>x.props.href==='/khpos/school'),'No breadcrumb links back to the removed overview');
+menuAccess = { membership: "staff", roles: ["TEACHER"] };
+for (const route of ["/activation", "/people", "/team", "/recruitment", "/performance", "/schools-campuses"]) {
+  assert.equal(n.canShowSchoolMenu(route, menuAccess), false, route + " must be hidden for teachers");
+}
+for (const route of ["/work", "/availability", "/academic-delivery", "/staff-accountability", "/onboarding"]) {
+  assert.equal(n.canShowSchoolMenu(route, menuAccess), true, route + " stays available to teachers");
+}
+assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["SECTIONAL_PROMOTER"] }), false);
+assert.equal(n.canShowSchoolMenu("/academic-delivery", { membership: "staff", roles: ["SECTIONAL_PROMOTER"] }), true);
+assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["SCHOOL_GUARDIAN"] }), true);
+tree = exports.SchoolAreaNavigation({organisationId:"school"});
+group = nodes(tree).find(x=>x.type==="school-tabs");
+assert.ok(group.props.tabs.every(x=>!["/people","/team","/recruitment","/staff-transition"].includes(x.view)));
+
 const quick=fs.readFileSync('src/components/khpos/ops/SchoolQuickActions.tsx','utf8');
 const outing=fs.readFileSync('src/components/khpos/ops/AvailabilityWorkspace.tsx','utf8');
 const presence=fs.readFileSync('src/components/khpos/ops/TeacherPresenceWorkspace.tsx','utf8');

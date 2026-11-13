@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { LinkPending } from "@/components/navigation/LinkPending";
 import Image from "next/image";
 import { NotificationBell } from "@/components/khpos/NotificationBell";
 import { SchoolSectionTabs } from "@/components/khpos/SchoolSectionTabs";
@@ -182,20 +183,38 @@ function matchesSearch(suffix:string,label:string,query:string) {
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
 
+type SchoolMenuAccess = { roles: string[]; membership: string };
+const SchoolMenuContext = createContext<SchoolMenuAccess | null>(null);
+
+const governanceRoutes = new Set(["/activation", "/standard", "/execution-control", "/system-integrity", "/schools-campuses", "/campus-readiness"]);
+const leadershipRoutes = new Set(["/priorities", "/performance", "/decisions", "/people", "/team", "/staff-transition"]);
+const leadershipRoles = new Set(["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN", "ACADEMIC_INSPECTOR", "SKILL_INSPECTOR", "SECTIONAL_PROMOTER"]);
+
+function canShowSchoolMenu(route: string, access: SchoolMenuAccess | null) {
+  const executive = access?.membership === "executive";
+  const roles = access?.roles ?? [];
+  if (route === "/recruitment" || governanceRoutes.has(route)) return executive || roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN"].includes(role));
+  if (leadershipRoutes.has(route)) return executive || roles.some(role => leadershipRoles.has(role));
+  return true;
+}
+
 function NavigationGroup({ group, base, pathname, onNavigate }: {
   group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
 }) {
-  const active = group.links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
+  const access = useContext(SchoolMenuContext);
+  const links = group.links.filter(link => canShowSchoolMenu(link.suffix, access));
+  const active = links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
   const Icon = group.icon;
+  if (!links.length) return null;
   return <details ref={detailsRef} className="group rounded-2xl border border-white/8 bg-white/[0.025] open:border-white/15 open:bg-white/[0.055]">
     <summary className={`flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold marker:hidden hover:bg-white/8 ${active ? "text-mint-300" : "text-slate-200"}`}>
       <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5"><Icon className="size-4" aria-hidden="true" /></span>
       <span className="min-w-0 flex-1"><span className="block">{group.title}</span><span className="mt-0.5 block text-[11px] font-medium leading-4 text-slate-400">{group.description}</span></span>
       <ChevronDown className="size-4 shrink-0 transition group-open:rotate-180" aria-hidden="true" />
     </summary>
-    <div className="space-y-0.5 px-2 pb-2 pl-4">{group.links.map((item) => <WorkspaceLink key={item.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...item} />)}</div>
+    <div className="space-y-0.5 px-2 pb-2 pl-4">{links.map((item) => <WorkspaceLink key={item.suffix} base={base} pathname={pathname} onNavigate={onNavigate} {...item} />)}</div>
   </details>;
 }
 
@@ -203,7 +222,8 @@ function NavigationGroups({ base, pathname, onNavigate }: {
   base: string; pathname: string; onNavigate?: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const results = workspaceLinks.filter(link => matchesSearch(link.suffix,link.label,query));
+  const access = useContext(SchoolMenuContext);
+  const results = workspaceLinks.filter(link => canShowSchoolMenu(link.suffix, access) && matchesSearch(link.suffix,link.label,query));
   return <div className="space-y-3">
     <label className="block px-1 text-xs font-bold text-slate-300">Find a page
       <span className="relative mt-2 block"><Search aria-hidden="true" className="absolute left-3 top-3 size-4 text-slate-400" />
@@ -261,12 +281,12 @@ function WorkspaceLink({
       >
         <Icon className="size-4" />
       </span>
-      <span className="min-w-0 break-words">{exactLabel ? label : displayLabel(suffix,label)}</span>
+      <span className="min-w-0 break-words">{exactLabel ? label : displayLabel(suffix,label)}</span><LinkPending />
     </Link>
   );
 }
 
-export function SchoolWorkspaceNav({ organisationId }: { organisationId: string }) {
+export function SchoolWorkspaceNav({ organisationId, children }: { organisationId: string; children: ReactNode }) {
   const pathname = usePathname();
   const base = `/khpos/${organisationId}`;
   const [signingOut, setSigningOut] = useState(false);
@@ -274,7 +294,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   const [menuOpen, setMenuOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [school, setSchool] = useState<{ id: string; name: string } | null>(null);
+  const [school, setSchool] = useState<({ id: string; name: string } & SchoolMenuAccess) | null>(null);
   const schoolName = school?.id === organisationId ? school.name : "School workspace";
   const isDailyActive = (suffix: string) => workspaceLinks.some(link => primarySuffix(link.suffix) === suffix && isActive(pathname, base, link.suffix));
   const moreActive = !dailyLinks.some((item) => isDailyActive(item.suffix));
@@ -312,7 +332,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
       schoolRequest?.abort();
       const request = new AbortController();
       schoolRequest = request;
-      void fetch(`/api/khpos/partnership/${organisationId}`, {
+      void fetch(`/api/khpos/partnership/${organisationId}?navigation=1`, {
         headers,
         cache: "no-store",
         signal: request.signal,
@@ -323,12 +343,13 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
           }
           return;
         }
-        const { partnership } = await response.json() as { partnership?: KhposPartnerSnapshot };
+        const { partnership, roles } = await response.json() as { partnership?: KhposPartnerSnapshot; roles?: string[] };
         if (request.signal.aborted) return;
         const name = partnership?.name.trim();
         setSchool(partnership?.organisationId === organisationId &&
-          partnership.membershipStatus === "active" && partnership.partnerStatus === "active" && name
-          ? { id: organisationId, name }
+          partnership.membershipStatus === "active" && partnership.partnerStatus === "active" &&
+          partnership.entitlements.includes("khpos_core") && name
+          ? { id: organisationId, name, membership: partnership.membershipRole, roles: roles ?? [] }
           : null);
       }).catch(() => undefined);
     };
@@ -375,7 +396,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
   }, [menuOpen]);
 
   return (
-    <>
+    <SchoolMenuContext.Provider value={school?.id === organisationId ? school : null}>
       <a href="#school-page" className="sr-only fixed left-3 top-3 z-[100] rounded-xl bg-white p-3 font-bold text-slate-950 focus:not-sr-only">Skip to page content</a>
       <aside className="khpos-nav-panel fixed inset-y-0 left-0 z-[60] hidden w-72 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:flex">
         <div className="border-b border-white/10 px-5 py-5">
@@ -464,7 +485,7 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
                       : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <Icon className="size-5" aria-hidden="true" />
+                  <span className="relative"><Icon className="size-5" aria-hidden="true" /><span className="absolute -right-2 top-0"><LinkPending /></span></span>
                   <span className="w-full truncate text-center">{["Today", "School day", "Reports", "Updates"][dailyLinks.indexOf(item)]}</span>
                 </Link>
               );
@@ -482,13 +503,16 @@ export function SchoolWorkspaceNav({ organisationId }: { organisationId: string 
           <div className="khpos-mobile-more-footer flex gap-2 border-t border-white/10 p-3 text-xs"><Link href="/account" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Account</Link><Link href="/khpos" className="flex min-h-11 items-center rounded-lg border border-white/15 px-3 py-2" onClick={() => setMenuOpen(false)}>Main entrance</Link></div>
         </div>
       </div>}
-    </>
+      {children}
+    </SchoolMenuContext.Provider>
   );
 }
 
 export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   const pathname = usePathname(), base = `/khpos/${organisationId}`;
   const area = schoolAreas.find(item => item.routes.some(route=>isActive(pathname,base,route)));
+  const access = useContext(SchoolMenuContext);
+  const routes = area?.routes.filter(route => canShowSchoolMenu(route, access)) ?? [];
   const current = workspaceLinks.find(link => isActive(pathname,base,link.suffix));
   const breadcrumb = <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
     <Link href={`${base}/work`} className="inline-flex min-h-9 items-center font-bold text-brand-700 hover:underline">Today</Link>
@@ -498,8 +522,8 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   // Today is already the school home. Do not repeat a second section selector.
   if (pathname === `${base}/work`) return null;
   const trail = <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
-  if (!area || area.routes.length === 1) return trail;
-  const selected = area.routes.find(route => isActive(pathname, base, route)) ?? area.routes[0];
+  if (!area || routes.length <= 1) return trail;
+  const selected = routes.find(route => isActive(pathname, base, route)) ?? "";
   return <>
     {trail}
     <SchoolSectionTabs
@@ -507,7 +531,7 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
       title={area.title}
       selected={selected}
       destinationId="school-route-content"
-      tabs={area.routes.map(route => ({
+      tabs={routes.map(route => ({
         view: route,
         label: byRoute(route).label,
         href: `${base}${route}`,

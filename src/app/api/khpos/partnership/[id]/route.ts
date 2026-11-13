@@ -6,6 +6,7 @@ import {
 } from "@/lib/khpos/auth";
 import {
   getUserPartnership,
+  getSchoolNavigationRoles,
   KhposPartnershipError,
 } from "@/lib/khpos/partnership";
 
@@ -19,8 +20,10 @@ export async function GET(
     const user = await verifyKhposAccessToken(token);
     const { id } = await context.params;
     const partnership = await getUserPartnership(id, user.id);
+    const roles = new URL(request.url).searchParams.has("navigation")
+      ? await getSchoolNavigationRoles(partnership, user.id) : undefined;
     return NextResponse.json(
-      { ok: true, partnership },
+      { ok: true, partnership, roles },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {

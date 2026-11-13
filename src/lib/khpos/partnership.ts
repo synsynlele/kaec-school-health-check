@@ -168,6 +168,20 @@ export async function getUserPartnership(
   return combine(membership as MembershipRow, organisation as OrganisationRow);
 }
 
+export async function getSchoolNavigationRoles(partnership: KhposPartnerSnapshot, userId: string): Promise<string[]> {
+  if (partnership.membershipStatus !== "active" || partnership.partnerStatus !== "active" ||
+      !partnership.entitlements.includes("khpos_core")) return [];
+
+  const day = new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 10);
+  const { data, error } = await service().from("khpos_ops_role_assignments")
+    .select("role:khpos_ops_roles!inner(code)")
+    .eq("user_id", userId).eq("status", "active")
+    .eq("role.organisation_id", partnership.organisationId).eq("role.status", "active")
+    .lte("start_date", day).or(`end_date.is.null,end_date.gte.${day}`);
+  if (error) throw new KhposPartnershipError("School navigation could not be loaded.", 503);
+  return (data ?? []).flatMap(({ role }) => (Array.isArray(role) ? role : [role]).map(entry => entry.code as string));
+}
+
 export async function getPartnerRegistry(user: VerifiedKhposUser): Promise<KhposPartnerRegistry> {
   const { data, error } = await service().rpc("khpos_get_partner_registry_server", {
     p_actor_user_id: user.id,

@@ -221,19 +221,17 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
     try {
       const token=await authToken();
       const headers={Authorization:"Bearer "+token};
+      const academicRequest = fetch("/api/khpos/ops/academic-delivery/"+organisationId,{headers,cache:"no-store"})
+        .then(async response => response.ok ? await response.json() as { academic?: KhposOpsAcademicDeliveryWorkspace } : null)
+        .catch(() => null);
       const response=await fetch("/api/khpos/ops/presence/"+organisationId,{headers,cache:"no-store"});
       const body=await response.json() as {ok?:boolean;workspace?:KhposPresenceWorkspace;error?:string};
       if(!response.ok||!body.ok||!body.workspace) throw new Error(body.error??"Attendance could not be loaded.");
       if(!refreshGate.current.canApplyRead(read))return;
       setData(body.workspace);
       setCampusId(v=>v||body.workspace?.staff?.campusId||body.workspace?.campuses[0]?.id||"");
-      try {
-        const res=await fetch("/api/khpos/ops/academic-delivery/"+organisationId,{headers,cache:"no-store"});
-        if(res.ok) {
-          const academicBody=await res.json() as {academic?:KhposOpsAcademicDeliveryWorkspace};
-          if(refreshGate.current.canApplyRead(read))setAcademic(academicBody.academic??null);
-        }
-      } catch { /* Attendance remains available if Academic Delivery cannot be loaded. */ }
+      const academicBody = await academicRequest;
+      if(refreshGate.current.canApplyRead(read))setAcademic(academicBody?.academic ?? null);
       if(refreshGate.current.canApplyRead(read))setError("");
     } catch(e){if(refreshGate.current.canApplyRead(read))setError(e instanceof Error?e.message:"Unable to load attendance.");}
   },[authToken,organisationId]);
