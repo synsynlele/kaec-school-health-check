@@ -16,11 +16,11 @@ export async function downloadTimetablePdf(headings: string[], rows: string[][])
   function wrap(value: string, width: number, font: PDFFont) {
     const safe = [...value.normalize("NFC")].map(character => {
       try { font.encodeText(character); return character; }
-      catch { return character.normalize("NFD").replace(/\\p{M}/gu, "").replace(/[^ -~]/g, "?"); }
+      catch { return character.normalize("NFD").replace(/\p{M}/gu, "").replace(/[^ -~]/g, "?"); }
     }).join("");
     const lines: string[] = [];
     let line = "";
-    for (const word of safe.split(/\\s+/)) {
+    for (const word of safe.split(/\s+/)) {
       const candidate = line ? `${line} ${word}` : word;
       if (font.widthOfTextAtSize(candidate, size) <= width) {
         line = candidate;
