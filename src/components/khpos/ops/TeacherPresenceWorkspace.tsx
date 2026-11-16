@@ -22,6 +22,7 @@ import { CampusLocationPanel } from "@/components/khpos/CampusLocationPanel";
 import { needsLocationReview } from "@/lib/khpos/attendance-location";
 
 import { AssessmentTimetable } from "./AssessmentTimetable";
+import { WeeklyTimetableTable } from "./WeeklyTimetableTable";
 import { createAttendanceRefreshGate } from "@/lib/khpos/ops/attendance-refresh";
 import { findScheduleCollisions } from "@/lib/khpos/ops/schedule-assist";
 
@@ -549,6 +550,10 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
             <label className="mt-4 block text-sm font-semibold text-slate-700">Find a scheduled class
               <input type="search" className={field} placeholder="Search class, teacher, subject or room" value={lessonQuery} onChange={e=>setLessonQuery(e.target.value)}/>
             </label>
+            <details className="mt-4 rounded-xl border border-slate-200 p-4">
+              <summary className="cursor-pointer text-sm font-bold text-brand-700">View timetable as a table</summary>
+              <WeeklyTimetableTable periods={own} campuses={data.campuses} />
+            </details>
             {week&&<p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
             Showing attendance status for <strong>{schoolDayLabel(week.from)} – {schoolDayLabel(week.to)}</strong>.
             Weekly teaching slots remain scheduled across weeks. A break label here describes that dated lesson occurrence, not the whole recurring timetable.
