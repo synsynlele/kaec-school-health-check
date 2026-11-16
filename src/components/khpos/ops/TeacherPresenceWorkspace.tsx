@@ -555,6 +555,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           </p>}
           <div className="mt-3 space-y-3">
               {own.map(p=>{
+                const currentStream = lessonStreams.find(stream => stream.id === p.streamId);
                 const today=possibleToday(data.localDay,p.weekday);
                 const mine=p.teacherUserId===data.userId;
                 const lessonDate = week ? new Date(Date.parse(week.from+"T12:00:00Z") + (p.weekday-1)*86400000).toISOString().slice(0,10) : null;
@@ -607,7 +608,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                     </p>
                   ))}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
-                  {lessonStreams.some(stream => stream.id === p.streamId) && (
+                  {currentStream && (
                     <div className="mt-3">
                       <button type="button" disabled={Boolean(busy)} aria-expanded={editingPeriod === p.id}
                         className="text-sm font-bold text-brand-700" onClick={() => setEditingPeriod(editingPeriod === p.id ? "" : p.id)}>
@@ -617,12 +618,21 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                         event.preventDefault();
                         const form = new FormData(event.currentTarget);
                         const saved = await act("period_edit", {
-                          periodId: p.id, weekday: Number(form.get("weekday")),
+                          periodId: p.id, streamId: form.get("streamId"), weekday: Number(form.get("weekday")),
                           start: form.get("start"), end: form.get("end"), room: form.get("room"),
                            ...getTeachingGroupFields(form),
                         }, "Weekly lesson updated.");
                         if (saved) setEditingPeriod("");
                       }}>
+                        <label className="sm:col-span-2">Subject, class and teacher
+                          <select className={field} name="streamId" defaultValue={p.streamId} required>
+                            {lessonStreams.filter(stream => stream.campusId === p.campusId &&
+                              stream.termId === currentStream.termId
+                            ).map(stream => <option key={stream.id} value={stream.id}>
+                              {stream.subjectLabel} · {stream.classLabel}{stream.sectionLabel ? " · " + stream.sectionLabel : ""} · {stream.teacherDisplay}
+                            </option>)}
+                          </select>
+                        </label>
                         <label>Weekday<select className={field} name="weekday" defaultValue={p.weekday}>
                           {WEEKDAYS.slice(1).map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
                         </select></label>

@@ -229,6 +229,26 @@ try {
  await assert.rejects(act(promoter,"period_add",{streamId:draftId,weekday:parallelDay,start:"17:00",end:"18:00",...groupFields("English")}),/Approve the Academic Delivery stream/);
  await act(promoter,"period_add",{streamId:stream,weekday:parallelDay,start:"17:00",end:"18:00",teachingGroupKind:"whole_class"});
  assert.ok((await read(promoter)).sectionalScheduleStreamIds.includes(stream));
+ await db.exec(fs.readFileSync("supabase/migrations/20261116120000_edit_timetable_subject.sql", "utf8"));
+ const editable = (await read(guardian)).periods.find(p => p.streamId === stream && p.start === "17:00");
+ assert.ok(editable);
+ const replaceSubject = { periodId: editable.id, streamId: draftId, weekday: parallelDay, start: "17:00", end: "18:00" };
+ await assert.rejects(act(teacher,"period_edit",replaceSubject),/authorised academic leader/);
+ await assert.rejects(act(promoter,"period_edit",replaceSubject),/Approve the Academic Delivery stream/);
+ await q("update khpos_ops_academic_delivery_streams set status='approved' where id=$1",[draftId]);
+ await assert.rejects(act(promoter,"period_edit",{...replaceSubject,start:"11:20",end:"12:20"}),/overlapping scheduled class/);
+ await q("update khpos_ops_academic_delivery_streams set unit_id=$2 where id=$1",[draftId,otherUnit]);
+ await assert.rejects(act(promoter,"period_edit",replaceSubject),/authorised academic leader/);
+ await q("update khpos_ops_academic_delivery_streams set unit_id=$2 where id=$1",[draftId,unit]);
+ await act(promoter,"period_edit",replaceSubject);
+ const edited = (await read(guardian)).periods.find(p=>p.id===editable.id);
+ assert.equal(edited.streamId,draftId);
+ assert.equal(edited.subject,"English");
+ assert.equal(edited.start,"17:00");
+ await act(promoter,"period_edit",{periodId:editable.id,weekday:parallelDay,start:"17:10",end:"18:00"});
+ assert.equal((await read(guardian)).periods.find(p=>p.id===editable.id).streamId,draftId);
+ console.log("Timetable subject editing: scoped replacement, approval, overlap checks and existing callers passed.");
+
  await q("update khpos_ops_role_assignments set end_date=current_date-1 where user_id=$1",[promoter]);
  await fail(createStream,[promoter,org,term,campus,unit,teacherAssignment],/assigned Sectional Promoter/);
  assert.deepEqual((await read(promoter)).sectionalScheduleStreamIds,[]);
