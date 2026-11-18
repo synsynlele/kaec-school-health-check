@@ -80,3 +80,20 @@ await button(render(),"Use my current position for the pin").props.onClick();
 assert.equal(state[9],null);assert.equal(state[2],"6.56");
 assert.equal(button(render(),"Save campus location").props.disabled,false);
 console.log("Campus pin recovery passed: 30-second setup capture, distinct permission/timeout help, approximate-pin map review and confirmation, failed-capture preservation and accurate retry.");
+
+// A teacher who declined GPS must be able to recover within the installed app.
+// The test action may never backfill a previous attendance record.
+const recovery = fs.readFileSync("src/components/khpos/useAttendanceLocation.tsx", "utf8");
+const todayView = fs.readFileSync("src/components/khpos/ops/TodayAttendanceCard.tsx", "utf8");
+const fullView = fs.readFileSync("src/components/khpos/ops/TeacherPresenceWorkspace.tsx", "utf8");
+assert.match(recovery, /async function retry\(\)/, "Denied attendance capture offers another location attempt");
+assert.match(recovery, /Retry location/, "Teachers see a clear retry button");
+assert.match(recovery, /async function checkNow\(\)/, "Teachers may test permission after an earlier sign-in");
+assert.match(recovery, /This test does not create, duplicate or change attendance records/);
+assert.match(recovery, /finish\(\{ \.\.\.value, reason: noteRef\.current \}\)/, "Successful retry continues the original action");
+assert.match(recovery, /Record with explanation/, "Supervisor-review fallback remains available");
+assert.match(recovery, /www\.kshc\.name\.ng/, "Recovery names the exact production origin");
+assert.match(todayView, /\{locationCapture\.help\}/, "Recovery is visible from Today");
+assert.match(fullView, /\{locationCapture\.help\}/, "Recovery is visible from the full attendance screen");
+assert.doesNotMatch(recovery, /watchPosition|localStorage\.setItem/, "No continuous tracking or persisted coordinates");
+console.log("Attendance location recovery controls passed: retry, standalone permission test, both teacher views, and no backfilling.");
