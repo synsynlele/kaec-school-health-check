@@ -389,6 +389,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     {locationCapture.dialog}
     <div className="mx-auto max-w-6xl space-y-5">
+      {locationCapture.help}
       <Link href={"/khpos/"+organisationId+"/work"} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
         <ArrowLeft className="size-4"/> Today
       </Link>
