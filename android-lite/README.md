@@ -43,6 +43,14 @@ The first signed production wrapper, `khpos-lite-v1.0.0`, was successfully built
 
 The initial release validated the protected secrets, permanent signing certificate, Bubblewrap project generation, signed APK/AAB build, release packaging and GitHub publication.
 
+## Location recovery — web and native permissions
+
+KHP-OS attendance now offers a location retry and a non-recording permission test in both teacher attendance screens, including after a teacher has already signed in with a supervisor-review exception. No location is collected in the background, and the test cannot backfill a previous attendance entry.
+
+The production TWA manifest now opts into Bubblewrap `features.locationDelegation.enabled` so the Android permission can be managed through **KHP-OS → App info → Permissions → Location**, rather than relying only on Chrome's website permission. It also enables the launcher site-settings shortcut. The existing installed binary **does not automatically gain these native features from a web deployment**. Until the next signed Android update, teachers whose installed build has no Location permission entry should unblock `www.kshc.name.ng` in Chrome site settings and use the new in-app retry/test control.
+
+**Native release gate:** Confirm the currently published Google Play version code, increment both `appVersionCode` and `appVersion` to a fresh release, build and inspect the signed AAB/APK (including declared location permissions and target SDK), test denied → Settings → allow → retry on an Android device, then dispatch the protected Android workflow deliberately. Publish the new AAB through Google Play and have teachers update the installed app. Do not publish a new binary on the existing version code or assume this repository's historic code `1` is higher than the active Play version.
+
 ## Permanent release model
 
 `.github/workflows/android-lite-release.yml` is **manual-only** via `workflow_dispatch`. Routine web commits and normal KHP-OS product releases must not rebuild the Android shell automatically.
