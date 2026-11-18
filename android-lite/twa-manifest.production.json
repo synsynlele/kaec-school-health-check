@@ -26,15 +26,11 @@
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://raw.githubusercontent.com/synsynlele/kaec-school-health-check/47668ed01f76ecb5fa0f73d4fb55c2b8bd87a43f/public/khpos-lite-bootstrap.webmanifest",
   "fallbackType": "customtabs",
-  "features": {
-    "locationDelegation": {
-      "enabled": true
-    }
-  },
+  "features": {},
   "alphaDependencies": {
     "enabled": false
   },
-  "enableSiteSettingsShortcut": true,
+  "enableSiteSettingsShortcut": false,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "minSdkVersion": 21,
