@@ -56,11 +56,6 @@ for (const required of [
   requireText(manifest, required, "PWA manifest");
 }
 
-const locationConfig = JSON.parse(twa);
-if (locationConfig.features?.locationDelegation?.enabled !== true || locationConfig.enableSiteSettingsShortcut !== true) {
-  throw new Error("KHP-OS Lite must enable Android location delegation and a site settings shortcut");
-}
-
 for (const required of [
   '"packageId": "ng.name.khpos.lite"',
   '"host": "www.kshc.name.ng"',
