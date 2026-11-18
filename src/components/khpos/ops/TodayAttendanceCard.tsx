@@ -240,6 +240,7 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
       </div>
       {loading && <p role="status" className="mt-3 text-sm text-slate-600">Fetching today’s attendance.</p>}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+      {locationCapture.help}
       {presence && !presence.pilotEnabled && <div className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
         <strong>Attendance is not yet switched on for your school.</strong>{" "}
         {presence.canEnablePilot ? "Open the attendance page and choose Turn on school attendance to begin." :
