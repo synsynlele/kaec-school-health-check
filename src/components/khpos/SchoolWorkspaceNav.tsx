@@ -204,7 +204,14 @@ function NavigationGroup({ group, base, pathname, onNavigate }: {
   group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
 }) {
   const access = useContext(SchoolMenuContext);
-  const links = group.links.filter(link => canShowSchoolMenu(link.suffix, access));
+  const links: Array<(typeof workspaceLinks)[number]> = group.links.filter(link => canShowSchoolMenu(link.suffix, access));
+  // Finance/Admin may have no general leadership permission. Give them their
+  // financial page in School management without granting the School Results page
+  // or adding another main entrance for everybody.
+  if (group.title === "School management" && access?.roles.includes("FINANCE_ADMIN_OFFICER")
+      && !links.some(link=>link.suffix === "/performance")) {
+    links.unshift(byRoute("/financial-health"));
+  }
   const active = links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
