@@ -162,8 +162,7 @@ const schoolAreas = [
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
   { title: "Parents", help: "Current families, enquiries and admissions in one place.", routes: ["/parents"] },
   { title: "School improvement", help: "One journey from priorities through implementation, evidence, review and improvement.", routes: ["/priorities"] },
-  { title: "School results", help: "Results, campus status, comparisons, learning and development summaries.", routes: ["/performance"] },
-  { title: "School management", help: "Track school finances and approved management results.", routes: ["/financial-health"] },
+  { title: "School results & finances", help: "Institutional results, financial health and approved management information.", routes: ["/performance", "/financial-health"] },
   { title: "Schools & campuses", help: "Manage locations, campus readiness and equipment; events are in Calendar.", routes: ["/schools-campuses", "/campus-readiness", "/assets"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
@@ -172,7 +171,7 @@ const navigationGroups = [
   { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "School management", icon: Building2, description: "Financial health, improvement, results and school settings", links: [operation("/financial-health"), byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "School management", icon: Building2, description: "Financial health, improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/financial-health":"School Financial Health","/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
