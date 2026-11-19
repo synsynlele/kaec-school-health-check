@@ -1,5 +1,5 @@
-import { CustodianInvestorReportsPanel } from "@/components/khpos/ops/CustodianInvestorReportsPanel";
 "use client";
+import { CustodianInvestorReportsPanel } from "@/components/khpos/ops/CustodianInvestorReportsPanel";
 
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
