@@ -61,8 +61,9 @@ export async function makeCustodianReportPdf(report: CustodianReport, schoolName
   const bold=await pdf.embedFont(StandardFonts.HelveticaBold);
   const ink=rgb(0.09,0.16,0.24), green=rgb(0.06,0.34,0.28), muted=rgb(0.37,0.43,0.48);
   const W=595,H=842, margin=48, maxWidth=W-margin*2;
-  let page=pdf.addPage([W,H]), y=H-60;
-  function nextPage(){page=pdf.addPage([W,H]);y=H-60;}
+  let page=pdf.addPage(), y=H-60;
+  page.setSize(W,H);
+  function nextPage(){page=pdf.addPage();page.setSize(W,H);y=H-60;}
   function line(text:string,size=10,strong=false,space=4){
     const font=strong?bold:regular;
     for(const wrapped of wrap(text,maxWidth,font,size)){
