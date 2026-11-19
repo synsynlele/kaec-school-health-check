@@ -17,6 +17,7 @@ vm.runInNewContext(compiled+"\nexports.TypeEditor=TypeEditor;",{exports,Date,For
  if(name==="@/lib/supabase/client")return {};
  if(name==="@/lib/khpos/ops/action-events")return {};
  if(name.endsWith("/ActionFeedback"))return {ActionFeedback:"aside"};
+ if(name==="@/components/khpos/ops/CustodianInvestorReportsPanel")return {CustodianInvestorReportsPanel:()=>null};
  if(name==="@/components/navigation/LoadingScreen")return {LoadingScreen:"div"};
  throw new Error(name);
 }});

@@ -1,4 +1,5 @@
 "use client";
+import { CustodianInvestorReportsPanel } from "@/components/khpos/ops/CustodianInvestorReportsPanel";
 
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
@@ -306,6 +307,7 @@ export function ReportsWorkspace({
           </button>
         </p>
       )}
+      <CustodianInvestorReportsPanel organisationId={organisationId} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           ["To complete", summary?.open],
