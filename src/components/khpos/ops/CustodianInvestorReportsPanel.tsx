@@ -62,7 +62,7 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
       setReports(json.reports??[]);
     }catch(cause){setError(cause instanceof Error?cause.message:"Unable to load Custodian reports.");}
   },[endpoint,token]);
-  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{const first=window.setTimeout(()=>{void load();},0);return ()=>window.clearTimeout(first);},[load]);
 
   function updateData(key:keyof CustodianReportData,value:number|string){
     setForm(current=>({...current,data:{...current.data,[key]:value}}));
