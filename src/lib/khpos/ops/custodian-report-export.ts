@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { custodianReportTotals, type CustodianReport } from "./custodian-investor-reports";
+import { custodianReportTotals, type CustodianReport } from "./custodian-report-shared";
 
 function money(value: number, pdf = false) {
   return (pdf ? "NGN " : "₦") + new Intl.NumberFormat("en-NG", {maximumFractionDigits:0}).format(value);
