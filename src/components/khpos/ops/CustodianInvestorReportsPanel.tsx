@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { custodianReportTotals, type CustodianReport, type CustodianReportData } from "@/lib/khpos/ops/custodian-investor-reports";
+import { custodianReportTotals, type CustodianReport, type CustodianReportData } from "@/lib/khpos/ops/custodian-report-shared";
 
 const blank:CustodianReportData={
   feeIncome:0,otherIncome:0,operatingExpenses:0,cashAvailable:0,outstandingFees:0,
