@@ -6,6 +6,7 @@ import {
   saveCustodianReport, approveCustodianReport
 } from "@/lib/khpos/ops/custodian-investor-reports";
 import { makeCustodianReportPdf, makeCustodianReportDocx } from "@/lib/khpos/ops/custodian-report-export";
+import { financialSummaryForDates } from "@/lib/khpos/ops/school-financial-health";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -30,6 +31,14 @@ export async function GET(request:Request, context:{params:Promise<{id:string}>}
     const {school}=await contextFor(request,id);
     const search=new URL(request.url).searchParams;
     const format=search.get("format");
+    if(search.get("summary")==="1"){
+      const from=search.get("from")||"",to=search.get("to")||"";
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)
+        throw new CustodianReportError("Choose a valid term start and end date.");
+      const summary=await financialSummaryForDates(id,from,to);
+      return NextResponse.json({ok:true,summary},{headers:privateHeaders});
+    }
+
     if(!format) {
       return NextResponse.json({ok:true,schoolName:school.schoolName,reports:await getCustodianReports(id)},{headers:privateHeaders});
     }
