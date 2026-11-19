@@ -26,13 +26,13 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
-assert.equal(n.workspaceLinks.length,40);
+assert.equal(n.workspaceLinks.length,41);
 const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,20);assert.equal(new Set(primary.map(x=>x.suffix)).size,20);
 assert(!n.workspaceLinks.some(x=>x.suffix===""),'School Overview must not appear in More');
 assert(n.matchesSearch('/work','Today','school overview'),'Search for old School Overview leads to Today');
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
 assert(n.matchesSearch('/people','Staff','leave'));assert(n.matchesSearch('/potential-development','Learner development','skills'));assert(n.matchesSearch('/availability','Leave & cover','movement permission'));
-assert.deepEqual(Array.from(n.navigationGroups,g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','Leadership & schools','Resources & help']);
+assert.deepEqual(Array.from(n.navigationGroups,g=>g.title),['Work & approvals','People & gate','Teaching & learners','Care & families','School management','Resources & help']);
 assert.deepEqual(Array.from(n.dailyLinks,x=>x.suffix),['/work','/teaching-presence','/reports','/announcements']);
 let tree=exports.SchoolAreaNavigation({organisationId:'school'});let all=nodes(tree);
 let group=all.find(x=>x.type==='school-tabs');
@@ -55,7 +55,7 @@ currentPath='/khpos/school/work';tree=exports.SchoolAreaNavigation({organisation
 currentPath='/khpos/school/people';tree=exports.SchoolAreaNavigation({organisationId:'school'});assert.ok(nodes(tree).some(x=>x.props.href==='/khpos/school/work'),'Other school pages return directly to Today');
 assert(!nodes(tree).some(x=>x.props.href==='/khpos/school'),'No breadcrumb links back to the removed overview');
 menuAccess = { membership: "staff", roles: ["TEACHER"] };
-for (const route of ["/activation", "/people", "/team", "/recruitment", "/performance", "/schools-campuses"]) {
+for (const route of ["/activation", "/people", "/team", "/recruitment", "/performance", "/financial-health", "/schools-campuses"]) {
   assert.equal(n.canShowSchoolMenu(route, menuAccess), false, route + " must be hidden for teachers");
 }
 for (const route of ["/work", "/availability", "/academic-delivery", "/staff-accountability", "/onboarding"]) {
@@ -64,6 +64,9 @@ for (const route of ["/work", "/availability", "/academic-delivery", "/staff-acc
 assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["SECTIONAL_PROMOTER"] }), false);
 assert.equal(n.canShowSchoolMenu("/academic-delivery", { membership: "staff", roles: ["SECTIONAL_PROMOTER"] }), true);
 assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["SCHOOL_GUARDIAN"] }), true);
+assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["FINANCE_ADMIN_OFFICER"]}),true);
+assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_CUSTODIAN"]}),true);
+assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_GUARDIAN"]}),false);
 tree = exports.SchoolAreaNavigation({organisationId:"school"});
 group = nodes(tree).find(x=>x.type==="school-tabs");
 assert.ok(group.props.tabs.every(x=>!["/people","/team","/recruitment","/staff-transition"].includes(x.view)));
