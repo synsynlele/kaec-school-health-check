@@ -89,7 +89,9 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
     setError("");setNotice("");setBusy(true);
     try{
       const token=await auth();
-      const {id,status, ...values}=form;
+      const {id}=form;
+      const {periodStart,periodEnd,feeIncome,otherIncome,operatingExpenses,cashAvailable,outstandingFees,learnerCount,schoolCapacity,breakEvenTarget,sourceNote,managementNote}=form;
+      const values={periodStart,periodEnd,feeIncome,otherIncome,operatingExpenses,cashAvailable,outstandingFees,learnerCount,schoolCapacity,breakEvenTarget,sourceNote,managementNote};
       if(mode!=="save"&&!id)throw new Error("Save the draft first.");
       if((mode==="return"||mode==="approve")&&reviewNote.trim().length<10)
         throw new Error("Provide a Custodian review note of at least 10 characters.");
