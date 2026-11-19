@@ -70,8 +70,8 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
   // The financial section is display-only. Approved underlying finance statements
   // are the sole source of numbers when saving and approving institutional reports.
   useEffect(()=>{
-    if(!allowed||form.status==="approved"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(form.periodStart)||
-       !/^\\d{4}-\\d{2}-\\d{2}$/.test(form.periodEnd)||form.periodStart>form.periodEnd)return;
+    if(!allowed||form.status==="approved"||!/^\d{4}-\d{2}-\d{2}$/.test(form.periodStart)||
+       !/^\d{4}-\d{2}-\d{2}$/.test(form.periodEnd)||form.periodStart>form.periodEnd)return;
     let active=true;
     const {periodStart,periodEnd}=form;
     const timer=window.setTimeout(()=>{
