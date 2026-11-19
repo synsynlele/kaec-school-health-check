@@ -53,7 +53,7 @@ const exports={}, sample={
 };
 const sandbox={exports,require(name){
   if(name==="pdf-lib")return require("pdf-lib");
-  if(name==="./custodian-investor-reports")return {custodianReportTotals:(d)=>{
+  if(name==="./custodian-report-shared")return {custodianReportTotals:(d)=>{
     const income=d.feeIncome+d.otherIncome;
     return {income,operatingResult:income-d.operatingExpenses,occupancy:Math.round(d.learnerCount/d.schoolCapacity*1000)/10};
   }};
