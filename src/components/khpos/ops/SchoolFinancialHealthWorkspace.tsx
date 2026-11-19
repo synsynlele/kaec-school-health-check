@@ -113,7 +113,7 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
     if(key==="breakEvenTarget"){setForm(v=>({...v,breakEvenTarget:value===""?null:Math.max(0,Number(value)||0)}));return;}
     setForm(v=>({...v,[key]:Math.max(0,Number(value)||0)}));
   }
-  if(loading)return <main className="khpos-interface-page mx-auto max-w-6xl p-5"><p className="text-sm text-slate-700">Loading authorised school financial information…</p></main>;
+  if(loading)return <main className="khpos-interface-page mx-auto max-w-6xl p-5"><p className="text-sm text-slate-700">Checking access to school financial records</p></main>;
   return <main className="khpos-interface-page mx-auto max-w-6xl space-y-5 p-4 pb-20 sm:p-6">
     <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
       <p className="text-xs font-black uppercase tracking-widest text-brand-700">School management · Restricted financial records</p>
