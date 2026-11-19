@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { saveCustodianReportSchema, approveCustodianReportSchema, type CustodianReport } from "./custodian-report-shared";
+import { financialSummaryForDates } from "./school-financial-health";
+import type { CustodianReportData } from "./custodian-report-shared";
 
 let client: SupabaseClient | null = null;
 function db() {
@@ -62,10 +64,37 @@ export async function getCustodianReport(schoolId:string,id:string) {
   return data as CustodianReport;
 }
 
+function financialNumbersFromApprovedPeriods(
+  summary: Awaited<ReturnType<typeof financialSummaryForDates>>,
+  current: CustodianReportData,
+): CustodianReportData {
+  if (!summary.complete) {
+    return {
+      ...current,feeIncome:0,otherIncome:0,operatingExpenses:0,
+      cashAvailable:0,outstandingFees:0,learnerCount:0,schoolCapacity:0,
+      financialSourceNotes:"PENDING: Approved School Financial Health records do not yet cover the full term.",
+      financeSourcePeriodIds:[],
+    };
+  }
+  return {
+    ...current,feeIncome:summary.feeIncome,otherIncome:summary.otherIncome,
+    operatingExpenses:summary.operatingExpenses,
+    cashAvailable:summary.cashAvailable??0,outstandingFees:summary.outstandingFees??0,
+    learnerCount:summary.learnerCount??0,schoolCapacity:summary.schoolCapacity??0,
+    financialSourceNotes:
+      "Auto-synced from "+summary.periods+" approved School Financial Health period(s) covering "+
+      summary.periodStart+" to "+summary.periodEnd+
+      ". These are management-approved amounts, not independently audited accounts.",
+    financeSourcePeriodIds:summary.approvedIds,
+  };
+}
+
 export async function saveCustodianReport(schoolId:string,actorId:string,raw:unknown) {
   const parsed=saveCustodianReportSchema.safeParse(raw);
   if(!parsed.success)throw new CustodianReportError(parsed.error.issues[0]?.message||"Check the financial figures and narrative.");
-  const {id,termLabel,periodStart,periodEnd,data}=parsed.data;
+  const {id,termLabel,periodStart,periodEnd}=parsed.data;
+  const summary=await financialSummaryForDates(schoolId,periodStart,periodEnd);
+  const data=financialNumbersFromApprovedPeriods(summary,parsed.data.data);
   if(data.schoolCapacity > 0 && data.learnerCount > data.schoolCapacity * 2)
     throw new CustodianReportError("Review the enrolled learners and school capacity.");
   const common={term_label:termLabel,period_start:periodStart,period_end:periodEnd,data,updated_by:actorId,updated_at:new Date().toISOString()};
@@ -85,8 +114,16 @@ export async function saveCustodianReport(schoolId:string,actorId:string,raw:unk
 export async function approveCustodianReport(schoolId:string,actorId:string,raw:unknown) {
   const parsed=approveCustodianReportSchema.safeParse(raw);
   if(!parsed.success)throw new CustodianReportError("Choose a valid report to approve.");
+  const draft=await getCustodianReport(schoolId,parsed.data.id);
+  if(draft.status!=="draft")throw new CustodianReportError("Only a draft report can be approved.",409);
+  const summary=await financialSummaryForDates(schoolId,draft.period_start,draft.period_end);
+  if(!summary.complete)throw new CustodianReportError(
+    "The investor report cannot be approved yet. School Financial Health must have approved, continuous coverage for the full term: "+
+    (summary.missing.join("; ")||"No approved periods recorded")+".",409
+  );
+  const approvedData=financialNumbersFromApprovedPeriods(summary,draft.data);
   const {data,error}=await db().from("khpos_custodian_investor_reports")
-    .update({status:"approved",approved_by:actorId,approved_at:new Date().toISOString(),updated_by:actorId,updated_at:new Date().toISOString()})
+    .update({data:approvedData,status:"approved",approved_by:actorId,approved_at:new Date().toISOString(),updated_by:actorId,updated_at:new Date().toISOString()})
     .eq("school_id",schoolId).eq("id",parsed.data.id).eq("status","draft")
     .select("id").maybeSingle();
   if(error||!data)throw new CustodianReportError("Only a draft report can be approved.",409);

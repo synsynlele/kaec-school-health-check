@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import type { FinancialSummary } from "@/lib/khpos/ops/school-financial-shared";
 import { custodianReportTotals, type CustodianReport, type CustodianReportData } from "@/lib/khpos/ops/custodian-report-shared";
 
 const blank:CustodianReportData={
   feeIncome:0,otherIncome:0,operatingExpenses:0,cashAvailable:0,outstandingFees:0,
   learnerCount:0,schoolCapacity:0,operationalHighlights:"",learningHighlights:"",
-  managementRisks:"",nextTermPriorities:"",financialSourceNotes:"",
+  managementRisks:"",nextTermPriorities:"",financialSourceNotes:"Pending approved School Financial Health coverage.",
 };
 const moneyLabels:Array<[keyof CustodianReportData,string]>=[
   ["feeIncome","Tuition and school fees received (₦)"],
@@ -23,7 +25,7 @@ const notes:Array<[keyof CustodianReportData,string,string]>=[
   ["learningHighlights","Teaching, learning and human-potential progress","Summarise measured learner progress, quality assurance and project outcomes."],
   ["managementRisks","Material risks and management responses","State material financial, safeguarding, operational or regulatory risks and actions."],
   ["nextTermPriorities","Priorities for the next term","List the key outcomes, responsible management actions and targets."],
-  ["financialSourceNotes","Source and reconciliation of financial figures","Name the underlying fee collection records, expenditure statements and checks. Figures are management-reported, not audited."],
+
 ];
 const small="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-950";
 const button="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 disabled:opacity-50";
@@ -42,6 +44,7 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
+  const [financeCoverage,setFinanceCoverage]=useState<FinancialSummary|null>(null);
   const endpoint="/api/khpos/ops/investor-reports/"+organisationId;
 
   const token=useCallback(async()=>{
@@ -63,6 +66,46 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
     }catch(cause){setError(cause instanceof Error?cause.message:"Unable to load Custodian reports.");}
   },[endpoint,token]);
   useEffect(()=>{const first=window.setTimeout(()=>{void load();},0);return ()=>window.clearTimeout(first);},[load]);
+
+  // The financial section is display-only. Approved underlying finance statements
+  // are the sole source of numbers when saving and approving institutional reports.
+  useEffect(()=>{
+    if(!allowed||form.status==="approved"||!/^\d{4}-\d{2}-\d{2}$/.test(form.periodStart)||
+       !/^\d{4}-\d{2}-\d{2}$/.test(form.periodEnd)||form.periodStart>form.periodEnd)return;
+    let active=true;
+    const {periodStart,periodEnd}=form;
+    const timer=window.setTimeout(()=>{
+      void (async()=>{
+        try{
+          const access=await token();
+          const params=new URLSearchParams({summary:"1",from:periodStart,to:periodEnd});
+          const response=await fetch(endpoint+"?"+params.toString(),{headers:{Authorization:"Bearer "+access},cache:"no-store"});
+          const json=await response.json() as {ok?:boolean;summary?:FinancialSummary};
+          if(!response.ok||!json.ok||!json.summary)throw new Error("Coverage not available.");
+          if(!active)return;
+          const summary=json.summary;
+          setFinanceCoverage(summary);
+          setForm(current=>{
+            if(current.status==="approved"||current.periodStart!==periodStart||current.periodEnd!==periodEnd)return current;
+            return {...current,data:{...current.data,
+              feeIncome:summary.complete?summary.feeIncome:0,
+              otherIncome:summary.complete?summary.otherIncome:0,
+              operatingExpenses:summary.complete?summary.operatingExpenses:0,
+              cashAvailable:summary.complete?summary.cashAvailable??0:0,
+              outstandingFees:summary.complete?summary.outstandingFees??0:0,
+              learnerCount:summary.complete?summary.learnerCount??0:0,
+              schoolCapacity:summary.complete?summary.schoolCapacity??0:0,
+              financialSourceNotes:summary.complete
+                ? "Auto-synced from "+summary.periods+" approved School Financial Health period(s)."
+                : "PENDING: Approved School Financial Health periods do not fully cover this term.",
+              financeSourcePeriodIds:summary.complete?summary.approvedIds:[],
+            }};
+          });
+        }catch{if(active)setFinanceCoverage(null);}
+      })();
+    },250);
+    return ()=>{active=false;window.clearTimeout(timer);};
+  },[allowed,endpoint,form.periodStart,form.periodEnd,form.status,token]);
 
   function updateData(key:keyof CustodianReportData,value:number|string){
     setForm(current=>({...current,data:{...current.data,[key]:value}}));
@@ -149,11 +192,12 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
           </div>
           <div>
             <h3 className="text-lg font-black text-slate-950">School Financial Health</h3>
-            <p className="mt-1 text-sm text-slate-700">Enter figures from verified internal financial records. KHP-OS does not fabricate numbers or treat management figures as audited accounts.</p>
+            <p className="mt-1 text-sm text-slate-700">These figures are automatically sourced from approved School Financial Health records, not entered again in this report. They remain management-approved, not audited accounts.</p>
+            <Link className="mt-2 inline-block text-sm font-bold text-brand-700 underline" href={"/khpos/"+organisationId+"/financial-health"}>Open School Financial Health</Link>
+            {form.status!=="approved"&&form.periodStart&&form.periodEnd&&<p className={"mt-2 rounded-xl p-3 text-sm "+(financeCoverage?.complete?"bg-emerald-50 text-emerald-900":"bg-amber-50 text-amber-950")}>{financeCoverage?.complete?"Approved financial source complete for this term.":"Financial data incomplete. The Custodian cannot approve this report until all dates are covered by approved financial periods."}{financeCoverage?.missing?.length?" Missing: "+financeCoverage.missing.join("; "):""}</p>}
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {moneyLabels.map(([key,label])=><label key={key} className="text-sm font-bold">{label}
-                <input type="number" min={0} step={1} required className={small+" mt-1"} value={form.data[key] as number}
-                  onChange={event=>updateData(key,Math.max(0,Number(event.target.value)||0))}/>
+                <input type="number" min={0} step={1} readOnly required className={small+" mt-1 bg-slate-100"} value={form.data[key] as number}/>
               </label>)}
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -162,6 +206,7 @@ export function CustodianInvestorReportsPanel({organisationId}:{organisationId:s
                 <p className="mt-1 text-xl font-black">{formatMoney(totals.operatingResult)}</p></div>
             </div>
           </div>
+          <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700">Financial source: {form.data.financialSourceNotes}</p>
           <div className="grid gap-4">
             {notes.map(([key,label,help])=><label key={key} className="text-sm font-bold">
               {label}<span className="mt-1 block text-xs font-normal text-slate-600">{help}</span>
