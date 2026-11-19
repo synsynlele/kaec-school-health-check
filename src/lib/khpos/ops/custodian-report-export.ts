@@ -83,7 +83,6 @@ export async function makeCustodianReportPdf(report: CustodianReport, schoolName
   y-=10;
   line("Prepared from management-entered information. Figures are not independently audited or certified by KHP-OS.",9,false,6);
   pdf.getPages().forEach((p,i)=>{
-    p.drawLine({start:{x:margin,y:60},end:{x:W-margin,y:60},color:rgb(0.79,0.86,0.83),thickness:0.7});
     p.drawText("KAEC-NG  |  Confidential  |  Page " + (i+1) + " of " + pdf.getPageCount(),{x:margin,y:41,font:regular,size:8,color:muted});
   });
   return pdf.save();
