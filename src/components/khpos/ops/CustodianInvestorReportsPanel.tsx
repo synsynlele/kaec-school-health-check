@@ -28,8 +28,8 @@ const notes:Array<[keyof CustodianReportData,string,string]>=[
 const small="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-950";
 const button="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 disabled:opacity-50";
 const primary="min-h-11 rounded-xl bg-brand-700 px-4 py-3 text-sm font-black text-white disabled:opacity-50";
-const fresh=()=>({id:"",termLabel:"",periodStart:"",periodEnd:"",data:{...blank},status:"draft" as const});
-type FormState=ReturnType<typeof fresh>;
+type FormState={id:string;termLabel:string;periodStart:string;periodEnd:string;data:CustodianReportData;status:"draft"|"approved"};
+const fresh=():FormState=>({id:"",termLabel:"",periodStart:"",periodEnd:"",data:{...blank},status:"draft"});
 function fromReport(report:CustodianReport):FormState {
   return {id:report.id,termLabel:report.term_label,periodStart:report.period_start,periodEnd:report.period_end,
     data:{...blank,...report.data},status:report.status};
