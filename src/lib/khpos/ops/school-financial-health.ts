@@ -32,12 +32,22 @@ export async function requireFinancialHealthAccess(schoolId:string,userId:string
   const roleIds=(roles.data??[]).map(r=>r.id);
   if(!roleIds.length)throw new FinancialHealthError("You are not assigned to school finance.",403);
   const {data:assignments,error}=await db().from("khpos_ops_role_assignments")
-    .select("role_id,start_date,end_date").eq("user_id",userId).eq("status","active").in("role_id",roleIds);
+    .select("role_id,campus_id,start_date,end_date").eq("user_id",userId).eq("status","active").in("role_id",roleIds);
   if(error)throw new FinancialHealthError("Financial access could not be verified.",503);
   const date=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Lagos",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const eligible=(assignments??[]).filter(a=>(!a.start_date||a.start_date<=date)&&(!a.end_date||a.end_date>=date));
-  const activeCodes=new Set(eligible.map(a=>roles.data?.find(r=>r.id===a.role_id)?.code).filter(Boolean));
-  if(!activeCodes.size)throw new FinancialHealthError("Only an appointed Finance/Admin or School Custodian may access school finances.",403);
+  // Organisation-wide reports must not leak other campuses' finances to
+  // an officer appointed to only one campus. For single-campus schools that
+  // campus appointment naturally covers the complete school ledger.
+  const {count:campusCount,error:campusError}=await db().from("khpos_ops_campuses")
+    .select("id",{count:"exact",head:true}).eq("organisation_id",schoolId).eq("status","active");
+  if(campusError)throw new FinancialHealthError("School financial scope could not be verified.",503);
+  const activeCodes=new Set(eligible.filter(a=>
+    a.campus_id===null || (campusCount??0)<=1
+  ).map(a=>roles.data?.find(r=>r.id===a.role_id)?.code).filter(Boolean));
+  if(!activeCodes.size)throw new FinancialHealthError(
+    "School-wide financial health needs a school-wide appointment when the school has multiple campuses.",403
+  );
   return {schoolId,schoolName:org.name as string,userId,
     canEdit:relevantRoles.some(code=>activeCodes.has(code)),
     canApprove:custodianCodes.some(code=>activeCodes.has(code)),
