@@ -15,6 +15,7 @@ export const custodianReportDataSchema = z.object({
   managementRisks: note,
   nextTermPriorities: note,
   financialSourceNotes: note,
+  financeSourcePeriodIds: z.array(z.string().uuid()).max(240).optional(),
 }).strict();
 export type CustodianReportData = z.infer<typeof custodianReportDataSchema>;
 export type CustodianReport = {
