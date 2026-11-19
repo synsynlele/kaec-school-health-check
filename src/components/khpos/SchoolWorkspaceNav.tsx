@@ -97,6 +97,7 @@ const operationsLinks = [
   { suffix: "/issues", label: "Issues & help", icon: AlertTriangle },
   { suffix: "/decisions", label: "Approvals & decisions", icon: CheckCircle2 },
   { suffix: "/performance", label: "School results", icon: BarChart3 },
+  { suffix: "/financial-health", label: "Financial Health", icon: CircleDollarSign },
   { suffix: "/people", label: "Staff", icon: UserRoundCheck },
   { suffix: "/recruitment", label: "Hiring", icon: BriefcaseBusiness },
   { suffix: "/availability", label: "Leave & cover", icon: CalendarClock },
@@ -162,6 +163,7 @@ const schoolAreas = [
   { title: "Parents", help: "Current families, enquiries and admissions in one place.", routes: ["/parents"] },
   { title: "School improvement", help: "One journey from priorities through implementation, evidence, review and improvement.", routes: ["/priorities"] },
   { title: "School results", help: "Results, campus status, comparisons, learning and development summaries.", routes: ["/performance"] },
+  { title: "School management", help: "Track school finances and approved management results.", routes: ["/financial-health"] },
   { title: "Schools & campuses", help: "Manage locations, campus readiness and equipment; events are in Calendar.", routes: ["/schools-campuses", "/campus-readiness", "/assets"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
@@ -170,15 +172,15 @@ const navigationGroups = [
   { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "Leadership & schools", icon: Building2, description: "Improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "School management", icon: Building2, description: "Financial health, improvement, results and school settings", links: [operation("/financial-health"), byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/financial-health":"School Financial Health","/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
   const area = schoolAreas.find(area => area.routes[0] === suffix);
-  const aliases: Record<string,string> = {"/work":"home school dashboard school overview today school home","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports forms checklists record templates","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/announcements":"updates meeting meetings private calls discussions ideas official notices","/calendar":"events programmes school diary holidays term activities school calendar","/parents":"families admissions enquiries parent journey prospective parents","/performance":"results learning intelligence potential development comparison benchmarking network pulse meeting brief school data","/priorities":"transformation plan action plan implementation playbooks evidence proof verification review improvement school priorities"};
+  const aliases: Record<string,string> = {"/work":"home school dashboard school overview today school home","/teaching-presence":"check in check out sign in sign out roll call timetable HQLS school day lesson","/visitors":"visitor guest gate register tablet kiosk admission exit sign in sign out","/reports":"daily weekly monthly termly logs reports forms checklists record templates","/availability":"movement permission outing errand school gate brief exit return today early departure leave cover absence","/people":"staff teachers employees positions appointments leave absence cover queries staff query discipline","/library":"policies rules procedures SOP tools forms","/activation":"school setup getting started readiness","/announcements":"updates meeting meetings private calls discussions ideas official notices","/calendar":"events programmes school diary holidays term activities school calendar","/parents":"families admissions enquiries parent journey prospective parents","/performance":"results learning intelligence potential development comparison benchmarking network pulse meeting brief school data","/financial-health":"finance money income costs cash fees profit operating margin investment break-even","/priorities":"transformation plan action plan implementation playbooks evidence proof verification review improvement school priorities"};
   const text = [label, aliases[suffix], areaEntrances[suffix], area?.title, area?.help, ...(area?.routes.map(route => byRoute(route).label) ?? [])].join(" ").toLowerCase();
   return query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }
@@ -193,6 +195,7 @@ const leadershipRoles = new Set(["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL
 function canShowSchoolMenu(route: string, access: SchoolMenuAccess | null) {
   const executive = access?.membership === "executive";
   const roles = access?.roles ?? [];
+  if (route === "/financial-health") return roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "FINANCE_ADMIN_OFFICER"].includes(role));
   if (route === "/recruitment" || governanceRoutes.has(route)) return executive || roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN"].includes(role));
   if (leadershipRoutes.has(route)) return executive || roles.some(role => leadershipRoles.has(role));
   return true;
