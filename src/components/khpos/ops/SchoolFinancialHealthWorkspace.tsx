@@ -39,7 +39,7 @@ const fromPeriod=(p:FinancialPeriod):Editor=>({
 const input="w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-950";
 const button="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 disabled:opacity-50";
 const primary="min-h-11 rounded-xl bg-brand-700 px-4 py-3 text-sm font-black text-white disabled:opacity-50";
-export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:string}){
+export function SchoolFinancialHealthWorkspace({organisationId,embedded=false,initialId="",onChanged}:{organisationId:string;embedded?:boolean;initialId?:string;onChanged?:()=>void}){
   const [periods,setPeriods]=useState<FinancialPeriod[]>([]);
   const [schoolName,setSchoolName]=useState("");
   const [canEdit,setCanEdit]=useState(false);
@@ -64,15 +64,18 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
       const json=await response.json() as {ok?:boolean;error?:string;schoolName?:string;canEdit?:boolean;canApprove?:boolean;periods?:FinancialPeriod[]};
       if(!response.ok||!json.ok)throw new Error(json.error||"School finances could not be loaded.");
       setPeriods(json.periods??[]);
+      const initial = json.periods?.find(period => period.id === initialId);
+      if (initial) setForm(fromPeriod(initial));
       setSchoolName(json.schoolName??"");
       setCanEdit(Boolean(json.canEdit));
       setCanApprove(Boolean(json.canApprove));
       setError("");
     }catch(cause){setError(cause instanceof Error?cause.message:"Unable to load financial health.");}
     finally{setLoading(false);}
-  },[auth,endpoint]);
+  },[auth,endpoint,initialId]);
   useEffect(()=>{const t=window.setTimeout(()=>{void load();},0);return ()=>window.clearTimeout(t);},[load]);
   const selected=periods.find(p=>p.id===form.id);
+  const linked=selected?.source_note.startsWith("Prepared from reconciled School Finance records.") ?? false;
   const approved=periods.filter(p=>p.status==="approved").sort((a,b)=>b.period_end.localeCompare(a.period_end));
   const latest=approved[0];
   const latestSummary=useMemo(()=>{
@@ -107,6 +110,7 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
       const next=rows.find(p=>p.id===json.id);
       if(next)setForm(fromPeriod(next));
       setReviewNote("");
+      onChanged?.();
       setNotice(mode==="save"?"Finance draft saved.":mode==="submit"?"Submitted for School Custodian review.":mode==="approve"?"Approved and locked. This period can now feed investor reporting.":"Returned to Finance/Admin for correction.");
     }catch(cause){setError(cause instanceof Error?cause.message:"Could not save financial period.");}
     finally{setBusy(false);}
@@ -115,14 +119,14 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
     if(key==="breakEvenTarget"){setForm(v=>({...v,breakEvenTarget:value===""?null:Math.max(0,Number(value)||0)}));return;}
     setForm(v=>({...v,[key]:Math.max(0,Number(value)||0)}));
   }
-  if(loading)return <main className="khpos-interface-page mx-auto max-w-6xl p-5"><p className="text-sm text-slate-700">Checking access to school financial records</p></main>;
-  return <main className="khpos-interface-page mx-auto max-w-6xl space-y-5 p-4 pb-20 sm:p-6">
-    <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
+  if(loading)return <p role="status" className="p-3 text-sm text-slate-700">Verifying access to school financial records.</p>;
+  return <div className={embedded ? "space-y-4" : "khpos-interface-page mx-auto max-w-6xl space-y-5 p-4 pb-20 sm:p-6"}>
+    {!embedded && <header className="khpos-interface-card space-y-2 p-5 sm:p-7">
       <p className="text-xs font-black uppercase tracking-widest text-brand-700">School management · Restricted financial records</p>
       <h1 className="text-3xl font-black text-slate-950">School Financial Health</h1>
       <p className="max-w-3xl text-sm leading-6 text-slate-700">{schoolName}. Finance/Admin records one statement for each accounting period. Only a School Custodian can approve financial figures for official institutional reports.</p>
       <p className="text-xs text-slate-600">Not an accounting package or independent audit. Enter reconciled numbers from your school’s financial records. Investors do not have access to this workspace.</p>
-    </header>
+    </header>}
     {error&&<p role="alert" className="rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-900">{error} <button className="underline" onClick={()=>void load()}>Retry</button></p>}
     {notice&&<p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-950">{notice}</p>}
     <section className="khpos-interface-card space-y-3 p-4 sm:p-6">
@@ -166,25 +170,25 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
         <fieldset className="space-y-5 disabled:opacity-80" disabled={!editable||busy}>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="text-sm font-bold text-slate-900">Period starts
-              <input required type="date" className={input+" mt-1"} value={form.periodStart}
+              <input disabled={linked} required type="date" className={input+" mt-1"} value={form.periodStart}
                 onChange={event=>setForm(v=>({...v,periodStart:event.target.value}))}/>
             </label>
             <label className="text-sm font-bold text-slate-900">Period ends
-              <input required type="date" min={form.periodStart||undefined} className={input+" mt-1"} value={form.periodEnd}
+              <input disabled={linked} required type="date" min={form.periodStart||undefined} className={input+" mt-1"} value={form.periodEnd}
                 onChange={event=>setForm(v=>({...v,periodEnd:event.target.value}))}/>
             </label>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {fields.map(([key,label,help])=><label key={key} className="text-sm font-bold text-slate-900">
               {label}<span className="mt-1 block text-xs font-normal text-slate-600">{help}</span>
-              <input type="number" min={0} step={1} required={key!=="breakEvenTarget"} value={form[key]??""}
+              <input disabled={linked && !["learnerCount","schoolCapacity","breakEvenTarget"].includes(key)} type="number" min={0} step={1} required={key!=="breakEvenTarget"} value={form[key]??""}
                 className={input+" mt-1"} onChange={event=>setMoney(key,event.target.value)}/>
             </label>)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-bold text-slate-900">Source and reconciliation evidence
               <span className="mt-1 block text-xs font-normal text-slate-600">Describe the bank statements, ledger and fee register used (at least 10 characters).</span>
-              <textarea required minLength={10} maxLength={2500} rows={4} className={input+" mt-1"} value={form.sourceNote}
+              <textarea disabled={linked} required minLength={10} maxLength={2500} rows={4} className={input+" mt-1"} value={form.sourceNote}
                 onChange={event=>setForm(v=>({...v,sourceNote:event.target.value}))}/>
             </label>
             <label className="text-sm font-bold text-slate-900">Management explanation (optional)
@@ -215,5 +219,5 @@ export function SchoolFinancialHealthWorkspace({organisationId}:{organisationId:
       {selected?.review_note&&<p className="rounded-xl border border-slate-200 p-3 text-sm text-slate-800">Last Custodian review: {selected.review_note}</p>}
     </section>
     {canApprove&&<p className="text-sm text-slate-600">Preparing the termly institutional report? <Link href={"/khpos/"+organisationId+"/reports#custodian-investor-report"} className="font-bold text-brand-700 underline">Open Custodian investor reports</Link>. Approved periods will be used as the financial source when they fully cover the selected reporting dates.</p>}
-  </main>;
+  </div>;
 }
