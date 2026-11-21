@@ -65,14 +65,15 @@ export async function listSuccession(user:VerifiedKhposUser,scope:string,schoolI
   }
   if(scope==="admin"){
     if(!await isAdmin(user.id))throw new SuccessionError("Only authorised KAEC administration may review school succession.",403);
-    const [q,schools]=await Promise.all([
+    const [q,schools,campuses]=await Promise.all([
       db().from("khpos_custodian_transfers").select(columns).order("created_at",{ascending:false}).limit(60),
       db().from("organisations").select("id,name").eq("status","active").eq("partner_status","active").order("name"),
+      db().from("khpos_ops_campuses").select("id,name,organisation_id").eq("status","active"),
     ]);
-    if(q.error||schools.error)throw new SuccessionError("Succession administration could not be loaded.",503);
+    if(q.error||schools.error||campuses.error)throw new SuccessionError("Succession administration could not be loaded.",503);
     const names=new Map((schools.data??[]).map(o=>[o.id,o.name]));
     return {transfers:(q.data??[]).map(row=>({...row,schoolName:names.get(row.organisation_id)||"School"})),
-      schools:schools.data??[],canApprove:user.aal==="aal2"};
+      schools:schools.data??[],campuses:campuses.data??[],canApprove:user.aal==="aal2"};
   }
   if(scope!=="school"||!schoolId||!uuid.safeParse(schoolId).success)
     throw new SuccessionError("Choose a valid school.");
