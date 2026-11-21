@@ -27,6 +27,7 @@ const faqs = [
 
 const primary = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-700";
 const secondary = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-700";
+const schoolSignIn = "inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border-2 border-slate-950 bg-slate-950 px-5 py-3 text-base font-black text-white shadow-lg transition hover:bg-slate-800 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-700";
 
 function Brand() {
   return <Link href="/" className="inline-flex shrink-0 items-center gap-2.5" aria-label="KHP-OS home">
@@ -48,7 +49,7 @@ export function ProductLanding() {
           <a href="#pricing" className="hover:text-brand-700">Pricing</a>
           <a href="#faq" className="hover:text-brand-700">Questions</a>
         </nav>
-        <Link href="/khpos" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Open app <ArrowRight aria-hidden="true" className="size-4" /></Link>
+        <Link href="/account" aria-label="Sign in to your school" className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl border-2 border-slate-950 bg-slate-950 px-4 py-2 text-sm font-black text-white hover:bg-slate-800" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Sign in <ArrowRight aria-hidden="true" className="size-4" /></Link>
       </div>
     </header>
 
@@ -61,9 +62,9 @@ export function ProductLanding() {
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">Bring your people, processes and daily work together. Know who is on duty, what needs attention, and which responsibilities have been completed.</p>
             <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               <Link href="/assessment" className={primary}>Start with a free health check <ArrowRight aria-hidden="true" className="size-4" /></Link>
-              <Link href="/account" className={secondary}>Sign in to your school</Link>
+              <Link href="/account" aria-label="Sign in to your school" className={schoolSignIn} style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Sign in to your school <ArrowRight aria-hidden="true" className="size-5" /></Link>
             </div>
-            <p className="mt-3 text-xs leading-5 text-slate-500">Already invited by your school? Sign in using the email address on your invitation.</p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Already invited by your school? Sign in with the email address on your invitation. <Link href="/khpos" className="font-bold text-brand-700 underline underline-offset-4">Open the KHP-OS entrance</Link> for School Custodian invitations.</p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-lift sm:p-6" aria-label="Illustrative KHP-OS school day">
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
