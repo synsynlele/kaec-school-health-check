@@ -22,7 +22,7 @@ create table public.khpos_custodian_transfers (
  completed_at timestamptz,
  created_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
- constraint khpos_custodian_transfer_incoming_distinct check (outgoing_user_id is distinct from incoming_user_id)
+ constraint khpos_custodian_transfer_incoming_distinct check (incoming_user_id is null or outgoing_user_id is distinct from incoming_user_id)
 );
 create unique index khpos_custodian_one_pending_transfer_per_school
  on public.khpos_custodian_transfers(organisation_id)
