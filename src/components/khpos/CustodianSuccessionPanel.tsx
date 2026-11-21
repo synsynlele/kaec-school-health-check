@@ -84,7 +84,7 @@ export function CustodianSuccessionPanel({scope,organisationId}:{scope:Scope;org
       setNotice(payload.mode==="propose"
         ?"Succession request recorded. Ask the incoming Custodian to sign in at the KHP-OS entrance and accept the invitation."
         :payload.mode==="accept"?"You accepted the invitation. Custodian access begins only after KAEC governance approval."
-        :payload.mode==="approve"?"Custodian role transferred. Original School Health Check history remains intact."
+        :payload.mode==="approve"?"Custodian authority transferred. If Guardian was selected, the outgoing account now has its Guardian appointment. Complete Staff profile linking/onboarding separately if needed. Original School Health Check history remains intact."
         :"Succession status updated.");
       if(payload.mode==="propose"){setEmail("");setReason("");}
       await load();
