@@ -162,7 +162,7 @@ const schoolAreas = [
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
   { title: "Parents", help: "Current families, enquiries and admissions in one place.", routes: ["/parents"] },
   { title: "School improvement", help: "One journey from priorities through implementation, evidence, review and improvement.", routes: ["/priorities"] },
-  { title: "School results & finances", help: "Institutional results, financial health and approved management information.", routes: ["/performance", "/financial-health"] },
+  { title: "School results", help: "Institutional results and approved management information.", routes: ["/performance"] },
   { title: "Schools & campuses", help: "Manage locations, campus readiness and equipment; events are in Calendar.", routes: ["/schools-campuses", "/campus-readiness", "/assets"] },
   { title: "School settings", help: "Complete school setup, adopt the KAEC Standard and set up tasks. These changes require the right permissions.", routes: ["/activation", "/standard", "/execution-control", "/system-integrity"] },
 ] as const;
@@ -171,7 +171,7 @@ const navigationGroups = [
   { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
-  { title: "School management", icon: Building2, description: "Financial health, improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
+  { title: "School management", icon: Building2, description: "Finance, improvement, results and school settings", links: [byRoute("/financial-health"), byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
 const areaEntrances: Record<string,string> = {"/financial-health":"School Finance","/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
@@ -208,14 +208,7 @@ function NavigationGroup({ group, base, pathname, onNavigate }: {
   group: (typeof navigationGroups)[number]; base: string; pathname: string; onNavigate?: () => void;
 }) {
   const access = useContext(SchoolMenuContext);
-  const links: Array<(typeof workspaceLinks)[number]> = group.links.filter(link => canShowSchoolMenu(link.suffix, access));
-  // Finance/Admin may have no general leadership permission. Give them their
-  // financial page in School management without granting the School Results page
-  // or adding another main entrance for everybody.
-  if (group.title === "School management" && access?.roles.includes("FINANCE_ADMIN_OFFICER")
-      && !links.some(link=>link.suffix === "/performance")) {
-    links.unshift(byRoute("/financial-health"));
-  }
+  const links = group.links.filter(link => canShowSchoolMenu(link.suffix, access));
   const active = links.some(link => isActive(pathname, base, link.suffix) || workspaceLinks.some(page => primarySuffix(page.suffix) === link.suffix && isActive(pathname,base,page.suffix)));
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { if (active && detailsRef.current) detailsRef.current.open = true; }, [active]);
