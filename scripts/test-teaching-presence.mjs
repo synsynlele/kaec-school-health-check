@@ -240,10 +240,16 @@ try {
  await q("update khpos_ops_academic_delivery_streams set unit_id=$2 where id=$1",[draftId,otherUnit]);
  await assert.rejects(act(promoter,"period_edit",replaceSubject),/authorised academic leader/);
  await q("update khpos_ops_academic_delivery_streams set unit_id=$2 where id=$1",[draftId,unit]);
+ const disabledPeriod = id(803);
+ await q("insert into khpos_ops_class_periods(id,organisation_id,stream_id,weekday,starts_at,ends_at,is_active,created_by) values($1,$2,$3,$4,'17:00','17:30',false,$5)",[disabledPeriod,org,draftId,parallelDay,promoter]);
+ await assert.rejects(act(promoter,"period_edit",replaceSubject),/khpos_period_unique/);
+ await db.exec(fs.readFileSync("supabase/migrations/20261116123000_active_timetable_period_uniqueness.sql","utf8"));
  await act(promoter,"period_edit",replaceSubject);
  const edited = (await read(guardian)).periods.find(p=>p.id===editable.id);
  assert.equal(edited.streamId,draftId);
  assert.equal(edited.subject,"English");
+ assert.equal((await q("select is_active from khpos_ops_class_periods where id=$1",[disabledPeriod]))[0].is_active,false);
+ await assert.rejects(q("insert into khpos_ops_class_periods(organisation_id,stream_id,weekday,starts_at,ends_at,created_by) values($1,$2,$3,'17:00','17:30',$4)",[org,draftId,parallelDay,promoter]),/khpos_active_period_unique/);
  assert.equal(edited.start,"17:00");
  await act(promoter,"period_edit",{periodId:editable.id,weekday:parallelDay,start:"17:10",end:"18:00"});
  assert.equal((await read(guardian)).periods.find(p=>p.id===editable.id).streamId,draftId);

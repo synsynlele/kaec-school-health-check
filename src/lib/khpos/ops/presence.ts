@@ -106,6 +106,10 @@ export async function actOnPresence(org: string, actor: string, mode: string, in
     p_actor: actor, p_org: org, p_mode: mode, p_input: input
   });
   if (!error) return;
+  if ((mode === "period_add" || mode === "period_edit") && error.code === "23505" &&
+      /khpos_(?:active_)?period_unique/.test(error.message)) {
+    throw new KhposPresenceError("This subject already has a period starting at that time. Edit the existing period or choose another start time.", 409);
+  }
 
   const duplicateStart = mode === "class_in" && error.code === "23505";
   const missingOpenSession = mode === "class_out" &&
