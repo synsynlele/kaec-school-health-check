@@ -30,6 +30,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { CustodianSuccessionPanel } from "@/components/khpos/CustodianSuccessionPanel";
 import type {
   KhposOpsEmploymentType,
   KhposOpsOnboardingAction,
@@ -470,6 +471,7 @@ export function PeopleWorkspace({
             onSelectedStaffIdChange={setSelectedPositionStaffId}
             onPositionsChanged={() => { void refreshStaffProfiles(); }} />
         </div>}
+        <CustodianSuccessionPanel scope="school" organisationId={organisationId} />
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {error}

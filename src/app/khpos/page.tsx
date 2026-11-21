@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { CustodianSuccessionPanel } from "@/components/khpos/CustodianSuccessionPanel";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, Building2, CalendarDays, ClipboardCheck } from "lucide-react";
 
@@ -68,6 +69,10 @@ export default function KhposAccessPage() {
         </div>
         <p className="mt-2 max-w-2xl text-xs text-slate-400">Account access and KHP-OS access are intentionally different.</p>
 
+        <details className="mt-5 max-w-2xl rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white">
+          <summary className="cursor-pointer font-bold text-mint-300">Accept a School Custodian invitation</summary>
+          <div className="mt-4"><CustodianSuccessionPanel scope="candidate" /></div>
+        </details>
         <details className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-slate-300">
           <summary className="cursor-pointer font-bold text-white">KAEC HQ and platform administration</summary>
           <p className="mt-3 leading-6">For appointed KAEC team members and authorised platform administrators.</p>
