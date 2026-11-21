@@ -97,7 +97,7 @@ const operationsLinks = [
   { suffix: "/issues", label: "Issues & help", icon: AlertTriangle },
   { suffix: "/decisions", label: "Approvals & decisions", icon: CheckCircle2 },
   { suffix: "/performance", label: "School results", icon: BarChart3 },
-  { suffix: "/financial-health", label: "Financial Health", icon: CircleDollarSign },
+  { suffix: "/financial-health", label: "School Finance", icon: CircleDollarSign },
   { suffix: "/people", label: "Staff", icon: UserRoundCheck },
   { suffix: "/recruitment", label: "Hiring", icon: BriefcaseBusiness },
   { suffix: "/availability", label: "Leave & cover", icon: CalendarClock },
@@ -174,7 +174,7 @@ const navigationGroups = [
   { title: "School management", icon: Building2, description: "Financial health, improvement, results and school settings", links: [byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
   { title: "Resources & help", icon: LibraryBig, description: "Policies, guides and training", links: [operation("/library"), askKhposLink] },
 ] as const;
-const areaEntrances: Record<string,string> = {"/financial-health":"School Financial Health","/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
+const areaEntrances: Record<string,string> = {"/financial-health":"School Finance","/announcements":"Meetings & updates","/reports":"Reports & forms","/people":"Staff & roles","/teaching-presence":"School day & gate","/potential-development":"Learner development","/priorities":"School improvement","/performance":"School results","/parents":"Families & admissions","/calendar":"Calendar & events","/activation":"School settings"};
 const displayLabel = (suffix:string,label:string) => areaEntrances[suffix] ?? label;
 const primarySuffix = (suffix:string) => schoolAreas.find(area => (area.routes as readonly string[]).includes(suffix))?.routes[0] ?? suffix;
 function matchesSearch(suffix:string,label:string,query:string) {
@@ -186,6 +186,10 @@ function matchesSearch(suffix:string,label:string,query:string) {
 
 type SchoolMenuAccess = { roles: string[]; membership: string };
 const SchoolMenuContext = createContext<SchoolMenuAccess | null>(null);
+
+export function useSchoolMenuRoles() {
+  return useContext(SchoolMenuContext)?.roles;
+}
 
 const governanceRoutes = new Set(["/activation", "/standard", "/execution-control", "/system-integrity", "/schools-campuses", "/campus-readiness"]);
 const leadershipRoutes = new Set(["/priorities", "/performance", "/decisions", "/people", "/team", "/staff-transition"]);

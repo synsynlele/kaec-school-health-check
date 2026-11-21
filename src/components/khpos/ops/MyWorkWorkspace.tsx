@@ -9,6 +9,7 @@ import { ActionFeedback } from "./ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { FinanceTodayApprovals } from "@/components/khpos/finance/FinanceTodayApprovals";
 import { TodayAttendanceCard } from "@/components/khpos/ops/TodayAttendanceCard";
 import { SchoolQuickActions } from "@/components/khpos/ops/SchoolQuickActions";
 import { SchoolHealthSummary } from "@/components/khpos/ops/SchoolHealthSummary";
@@ -419,6 +420,7 @@ export function MyWorkWorkspace({
 
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         <SchoolQuickActions organisationId={organisationId} reviewCount={verificationItems.length} />
+        <FinanceTodayApprovals organisationId={organisationId} />
         <div id="today-attendance" className="scroll-mt-24"><TodayAttendanceCard organisationId={organisationId} /></div>
         <AssessmentTimetable school={organisationId} todayInvigilation />
         <SchoolPlan school={organisationId} todayOnly />
