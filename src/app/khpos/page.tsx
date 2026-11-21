@@ -31,11 +31,18 @@ export default function KhposAccessPage() {
             Manage attendance, teaching, exams, and follow-up in one place.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Link href="/account" className="group flex min-h-36 flex-col items-start gap-2 rounded-2xl bg-gradient-to-br from-mint-200 to-mint-400 p-4 text-slate-950 shadow-lg transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:p-5">
-              <Building2 aria-hidden="true" className="size-8 rounded-lg bg-white/60 p-1.5" />
-              <span className="text-lg font-black">Sign in to your school</span>
-              <span className="text-sm">Open your school workspace.</span>
-              <ArrowRight aria-hidden="true" className="ml-auto size-5 transition-transform group-hover:translate-x-1" />
+            <Link
+              href="/account"
+              aria-label="Sign in to your school — open your KHP-OS workspace"
+              className="group flex min-h-40 flex-col items-start justify-center gap-2 rounded-2xl border-2 border-mint-100 bg-mint-200 p-5 shadow-xl transition hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white sm:p-6"
+              style={{ backgroundColor: "#a7f3d0", color: "#102233" }}
+            >
+              <Building2 aria-hidden="true" className="size-9 rounded-lg bg-white p-1.5" />
+              <span className="text-xl font-black leading-snug">Sign in to your school</span>
+              <span className="text-sm font-semibold">Open your KHP-OS school workspace.</span>
+              <span className="mt-1 inline-flex items-center gap-2 text-sm font-black underline underline-offset-4">
+                Continue to sign in <ArrowRight aria-hidden="true" className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
+              </span>
             </Link>
             <Link href="/assessment" className="group flex min-h-36 flex-col items-start gap-2 rounded-2xl border border-sky-300/40 bg-gradient-to-br from-sky-950 to-slate-900 p-4 shadow-lg transition hover:border-sky-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:p-5">
               <BookOpenCheck aria-hidden="true" className="size-8 rounded-lg bg-sky-300/15 p-1.5 text-sky-200" />
