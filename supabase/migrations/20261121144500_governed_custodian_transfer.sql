@@ -126,7 +126,7 @@ begin
    select id into v_role from public.khpos_ops_roles
     where organisation_id=p_school and code='SCHOOL_CUSTODIAN' and status='active';
    if v_role is null then raise exception 'The School Custodian role has not been configured.'; end if;
-   select count(*),min(user_id),min(id)
+   select count(*),(array_agg(user_id))[1],(array_agg(id))[1]
      into v_active_count,v_old_user,v_old_assignment
      from public.khpos_ops_role_assignments
      where role_id=v_role and status='active' and campus_id is null;
@@ -154,7 +154,7 @@ begin
        select id into v_campus from public.khpos_ops_campuses where id=p_guardian_campus and organisation_id=p_school and status='active';
        if v_campus is null then raise exception 'The Guardian campus must belong to this school.'; end if;
      else
-       select count(*),min(id) into v_count,v_campus
+       select count(*),(array_agg(id))[1] into v_count,v_campus
        from public.khpos_ops_campuses where organisation_id=p_school and status='active';
        if v_count<>1 then
          raise exception 'Choose the campus where the outgoing Custodian will serve as School Guardian.'; end if;
@@ -234,7 +234,7 @@ begin
  select id into v_guardian_role from public.khpos_ops_roles where organisation_id=v_org.id and code='SCHOOL_GUARDIAN' and status='active';
  if v_role is null or (v_tr.keep_outgoing_as_guardian and v_guardian_role is null) then
    raise exception 'Required school leadership roles have not been configured.'; end if;
- select count(*),min(user_id),min(id) into v_active_count,v_old_user,v_old_assignment
+ select count(*),(array_agg(user_id))[1],(array_agg(id))[1] into v_active_count,v_old_user,v_old_assignment
  from public.khpos_ops_role_assignments where role_id=v_role and status='active' and campus_id is null;
  if v_tr.outgoing_assignment_id is null then
    if v_active_count<>0 then raise exception 'The school appointed another Custodian. Refresh succession.'; end if;
