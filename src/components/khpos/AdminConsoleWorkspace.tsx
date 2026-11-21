@@ -5,6 +5,7 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { ActionFeedback } from "./ops/ActionFeedback";
 
 import { useEffect, useMemo, useState } from "react";
+import { CustodianSuccessionPanel } from "@/components/khpos/CustodianSuccessionPanel";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -398,6 +399,7 @@ export function AdminConsoleWorkspace() {
           </div>
         )}
 
+        <CustodianSuccessionPanel scope="admin" />
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
             ["Active institutions", summary.activeInstitutions],
