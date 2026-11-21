@@ -186,7 +186,7 @@ if (staffArea?.routes.includes("/availability")) {
 if (navigation.navigationGroups.length !== 6) {
   throw new Error("More must present six task-based school areas.");
 }
-if (destinations.length !== 20) throw new Error("Today replaces School Overview: keep exactly 20 distinct main entrances.");
+if (destinations.length !== 21) throw new Error("Expected 21 distinct main entrances, including School Finance.");
 if (navigation.workspaceLinks.some(link => link.suffix === "")) throw new Error("Remove the School Overview entry from More.");
 if (!navigation.matchesSearch("/work", "Today", "school overview")) throw new Error("Users searching for the former overview must find Today.");
 const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);
@@ -195,7 +195,7 @@ for (const area of navigation.schoolAreas) for (const route of area.routes) {
   if (navigation.primarySuffix(route)!==area.routes[0]) throw new Error(`Wrong area entrance for ${route}`);
 }
 if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
-if (navigation.workspaceLinks.length !== 41) throw new Error("Expected 41 unique school destinations with financial health under the existing school results group.");
+if (navigation.workspaceLinks.length !== 41) throw new Error("Expected 41 unique school destinations including School Finance.");
 for (const [route,term] of [
   ["/announcements","meetings"], ["/announcements","discussions"], ["/reports","checklists"],
   ["/calendar","events"], ["/parents","admissions"], ["/priorities","implementation"], ["/performance","learning"]

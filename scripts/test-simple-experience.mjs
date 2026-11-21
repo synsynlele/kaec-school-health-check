@@ -27,7 +27,7 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
 assert.equal(n.workspaceLinks.length,41);
-const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,20);assert.equal(new Set(primary.map(x=>x.suffix)).size,20);
+const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
 assert(!n.workspaceLinks.some(x=>x.suffix===""),'School Overview must not appear in More');
 assert(n.matchesSearch('/work','Today','school overview'),'Search for old School Overview leads to Today');
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
@@ -67,6 +67,8 @@ assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["
 assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["FINANCE_ADMIN_OFFICER"]}),true);
 assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_CUSTODIAN"]}),true);
 assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_GUARDIAN"]}),false);
+assert.match(fs.readFileSync("src/components/khpos/SchoolWorkspaceNav.tsx", "utf8"), /title: "School management"[^\n]+links: \[byRoute\("\/financial-health"\)/,
+  "School Finance must have a direct, role-filtered entry in School management.");
 tree = exports.SchoolAreaNavigation({organisationId:"school"});
 group = nodes(tree).find(x=>x.type==="school-tabs");
 assert.ok(group.props.tabs.every(x=>!["/people","/team","/recruitment","/staff-transition"].includes(x.view)));
