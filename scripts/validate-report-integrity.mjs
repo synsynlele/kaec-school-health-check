@@ -76,7 +76,7 @@ if (legacyAi.includes("generateReport")) {
   throw new Error("Legacy src/lib/ai.ts must not contain or export a second report generator.");
 }
 const coach = read("src/lib/kshc-ai-coach.ts");
-for (const required of ["gpt-4.1-mini-2025-04-14", "deterministic fallback used", "CoachStreamResult"]) {
+for (const required of ["KAEC_AI_MODEL", "...KAEC_AI_CHAT_OPTIONS", "deterministic fallback used", "CoachStreamResult"]) {
   if (!coach.includes(required)) throw new Error(`Coach AI boundary is missing: ${required}`);
 }
 const coachRoute = read("src/app/api/report/[id]/coach/route.ts");

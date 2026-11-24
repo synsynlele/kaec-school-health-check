@@ -6,6 +6,7 @@
  * why AI was not used so production can never fail silently again.
  */
 import OpenAI from "openai";
+import { KAEC_AI_MODEL, KAEC_AI_CHAT_OPTIONS } from "@/lib/kaec-ai-model";
 import { recordKshcAiUsage } from "@/lib/kaec-ai-observability";
 import { z } from "zod";
 import {
@@ -24,10 +25,7 @@ import type {
   SchoolInfo,
 } from "./types";
 
-const REPORT_MODEL =
-  process.env.OPENAI_REPORT_MODEL ||
-  process.env.OPENAI_MODEL ||
-  "gpt-4.1-mini-2025-04-14";
+const REPORT_MODEL = KAEC_AI_MODEL;
 
 function client(): OpenAI | null {
   const key = process.env.OPENAI_API_KEY?.trim();
@@ -81,6 +79,7 @@ export async function probeOpenAiConnection(): Promise<OpenAiProbeResult> {
   try {
     const response = await openai.chat.completions.create({
       model: REPORT_MODEL,
+      ...KAEC_AI_CHAT_OPTIONS,
       temperature: 0,
       max_completion_tokens: 16,
       messages: [
@@ -406,6 +405,7 @@ export async function generateReport(
 
       const completion = await openai.chat.completions.create({
         model: REPORT_MODEL,
+        ...KAEC_AI_CHAT_OPTIONS,
         temperature: 0.35,
         max_completion_tokens: 8000,
         response_format: { type: "json_object" },

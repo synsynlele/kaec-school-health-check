@@ -20,6 +20,9 @@ vm.runInNewContext(compiled, {
 const { khposAiRates, khposAiCostMicroUsd, khposAiMonthlyCapMicroUsd,
   reserveKhposAi, settleKhposAi } = moduleExports;
 
+assert.equal(khposAiRates("gpt-6-luna").input, 0.1);
+assert.equal(khposAiRates("gpt-6-luna").output, 0.5);
+assert.equal(khposAiCostMicroUsd(2000, 500, khposAiRates("gpt-6-luna")), 450);
 assert.equal(khposAiRates("not-listed-model"), null, "unknown model pricing cannot be free");
 assert.equal(khposAiRates("gpt-4.1-mini-2025-04-14").input, 0.4);
 assert.equal(khposAiCostMicroUsd(2000, 500, { input: 0.4, output: 1.6 }), 1600);
@@ -55,6 +58,7 @@ assert.equal(await reserveKhposAi(failDb, {
 
 environment.KHPOS_AI_INPUT_USD_PER_1M = "5";
 assert.equal(khposAiRates("gpt-4.1-mini-2025-04-14"), null, "partially configured prices must block AI");
+assert.equal(khposAiRates("gpt-6-luna").input, 0.1, "legacy price override must not affect Luna");
 delete environment.KHPOS_AI_INPUT_USD_PER_1M;
 
 assert.match(assistant, /!groundedContext \|\| !permit/);
