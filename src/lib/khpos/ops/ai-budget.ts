@@ -24,6 +24,7 @@ export interface KhposAiPermit {
 }
 
 const KNOWN_MODEL_RATES: Record<string, ModelRates> = {
+  "gpt-6-luna": { input: 0.1, output: 0.5 },
   "gpt-4.1-mini-2025-04-14": { input: 0.4, output: 1.6 },
   "gpt-4.1-mini": { input: 0.4, output: 1.6 },
   "gpt-4.1-nano-2025-04-14": { input: 0.1, output: 0.4 },
@@ -38,7 +39,8 @@ function positiveNumber(value: string | undefined): number | null {
 
 export function khposAiRates(model: string, allowKhposOverride = true): ModelRates | null {
   // Unknown model prices must be explicitly set, never silently treated as free.
-  if (!allowKhposOverride) return KNOWN_MODEL_RATES[model] ?? null;
+  // Luna uses its own published rate, not a stale legacy-model deployment override.
+  if (!allowKhposOverride || model === "gpt-6-luna") return KNOWN_MODEL_RATES[model] ?? null;
   const input = positiveNumber(process.env.KHPOS_AI_INPUT_USD_PER_1M);
   const output = positiveNumber(process.env.KHPOS_AI_OUTPUT_USD_PER_1M);
   if (input !== null && output !== null) return { input, output };

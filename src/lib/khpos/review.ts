@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { KAEC_AI_MODEL, KAEC_AI_CHAT_OPTIONS } from "@/lib/kaec-ai-model";
 import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { z } from "zod";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -10,12 +11,7 @@ import {
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const REVIEW_MODEL =
-  process.env.KHPOS_REVIEW_MODEL ||
-  process.env.OPENAI_KHPOS_MODEL ||
-  process.env.OPENAI_REPORT_MODEL ||
-  process.env.OPENAI_MODEL ||
-  "gpt-4.1-mini-2025-04-14";
+const REVIEW_MODEL = KAEC_AI_MODEL;
 const REVIEW_PROMPT_VERSION = "2.0";
 
 let adminClient: SupabaseClient | null = null;
@@ -370,6 +366,7 @@ async function enrichReviewNarrative(
   try {
     const response = await openai.chat.completions.create({
       model: REVIEW_MODEL,
+      ...KAEC_AI_CHAT_OPTIONS,
       temperature: 0.2,
       max_completion_tokens: 2600,
       response_format: { type: "json_object" },

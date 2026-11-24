@@ -13,9 +13,15 @@ function expect(path, needles) {
   }
 }
 
+expect("src/lib/kaec-ai-model.ts", ["gpt-6-luna", "KAEC_AI_MODEL", 'reasoning_effort: "none"']);
+for (const path of ["src/lib/kshc-ai-coach.ts", "src/lib/khpos/ops/assistant.ts", "src/lib/khpos/intervention-intelligence.ts", "src/lib/khpos/review.ts"]) {
+  expect(path, ["KAEC_AI_MODEL", "...KAEC_AI_CHAT_OPTIONS"]);
+}
+
 expect("src/lib/kshc-ai-report.ts", [
   "OPENAI_API_KEY",
-  "gpt-4.1-mini-2025-04-14",
+  "KAEC_AI_MODEL",
+  "...KAEC_AI_CHAT_OPTIONS",
   "probeOpenAiConnection",
   "openai_success",
   "ai_not_configured",

@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { KAEC_AI_MODEL, KAEC_AI_CHAT_OPTIONS } from "@/lib/kaec-ai-model";
 import { reserveKhposAi, settleKhposAi } from "@/lib/khpos/ops/ai-budget";
 import { z } from "zod";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -6,11 +7,7 @@ import { CHAPTER_MAP, QUESTION_INDEX, RATING_OPTIONS } from "@/lib/questions";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const KHPOS_INTELLIGENCE_MODEL =
-  process.env.OPENAI_KHPOS_MODEL ||
-  process.env.OPENAI_REPORT_MODEL ||
-  process.env.OPENAI_MODEL ||
-  "gpt-4.1-mini-2025-04-14";
+const KHPOS_INTELLIGENCE_MODEL = KAEC_AI_MODEL;
 const GENERATION_VERSION = "2.0";
 
 let adminClient: SupabaseClient | null = null;
@@ -497,6 +494,7 @@ export async function ensureKhposInterventionIntelligence(
       try {
         completion = await openai.chat.completions.create({
           model: KHPOS_INTELLIGENCE_MODEL,
+          ...KAEC_AI_CHAT_OPTIONS,
           temperature: 0.25,
           max_completion_tokens: 6000,
           response_format: { type: "json_object" },

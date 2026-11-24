@@ -1,12 +1,10 @@
 import OpenAI from "openai";
+import { KAEC_AI_MODEL, KAEC_AI_CHAT_OPTIONS } from "@/lib/kaec-ai-model";
 import { recordKshcAiUsage } from "@/lib/kaec-ai-observability";
 import { CHAPTER_MAP } from "./questions";
 import type { CoachMessage, ReportData, SchoolInfo } from "./types";
 
-const COACH_MODEL =
-  process.env.OPENAI_COACH_MODEL ||
-  process.env.OPENAI_MODEL ||
-  "gpt-4.1-mini-2025-04-14";
+const COACH_MODEL = KAEC_AI_MODEL;
 
 function client(): OpenAI | null {
   const key = process.env.OPENAI_API_KEY?.trim();
@@ -184,6 +182,7 @@ export async function streamCoachReply(
   try {
     const response = await openai.chat.completions.create({
       model: COACH_MODEL,
+      ...KAEC_AI_CHAT_OPTIONS,
       temperature: 0.45,
       max_completion_tokens: 600,
       stream: true,

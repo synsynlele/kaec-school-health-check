@@ -16,7 +16,7 @@ No accounts. No dashboards. No passwords. Extremely simple by design.
 - **Database:** PostgreSQL via `DATABASE_URL` (auto-provisions tables on first
   request) **or** Supabase REST when `NEXT_PUBLIC_SUPABASE_URL` +
   `SUPABASE_SERVICE_ROLE_KEY` are set (apply `supabase/schema.sql`)
-- **AI:** OpenAI (`gpt-4o-mini` by default) with a built-in deterministic
+- **AI:** OpenAI (`gpt-6-luna` by default) with a built-in deterministic
   report engine as guaranteed fallback — a complete report is generated even if
   the model is unreachable
 - **PDF:** `pdf-lib` server-side branded PDF at `/api/report/[id]/pdf`
@@ -36,7 +36,7 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 OPENAI_API_KEY=sk-...
 
 # Optional
-OPENAI_MODEL=gpt-4o-mini
+KAEC_AI_MODEL=gpt-6-luna # shared KSHC/KHP-OS setting; legacy per-feature model overrides retired
 RESEND_API_KEY=re_...
 EMAIL_FROM="KAEC School Health <reports@yourdomain.com>"
 NEXT_PUBLIC_APP_URL=https://your-domain.com
