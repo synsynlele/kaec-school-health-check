@@ -195,7 +195,7 @@ for (const area of navigation.schoolAreas) for (const route of area.routes) {
   if (navigation.primarySuffix(route)!==area.routes[0]) throw new Error(`Wrong area entrance for ${route}`);
 }
 if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
-if (navigation.workspaceLinks.length !== 41) throw new Error("Expected 41 unique school destinations including School Finance.");
+if (navigation.workspaceLinks.length !== 42) throw new Error("Expected 42 unique school destinations including the learner register.");
 for (const [route,term] of [
   ["/announcements","meetings"], ["/announcements","discussions"], ["/reports","checklists"],
   ["/calendar","events"], ["/parents","admissions"], ["/priorities","implementation"], ["/performance","learning"]
