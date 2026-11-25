@@ -23,15 +23,15 @@ export default async function Page({
   const selected = ["forms"].includes(requested) ? requested : "";
   return (
     <>
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "forms" ? (<OperationalRecordsWorkspace organisationId={organisationId} />) : (<ReportsWorkspace key={organisationId} organisationId={organisationId} />)}
+      </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/reports"}
         title="Reports & forms"
         selected={selected}
         tabs={[{"view":"","label":"Reports"},{"view":"forms","label":"Forms & checklists"}]}
       />
-      <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "forms" ? (<OperationalRecordsWorkspace organisationId={organisationId} />) : (<ReportsWorkspace key={organisationId} organisationId={organisationId} />)}
-      </div>
     </>
   );
 }

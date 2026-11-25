@@ -83,10 +83,9 @@ assert(nav.includes('routes: ["/teaching-presence", "/availability", "/visitors"
   "Visitor register must share the school attendance area.");
 assert(!/title: "Teaching & learning"[^\\n]*"\/visitors"/.test(nav),
   "Visitor register must never be placed in Teaching & learning.");
-const presence=read("src/components/khpos/ops/TeacherPresenceWorkspace.tsx");
-assert(presence.includes('Visitors sign-in and sign-out') &&
-  presence.includes('${organisationId}/visitors'),
-  "Gate & Visitors must be accessible beside staff school sign-in/out.");
+const schoolLayout=read("src/app/khpos/[organisationId]/layout.tsx");
+assert(schoolLayout.indexOf('id="school-route-content"') < schoolLayout.indexOf('<SchoolAreaNavigation'),
+  "Gate & Visitors remains in the school-day navigation below the main workspace.");
 
 // Temporary outing reuses Leave & Cover approval, never creates a second
 // staff availability authority or a fake end-of-day attendance check-out.

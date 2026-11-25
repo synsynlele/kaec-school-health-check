@@ -528,11 +528,10 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
   </nav>;
   // Today is already the school home. Do not repeat a second section selector.
   if (pathname === `${base}/work`) return null;
-  const trail = <div className="border-b border-slate-200 bg-white px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
+  const trail = <div className="px-4 sm:px-6"><div className="mx-auto max-w-7xl">{breadcrumb}</div></div>;
   if (!area || routes.length <= 1) return trail;
   const selected = routes.find(route => isActive(pathname, base, route)) ?? "";
   return <>
-    {trail}
     <SchoolSectionTabs
       base={base}
       title={area.title}
@@ -544,5 +543,6 @@ export function SchoolAreaNavigation({organisationId}:{organisationId:string}) {
         href: `${base}${route}`,
       }))}
     />
+    {trail}
   </>;
 }
