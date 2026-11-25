@@ -6,6 +6,7 @@ export async function learnerRegister(actor: string, school: string, action: str
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Learner register is unavailable.");
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  if (action === "history") return db.rpc("khpos_learner_register_history_server", { actor, school, input });
   return db.rpc("khpos_learner_register_server", { actor, school, action, input });
 }
 
