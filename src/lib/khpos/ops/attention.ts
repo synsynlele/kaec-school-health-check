@@ -1,3 +1,4 @@
+import { getAvailabilityHandoffs } from "@/lib/khpos/ops/availability";
 import { getMeetingAlerts } from "@/lib/khpos/ops/meetings";
 import { khposRecordHref } from "@/lib/khpos/ops/record-links";
 import { needsOwnerWorkAction, issueAttentionAction, decisionAttentionActions } from "@/lib/khpos/ops/attention-rules";
@@ -12,7 +13,8 @@ export type KhposAttentionKind =
   | "issue"
   | "decision"
   | "implementation"
-  | "meeting";
+  | "meeting"
+  | "availability";
 
 export interface KhposAttentionItem {
   id: string;
@@ -61,11 +63,12 @@ export async function getKhposAttention(
   userId: string,
   nowMs = Date.now(),
 ): Promise<KhposAttentionSnapshot> {
-  const [work, issues, decisions, meetings] = await Promise.all([
+  const [work, issues, decisions, meetings, handoffs] = await Promise.all([
     getKhposOpsMyWork(organisationId, userId),
     getKhposOpsIssues(organisationId, userId),
     getKhposOpsDecisions(organisationId, userId),
     getMeetingAlerts(organisationId, userId, nowMs),
+    getAvailabilityHandoffs(organisationId, userId, true).catch(() => []),
   ]);
 
   const items: KhposAttentionItem[] = [];
@@ -203,6 +206,20 @@ export async function getKhposAttention(
       href: khposRecordHref(organisationId, "decision", decision.id),
       dueAt,
       actionLabel: implementation ? "Execute action" : "Review decision",
+    });
+  }
+
+  for (const handoff of handoffs) {
+    waitingApproval += 1;
+    items.push({
+      id: (handoff.forwardedAt ? "availability-guardian:" : "availability-review:") + handoff.caseId,
+      kind: "availability",
+      severity: "high",
+      title: handoff.forwardedAt ? "Staff permission needs your decision" : "Staff permission needs review",
+      detail: handoff.forwardedAt ? "A reporting leader forwarded a request to the School Guardian." : "Review the request or send a recommendation to the School Guardian.",
+      href: khposRecordHref(organisationId, "availability", handoff.caseId),
+      dueAt: handoff.forwardedAt ?? handoff.requestedAt,
+      actionLabel: "Review permission",
     });
   }
 
