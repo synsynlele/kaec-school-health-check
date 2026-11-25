@@ -17,7 +17,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 
-    const result = await deliverKhposPushReminders();
+    const category = new URL(request.url).searchParams.get("category");
+    if (category !== null && category !== "learner_attendance") {
+      return NextResponse.json({ ok: false }, { status: 400 });
+    }
+    const result = await deliverKhposPushReminders(category ?? undefined);
     return NextResponse.json(
       { ok: true, ...result },
       { headers: { "Cache-Control": "no-store" } },

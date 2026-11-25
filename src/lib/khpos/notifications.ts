@@ -1,3 +1,4 @@
+import { learnerRegisterAlerts } from "@/lib/khpos/ops/learner-register";
 import { getMeetingAlerts } from "@/lib/khpos/ops/meetings";
 import { getReportAlerts } from "@/lib/khpos/reports";
 import { getAnnouncementAlerts } from "@/lib/khpos/announcements";
@@ -42,7 +43,7 @@ export async function getKhposAlerts(
   // Attendance uses the existing authenticated, school-scoped presence service.
   // A disabled pilot, missing staff identity, or a completed check-in/out
   // produces no attendance reminder. Other operational alerts are unaffected.
-  const [attention, attendanceAlerts, announcementAlerts, reportAlerts, meetingAlerts, assessmentAlerts] = await Promise.all([
+  const [attention, attendanceAlerts, announcementAlerts, reportAlerts, meetingAlerts, assessmentAlerts, learnerAlerts] = await Promise.all([
     retryClockSkew(() => getKhposAttention(organisationId, userId, nowMs)),
     retryClockSkew(() =>
     getPresenceWorkspace(organisationId, userId)
@@ -82,6 +83,7 @@ export async function getKhposAlerts(
     getReportAlerts(organisationId, userId).catch(() => []),
     getMeetingAlerts(organisationId, userId, nowMs).catch(() => []),
     getAssessmentAlerts(organisationId, userId, lagosLocalDay(nowMs), nowMs).catch(() => []),
+    learnerRegisterAlerts(organisationId, userId, lagosLocalDay(nowMs)).catch(() => []),
   ]);
   const workAlerts: KhposAlert[] = attention.items
     .filter((item) => {
@@ -121,7 +123,7 @@ export async function getKhposAlerts(
         (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) -
           (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER),
     );
-  return [...assessmentAlerts, ...meetingAlerts, ...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
+  return [...learnerAlerts, ...assessmentAlerts, ...meetingAlerts, ...reportAlerts, ...announcementAlerts, ...attendanceAlerts, ...workAlerts].sort((a, b) =>
     Number(b.urgent) - Number(a.urgent) ||
     (Date.parse(a.dueAt ?? "") || Number.MAX_SAFE_INTEGER) - (Date.parse(b.dueAt ?? "") || Number.MAX_SAFE_INTEGER));
 }

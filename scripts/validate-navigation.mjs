@@ -176,7 +176,7 @@ if (!navigation.matchesSearch("/availability","Leave & cover","movement permissi
   throw new Error("Users must be able to search movement permission and find Leave & cover.");
 }
 const schoolDayArea = navigation.schoolAreas.find(area => area.routes[0] === "/teaching-presence");
-if (!schoolDayArea || schoolDayArea.routes.join(",") !== "/teaching-presence,/availability,/visitors") {
+if (!schoolDayArea || schoolDayArea.routes.join(",") !== "/teaching-presence,/availability,/visitors,/learner-register") {
   throw new Error("School-day attendance, movement and visitor register must remain together.");
 }
 const staffArea = navigation.schoolAreas.find(area => area.routes[0] === "/people");
@@ -186,7 +186,7 @@ if (staffArea?.routes.includes("/availability")) {
 if (navigation.navigationGroups.length !== 6) {
   throw new Error("More must present six task-based school areas.");
 }
-if (destinations.length !== 21) throw new Error("Expected 21 distinct main entrances, including School Finance.");
+if (destinations.length !== 22) throw new Error("Expected 22 distinct main entrances, including the learner register.");
 if (navigation.workspaceLinks.some(link => link.suffix === "")) throw new Error("Remove the School Overview entry from More.");
 if (!navigation.matchesSearch("/work", "Today", "school overview")) throw new Error("Users searching for the former overview must find Today.");
 const secondaryRoutes = navigation.schoolAreas.flatMap(area=>area.routes);
@@ -195,7 +195,7 @@ for (const area of navigation.schoolAreas) for (const route of area.routes) {
   if (navigation.primarySuffix(route)!==area.routes[0]) throw new Error(`Wrong area entrance for ${route}`);
 }
 if (!navigation.matchesSearch("/people","Staff","leave") || !navigation.matchesSearch("/potential-development","Learner development","skills")) throw new Error("Page search must find pages inside a work area.");
-if (navigation.workspaceLinks.length !== 41) throw new Error("Expected 41 unique school destinations including School Finance.");
+if (navigation.workspaceLinks.length !== 42) throw new Error("Expected 42 unique school destinations including the learner register.");
 for (const [route,term] of [
   ["/announcements","meetings"], ["/announcements","discussions"], ["/reports","checklists"],
   ["/calendar","events"], ["/parents","admissions"], ["/priorities","implementation"], ["/performance","learning"]
