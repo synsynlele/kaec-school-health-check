@@ -21,8 +21,8 @@ export function SchoolSectionTabs({
 }) {
   const ref = useActiveNavScroll<HTMLElement>(selected, '[aria-current="page"]');
   return (
-    <section aria-label={title + " sections"} className="mx-auto max-w-7xl px-4 pt-5 sm:px-6">
-      <div className="khpos-interface-card min-w-0 p-3 sm:p-4">
+    <section aria-label={title + " sections"} className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+      <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-100/70 p-3 sm:p-4">
         <p className="px-1 text-[11px] font-black uppercase tracking-[0.13em] text-slate-600">
           {title}
         </p>

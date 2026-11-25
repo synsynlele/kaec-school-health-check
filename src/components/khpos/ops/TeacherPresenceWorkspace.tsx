@@ -451,7 +451,12 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
               </>}
             </div>}
             {locationCapture.help}
-            <label className="mt-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
+            {data.staff && <details className="mt-4 border-t border-slate-200 pt-3 text-sm">
+              <summary className="cursor-pointer font-semibold text-brand-700">Add a location note (optional)</summary>
+              <label className="mt-2 block text-sm font-bold">Location explanation, for example an off-site duty
+                <input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/>
+              </label>
+            </details>}
           </section>
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Today&apos;s classes</h2>
