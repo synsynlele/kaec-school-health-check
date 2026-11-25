@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     }
 
     const category = new URL(request.url).searchParams.get("category");
-    if (category !== null && category !== "learner_attendance") {
+    if (category !== null && category !== "learner_attendance" && category !== "teacher_attendance") {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
     const result = await deliverKhposPushReminders(category ?? undefined);
