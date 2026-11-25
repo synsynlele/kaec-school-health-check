@@ -8,6 +8,8 @@ import {
 } from "@mmmike/web-push/send";
 import { generateVapidKeys } from "@mmmike/web-push/vapid";
 import { getKhposAlerts, pushEligibleAlerts } from "@/lib/khpos/notifications";
+import { learnerRegisterAlerts } from "@/lib/khpos/ops/learner-register";
+import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
 
 let service: SupabaseClient | undefined;
 
@@ -269,7 +271,7 @@ async function disableStoredSubscription(id: string) {
     .eq("id", id);
 }
 
-export async function deliverKhposPushReminders() {
+export async function deliverKhposPushReminders(category?: "learner_attendance") {
   const client = admin();
   const config = await pushConfig();
   const today = new Date().toISOString().slice(0, 10);
@@ -313,14 +315,14 @@ export async function deliverKhposPushReminders() {
       const scope = `${subscription.organisation_id}:${subscription.user_id}`;
       let alerts = alertsByUserSchool.get(scope);
       if (!alerts) {
-        alerts = await getKhposAlerts(
-          subscription.organisation_id,
-          subscription.user_id,
-        );
+        alerts = category
+          ? await learnerRegisterAlerts(subscription.organisation_id, subscription.user_id, lagosLocalDay(Date.now()))
+          : await getKhposAlerts(subscription.organisation_id, subscription.user_id);
         alertsByUserSchool.set(scope, alerts);
       }
 
       const candidates = pushEligibleAlerts(alerts)
+        .filter(alert => !category || alert.category === category)
         .filter(
           (alert) =>
             !alreadyDelivered.has(`${subscription.id}:${alert.id}`),

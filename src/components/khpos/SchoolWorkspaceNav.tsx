@@ -106,6 +106,7 @@ const operationsLinks = [
   { suffix: "/staff-transition", label: "Staff changes & leaving", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Teaching plans", icon: GraduationCap },
   { suffix: "/teaching-presence", label: "Attendance & lessons", icon: BookOpen },
+  { suffix: "/learner-register", label: "Learner register", icon: FileCheck2 },
   { suffix: "/visitors", label: "Gate & visitors", icon: ShieldCheck },
   { suffix: "/academic-assurance", label: "Assessments & exams", icon: ShieldCheck },
   { suffix: "/learner-progress", label: "Learner support", icon: UserRoundSearch },
@@ -157,7 +158,7 @@ const schoolAreas = [
   { title: "Meetings & updates", help: "Announcements, private meetings and staff discussions on one page.", routes: ["/announcements"] },
   { title: "Reports & forms", help: "Reports, forms and checklists in one workspace.", routes: ["/reports"] },
   { title: "Staff & roles", help: "Manage staff, roles, hiring and professional support.", routes: ["/people", "/team", "/onboarding", "/recruitment", "/staff-performance", "/staff-accountability", "/staff-transition"] },
-  { title: "School day & gate", help: "Sign in and out, record classes, request movement permission, and register visitors.", routes: ["/teaching-presence", "/availability", "/visitors"] },
+  { title: "School day & gate", help: "Sign in and out, record classes, request movement permission, and register visitors.", routes: ["/teaching-presence", "/availability", "/visitors", "/learner-register"] },
   { title: "Teaching & planning", help: "Calendar and events, lesson plans, assessments and learner support.", routes: ["/calendar", "/academic-delivery", "/academic-assurance", "/learner-progress"] },
   { title: "Learner development", help: "Record learners' interests, skills, projects and preparation for life after school.", routes: ["/potential-development", "/skills-development", "/leadership-financial", "/young-ceo", "/builder-projects", "/worldready", "/builders-council"] },
   { title: "Parents", help: "Current families, enquiries and admissions in one place.", routes: ["/parents"] },
@@ -168,7 +169,7 @@ const schoolAreas = [
 ] as const;
 const navigationGroups = [
   { title: "Work & approvals", icon: CheckCircle2, description: "Tasks that need a decision or follow-up", links: [operation("/issues"), operation("/decisions")] },
-  { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/availability"), operation("/visitors")] },
+  { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/learner-register"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
   { title: "School management", icon: Building2, description: "Finance, improvement, results and school settings", links: [byRoute("/financial-health"), byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
