@@ -8,7 +8,7 @@ import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
 type Teacher = { id: string; name: string; workdays: number[] | null; reportingTime: string | null;
   arrival: string | null; status: string; lateMinutes: number | null };
 type Campus = { id: string; name: string; teachers: Teacher[];
-  policy: { workdays: number[]; reporting_time: string; grace_minutes: number } | null };
+  policy: { workdays: number[]; reporting_time: string; grace_minutes: number; escalation_time: string } | null };
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const statuses: Record<string, string> = { off_duty: "Not expected on campus", missing: "Not signed in",
   late: "Late", present: "Present · confirmed by leadership", signed_in: "Signed in",
@@ -83,7 +83,7 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
     <form key={campus.id + JSON.stringify(campus.policy)} className="space-y-2" onSubmit={event => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
-      void save("policy", { workdays: data.getAll("workday").map(Number), time: data.get("time"), grace: data.get("grace") });
+      void save("policy", { workdays: data.getAll("workday").map(Number), time: data.get("time"), grace: data.get("grace"), escalationTime: data.get("escalation") });
     }}>
       <h3 className="font-semibold">Campus defaults</h3>
       <Workdays days={campus.policy?.workdays ?? [1,2,3,4,5]} />
@@ -94,9 +94,13 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
         <label className="grid gap-1">Grace minutes
           <input type="number" className={field} name="grace" min={0} max={120} defaultValue={campus.policy?.grace_minutes ?? 0} required />
         </label>
+        <label className="grid gap-1">Leadership alert time (Lagos)
+          <input type="time" className={field} name="escalation" defaultValue={campus.policy?.escalation_time?.slice(0,5) ?? "10:00"} required />
+        </label>
         <button className={button} disabled={busy}>Save campus defaults</button>
       </div>
     </form>
+    <p className="text-sm">Reporting time and grace determine lateness. Leadership alerts start at the alert time or when the teacher’s grace period ends, whichever is later.</p>
     {!campus.policy && <p>Save campus defaults to enable teacher attendance alerts.</p>}
     {campus.policy && campus.teachers.map(teacher => <details className="rounded-lg border p-3" key={teacher.id}>
       <summary className="cursor-pointer font-medium">{teacher.name} · {statuses[teacher.status]}
