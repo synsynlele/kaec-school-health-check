@@ -287,11 +287,11 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
         method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
         body:JSON.stringify({mode,...payload})
       });
-      const body=await response.json() as {ok?:boolean;error?:string;workspace?:KhposPresenceWorkspace;alreadyRecorded?:boolean};
+      const body=await response.json() as {ok?:boolean;error?:string;workspace?:KhposPresenceWorkspace;alreadyRecorded?:boolean;checkInNotice?:string};
       if(!response.ok||!body.ok)throw new Error(body.error??"The request could not be completed.");
       if(body.workspace)setData(body.workspace);
       setAttendanceRevision(v=>v+1);
-      setNotice(body.alreadyRecorded ? (mode === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") : label);
+      setNotice(body.checkInNotice ?? (body.alreadyRecorded ? (mode === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") : label));
       announceKhposActivityChanged(organisationId);
       return true;
     }catch(e){setError(e instanceof Error?e.message:"Unable to complete action.");}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { ActionFeedback } from "./ActionFeedback";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 type Phase = "morning" | "closing" | "release";
@@ -35,6 +36,7 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
   const [date, setDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [release, setRelease] = useState<{ learner: Learner; mark: "released" | "left_early" }>();
   const call = useCallback(async (action: string, input: object = {}) => {
     const session = (await createBrowserSupabaseClient()?.auth.getSession())?.data.session;
@@ -77,14 +79,18 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
     return group(learner) === selectedClass;
   }) ?? [];
 
-  async function save(action: string, input: object) {
-    if (!campus || busy || readOnly) return;
+  async function save(action: string, input: object = {}) {
+    if (!campus || busy || (readOnly && action !== "refresh")) return;
     setBusy(true);
     setError("");
+    setNotice(action === "refresh" ? "Refreshing the register…" : "Saving the register…");
     try {
-      await call(action, { ...input, campus: campus.id, day: roster?.day });
-      setRelease(undefined);
+      if (action !== "refresh") {
+        await call(action, { ...input, campus: campus.id, day: roster?.day });
+        setRelease(undefined);
+      }
       await refresh();
+      setNotice(action === "refresh" ? "Register refreshed." : "Register updated.");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the register.");
     } finally {
@@ -104,7 +110,7 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
       <p className="text-sm text-slate-600">Take the morning roll, then confirm learners at closing and record their release.</p>
       {roster && <p className="mt-1 text-sm">{roster.day}</p>}
     </header>
-    {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-900">{error}</p>}
+    <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!campus && roster && <p>No assigned learner roster is available.</p>}
     {campus && <>
       <div className="flex flex-wrap items-end gap-3">
@@ -128,7 +134,7 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
             <option value="unaccounted">Unaccounted for at closing</option>
           </select>
         </label>
-        <button type="button" className={button} disabled={busy} onClick={() => void refresh().catch(error => setError(error.message))}>Refresh</button>
+        <button type="button" className={button} disabled={busy} onClick={() => void save("refresh")}>Refresh</button>
       </div>
       {campus.guardian && !readOnly && <form key={campus.id} className="flex flex-wrap items-end gap-2" onSubmit={event => {
         event.preventDefault();
