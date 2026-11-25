@@ -1,4 +1,6 @@
 "use client";
+import { useRecordFocus } from "./useRecordFocus";
+import { khposRecordAnchor } from "@/lib/khpos/ops/record-links";
 
 import { actionDestination } from "@/components/khpos/actionDestination";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
@@ -11,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
+import { LinkPending } from "@/components/navigation/LinkPending";
 import {
   ArrowLeft,
   CalendarClock,
@@ -131,6 +134,8 @@ export function AvailabilityWorkspace({
     (e) => e.startAt,
     undefined,
   );
+
+  useRecordFocus(!!workspace);
 
   async function token() {
     if (!supabase) return null;
@@ -308,6 +313,7 @@ export function AvailabilityWorkspace({
   async function caseAction(
     availabilityCase: KhposOpsAvailabilityCase,
     action:
+      | "forward_guardian"
       | "approve"
       | "decline"
       | "cancel"
@@ -317,6 +323,10 @@ export function AvailabilityWorkspace({
       | "close",
   ) {
     const note = caseNotes[availabilityCase.id]?.trim() || "";
+    if (action === "forward_guardian" && !note) {
+      setError("Add your recommendation before sending this request to the School Guardian.");
+      return;
+    }
     if (action === "decline" && !note) {
       setError("Add a reason before declining planned leave.");
       return;
@@ -470,8 +480,11 @@ export function AvailabilityWorkspace({
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-100 sm:text-base">
                 Request leave, report an absence or plan a temporary outing. Leaders approve leave,
-                arrange cover and confirm when staff return. School arrival records remain separate.
+                arrange cover and confirm when staff return.
               </p>
+              <Link href={`/khpos/${organisationId}/decisions`} className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-bold">
+                Request another school decision <LinkPending />
+              </Link>
             </div>
 
             {workspace.staffOptions.length > 0 && (
@@ -791,7 +804,9 @@ export function AvailabilityWorkspace({
                   return (
                     <article
                       key={availabilityCase.id}
-                      className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
+                      id={khposRecordAnchor("availability", availabilityCase.id)}
+                      tabIndex={-1}
+                      className="scroll-mt-24 target:ring-4 target:ring-brand-300 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
                     >
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
@@ -880,7 +895,7 @@ export function AvailabilityWorkspace({
                       {(availabilityCase.isSelf ||
                         availabilityCase.canReview) && (
                         <div className="mt-5">
-                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Decision / return / closure note when required</span><textarea
+                          <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Recommendation for Guardian, decision, return or closure note</span><textarea
                             value={note}
                             onChange={(event) =>
                               setCaseNotes((current) => ({
@@ -890,13 +905,24 @@ export function AvailabilityWorkspace({
                             }
                             maxLength={2000}
                             className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
-                            placeholder="Decision / return / closure note when required"
+                            placeholder="Recommendation for Guardian, decision, return or closure note"
                           /></label>
                         </div>
                       )}
 
+                      {availabilityCase.handoff?.forwardedAt && <div className="mt-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
+                        <p className="font-bold">{availabilityCase.handoff.pending ? "Awaiting School Guardian decision" : "Forwarded to School Guardian"}</p>
+                        {availabilityCase.handoff.note && <p className="mt-1 whitespace-pre-wrap">{availabilityCase.handoff.note}</p>}
+                      </div>}
                       <div className="mt-4 flex flex-wrap gap-2">
+                        {availabilityCase.handoff?.canForward && <button type="button"
+                          disabled={Boolean(busyId)}
+                          onClick={() => void caseAction(availabilityCase, "forward_guardian")}
+                          className="rounded-full bg-brand-700 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
+                          Send to School Guardian
+                        </button>}
                         {availabilityCase.canReview &&
+                          (!availabilityCase.handoff?.forwardedAt || availabilityCase.handoff.canDecide) &&
                           availabilityCase.status === "pending_approval" && (
                             <>
                               <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-700">

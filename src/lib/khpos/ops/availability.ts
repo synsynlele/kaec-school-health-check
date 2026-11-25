@@ -111,6 +111,7 @@ export interface KhposOpsAvailabilityCase {
   isSelf: boolean;
   canReview: boolean;
   isCoverer: boolean;
+  handoff?: AvailabilityHandoff;
   coverage: KhposOpsCoverageAssignment[];
   history: KhposOpsAvailabilityEvent[];
 }
@@ -172,6 +173,22 @@ function statusFor(message: string | undefined) {
       : 400;
 }
 
+interface AvailabilityHandoff {
+  caseId: string;
+  requestedAt: string;
+  forwardedAt: string | null;
+  pending: boolean;
+  canDecide: boolean;
+  canForward: boolean;
+  note: string | null;
+}
+
+export async function getAvailabilityHandoffs(school: string, actor: string, onlyPending: boolean): Promise<AvailabilityHandoff[]> {
+  const { data, error } = await admin().rpc("khpos_availability_handoffs_server", { actor, school, only_pending: onlyPending });
+  if (error) throw new KhposOpsAvailabilityError(error.message, statusFor(error.message));
+  return data as AvailabilityHandoff[];
+}
+
 export async function getKhposOpsAvailability(
   organisationId: string,
   userId: string,
@@ -191,7 +208,10 @@ export async function getKhposOpsAvailability(
     );
   }
 
-  return data as unknown as KhposOpsAvailabilityWorkspace;
+  const workspace = data as unknown as KhposOpsAvailabilityWorkspace;
+  const handoffs = new Map((await getAvailabilityHandoffs(organisationId, userId, false)).map(handoff => [handoff.caseId, handoff]));
+  workspace.cases = workspace.cases.map(entry => ({ ...entry, handoff: handoffs.get(entry.id) }));
+  return workspace;
 }
 
 export async function createKhposOpsAvailabilityCase(
@@ -231,6 +251,7 @@ export async function actOnKhposOpsAvailabilityCase(
   input: {
     caseId: string;
     action:
+      | "forward_guardian"
       | "approve"
       | "decline"
       | "cancel"
@@ -243,14 +264,14 @@ export async function actOnKhposOpsAvailabilityCase(
   },
 ): Promise<KhposOpsAvailabilityWorkspace> {
   const { error } = await admin().rpc(
-    "khpos_ops_availability_action_server",
+    "khpos_availability_handoff_action_server",
     {
-      p_actor_user_id: userId,
-      p_organisation_id: organisationId,
-      p_case_id: input.caseId,
-      p_action: input.action,
-      p_note: input.note ?? null,
-      p_coverage_required: input.coverageRequired ?? null,
+      actor: userId,
+      school: organisationId,
+      request_id: input.caseId,
+      action: input.action,
+      note: input.note ?? null,
+      coverage: input.coverageRequired ?? null,
     },
   );
 

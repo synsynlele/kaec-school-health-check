@@ -200,6 +200,7 @@ export async function POST(
       UUID_RE.test(payload.caseId) &&
       payload.action &&
       [
+        "forward_guardian",
         "approve",
         "decline",
         "cancel",
@@ -212,6 +213,7 @@ export async function POST(
       const availability = await actOnKhposOpsAvailabilityCase(id, user.id, {
         caseId: payload.caseId,
         action: payload.action as
+          | "forward_guardian"
           | "approve"
           | "decline"
           | "cancel"

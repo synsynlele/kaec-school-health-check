@@ -36,7 +36,7 @@ const service = read("src/lib/khpos/ops/availability.ts");
 for (const expected of [
   "khpos_ops_get_availability_server",
   "khpos_ops_create_availability_case_server",
-  "khpos_ops_availability_action_server",
+  "khpos_availability_handoff_action_server",
   "khpos_ops_assign_coverage_server",
   "khpos_ops_coverage_action_server",
   "SUPABASE_SERVICE_ROLE_KEY",
