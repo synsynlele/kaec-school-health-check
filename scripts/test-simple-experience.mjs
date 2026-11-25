@@ -26,8 +26,8 @@ vm.runInNewContext(compile('src/components/khpos/SchoolWorkspaceNav.tsx')+'\nexp
 }});
 function nodes(n){return !n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];}
 const n=exports.navigation;
-assert.equal(n.workspaceLinks.length,41);
-const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,21);assert.equal(new Set(primary.map(x=>x.suffix)).size,21);
+assert.equal(n.workspaceLinks.length,42);
+const primary=[...n.dailyLinks,...n.navigationGroups.flatMap(g=>g.links)];assert.equal(primary.length,22);assert.equal(new Set(primary.map(x=>x.suffix)).size,22);
 assert(!n.workspaceLinks.some(x=>x.suffix===""),'School Overview must not appear in More');
 assert(n.matchesSearch('/work','Today','school overview'),'Search for old School Overview leads to Today');
 for(const link of n.workspaceLinks){const entrance=n.primarySuffix(link.suffix);assert(primary.some(x=>x.suffix===entrance),`Lost ${link.suffix}`);}
