@@ -432,6 +432,11 @@ export function PeopleWorkspace({
               </p>
             </div>
 
+            {workspace.canManagePeople && <Link
+              href={`/khpos/${organisationId}/teaching-presence?tab=leaders#teacher-attendance`}
+              className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-3 text-sm font-bold text-white"
+            >Teacher workdays &amp; sign-in</Link>}
+
             {workspace.canManagePeople && (
               <button
                 type="button"
