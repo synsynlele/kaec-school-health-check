@@ -26,15 +26,15 @@ export default async function Page({
   const initialMeeting = UUID_RE.test(meetingId) ? meetingId : "";
   return (
     <>
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "meetings" ? (<MeetingsWorkspace organisationId={organisationId} initialMeeting={initialMeeting} />) : (selected === "ideas" ? (<IdeasBoard scope={organisationId} />) : (<AnnouncementsWorkspace key={organisationId} organisationId={organisationId} />))}
+      </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/announcements"}
         title="Meetings & updates"
         selected={selected}
         tabs={[{"view":"","label":"Announcements"},{"view":"meetings","label":"Private meetings"},{"view":"ideas","label":"Discussions"}]}
       />
-      <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "meetings" ? (<MeetingsWorkspace organisationId={organisationId} initialMeeting={initialMeeting} />) : (selected === "ideas" ? (<IdeasBoard scope={organisationId} />) : (<AnnouncementsWorkspace key={organisationId} organisationId={organisationId} />))}
-      </div>
     </>
   );
 }

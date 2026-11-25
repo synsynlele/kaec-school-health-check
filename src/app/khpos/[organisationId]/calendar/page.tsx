@@ -23,15 +23,15 @@ export default async function Page({
   const selected = ["events"].includes(requested) ? requested : "";
   return (
     <>
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace organisationId={organisationId} />)}
+      </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/calendar"}
         title="Calendar & events"
         selected={selected}
         tabs={[{"view":"","label":"Calendar"},{"view":"events","label":"Events & programmes"}]}
       />
-      <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace organisationId={organisationId} />)}
-      </div>
     </>
   );
 }

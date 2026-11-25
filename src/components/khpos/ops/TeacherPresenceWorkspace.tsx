@@ -11,7 +11,7 @@ import { ActionFeedback } from "./ActionFeedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { announceKhposActivityChanged, KHPOS_ACTIVITY_CHANGED } from "@/lib/khpos/ops/action-events";
-import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, School, UsersRound } from "lucide-react";
+import { BookOpenCheck, CalendarClock, CheckCircle2, ClipboardCheck, School, UsersRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { KhposOpsAcademicDeliveryWorkspace } from "@/lib/khpos/ops/academic-delivery";
 import type { KhposHqlsDomain } from "@/lib/khpos/ops/presence";
@@ -390,10 +390,6 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   return <div className="min-h-screen bg-slate-50 px-4 py-7 sm:px-7">
     {locationCapture.dialog}
     <div className="mx-auto max-w-6xl space-y-5">
-      {locationCapture.help}
-      <Link href={"/khpos/"+organisationId+"/work"} className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-        <ArrowLeft className="size-4"/> Today
-      </Link>
       <div className="khpos-hero rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-300"><BookOpenCheck className="size-4"/> SCHOOL ATTENDANCE & LESSONS</div>
         <h1 className="text-2xl font-black sm:text-4xl">My school day</h1>
@@ -432,7 +428,6 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Your school arrival and departure</h2>
             <p className="mb-4 text-sm text-slate-600">Arrival and departure save server time and request one location reading, with your permission. Your supervisors can view the coordinates and accuracy. No background tracking. If GPS fails, explain why and still record attendance. Your classes are recorded separately.</p>
-            <label className="mb-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
             {!data.staff?<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">An active staff identity is needed. Ask your school leader to complete Staff onboarding.</p>
             :<div className="space-y-3">
               <p className="text-sm"><b>Staff member:</b> {data.staff.name}</p>
@@ -455,13 +450,8 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                   className="w-full rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:opacity-50">Record School Check-in</button>
               </>}
             </div>}
-            <div className="mt-5 border-t border-slate-200 pt-4">
-              <h3 className="font-black text-slate-900">Visitors sign-in and sign-out</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Visitors check themselves in on the school tablet. An authorised staff member confirms entry, records departures and reviews the visitor register.</p>
-              <Link href={`/khpos/${organisationId}/visitors`} className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100">
-                Open Gate & Visitors
-              </Link>
-            </div>
+            {locationCapture.help}
+            <label className="mt-3 block text-sm font-bold">Location explanation (optional, for example an off-site duty)<input maxLength={500} className={field+" mt-1 !text-base"} value={locationNote} onChange={e=>setLocationNote(e.target.value)}/></label>
           </section>
           <section className={box}>
             <h2 className="mb-2 text-xl font-black text-slate-900">Today&apos;s classes</h2>
@@ -475,7 +465,6 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           </section>
         </div>}
 
-        {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         {tab==="lessons"&&<div className="space-y-4">
           {canSchedule&&scheduleConflicts.length>0&&<section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Timetable conflict and group review">
             <h2 className="text-lg font-black text-amber-950">Timetable checks</h2>
@@ -860,6 +849,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
 
           </details>
         </div>}
+        {tab==="day"&&<CampusLocationPanel school={organisationId}/>}
         </>}
       </>}
     </div>

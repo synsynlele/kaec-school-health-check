@@ -27,15 +27,15 @@ export default async function Page({
   const selected = ["campuses", "compare", "learning", "development", "brief"].includes(requested) ? requested : "";
   return (
     <>
+      <div id="khpos-section-content" tabIndex={-1}>
+        {selected === "campuses" ? (<ExtendedWorkspace organisationId={organisationId} type="network-pulse" />) : (selected === "compare" ? (<BenchmarkingWorkspace organisationId={organisationId} />) : (selected === "learning" ? (<LearningIntelligenceWorkspace organisationId={organisationId} />) : (selected === "development" ? (<HumanPotentialIntelligenceWorkspace organisationId={organisationId} />) : (selected === "brief" ? (<LeadershipBriefWorkspace organisationId={organisationId} />) : (<PerformanceWorkspace organisationId={organisationId} />)))))}
+      </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/performance"}
         title="School results"
         selected={selected}
         tabs={[{"view":"","label":"Overview"},{"view":"campuses","label":"Campus summary"},{"view":"compare","label":"Comparisons"},{"view":"learning","label":"Learning summary"},{"view":"development","label":"Development summary"},{"view":"brief","label":"Meeting brief"}]}
       />
-      <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "campuses" ? (<ExtendedWorkspace organisationId={organisationId} type="network-pulse" />) : (selected === "compare" ? (<BenchmarkingWorkspace organisationId={organisationId} />) : (selected === "learning" ? (<LearningIntelligenceWorkspace organisationId={organisationId} />) : (selected === "development" ? (<HumanPotentialIntelligenceWorkspace organisationId={organisationId} />) : (selected === "brief" ? (<LeadershipBriefWorkspace organisationId={organisationId} />) : (<PerformanceWorkspace organisationId={organisationId} />)))))}
-      </div>
     </>
   );
 }
