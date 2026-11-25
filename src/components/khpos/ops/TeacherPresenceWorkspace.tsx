@@ -5,6 +5,7 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
 import { calendarPauses, calendarPauseForDay, nextRegularLessonDay, openClassToday, missedClassCheckouts } from "@/lib/khpos/ops/attendance-guidance";
 
+import { TeacherAttendanceSettings } from "./TeacherAttendanceSettings";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -752,6 +753,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           </section>
         </div>}
         {tab==="leaders"&&<div className="space-y-5">
+          <TeacherAttendanceSettings organisationId={organisationId} />
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">School Day — leadership overview</h2>
             <p className="mt-2 text-sm text-slate-600">School attendance and class lesson attendance are separate events. Times below show when they were actually recorded in Nigeria (Africa/Lagos); they are not scheduled arrival or departure times.</p>

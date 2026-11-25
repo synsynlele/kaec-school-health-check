@@ -8,6 +8,7 @@ import {
 } from "@mmmike/web-push/send";
 import { generateVapidKeys } from "@mmmike/web-push/vapid";
 import { getKhposAlerts, pushEligibleAlerts } from "@/lib/khpos/notifications";
+import { teacherAttendanceAlerts } from "@/lib/khpos/ops/teacher-attendance";
 import { learnerRegisterAlerts } from "@/lib/khpos/ops/learner-register";
 import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
 
@@ -271,7 +272,7 @@ async function disableStoredSubscription(id: string) {
     .eq("id", id);
 }
 
-export async function deliverKhposPushReminders(category?: "learner_attendance") {
+export async function deliverKhposPushReminders(category?: "learner_attendance" | "teacher_attendance") {
   const client = admin();
   const config = await pushConfig();
   const today = new Date().toISOString().slice(0, 10);
@@ -316,7 +317,9 @@ export async function deliverKhposPushReminders(category?: "learner_attendance")
       let alerts = alertsByUserSchool.get(scope);
       if (!alerts) {
         alerts = category
-          ? await learnerRegisterAlerts(subscription.organisation_id, subscription.user_id, lagosLocalDay(Date.now()))
+          ? await (category === "teacher_attendance" ? teacherAttendanceAlerts : learnerRegisterAlerts)(
+              subscription.organisation_id, subscription.user_id, lagosLocalDay(Date.now()),
+            )
           : await getKhposAlerts(subscription.organisation_id, subscription.user_id);
         alertsByUserSchool.set(scope, alerts);
       }
