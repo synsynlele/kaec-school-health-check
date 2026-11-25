@@ -1,3 +1,4 @@
+import { teacherAttendance } from "@/lib/khpos/ops/teacher-attendance";
 import { NextResponse } from "next/server";
 import { UUID_RE } from "@/lib/http";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
@@ -81,7 +82,18 @@ export async function POST(request: Request, context: { params: Promise<{ id:str
       if (JSON.stringify(body).length>12000) throw new KhposPresenceError("Observation notes are too long.");
     }
     const recorded = await actOnPresence(id,user.id,body.mode,body);
-    return NextResponse.json({ok:true,workspace:recorded ?? await getPresenceWorkspace(id,user.id),alreadyRecorded:Boolean(recorded)},
+    const workspace = recorded ?? await getPresenceWorkspace(id,user.id);
+    let checkInNotice: string | undefined;
+    if (body.mode === "school_in" && workspace.todayPresence) {
+      const result = await teacherAttendance(user.id, id, "self", {
+        campus: workspace.todayPresence.campusId,
+      }).catch(() => null);
+      const minutes = result?.data?.[0]?.teachers?.[0]?.lateMinutes;
+      if (typeof minutes === "number" && minutes > 0) {
+        checkInNotice = `School check-in recorded. You signed in ${minutes} minute${minutes === 1 ? "" : "s"} after your reporting time and were marked late.`;
+      }
+    }
+    return NextResponse.json({ok:true,workspace,alreadyRecorded:Boolean(recorded),checkInNotice},
       {headers:{"Cache-Control":"private, no-store"}});
   } catch(cause) { return responseError(cause); }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionFeedback } from "./ActionFeedback";
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { lagosLocalDay } from "@/lib/khpos/ops/attendance-guidance";
@@ -28,7 +29,8 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [campusId, setCampusId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [notice, setNotice] = useState("");
   const [day, setDay] = useState("");
   const call = useCallback(async (action: string, input: object = {}) => {
     const session = (await createBrowserSupabaseClient()?.auth.getSession())?.data.session;
@@ -46,7 +48,7 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
     let active = true;
     call("list").then(data => {
       if (active) { setCampuses(data); setDay(lagosLocalDay(Date.now())); }
-    }).catch(error => { if (active) setFeedback(error.message); });
+    }).catch(error => { if (active) setErrorMessage(error.message); });
     return () => { active = false; };
   }, [call]);
 
@@ -54,20 +56,21 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
   async function save(action: string, input: object) {
     if (!campus || busy) return;
     setBusy(true);
-    setFeedback("");
+    setErrorMessage("");
+    setNotice("Saving teacher attendance…");
     try {
       await call(action, { ...input, campus: campus.id, day });
       setCampuses(await call("list"));
       setDay(lagosLocalDay(Date.now()));
-      setFeedback("Saved.");
+      setNotice("Teacher attendance updated.");
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Could not save attendance.");
+      setErrorMessage(error instanceof Error ? error.message : "Could not save attendance.");
     } finally {
       setBusy(false);
     }
   }
 
-  if (!campus) return feedback ? <p role="status">{feedback}</p> : null;
+  if (!campus) return errorMessage ? <p role="alert">{errorMessage}</p> : null;
   return <section id="teacher-attendance" className="scroll-mt-24 space-y-4 rounded-2xl border bg-white p-4 text-slate-900">
     <h2 className="text-lg font-bold">Teacher workdays & sign-in</h2>
     <p className="text-sm">Set the days teachers are expected on campus, including days without lessons.</p>
@@ -76,7 +79,7 @@ export function TeacherAttendanceSettings({ organisationId }: { organisationId: 
         {campuses.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}
       </select>
     </label>
-    {feedback && <p role="status">{feedback}</p>}
+    <ActionFeedback busy={busy} error={errorMessage} notice={notice} onDismiss={() => { setErrorMessage(""); setNotice(""); }} />
     <form key={campus.id + JSON.stringify(campus.policy)} className="space-y-2" onSubmit={event => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);

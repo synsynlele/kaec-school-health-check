@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RecordQueueTabs, useRecordQueue } from "./RecordQueue";
 import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch";
 import Link from "next/link";
+import { LinkPending } from "@/components/navigation/LinkPending";
 import { StaffPositionsPanel } from "./StaffPositionsPanel";
 import { useRouter } from "next/navigation";
 import {
@@ -434,8 +435,8 @@ export function PeopleWorkspace({
 
             {workspace.canManagePeople && <Link
               href={`/khpos/${organisationId}/teaching-presence?tab=leaders#teacher-attendance`}
-              className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-3 text-sm font-bold text-white"
-            >Teacher workdays &amp; sign-in</Link>}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-bold text-white"
+            >Teacher workdays &amp; sign-in <LinkPending /></Link>}
 
             {workspace.canManagePeople && (
               <button

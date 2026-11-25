@@ -193,13 +193,13 @@ export function TodayAttendanceCard({ organisationId }: { organisationId: string
         body: JSON.stringify({ mode: kind, ...(location ? { location } : {}), ...(kind === "school_in" ? { campusId } : {}),
           ...(periodId ? { periodId } : {}), ...lesson }),
       });
-      const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string; alreadyRecorded?: boolean };
+      const body = await response.json() as { ok?: boolean; workspace?: KhposPresenceWorkspace; error?: string; alreadyRecorded?: boolean; checkInNotice?: string };
       if (!response.ok || !body.ok || !body.workspace) throw new Error(body.error || "Attendance could not be recorded.");
       setPresence(body.workspace);
       setNowMs(Date.now());
-      setNotice(body.alreadyRecorded ? (kind === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") :
+      setNotice(body.checkInNotice ?? (body.alreadyRecorded ? (kind === "class_out" ? "Class check-out was already recorded." : "Class check-in was already recorded.") :
         kind === "school_in" ? "School arrival saved with date and time." :
-        kind === "school_out" ? "School departure saved with date and time." : kind === "class_out" ? "Class finish saved." : "Class start saved with date and time.");
+        kind === "school_out" ? "School departure saved with date and time." : kind === "class_out" ? "Class finish saved." : "Class start saved with date and time."));
       announceKhposActivityChanged(organisationId);
     } catch (cause) {
       setNotice("");
