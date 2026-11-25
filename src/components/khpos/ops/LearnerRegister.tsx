@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { LearnerAttendanceHistory } from "./LearnerAttendanceHistory";
 import { ActionFeedback } from "./ActionFeedback";
 import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 
@@ -34,6 +35,11 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
   const [filter, setFilter] = useState(initialFilter === "absent" || initialFilter === "unaccounted" ? initialFilter : "all");
   const [phase, setPhase] = useState<"morning" | "closing">(initialCampus ? "closing" : "morning");
   const [date, setDate] = useState("");
+  const [view, setView] = useState<"daily" | "history">("daily");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("name");
+  const [size, setSize] = useState(20);
+  const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,7 +68,8 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
     return () => { active = false; };
   }, [call, date]);
 
-  const readOnly = Boolean(roster && (roster.day !== roster.today || (date && date !== roster.day)));
+  const dateLoading = Boolean(roster && (date || roster.today) !== roster.day);
+  const readOnly = Boolean(roster && (roster.day !== roster.today || dateLoading));
   const campus = roster?.campuses.find(item => item.id === campusId) ?? roster?.campuses[0];
   const group = (learner: Learner) => [learner.class, learner.section].filter(Boolean).join(" · ");
   const classes = [...new Set(campus?.learners.map(group))];
@@ -71,13 +78,26 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
   const assignment = campus?.assignments.find(item =>
     item.class === selectedLearner?.class.toLowerCase() &&
     item.section === (selectedLearner?.section ?? "").toLowerCase());
-  const learners = campus?.learners.filter(learner => {
+  const learners = !dateLoading ? campus?.learners.filter(learner => {
     if (filter === "absent") {
       return learner.marks.morning?.mark === "absent" && learner.marks.closing?.mark !== "present" && !learner.marks.release;
     }
     if (filter === "unaccounted") return learner.marks.closing?.mark === "unaccounted" && !learner.marks.release;
     return group(learner) === selectedClass;
-  }) ?? [];
+  }) ?? [] : [];
+
+  const shown = learners.filter(learner => learner.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  shown.sort((a, b) => {
+    if (sort === "status") {
+      const first = a.marks[phase]?.mark ?? "";
+      const second = b.marks[phase]?.mark ?? "";
+      return first.localeCompare(second) || a.name.localeCompare(b.name);
+    }
+    return sort === "name_desc" ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+  });
+  const pages = Math.max(1, Math.ceil(shown.length / size));
+  const currentPage = Math.min(page, pages);
+  const pageStart = (currentPage - 1) * size;
 
   async function save(action: string, input: object = {}) {
     if (!campus || busy || (readOnly && action !== "refresh")) return;
@@ -108,47 +128,55 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
     <header>
       <h1 className="text-2xl font-semibold">Learner register</h1>
       <p className="text-sm text-slate-600">Take the morning roll, then confirm learners at closing and record their release.</p>
-      {roster && <p className="mt-1 text-sm">{roster.day}</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button className={button} disabled={busy || Boolean(release)} aria-pressed={view === "daily"} onClick={() => setView("daily")}>Daily register</button>
+        <button className={button} disabled={busy || Boolean(release)} aria-pressed={view === "history"} onClick={() => setView("history")}>Attendance history</button>
+      </div>
     </header>
     <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!campus && roster && <p>No assigned learner roster is available.</p>}
     {campus && <>
       <div className="flex flex-wrap items-end gap-3">
-        <label className="grid gap-1 text-sm">Date
-          <input type="date" className={field} value={date || roster?.today || ""} max={roster?.today} disabled={busy || Boolean(release)} onChange={event => setDate(event.target.value)} />
-        </label>
+        {view === "daily" && <label className="grid gap-1 text-sm">Date
+          <input type="date" className={field} value={date || roster?.today || ""} max={roster?.today} disabled={busy || Boolean(release)} onChange={event => { setError(""); setDate(event.target.value); setPage(1); }} />
+        </label>}
         <label className="grid gap-1 text-sm">Campus
-          <select className={field} disabled={busy || Boolean(release)} value={campus.id} onChange={event => setCampus(event.target.value)}>
+          <select className={field} disabled={busy || Boolean(release)} value={campus.id} onChange={event => { setCampus(event.target.value); setClass(""); setPage(1); }}>
             {roster?.campuses.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
         </label>
         <label className="grid gap-1 text-sm">Class
-          <select className={field} disabled={busy || Boolean(release) || filter !== "all"} value={selectedClass} onChange={event => setClass(event.target.value)}>
+          <select className={field} disabled={busy || Boolean(release) || (view === "daily" && filter !== "all")} value={selectedClass} onChange={event => { setClass(event.target.value); setPage(1); }}>
             {classes.map(item => <option key={item}>{item}</option>)}
           </select>
         </label>
-        <label className="grid gap-1 text-sm">Show
-          <select className={field} disabled={busy || Boolean(release)} value={filter} onChange={event => setFilter(event.target.value)}>
+        {view === "daily" && <><label className="grid gap-1 text-sm">Show
+          <select className={field} disabled={busy || Boolean(release)} value={filter} onChange={event => { setFilter(event.target.value); setPage(1); }}>
             <option value="all">Selected class</option>
             <option value="absent">Learners marked absent</option>
             <option value="unaccounted">Unaccounted for at closing</option>
           </select>
         </label>
-        <button type="button" className={button} disabled={busy} onClick={() => void save("refresh")}>Refresh</button>
+        <button type="button" className={button} disabled={busy} onClick={() => void save("refresh")}>Refresh</button></>}
       </div>
-      {campus.guardian && !readOnly && <form key={campus.id} className="flex flex-wrap items-end gap-2" onSubmit={event => {
+      {view === "history" && selectedLearner && roster && <LearnerAttendanceHistory
+        key={campus.id + selectedClass} call={call} campus={campus.id} classLabel={selectedLearner.class}
+        section={selectedLearner.section} today={roster.today}
+        onOpenDay={day => { setDate(day); setFilter("all"); setPage(1); setView("daily"); }} />}
+      {view === "history" && !selectedLearner && <p>No class roster is available.</p>}
+      {view === "daily" && <>
+      {campus.guardian && !readOnly && <details className="space-y-3 rounded-xl border p-3">
+        <summary className="cursor-pointer font-medium">Register settings</summary>
+      <form key={campus.id} className="flex flex-wrap items-end gap-2" onSubmit={event => {
         event.preventDefault();
         void save("schedule", { closesAt: new FormData(event.currentTarget).get("closing") });
       }}>
-        <label className="grid gap-1 text-sm">Date
-          <input type="date" className={field} value={date || roster?.today || ""} max={roster?.today} disabled={busy || Boolean(release)} onChange={event => setDate(event.target.value)} />
-        </label>
         <label className="grid gap-1 text-sm">Campus closing time (Lagos)
           <input type="time" className={field} name="closing" defaultValue={campus.closesAt?.slice(0, 5)} required />
         </label>
         <button className={button} disabled={busy}>Save closing time</button>
-      </form>}
-      {campus.guardian && !readOnly && selectedLearner && <form
+      </form>
+      {selectedLearner && <form
         key={[campus.id, selectedClass, assignment?.teacher, assignment?.backup].join(":")}
         className="flex flex-wrap items-end gap-2 rounded-lg border p-3"
         onSubmit={event => {
@@ -175,6 +203,7 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
         <button className={button} disabled={busy || !campus.teachers.length}>Save assignment</button>
         {!campus.teachers.length && <p className="basis-full text-sm">Appoint a teacher to this campus in Staff & roles first.</p>}
       </form>}
+      </details>}
       <div className="flex gap-2">
         <button className={button} aria-pressed={phase === "morning"} onClick={() => setPhase("morning")}>Morning roll</button>
         <button className={button} aria-pressed={phase === "closing"} onClick={() => setPhase("closing")}>Closing & release</button>
@@ -190,8 +219,23 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
         <button className={button} disabled={busy}>Confirm actual release</button>{" "}
         <button type="button" className={button} disabled={busy} onClick={() => setRelease(undefined)}>Cancel</button>
       </form>}
+      <div className="flex flex-wrap gap-3">
+        <label className="grid flex-1 gap-1 text-sm">Search learners
+          <input className={field} type="search" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        </label>
+        <label className="grid gap-1 text-sm">Sort
+          <select className={field} value={sort} onChange={e => { setSort(e.target.value); setPage(1); }}>
+            <option value="name">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="status">Attendance status</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm">Rows per page
+          <select className={field} value={size} onChange={e => { setSize(Number(e.target.value)); setPage(1); }}>
+            {[10,20,50].map(count => <option key={count}>{count}</option>)}
+          </select>
+        </label>
+      </div>
       <ul className="divide-y rounded-lg border">
-        {learners.map(learner => {
+        {shown.slice(pageStart, pageStart + size).map(learner => {
           const { morning, closing, release: released } = learner.marks;
           return <li key={learner.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
             <div>
@@ -215,8 +259,16 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
             </div>
           </li>;
         })}
-        {!learners.length && <li className="p-3 text-sm text-slate-600">No learners to show.</li>}
+        {!shown.length && <li className="p-3 text-sm text-slate-600" role="status">{dateLoading ? (error ? "This day could not be opened." : "Fetching the selected date.") : "No learners to show."}</li>}
       </ul>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span>{shown.length ? pageStart + 1 : 0}–{Math.min(shown.length, pageStart + size)} of {shown.length} learners</span>
+        <div className="flex gap-2">
+          <button className={button} disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</button>
+          <button className={button} disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</button>
+        </div>
+      </div>
+      </>}
     </>}
   </section>;
 }
