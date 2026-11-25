@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const raw = await request.text();
     if (raw.length > 4096) return json({ error: "Request too large." }, 413);
     const body = JSON.parse(raw);
-    if (!body || !["roster", "mark", "schedule"].includes(body.action) ||
+    if (!body || !["roster", "mark", "schedule", "assign"].includes(body.action) ||
         !body.input || typeof body.input !== "object" || Array.isArray(body.input)) {
       return json({ error: "Choose a valid register action." }, 400);
     }

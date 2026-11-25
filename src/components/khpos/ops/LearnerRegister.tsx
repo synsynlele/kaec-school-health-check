@@ -10,12 +10,13 @@ type Learner = {
   name: string;
   class: string;
   section: string | null;
+  canMarkMorning: boolean;
   marks: Partial<Record<Phase, { mark: string; id: number; at: string; note: string | null }>>;
 };
 type Roster = {
   day: string;
   today: string;
-  campuses: { id: string; name: string; closesAt: string | null; guardian: boolean; office: boolean; learners: Learner[] }[];
+  campuses: { id: string; name: string; closesAt: string | null; guardian: boolean; office: boolean; learners: Learner[]; teachers: { id: string; name: string }[]; assignments: { class: string; section: string; teacher: string; backup: string | null }[] }[];
 };
 
 const labels: Record<string, string> = {
@@ -64,6 +65,10 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
   const group = (learner: Learner) => [learner.class, learner.section].filter(Boolean).join(" · ");
   const classes = [...new Set(campus?.learners.map(group))];
   const selectedClass = classes.includes(className) ? className : (classes[0] ?? "");
+  const selectedLearner = campus?.learners.find(learner => group(learner) === selectedClass);
+  const assignment = campus?.assignments.find(item =>
+    item.class === selectedLearner?.class.toLowerCase() &&
+    item.section === (selectedLearner?.section ?? "").toLowerCase());
   const learners = campus?.learners.filter(learner => {
     if (filter === "absent") {
       return learner.marks.morning?.mark === "absent" && learner.marks.closing?.mark !== "present" && !learner.marks.release;
@@ -137,6 +142,33 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
         </label>
         <button className={button} disabled={busy}>Save closing time</button>
       </form>}
+      {campus.guardian && !readOnly && selectedLearner && <form
+        key={[campus.id, selectedClass, assignment?.teacher, assignment?.backup].join(":")}
+        className="flex flex-wrap items-end gap-2 rounded-lg border p-3"
+        onSubmit={event => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          void save("assign", {
+            class: selectedLearner.class, section: selectedLearner.section,
+            teacher: data.get("teacher"), backup: data.get("backup"),
+          });
+        }}>
+        <p className="basis-full font-medium">Register responsibility · {selectedClass}</p>
+        <label className="grid gap-1 text-sm">Class teacher
+          <select name="teacher" className={field} defaultValue={assignment?.teacher ?? ""} required>
+            <option value="">Choose a teacher</option>
+            {campus.teachers.map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm">Backup teacher
+          <select name="backup" className={field} defaultValue={assignment?.backup ?? ""}>
+            <option value="">No backup</option>
+            {campus.teachers.map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
+          </select>
+        </label>
+        <button className={button} disabled={busy || !campus.teachers.length}>Save assignment</button>
+        {!campus.teachers.length && <p className="basis-full text-sm">Appoint a teacher to this campus in Staff & roles first.</p>}
+      </form>}
       <div className="flex gap-2">
         <button className={button} aria-pressed={phase === "morning"} onClick={() => setPhase("morning")}>Morning roll</button>
         <button className={button} aria-pressed={phase === "closing"} onClick={() => setPhase("closing")}>Closing & release</button>
@@ -164,7 +196,7 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
               {released && <p className="text-sm text-slate-600">{new Date(released.at).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" })} · {released.note}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
-              {phase === "morning" && ["present", "late", "absent"].map(status => <button key={status} className={button}
+              {phase === "morning" && learner.canMarkMorning && ["present", "late", "absent"].map(status => <button key={status} className={button}
                 disabled={busy || readOnly || Boolean(release)} aria-pressed={morning?.mark === status}
                 onClick={() => void mark(learner, "morning", status)}>{labels[status]}</button>)}
               {phase === "closing" && !readOnly && !released && <>

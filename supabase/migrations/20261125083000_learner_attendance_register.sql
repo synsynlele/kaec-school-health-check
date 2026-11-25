@@ -44,26 +44,30 @@ returns boolean language sql stable set search_path='' as $$
   )
 $$;
 
+create table public.khpos_learner_register_assignments (
+  campus_id uuid not null references public.khpos_ops_campuses(id) on delete cascade,
+  class_key text not null,
+  section_key text not null,
+  teacher_id uuid not null references auth.users(id),
+  backup_id uuid references auth.users(id),
+  assigned_by uuid not null references auth.users(id),
+  assigned_at timestamptz not null default now(),
+  primary key (campus_id,class_key,section_key),
+  check (backup_id is distinct from teacher_id)
+);
+
+alter table public.khpos_learner_register_assignments enable row level security;
+revoke all on public.khpos_learner_register_assignments from public,anon,authenticated,service_role;
+
 create function khpos_private.learner_register_class(actor uuid, learner public.khpos_ops_learner_anchors)
 returns boolean language sql stable set search_path='' as $$
-  select exists (
-    select 1 from public.khpos_ops_academic_delivery_streams s
-    join public.khpos_ops_role_assignments a on a.id=s.teacher_assignment_id
-    join public.khpos_ops_roles r on r.id=a.role_id
-    join public.khpos_ops_academic_terms t on t.id=s.term_id
-    join public.organisation_memberships m on m.organisation_id=s.organisation_id and m.user_id=a.user_id
-    join public.organisations o on o.id=m.organisation_id
-    where s.organisation_id=learner.organisation_id and s.campus_id=learner.campus_id
-      and lower(s.class_label)=lower(learner.class_label)
-      and lower(coalesce(s.section_label,''))=lower(coalesce(learner.section_label,''))
-      and s.status in ('approved','active') and t.status='active'
-      and (now() at time zone 'Africa/Lagos')::date between t.start_date and t.end_date
-      and r.organisation_id=s.organisation_id and (a.campus_id is null or a.campus_id=s.campus_id)
-      and a.user_id=actor and a.status='active' and r.status='active' and m.status='active'
-      and a.start_date <= (now() at time zone 'Africa/Lagos')::date
-      and (a.end_date is null or a.end_date >= (now() at time zone 'Africa/Lagos')::date)
-      and o.status='active' and o.partner_status='active' and 'khpos_core'=any(o.partner_entitlements)
-  )
+  select khpos_private.learner_register_role(actor,learner.organisation_id,learner.campus_id,array['TEACHER'])
+    and exists (
+      select 1 from public.khpos_learner_register_assignments a
+      where a.campus_id=learner.campus_id and a.class_key=lower(learner.class_label)
+        and a.section_key=lower(coalesce(learner.section_label,''))
+        and actor in (a.teacher_id,a.backup_id)
+    )
 $$;
 
 create function public.khpos_learner_register_server(actor uuid, school uuid, action text, input jsonb)
@@ -82,6 +86,10 @@ declare
   release_note text := nullif(btrim(input->>'note'),'');
   last_event public.khpos_learner_attendance_events;
   result jsonb;
+  teacher uuid := nullif(input->>'teacher','')::uuid;
+  backup uuid := nullif(input->>'backup','')::uuid;
+  class_key_input text := lower(input->>'class');
+  section_key_input text := lower(coalesce(input->>'section',''));
 begin
   if action='alerts' then
     select coalesce(jsonb_agg(to_jsonb(summary)),'[]'::jsonb) into result
@@ -114,7 +122,16 @@ begin
     if view_day > register_day then raise exception 'Choose today or an earlier date.' using errcode='22023'; end if;
     return jsonb_build_object('day',view_day,'today',register_day,'campuses',(
       select coalesce(jsonb_agg(jsonb_build_object('id',c.id,'name',c.name,'closesAt',s.closes_at,
-        'guardian',permissions.guardian,'office',permissions.office,'learners',roster.learners) order by c.name),'[]'::jsonb)
+        'guardian',permissions.guardian,'office',permissions.office,'learners',roster.learners,
+        'teachers',case when permissions.guardian then (
+          select coalesce(jsonb_agg(jsonb_build_object('id',st.user_id,'name',st.display_name) order by st.display_name),'[]'::jsonb)
+          from public.khpos_ops_staff st where st.organisation_id=school and st.status in ('ready','active')
+            and khpos_private.learner_register_role(st.user_id,school,c.id,array['TEACHER'])
+        ) else '[]'::jsonb end,
+        'assignments',case when permissions.guardian then (
+          select coalesce(jsonb_agg(jsonb_build_object('class',a.class_key,'section',a.section_key,'teacher',a.teacher_id,'backup',a.backup_id)),'[]'::jsonb)
+          from public.khpos_learner_register_assignments a where a.campus_id=c.id
+        ) else '[]'::jsonb end) order by c.name),'[]'::jsonb)
       from public.khpos_ops_campuses c
       left join public.khpos_learner_attendance_settings s on s.campus_id=c.id
       cross join lateral (select
@@ -123,7 +140,7 @@ begin
       ) permissions
       cross join lateral (
         select coalesce(jsonb_agg(jsonb_build_object('id',a.id,'name',a.display_name,'class',a.class_label,
-          'section',a.section_label,'marks',(
+          'section',a.section_label,'canMarkMorning',permissions.guardian or khpos_private.learner_register_class(actor,a),'marks',(
             select coalesce(jsonb_object_agg(e.phase,jsonb_build_object('mark',e.mark,'id',e.id,'at',e.recorded_at,'note',e.note)),'{}'::jsonb)
             from (select distinct on (v.phase) v.* from public.khpos_learner_attendance_events v
               where v.organisation_id=school and v.campus_id=c.id and v.learner_id=a.id
@@ -143,6 +160,23 @@ begin
   end if;
   guardian := khpos_private.learner_register_role(actor,school,campus,array['SCHOOL_GUARDIAN']);
   office := khpos_private.learner_register_role(actor,school,campus,array['SCHOOL_CARE_OPERATIONS_OFFICER','FINANCE_ADMIN_OFFICER']);
+  if action='assign' and guardian then
+    if not exists (
+      select 1 from public.khpos_ops_learner_anchors a
+      where a.organisation_id=school and a.campus_id=campus and a.status='active'
+        and lower(a.class_label)=class_key_input and lower(coalesce(a.section_label,''))=section_key_input
+    ) then raise exception 'Choose an active class.' using errcode='22023'; end if;
+    if teacher is null or teacher=backup
+       or not khpos_private.learner_register_role(teacher,school,campus,array['TEACHER'])
+       or (backup is not null and not khpos_private.learner_register_role(backup,school,campus,array['TEACHER'])) then
+      raise exception 'Choose an active campus teacher and a different backup, if needed.' using errcode='22023';
+    end if;
+    insert into public.khpos_learner_register_assignments(campus_id,class_key,section_key,teacher_id,backup_id,assigned_by)
+      values(campus,class_key_input,section_key_input,teacher,backup,actor)
+      on conflict (campus_id,class_key,section_key) do update
+      set teacher_id=excluded.teacher_id,backup_id=excluded.backup_id,assigned_by=excluded.assigned_by,assigned_at=now();
+    return '{}'::jsonb;
+  end if;
   if action='schedule' and guardian then
     insert into public.khpos_learner_attendance_settings(campus_id,closes_at)
       values(campus,(input->>'closesAt')::time)
@@ -157,7 +191,8 @@ begin
     where a.id=(input->>'learner')::uuid and a.organisation_id=school and a.campus_id=campus and a.status='active'
     for update;
   if not found or not (guardian or office or khpos_private.learner_register_class(actor,selected)) or
-      (mark_name='left_early' and not (guardian or office)) then
+      (mark_name='left_early' and not (guardian or office)) or
+      (phase_name='morning' and not (guardian or khpos_private.learner_register_class(actor,selected))) then
     raise exception 'Access denied.' using errcode='42501';
   end if;
 
