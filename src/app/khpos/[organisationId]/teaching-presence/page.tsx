@@ -15,6 +15,6 @@ export default async function PresencePage({
 }) {
   const [{ organisationId }, { tab }] = await Promise.all([params, searchParams]);
   if (!UUID_RE.test(organisationId)) notFound();
-  const initialTab = tab === "lessons" ? "lessons" : "day";
+  const initialTab = tab === "lessons" || tab === "exams" ? tab : "day";
   return <TeacherPresenceWorkspace key={initialTab} organisationId={organisationId} initialTab={initialTab} />;
 }

@@ -210,21 +210,28 @@ export function AcademicAssuranceWorkspace({
               Assessments & exams
             </h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-              Moderation, readiness, integrity, correction audit and academic
-              close-out—without duplicating the SIS/CBT result system.
+              Set up an exam period, send question papers for review, and check that the school is ready.
+              Use the timetable to schedule individual tests and exams.
             </p>
           </div>
-          <span className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-xs font-black text-brand-900">
-            ACD-012…015 · ACD-P02
-          </span>
+          <Link href={`/khpos/${organisationId}/teaching-presence?tab=exams`}
+            className="rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white">
+            Open test and exam timetable
+          </Link>
         </div>
       </header>
+
+      {!workspace.executiveSummaryOnly && <ol className="list-decimal space-y-1 rounded-xl border bg-white py-3 pl-9 pr-4 text-sm text-slate-700">
+        <li>Choose a term and create an assessment period, such as Midterm or End-of-term Exams.</li>
+        <li>Add each class and subject’s question-paper reference. Submit it so an authorised reviewer can approve it or ask for changes.</li>
+        <li>Add readiness checks for the timetable, rooms and invigilators. Confirm the required checks before starting the period.</li>
+      </ol>}
 
       {!workspace.executiveSummaryOnly && (
         <SectionJumpNav
           label="Assessment work areas"
           sections={[
-            { id: "assurance-cycles", label: "Assessment cycles" },
+            { id: "assurance-cycles", label: "Assessment periods" },
             { id: "assurance-integrity", label: "Academic integrity" },
             { id: "assurance-corrections", label: "Result corrections" },
             ...(workspace.canCoordinate ? [{ id: "assurance-closeout", label: "Term close-out" }] : []),
@@ -241,8 +248,8 @@ export function AcademicAssuranceWorkspace({
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {[
           ["Active cycles", workspace.summary.activeCycles],
-          ["Awaiting moderation", workspace.summary.packagesAwaitingModeration],
-          ["Readiness unresolved", workspace.summary.unresolvedReadiness],
+          ["Papers awaiting review", workspace.summary.packagesAwaitingModeration],
+          ["Open readiness checks", workspace.summary.unresolvedReadiness],
           ["Integrity open", workspace.summary.openIntegrityCases],
           ["Corrections open", workspace.summary.openResultCorrections],
           ["Close-outs in review", workspace.summary.closeoutsAwaitingApproval],
@@ -315,11 +322,11 @@ export function AcademicAssuranceWorkspace({
 
           <section id="assurance-cycles" className="scroll-mt-24 space-y-4">
             <SectionHeading
-              eyebrow="Assessment cycles"
-              title="Plan → moderate → prove readiness → administer → reconcile"
+              eyebrow="Assessment periods"
+              title="Plan the exam period and review papers"
             />
             {workspace.cycles.length === 0 ? (
-              <Empty text="No governed assessment cycle is visible yet." />
+              <Empty text="No assessment periods to show." />
             ) : (
               workspace.cycles.map((cycle) => (
                 <CycleCard
@@ -340,7 +347,7 @@ export function AcademicAssuranceWorkspace({
           <section id="assurance-integrity" className="scroll-mt-24 space-y-4">
             <SectionHeading
               eyebrow="Academic integrity"
-              title="Allegation ≠ finding: evidence + representation + reasoned decision"
+              title="Report and review exam incidents"
             />
             <IntegrityReportPanel
               workspace={workspace}
@@ -369,7 +376,7 @@ export function AcademicAssuranceWorkspace({
           <section id="assurance-corrections" className="scroll-mt-24 space-y-4">
             <SectionHeading
               eyebrow="Result correction"
-              title="No silent edit: request → approve → external implementation → independent verification"
+              title="Request and verify a result correction"
             />
             <CorrectionRequestPanel
               workspace={workspace}
@@ -398,7 +405,7 @@ export function AcademicAssuranceWorkspace({
             <section id="assurance-closeout" className="scroll-mt-24 space-y-4">
               <SectionHeading
                 eyebrow="Academic close-out"
-                title="Close the term only after assessment, support and exceptions are reconciled"
+                title="Review outstanding work before closing the term"
               />
               <CloseoutCreatePanel
                 workspace={workspace}
@@ -470,9 +477,10 @@ function CreateCyclePanel({
   return (
     <details className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <summary className="cursor-pointer text-sm font-black text-slate-950">
-        Create assessment / examination cycle
+        Create an assessment period
       </summary>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <label className="grid gap-1 text-sm font-semibold">Term
         <select
           value={term}
           onChange={(event) => setValue("cycle-term", event.target.value)}
@@ -486,6 +494,8 @@ function CreateCyclePanel({
               </option>
             ))}
         </select>
+        </label>
+        <label className="grid gap-1 text-sm font-semibold">Assessment type
         <select
           value={values["cycle-type"] || "terminal"}
           onChange={(event) => setValue("cycle-type", event.target.value)}
@@ -505,30 +515,37 @@ function CreateCyclePanel({
             </option>
           ))}
         </select>
+        </label>
         <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit xl:col-span-2"><span>Name for this period</span><input
           value={values["cycle-title"] || ""}
           onChange={(event) => setValue("cycle-title", event.target.value)}
           placeholder="Name for this period"
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm xl:col-span-2"
         /></label>
+        <label className="grid gap-1 text-sm font-semibold">Start date
         <input
           type="date"
           value={values["cycle-start"] || ""}
           onChange={(event) => setValue("cycle-start", event.target.value)}
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
         />
+        </label>
+        <label className="grid gap-1 text-sm font-semibold">End date
         <input
           type="date"
           value={values["cycle-end"] || ""}
           onChange={(event) => setValue("cycle-end", event.target.value)}
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
         />
+        </label>
+        <label className="grid gap-1 text-sm font-semibold">Results due (optional)
         <input
           type="date"
           value={values["cycle-results"] || ""}
           onChange={(event) => setValue("cycle-results", event.target.value)}
           className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
         />
+        </label>
         <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>School system, CBT or exam reference</span><input
           value={values["cycle-external"] || ""}
           onChange={(event) => setValue("cycle-external", event.target.value)}
@@ -575,7 +592,7 @@ function CreateCyclePanel({
         }}
         className="mt-4 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white disabled:opacity-60"
       >
-        Create approved cycle
+        Save assessment period
       </button>
     </details>
   );
@@ -657,7 +674,7 @@ function CycleCard({
           ) : null}
           {cycle.status === "planned" ? (
             <ActionButton
-              label="Mark Ready"
+              label="Confirm ready"
               busy={busyId === `cycle-ready-${cycle.id}`}
               onClick={() =>
                 void submit(
@@ -673,7 +690,7 @@ function CycleCard({
           ) : null}
           {cycle.status === "ready" ? (
             <ActionButton
-              label="Start cycle"
+              label="Start assessment period"
               busy={busyId === `cycle-start-${cycle.id}`}
               onClick={() =>
                 void submit(
@@ -717,7 +734,7 @@ function CycleCard({
       {["draft", "planned"].includes(cycle.status) && cycleStreams.length > 0 ? (
         <details className="mt-4 rounded-2xl border border-slate-200 p-4">
           <summary className="cursor-pointer text-sm font-black">
-            Add assessment package reference
+            Add a question-paper reference
           </summary>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             <select
@@ -745,20 +762,20 @@ function CycleCard({
                 </option>
               ))}
             </select>
-            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Assessment source reference</span><input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Question-paper link or reference</span><input
               value={values[`pkg-ref-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`pkg-ref-${cycle.id}`, event.target.value)
               }
-              placeholder="Assessment source reference"
+              placeholder="Question-paper link or reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             /></label>
-            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Assessment plan reference</span><input
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Paper plan reference</span><input
               value={values[`pkg-blueprint-${cycle.id}`] || ""}
               onChange={(event) =>
                 setValue(`pkg-blueprint-${cycle.id}`, event.target.value)
               }
-              placeholder="Assessment plan reference"
+              placeholder="Paper plan reference"
               className="rounded-xl border border-slate-200 px-3 py-2 text-xs"
             /></label>
           </div>
@@ -796,7 +813,7 @@ function CycleCard({
               )
             }
           >
-            Add package
+            Save paper for review
           </button>
         </details>
       ) : null}
@@ -804,7 +821,7 @@ function CycleCard({
       {cycle.packages.length > 0 ? (
         <div className="mt-4 space-y-2">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-            Moderation
+            Question-paper review
           </p>
           {cycle.packages.map((pkg) => (
             <PackageRow
@@ -823,7 +840,7 @@ function CycleCard({
       {cycle.canManage && ["draft", "planned"].includes(cycle.status) ? (
         <details className="mt-4 rounded-2xl border border-slate-200 p-4">
           <summary className="cursor-pointer text-sm font-black">
-            Add examination-readiness control
+            Add an exam readiness check
           </summary>
           <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             <select
@@ -999,7 +1016,7 @@ function PackageRow({
         {editing ? "Cancel editing" : "Edit assessment package"}
       </button>}
       {editing && canEdit && <div {...actionDestination} className="mt-3 space-y-2 rounded-xl border border-brand-200 bg-white p-3">
-        <p className="text-xs font-black">Edit saved package before moderation</p>
+        <p className="text-xs font-black">Edit the paper details</p>
         <label className="block text-xs">Assessment source
           <select value={source} onChange={(event) => setSource(event.target.value)} className="mt-1 w-full rounded-lg border p-2">
             {["KSI","SIS","CBT","external","manual"].map((item) => <option key={item} value={item}>{item}</option>)}
@@ -1022,17 +1039,17 @@ function PackageRow({
           if (saved) setEditing(false);
         })()} className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-black text-white disabled:opacity-50">Save package changes</button>
       </div>}
-      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Moderation / action note</span><textarea
+      <label className="grid min-w-0 gap-1 text-sm font-semibold text-inherit"><span>Review note</span><textarea
         value={values[noteKey] || ""}
         onChange={(event) => setValue(noteKey, event.target.value)}
-        placeholder="Moderation / action note"
+        placeholder="Review note"
         rows={2}
         className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
       /></label>
       <div className="mt-2 flex flex-wrap gap-2">
         {["draft", "changes_required"].includes(pkg.moderationState) ? (
           <MiniButton
-            label="Submit"
+            label="Send for review"
             busy={busyId === `pkg-submit-${pkg.id}`}
             onClick={() =>
               void submit(
@@ -1045,7 +1062,7 @@ function PackageRow({
         {pkg.canModerate && pkg.moderationState === "submitted" ? (
           <>
             <MiniButton
-              label="Approve"
+              label="Approve paper"
               busy={busyId === `pkg-approve-${pkg.id}`}
               onClick={() =>
                 void submit(

@@ -24,7 +24,7 @@ export default async function Page({
   return (
     <>
       <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace organisationId={organisationId} />)}
+        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace key={query.plan === "exams" ? "exams" : "calendar"} organisationId={organisationId} initialExamPlan={query.plan === "exams"} />)}
       </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/calendar"}

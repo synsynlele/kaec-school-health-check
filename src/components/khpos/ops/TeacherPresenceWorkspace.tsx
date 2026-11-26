@@ -135,7 +135,7 @@ function getTeachingGroupFields(form: FormData): Record<string, string | boolean
   };
 }
 
-export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{organisationId:string;initialTab?:"day"|"lessons"}) {
+export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{organisationId:string;initialTab?:"day"|"lessons"|"exams"}) {
   const refreshGate=useRef(createAttendanceRefreshGate());
   const [attendanceRevision,setAttendanceRevision]=useState(0);
   const locationCapture=useAttendanceLocation();

@@ -29,17 +29,23 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
     const token = bearerTokenFromRequest(request);
     if (!token) throw new KhposAuthError("Sign in to view the assessment timetable.");
     const actor = await verifyKhposAccessToken(token);
+    const query = new URL(request.url).searchParams;
+    const weeks = request.method === "GET" ? z.coerce.number().int().min(1).max(6).parse(query.get("weeks") ?? 1) : 1;
     const input = request.method === "POST" ? payload.parse(await request.json())
-      : { mode: "list", from: date.parse(new URL(request.url).searchParams.get("from")) };
+      : { mode: "list", from: date.parse(query.get("from")) };
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-    const { data, error } = await db.rpc("khpos_assessment_timetable_server", { p_actor: actor.id, p_org: id, p_mode: input.mode, p_input: input });
+    const results = await Promise.all(Array.from({ length: weeks }, (_, index) => {
+      const from = new Date(Date.parse(input.from) + index * 7 * 86400000).toISOString().slice(0, 10);
+      return db.rpc("khpos_assessment_timetable_server", { p_actor: actor.id, p_org: id, p_mode: input.mode, p_input: { ...input, from } });
+    }));
+    const error = results.find(result => result.error)?.error;
     if (error) {
       if (error.code === "42501") return NextResponse.json({ error: error.message }, { status: 403, headers });
       if (error.code === "22023") return NextResponse.json({ error: error.message }, { status: 400, headers });
       if (error.code === "23505") return NextResponse.json({ error: "That assignment already has an assessment at this time." }, { status: 409, headers });
       throw new Error("Assessment timetable request failed");
     }
-    return NextResponse.json({ entries: data }, { headers });
+    return NextResponse.json({ entries: results.flatMap(result => result.data ?? []) }, { headers });
   } catch (error) {
     if (error instanceof KhposAuthError || error instanceof KhposPresenceError) return NextResponse.json({ error: error.message }, { status: error.status, headers });
     if (error instanceof z.ZodError || error instanceof SyntaxError) return NextResponse.json({ error: "Check the timetable details." }, { status: 400, headers });
