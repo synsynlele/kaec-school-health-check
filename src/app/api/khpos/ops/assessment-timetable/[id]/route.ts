@@ -18,6 +18,7 @@ const payload = z.discriminatedUnion("mode", [
     papers: z.array(z.object({ streamId: schedule.streamId, title: schedule.title })).min(1).max(30)
       .refine(papers => new Set(papers.map(paper => paper.streamId)).size === papers.length),
   }),
+  z.object({ mode: z.literal("cancel"), from: date, day: date, ids: z.array(z.uuid()).min(1).max(50) }),
   z.object({ mode: z.literal("edit"), id: z.uuid(), ...schedule }),
   z.object({ mode: z.enum(["start", "finish", "mark"]), from: date, id: z.uuid() }),
   z.object({ mode: z.literal("invigilator_start"), from: date, id: z.uuid() }),
@@ -39,12 +40,13 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
     const input = request.method === "POST" ? payload.parse(await request.json())
       : { mode: "list", from: date.parse(query.get("from")) };
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+    const includeCancelled = query.get("includeCancelled") === "true";
     const results = await Promise.all(Array.from({ length: weeks }, (_, index) => {
       const from = new Date(Date.parse(input.from) + index * 7 * 86400000).toISOString().slice(0, 10);
       if (input.mode === "add_batch") {
-        return db.rpc("khpos_assessment_timetable_add_batch_server", { p_actor: actor.id, p_org: id, p_input: input });
+        return db.rpc("khpos_assessment_timetable_add_batch_server", { p_actor: actor.id, p_org: id, p_input: { ...input, includeCancelled } });
       }
-      return db.rpc("khpos_assessment_timetable_server", { p_actor: actor.id, p_org: id, p_mode: input.mode, p_input: { ...input, from } });
+      return db.rpc("khpos_assessment_timetable_server", { p_actor: actor.id, p_org: id, p_mode: input.mode, p_input: { ...input, from, includeCancelled } });
     }));
     const error = results.find(result => result.error)?.error;
     if (error) {
