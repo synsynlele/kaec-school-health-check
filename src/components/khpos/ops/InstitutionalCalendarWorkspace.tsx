@@ -10,6 +10,7 @@ import { RecordQueueSearchControls, useRecordSearch } from "./RecordQueueSearch"
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronDown,
   CircleAlert,
   Clock3,
   FileCheck2,
@@ -57,6 +58,8 @@ export function InstitutionalCalendarWorkspace({
   const [calendar, setCalendar] = useState<KhposCalendarSnapshot | null>(null);
   const [kind, setKind] = useState<KhposCalendarItem["kind"] | "all" | "overdue">("all");
   const [error, setError] = useState("");
+  const [datesPerPage, setDatesPerPage] = useState(10);
+  const [page, setPage] = useState(1);
   const calendarSearch = useRecordSearch(
     calendar?.items ?? [],
     (item) => [item.title, item.detail, item.kind, item.status, item.priority, item.date, item.time ?? ""].join(" "),
@@ -124,6 +127,11 @@ export function InstitutionalCalendarWorkspace({
     grouped.set(item.date, rows);
   }
 
+  const dateGroups = Array.from(grouped.entries());
+  const pageCount = Math.max(1, Math.ceil(dateGroups.length / datesPerPage));
+  const currentPage = Math.min(page, pageCount);
+  const offset = (currentPage - 1) * datesPerPage;
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="khpos-hero bg-gradient-to-br from-slate-950 via-brand-950 to-brand-900 text-white">
@@ -159,7 +167,7 @@ export function InstitutionalCalendarWorkspace({
               <a
                 key={name}
                 href="#calendar-timeline"
-                onClick={() => { setKind(filter); calendarSearch.setQuery(""); }}
+                onClick={() => { setKind(filter); setPage(1); calendarSearch.setQuery(""); }}
                 className="rounded-2xl border border-white/10 bg-white/10 p-4 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
               >
                 <p className="text-xs font-bold text-brand-100">{name}</p>
@@ -178,7 +186,7 @@ export function InstitutionalCalendarWorkspace({
               <button
                 key={value}
                 type="button"
-                onClick={() => setKind(value)}
+                onClick={() => { setKind(value); setPage(1); }}
                 className={`rounded-full border px-4 py-2 text-xs font-black capitalize ${
                   kind === value
                     ? "border-slate-950 bg-slate-950 text-white"
@@ -191,24 +199,38 @@ export function InstitutionalCalendarWorkspace({
           )}
         </section>
 
-        <RecordQueueSearchControls query={calendarSearch.query} setQuery={calendarSearch.setQuery} sort={calendarSearch.sort} setSort={calendarSearch.setSort} shown={visible.length} total={calendar.items.length} placeholder="Search event, work, decision or date" hasPriority />
-        {Array.from(grouped.entries()).map(([date, items]) => (
-          <section
-            key={date}
-            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-          >
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <CalendarDays className="size-5 text-brand-700" />
-              <h2 className="text-lg font-black">{niceDate(date)}</h2>
-            </div>
-            <div className="mt-4 space-y-3">
+        <RecordQueueSearchControls query={calendarSearch.query} setQuery={value => { calendarSearch.setQuery(value); setPage(1); }} sort={calendarSearch.sort} setSort={value => { calendarSearch.setSort(value); setPage(1); }} shown={visible.length} total={calendar.items.length} placeholder="Search event, work, decision or date" hasPriority />
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <label className="flex items-center gap-2 font-semibold">Dates per page
+            <select className="min-h-10 rounded-lg border border-slate-300 bg-white px-2" value={datesPerPage}
+              onChange={event => { setDatesPerPage(Number(event.target.value)); setPage(1); }}>
+              {[10, 20, 50, 100].map(size => <option key={size}>{size}</option>)}
+            </select>
+          </label>
+          {!!dateGroups.length && <div className="flex flex-wrap items-center gap-2">
+            <span aria-live="polite">{offset + 1}–{Math.min(offset + datesPerPage, dateGroups.length)} of {dateGroups.length} dates</span>
+            <button type="button" disabled={currentPage <= 1} className="rounded-lg border bg-white px-3 py-2 disabled:opacity-40"
+              onClick={() => setPage(currentPage - 1)}>Previous</button>
+            <button type="button" disabled={currentPage >= pageCount} className="rounded-lg border bg-white px-3 py-2 disabled:opacity-40"
+              onClick={() => setPage(currentPage + 1)}>Next</button>
+          </div>}
+        </div>
+        {dateGroups.slice(offset, offset + datesPerPage).map(([date, items]) => (
+          <details key={date} className="group rounded-2xl border border-slate-200 bg-white">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-brand-700 [&::-webkit-details-marker]:hidden">
+              <CalendarDays aria-hidden="true" className="size-5 shrink-0 text-brand-700" />
+              <span className="min-w-0 flex-1 font-bold">{niceDate(date)}</span>
+              <span className="shrink-0 text-xs text-slate-600">{items.length} {items.length === 1 ? "item" : "items"}</span>
+              <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-slate-600 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+            </summary>
+            <div className="space-y-3 border-t border-slate-100 p-3 sm:p-4">
               {items.map((item) => {
                 const Icon = icons[item.kind];
                 return (
                   <Link
                     key={item.id}
                     href={item.href}
-                    className={`flex items-start gap-4 rounded-2xl border p-4 transition hover:border-brand-300 ${
+                    className={`flex flex-wrap items-start gap-3 rounded-xl border p-3 sm:flex-nowrap sm:gap-4 sm:p-4 transition hover:border-brand-300 ${
                       item.overdue
                         ? "border-red-200 bg-red-50"
                         : "border-slate-200 bg-slate-50"
@@ -231,8 +253,8 @@ export function InstitutionalCalendarWorkspace({
                           <Flag className="size-3.5 text-red-700" />
                         )}
                       </span>
-                      <span className="mt-1 block font-black">{item.title}</span>
-                      <span className="mt-1 block text-sm leading-6 text-slate-600">
+                      <span className="mt-1 block break-words font-black">{item.title}</span>
+                      <span className="mt-1 block break-words text-sm leading-6 text-slate-600">
                         {item.detail}
                       </span>
                     </span>
@@ -245,7 +267,7 @@ export function InstitutionalCalendarWorkspace({
                 );
               })}
             </div>
-          </section>
+          </details>
         ))}
 
         {!visible.length && (

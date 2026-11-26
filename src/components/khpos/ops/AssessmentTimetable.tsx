@@ -27,7 +27,7 @@ function monday(day: string) {
   return date.toISOString().slice(0, 10);
 }
 
-const field = "block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
+const field = "block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base sm:text-sm text-slate-900";
 const headings = ["Date", "Time (WAT)", "Class", "Subject", "Test or exam", "Type", "Invigilators"];
 const dateLabel = new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short", year: "numeric" });
 const timeLabel = new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
@@ -143,6 +143,19 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
 
   const hasActions = timetableRows.some(({ item }) => item.can_manage_coverage || (item.can_edit && assignments.length > 0));
 
+  function paperActions(item: Entry) {
+    const canEdit = item.can_edit && assignments.length > 0;
+    if (!item.can_manage_coverage && !canEdit) return null;
+    return <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      {item.can_manage_coverage && <Link className="inline-flex min-h-10 items-center gap-1 font-semibold text-brand-700 underline"
+        href={`/khpos/${school}/calendar?plan=exams&paper=${item.id}&day=${lagosLocalDay(Date.parse(item.starts_at))}#school-plan`}>
+        Assign invigilators <LinkPending />
+      </Link>}
+      {canEdit && <button type="button" className="min-h-10 text-left font-semibold text-brand-700 underline disabled:opacity-50"
+        disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
+    </div>;
+  }
+
   async function download() {
     if (pending.current || !timetableRows.length) return;
     pending.current = true;
@@ -175,7 +188,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     item.invigilation_attendance?.some(duty => duty.mine && (duty.published || duty.in)),
   ) : timetableRows.map(row => row.item).filter(item => item.mine || item.invigilation_attendance?.length);
   if (todayInvigilation && !error && !visibleEntries?.length) return null;
-  return <section className="space-y-4 rounded-2xl border bg-white p-4 text-slate-900">
+  return <section className="min-w-0 space-y-4 rounded-2xl border bg-white p-3 text-slate-900 sm:p-4">
     <h2 className="text-xl font-bold">{todayInvigilation ? "My invigilation today" : "Tests and exams timetable"}</h2>
     {!todayInvigilation && <div className="rounded-xl bg-slate-50 p-3 text-sm">
       <ol className="list-decimal space-y-1 pl-5">
@@ -243,28 +256,42 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     </details>}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!entries && !error && <p role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Fetching scheduled tests and exams.</p>}
-    {!todayInvigilation && !!entries && (timetableRows.length ? <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full text-left text-sm">
-        <caption className="sr-only">Tests and exams with published invigilator names</caption>
-        <thead className="bg-slate-100"><tr>
-          {headings.map(heading => <th key={heading} scope="col" className="px-3 py-2">{heading}</th>)}
-          {hasActions && <th scope="col" className="px-3 py-2">Actions</th>}
-        </tr></thead>
-        <tbody className="divide-y">{timetableRows.map(({ item, cells }) => <tr key={item.id}>
-          {cells.map((cell, index) => <td key={headings[index]} className={index < 2 ? "whitespace-nowrap px-3 py-2" : "px-3 py-2"}>{cell}</td>)}
-          {hasActions && <td className="whitespace-nowrap px-3 py-2"><div className="flex flex-wrap gap-3">
-            {item.can_manage_coverage && <Link className="inline-flex items-center gap-1 font-semibold text-brand-700 underline"
-              href={`/khpos/${school}/calendar?plan=exams&paper=${item.id}&day=${lagosLocalDay(Date.parse(item.starts_at))}#school-plan`}>
-              Assign invigilators <LinkPending />
-            </Link>}
-            {item.can_edit && assignments.length > 0 && <button type="button" className="font-semibold text-brand-700 underline" disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
-          </div></td>}
-        </tr>)}</tbody>
-      </table>
-    </div> : <p>No tests or exams match this timetable view.</p>)}
+    {!todayInvigilation && !!entries && (timetableRows.length ? <>
+      <ul aria-label="Tests and exams timetable" className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
+        {timetableRows.map(({ item, cells }) => {
+          const [date, time, className, subject, title, kind, invigilators] = cells;
+          return <li key={item.id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span className="font-semibold text-brand-700">{date}</span>
+              <span className="whitespace-nowrap tabular-nums text-slate-600">{time} WAT</span>
+            </div>
+            <h3 className="mt-2 break-words text-base font-bold leading-snug">{title}</h3>
+            <p className="mt-1 break-words text-sm text-slate-700">{className} · {subject} · {kind}</p>
+            <dl className="mt-3 border-t border-slate-100 pt-2 text-sm">
+              <dt className="font-semibold">Invigilators</dt>
+              <dd className="mt-1 break-words text-slate-700">{invigilators}</dd>
+            </dl>
+            {paperActions(item)}
+          </li>;
+        })}
+      </ul>
+      <div className="hidden overflow-x-auto rounded-xl border xl:block">
+        <table className="w-full min-w-[860px] text-left text-sm">
+          <caption className="sr-only">Tests and exams with published invigilator names</caption>
+          <thead className="bg-slate-100"><tr>
+            {headings.map(heading => <th key={heading} scope="col" className="px-3 py-2">{heading}</th>)}
+            {hasActions && <th scope="col" className="px-3 py-2">Actions</th>}
+          </tr></thead>
+          <tbody className="divide-y">{timetableRows.map(({ item, cells }) => <tr key={item.id}>
+            {cells.map((cell, index) => <td key={headings[index]} className={index < 2 ? "whitespace-nowrap px-3 py-2 align-top" : "break-words px-3 py-2 align-top"}>{cell}</td>)}
+            {hasActions && <td className="min-w-36 px-3 py-2 align-top">{paperActions(item)}</td>}
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </> : <p>No tests or exams match this timetable view.</p>)}
     {visibleEntries?.map(item => {
       const canStart = now >= Date.parse(item.starts_at) - 1800000 && now <= Date.parse(item.ends_at) + 1800000;
-      return <details key={item.id} open={todayInvigilation ? true : undefined} className="space-y-2 rounded-xl border p-3 text-sm">
+      return <details key={item.id} open={todayInvigilation ? true : undefined} className="min-w-0 space-y-2 break-words rounded-xl border p-3 text-sm">
         <summary className="cursor-pointer font-bold">{item.title} · {item.class_label} · Attendance and marking</summary>
         <h3 className="font-bold">{item.title} · {item.class_label} · {item.subject_label}</h3>
         {!todayInvigilation && <p className="capitalize">{item.kind} · {item.teacher}</p>}
