@@ -13,6 +13,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type Assignment = { id: string; classLabel: string; subjectLabel: string; teacherDisplay: string };
 type Entry = {
+  cancelled_at: string | null; can_cancel: boolean;
   id: string; stream_id: string; can_edit: boolean; kind: string; title: string; starts_at: string; ends_at: string;
   checked_in_at: string | null; checked_out_at: string | null; marked_at: string | null;
   submitted_at: string | null; submitted_to: string | null; mine: boolean;
@@ -46,6 +47,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
   const [kindFilter, setKindFilter] = useState("all");
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [selectedStreams, setSelectedStreams] = useState<string[]>([]);
+  const [cancelSelection, setCancelSelection] = useState<string[]>([]);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,7 +64,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
   const request = useCallback(async (input?: object, signal?: AbortSignal) => {
     const token = (await createBrowserSupabaseClient()?.auth.getSession())?.data.session?.access_token;
     if (!token) throw new Error("Sign in to view the timetable.");
-    const response = await fetch(`/api/khpos/ops/assessment-timetable/${school}?from=${from}&weeks=${todayInvigilation ? 1 : weeks}`, {
+    const response = await fetch(`/api/khpos/ops/assessment-timetable/${school}?from=${from}&weeks=${todayInvigilation ? 1 : weeks}&includeCancelled=${!todayInvigilation}`, {
       method: input ? "POST" : "GET",
       headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
       body: input ? JSON.stringify({ ...input, from }) : undefined,
@@ -84,7 +86,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     return () => controller.abort();
   }, [request]);
 
-  async function save(input: object) {
+  async function save(input: { mode: string } & Record<string, unknown>) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
@@ -93,7 +95,8 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     try {
       const result = await request(input);
       setEntries(weeks === 1 ? result : await request());
-      setNotice("Assessment timetable updated.");
+      setNotice(input.mode === "cancel" ? "Selected papers cancelled." : "Assessment timetable updated.");
+      setCancelSelection([]);
       setEditing(null);
       setSelectedStreams([]);
     } catch (error) {
@@ -130,7 +133,9 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
   }
 
   const rangeEnd = new Date(Date.parse(from) + (weeks * 7 - 1) * 86400000).toISOString().slice(0, 10);
-  const timetableRows = (entries ?? []).filter(item => kindFilter === "all" || item.kind === kindFilter).map(item => ({
+  const filteredEntries = (entries ?? []).filter(item => kindFilter === "all" || item.kind === kindFilter);
+  const cancelledPapers = filteredEntries.filter(item => item.cancelled_at);
+  const timetableRows = filteredEntries.filter(item => !item.cancelled_at).map(item => ({
     item,
     cells: [
       dateLabel.format(new Date(item.starts_at)),
@@ -141,11 +146,22 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     ],
   }));
 
-  const hasActions = timetableRows.some(({ item }) => item.can_manage_coverage || (item.can_edit && assignments.length > 0));
+  const cancellableOnDate = timetableRows.map(row => row.item).filter(item =>
+    item.can_cancel && lagosLocalDay(Date.parse(item.starts_at)) === selectedDay);
+  const selectedPaperIds = cancellableOnDate.filter(item => cancelSelection.includes(item.id)).map(item => item.id);
+  const hasActions = timetableRows.some(({ item }) => item.can_cancel || item.can_manage_coverage || (item.can_edit && assignments.length > 0));
+
+  function cancelPapers(ids: string[], day: string) {
+    if (!ids.length || pending.current) return;
+    const papers = ids.length === 1 ? "this paper" : `these ${ids.length} papers`;
+    if (window.confirm(`Cancel ${papers}? Attendance and reports will stay in history.`)) {
+      void save({ mode: "cancel", ids, day });
+    }
+  }
 
   function paperActions(item: Entry) {
     const canEdit = item.can_edit && assignments.length > 0;
-    if (!item.can_manage_coverage && !canEdit) return null;
+    if (!item.can_cancel && !item.can_manage_coverage && !canEdit) return null;
     return <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
       {item.can_manage_coverage && <Link className="inline-flex min-h-10 items-center gap-1 font-semibold text-brand-700 underline"
         href={`/khpos/${school}/calendar?plan=exams&paper=${item.id}&day=${lagosLocalDay(Date.parse(item.starts_at))}#school-plan`}>
@@ -153,6 +169,8 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </Link>}
       {canEdit && <button type="button" className="min-h-10 text-left font-semibold text-brand-700 underline disabled:opacity-50"
         disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
+      {item.can_cancel && <button type="button" className="min-h-10 text-left font-semibold text-red-700 underline disabled:opacity-50"
+        disabled={busy} onClick={() => cancelPapers([item.id], lagosLocalDay(Date.parse(item.starts_at)))}>Cancel paper</button>}
     </div>;
   }
 
@@ -180,7 +198,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     }
   }
 
-  const examConflicts = !todayInvigilation ? findExamCollisions(entries??[]) : [];
+  const examConflicts = !todayInvigilation ? findExamCollisions((entries ?? []).filter(item => !item.cancelled_at)) : [];
   const editStart = editing ? new Date(Date.parse(editing.starts_at) + 3600000).toISOString() : "";
   const editEnd = editing ? new Date(Date.parse(editing.ends_at) + 3600000).toISOString() : "";
   const visibleEntries = todayInvigilation ? entries?.filter(item =>
@@ -208,6 +226,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
         if (event.target.value) {
           const selectedWeek = monday(event.target.value);
           if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); }
+          setCancelSelection([]);
           setSelectedDay(event.target.value);
         }
       }} />
@@ -218,7 +237,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
         }}>{[1, 2, 3, 4, 5, 6].map(value => <option key={value} value={value}>{value}</option>)}</select>
       </label>
       <label className="text-sm font-bold">Show
-        <select className={field} value={kindFilter} disabled={busy} onChange={event => setKindFilter(event.target.value)}>
+        <select className={field} value={kindFilter} disabled={busy} onChange={event => { setKindFilter(event.target.value); setCancelSelection([]); }}>
           <option value="all">All tests and exams</option><option value="exam">Exams only</option>
           <option value="test">Tests only</option><option value="assessment">Other assessments</option>
         </select>
@@ -255,6 +274,25 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </form>
     </details>}
       <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
+    {!todayInvigilation && cancellableOnDate.length > 1 && <details className="rounded-xl border p-3">
+      <summary className="cursor-pointer font-bold">Cancel papers on {dateLabel.format(new Date(selectedDay + "T12:00:00Z"))}</summary>
+      <fieldset disabled={busy} className="mt-3 space-y-2">
+        <legend className="sr-only">Papers to cancel</legend>
+        <div className="grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
+          {cancellableOnDate.map(item => <label key={item.id} className="flex items-start gap-2 break-words text-sm">
+            <input type="checkbox" checked={cancelSelection.includes(item.id)}
+              disabled={selectedPaperIds.length >= 50 && !cancelSelection.includes(item.id)}
+              onChange={event => {
+                const checked = event.target.checked;
+                setCancelSelection(current => checked ? [...current, item.id] : current.filter(id => id !== item.id));
+              }} />
+            <span>{timeLabel.format(new Date(item.starts_at))} · {item.class_label} · {item.subject_label} · {item.title}</span>
+          </label>)}
+        </div>
+        <button type="button" className={button} disabled={!selectedPaperIds.length}
+          onClick={() => cancelPapers(selectedPaperIds, selectedDay)}>Cancel selected papers{selectedPaperIds.length ? ` (${selectedPaperIds.length})` : ""}</button>
+      </fieldset>
+    </details>}
     {!entries && !error && <p role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Fetching scheduled tests and exams.</p>}
     {!todayInvigilation && !!entries && (timetableRows.length ? <>
       <ul aria-label="Tests and exams timetable" className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
@@ -289,6 +327,23 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
         </table>
       </div>
     </> : <p>No tests or exams match this timetable view.</p>)}
+    {!todayInvigilation && cancelledPapers.length > 0 && <details className="rounded-xl border p-3">
+      <summary className="cursor-pointer font-bold">Cancelled papers ({cancelledPapers.length})</summary>
+      <ul className="mt-3 divide-y text-sm">
+        {cancelledPapers.map(item => <li key={item.id} className="space-y-2 break-words py-3">
+          <h3 className="font-bold">{item.title} · {item.class_label} · {item.subject_label}</h3>
+          <p>{stamp(item.starts_at)} WAT{item.cancelled_at && ` · Cancelled ${stamp(item.cancelled_at)}`}</p>
+          {item.checked_in_at && <p>Teacher check-in {stamp(item.checked_in_at)}{item.checked_out_at && ` · Check-out ${stamp(item.checked_out_at)}`}</p>}
+          {item.marked_at && <p>Marking finished {stamp(item.marked_at)}</p>}
+          {item.submitted_at && <p>Submitted {stamp(item.submitted_at)}{item.submitted_to && ` · ${item.submitted_to}`}</p>}
+          {item.invigilation_attendance?.map(duty => <div key={duty.id} className="rounded-lg border p-2">
+            <p className="font-semibold">{duty.name}</p>
+            {duty.in && <p>Check-in {stamp(duty.in)}{duty.out && ` · Check-out ${stamp(duty.out)}`}</p>}
+            {duty.note && <p className="whitespace-pre-wrap">Exam report · {duty.note}</p>}
+          </div>)}
+        </li>)}
+      </ul>
+    </details>}
     {visibleEntries?.map(item => {
       const canStart = now >= Date.parse(item.starts_at) - 1800000 && now <= Date.parse(item.ends_at) + 1800000;
       return <details key={item.id} open={todayInvigilation ? true : undefined} className="min-w-0 space-y-2 break-words rounded-xl border p-3 text-sm">
