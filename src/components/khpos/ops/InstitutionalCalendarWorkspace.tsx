@@ -46,9 +46,12 @@ function niceDate(value: string) {
 }
 
 export function InstitutionalCalendarWorkspace({
-  organisationId,
+  organisationId, initialExamPlan = false, examPaper, examDay,
 }: {
   organisationId: string;
+  initialExamPlan?: boolean;
+  examPaper?: string;
+  examDay?: string;
 }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [calendar, setCalendar] = useState<KhposCalendarSnapshot | null>(null);
@@ -168,7 +171,7 @@ export function InstitutionalCalendarWorkspace({
       </section>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-        <SchoolPlan school={organisationId} />
+        <SchoolPlan school={organisationId} initialExamPlan={initialExamPlan} examPaper={examPaper} examDay={examDay} />
         <section id="calendar-timeline" className="flex scroll-mt-24 flex-wrap gap-2">
           {(["all", "overdue", "work", "decision", "event", "policy_review", "recurring"] as const).map(
             (value) => (

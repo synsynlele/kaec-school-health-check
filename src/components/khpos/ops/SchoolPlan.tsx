@@ -28,19 +28,21 @@ function mondayOf(day: string) {
 
 const modes = { scheduled: "Run on the scheduled date", teaching: "Teaching days only", staff: "Staff working days" };
 
-export function SchoolPlan({ school, todayOnly = false }: { school: string; todayOnly?: boolean }) {
-  const [from, setFrom] = useState(() => lagosLocalDay(Date.now()).slice(0, 8) + "01");
+export function SchoolPlan({ school, todayOnly = false, initialExamPlan = false, examPaper, examDay }: {
+  school: string; todayOnly?: boolean; initialExamPlan?: boolean; examPaper?: string; examDay?: string;
+}) {
+  const [from, setFrom] = useState(() => initialExamPlan && examDay ? examDay : lagosLocalDay(Date.now()).slice(0, 8) + "01");
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [editing, setEditing] = useState<PlanEntry | "new" | "document" | null>(null);
+  const [editing, setEditing] = useState<PlanEntry | "new" | "document" | null>(initialExamPlan && examPaper ? "document" : null);
   const [kind, setKind] = useState<PlanKind>("event");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("soonest");
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<number | null>(initialExamPlan ? 2 : null);
   const [limit, setLimit] = useState(pageSize);
   const [showArchive, setShowArchive] = useState(false);
-  const [includeExamPeriod, setIncludeExamPeriod] = useState(true);
+  const [includeExamPeriod, setIncludeExamPeriod] = useState(false);
   const [documentRows, setDocumentRows] = useState(1);
   const [todayLimit, setTodayLimit] = useState(10);
   const [retry, setRetry] = useState(0);
@@ -228,7 +230,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
     <ActionFeedback busy={busy} error={error} notice={notice} onDismiss={() => { setError(""); setNotice(""); }} />
     {!todayOnly && <>
       <p className="text-sm text-slate-600">Publish breaks, themes, staff duties and invigilation for your school or campus.</p>
-      <label className="block max-w-xs font-bold">Show 92 days from
+      <label className="block max-w-xs font-bold">Show plans from
         <input type="date" className={field} value={from} disabled={busy} onChange={event => {
           if (event.target.value) { setPlan(null); setEditing(null); setLimit(pageSize); setFrom(event.target.value); }
         }} />
@@ -238,14 +240,15 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
       <p className="text-sm"><Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/academic-delivery`}>Manage term dates in Teaching plans</Link></p>
       {plan?.terms.map(term => <p key={term.id} className="text-sm">{term.session} · {term.name} · {term.start} to {term.end}</p>)}
       {plan && !plan.canManage && !plan.canManageInvigilation && <p className="text-sm text-slate-600">Your access is view-only. A school custodian, campus guardian or academic inspector can add entries within their assigned scope.</p>}
+      {selectedGroup === 2 && <p className="text-sm text-slate-600">First <Link className="font-bold text-brand-700 underline" href={`/khpos/${school}/teaching-presence?tab=exams`}>add tests or exams to the timetable</Link>. Then choose a paper and an invigilator for each assignment. Publish when the names are ready to appear on the timetable.</p>}
       {(plan?.canManage || (selectedGroup === 2 && plan?.canManageInvigilation)) && !editing && group && <button type="button" className={button} onClick={() => {
-        setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(Boolean(plan?.canManage)); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
-      }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "New exam plan"}</button>}
+        setKind(group.kinds[0]); setDocumentRows(1); setIncludeExamPeriod(false); setShowArchive(false); setEditing(selectedGroup === 0 ? "new" : "document");
+      }}>{selectedGroup === 0 ? "Add calendar entry" : selectedGroup === 1 ? "New weekly plan" : "Assign invigilators"}</button>}
     </>}
     {editing === "document" && plan && (plan.canManage || (selectedGroup === 2 && plan.canManageInvigilation)) && <form {...actionDestination} className="space-y-4 rounded-xl border p-4" onSubmit={saveDocument}>
       <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
-        <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Exam plan"}</legend>
-        {selectedGroup === 2 && plan.canManage && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Include an exam period</label>}
+        <legend className="mb-3 font-bold">{selectedGroup === 1 ? "Weekly plan" : "Invigilator assignments"}</legend>
+        {selectedGroup === 2 && plan.canManage && <label className="sm:col-span-2"><input type="checkbox" checked={includeExamPeriod} onChange={event => setIncludeExamPeriod(event.target.checked)} /> Also add an exam period to the calendar</label>}
         {(selectedGroup === 1 || includeExamPeriod) && <label>{selectedGroup === 1 ? "Monday of the week" : "Exam period starts"}
           <input type="date" name="documentStart" required className={field} defaultValue={selectedGroup === 1 ? mondayOf(from) : from} />
         </label>}
@@ -266,9 +269,10 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
           {Array.from({ length: documentRows }, (_, index) => <fieldset key={index} className="grid gap-2 rounded-xl border p-3 sm:col-span-2 sm:grid-cols-2">
             <legend className="px-1 text-sm font-bold">{selectedGroup === 1 ? "Staff duty" : "Invigilation"} {index + 1}</legend>
             {selectedGroup === 1 ? <label>Duty<input name={`duty-${index}`} maxLength={120} className={field} /></label>
-              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field} disabled={!plan.assessments.length}>
+              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field} disabled={!plan.assessments.length}
+                defaultValue={plan.assessments.some(item => item.id === examPaper) ? examPaper : ""}>
                 <option value="">{plan.assessments.length ? "Choose an assessment" : "No scheduled assessments in this date range"}</option>
-                {plan.assessments.map(item => <option key={item.id} value={item.id}>{item.name} · {lagosLocalDay(Date.parse(item.start))}</option>)}
+                {plan.assessments.map(item => <option key={item.id} value={item.id}>{item.name} · {new Date(item.start).toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" })}</option>)}
               </select></label>}
             <label>{selectedGroup === 1 ? "Teacher on duty" : "Invigilator"}<select name={`staff-${index}`} className={field} disabled={selectedGroup !== 1 && !plan.assessments.length}>
               <option value="">Choose staff</option>
@@ -281,7 +285,7 @@ export function SchoolPlan({ school, todayOnly = false }: { school: string; toda
         </>
       </fieldset>
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={button} value="publish" disabled={busy}>Publish plan</button>
+        <button type="submit" className={button} value="publish" disabled={busy}>{selectedGroup === 2 ? "Publish exam plan" : "Publish plan"}</button>
         <button type="submit" className={button} value="draft" disabled={busy}>Save plan as draft</button>
         <button type="button" className={button} disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
       </div>

@@ -1,6 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 
-export async function downloadTimetablePdf(headings: string[], rows: string[][]) {
+export async function downloadTimetablePdf(headings: string[], rows: string[][], options?: {
+  title: string; subtitle: string; filename: string; widths: number[];
+}) {
   const document = await PDFDocument.create();
   const regular = await document.embedFont(StandardFonts.Helvetica);
   const bold = await document.embedFont(StandardFonts.HelveticaBold);
@@ -8,7 +10,7 @@ export async function downloadTimetablePdf(headings: string[], rows: string[][])
   const white = rgb(1, 1, 1);
   const text = rgb(0.12, 0.17, 0.19);
   const margin = 28;
-  const widths = [76, 89, 110, 132, 128, 66, 185];
+  const widths = options?.widths ?? [76, 89, 110, 132, 128, 66, 185];
   const tableWidth = widths.reduce((sum, width) => sum + width, 0);
   const size = 9;
   const lineHeight = 12;
@@ -44,8 +46,8 @@ export async function downloadTimetablePdf(headings: string[], rows: string[][])
   let y = 0;
   function addPage() {
     page = document.addPage([842, 595]);
-    page.drawText("KHP-OS  |  Weekly lesson timetable", { x: margin, y: 547, font: bold, size: 20, color: green });
-    page.drawText("Recurring weekly schedule  |  Lagos time (WAT)", { x: margin, y: 527, font: regular, size, color: text });
+    page.drawText(options?.title ?? "KHP-OS  |  Weekly lesson timetable", { x: margin, y: 547, font: bold, size: 20, color: green });
+    page.drawText(options?.subtitle ?? "Recurring weekly schedule  |  Lagos time (WAT)", { x: margin, y: 527, font: regular, size, color: text });
     page.drawRectangle({ x: margin, y: 483, width: tableWidth, height: 26, color: green });
     let x = margin;
     headings.forEach((heading, index) => {
@@ -88,7 +90,7 @@ export async function downloadTimetablePdf(headings: string[], rows: string[][])
   const url = URL.createObjectURL(new Blob([Uint8Array.from(bytes).buffer], { type: "application/pdf" }));
   const link = window.document.createElement("a");
   link.href = url;
-  link.download = "KHP-OS-weekly-timetable.pdf";
+  link.download = options?.filename ?? "KHP-OS-weekly-timetable.pdf";
   window.document.body.append(link);
   link.click();
   link.remove();

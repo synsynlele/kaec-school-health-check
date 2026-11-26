@@ -65,9 +65,9 @@ for (const expected of [
   "Assessments & exams",
   "Technology boundary",
   "Executive summary only",
-  "Allegation ≠ finding",
-  "No silent edit",
-  "Close the term only after assessment",
+  "Report and review exam incidents",
+  "Request and verify a result correction",
+  "Review outstanding work before closing the term",
 ]) requireText(workspace, expected, "O15 workspace");
 
 const migration = read(

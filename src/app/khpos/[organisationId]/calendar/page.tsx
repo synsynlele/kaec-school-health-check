@@ -21,10 +21,13 @@ export default async function Page({
   const query = await searchParams;
   const requested = typeof query.view === "string" ? query.view : "";
   const selected = ["events"].includes(requested) ? requested : "";
+  const paper = typeof query.paper === "string" && UUID_RE.test(query.paper) ? query.paper : undefined;
+  const day = typeof query.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(query.day)
+    && Number.isFinite(Date.parse(query.day)) && new Date(query.day).toISOString().slice(0, 10) === query.day ? query.day : undefined;
   return (
     <>
       <div id="khpos-section-content" tabIndex={-1}>
-        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace organisationId={organisationId} />)}
+        {selected === "events" ? (<ExtendedWorkspace organisationId={organisationId} type="events" />) : (<InstitutionalCalendarWorkspace key={[query.plan, paper, day].join(":")} organisationId={organisationId} initialExamPlan={query.plan === "exams"} examPaper={paper} examDay={day} />)}
       </div>
       <SchoolSectionTabs
         base={"/khpos/" + organisationId + "/calendar"}
