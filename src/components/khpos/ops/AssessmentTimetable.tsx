@@ -40,10 +40,12 @@ function stamp(value: string) {
 export function AssessmentTimetable({ school, today, assignments = [], todayInvigilation = false }: {
   school: string; today?: string; assignments?: Assignment[]; todayInvigilation?: boolean;
 }) {
-  const [week, setWeek] = useState(() => monday(today ?? lagosLocalDay(Date.now())));
+  const [selectedDay, setSelectedDay] = useState(() => today ?? lagosLocalDay(Date.now()));
+  const week = monday(selectedDay);
   const [weeks, setWeeks] = useState(1);
   const [kindFilter, setKindFilter] = useState("all");
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [selectedStreams, setSelectedStreams] = useState<string[]>([]);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -93,6 +95,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       setEntries(weeks === 1 ? result : await request());
       setNotice("Assessment timetable updated.");
       setEditing(null);
+      setSelectedStreams([]);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the timetable.");
     } finally {
@@ -104,19 +107,26 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
   function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
-    const day = String(fields.get("day"));
-    const assignment = assignments.find(item => item.id === fields.get("streamId"));
+    const day = editing ? String(fields.get("day")) : selectedDay;
     const kind = String(fields.get("kind"));
     const start = String(fields.get("start"));
     const end = String(fields.get("end"));
-    if (day < from || day > rangeEnd || end <= start) {
-      setError(end <= start ? "Choose an end time after the start." : "Choose a date within the displayed timetable.");
+    if (end <= start) {
+      setError("Choose an end time after the start.");
       return;
     }
-    const title = String(fields.get("title") ?? "").trim() ||
-      [assignment?.classLabel, assignment?.subjectLabel, kind].filter(Boolean).join(" ").slice(0, 120);
-    void save({ mode: editing ? "edit" : "add", id: editing?.id, title, streamId: fields.get("streamId"), kind,
-      startsAt: `${day}T${start}:00+01:00`, endsAt: `${day}T${end}:00+01:00` });
+    const schedule = { kind, startsAt: `${day}T${start}:00+01:00`, endsAt: `${day}T${end}:00+01:00` };
+    if (editing) {
+      void save({ mode: "edit", id: editing.id, ...schedule,
+        streamId: fields.get("streamId"), title: String(fields.get("title") ?? "").trim() || editing.title });
+      return;
+    }
+    const papers = assignments.filter(item => selectedStreams.includes(item.id)).map(item => ({
+      streamId: item.id,
+      title: (String(fields.get("title") ?? "").trim() || `${item.classLabel} ${item.subjectLabel} ${kind}`).slice(0, 120),
+    }));
+    if (!papers.length) { setError("Choose at least one class and subject."); return; }
+    void save({ mode: "add_batch", ...schedule, papers });
   }
 
   const rangeEnd = new Date(Date.parse(from) + (weeks * 7 - 1) * 86400000).toISOString().slice(0, 10);
@@ -131,7 +141,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     ],
   }));
 
-  const hasEditActions = assignments.length > 0 && timetableRows.some(row => row.item.can_edit);
+  const hasActions = timetableRows.some(({ item }) => item.can_manage_coverage || (item.can_edit && assignments.length > 0));
 
   async function download() {
     if (pending.current || !timetableRows.length) return;
@@ -169,8 +179,8 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
     <h2 className="text-xl font-bold">{todayInvigilation ? "My invigilation today" : "Tests and exams timetable"}</h2>
     {!todayInvigilation && <div className="rounded-xl bg-slate-50 p-3 text-sm">
       <ol className="list-decimal space-y-1 pl-5">
-        <li>Choose the timetable week, then add one test or exam for each class and subject.</li>
-        <li><Link className="inline-flex items-center gap-2 font-semibold text-brand-700 underline" href={`/khpos/${school}/calendar?plan=exams#school-plan`}>Assign and publish invigilators in Calendar <LinkPending /></Link>.</li>
+        <li>Choose the exam date, then select the class and subject assignments that share a time slot.</li>
+        <li><Link className="inline-flex items-center gap-2 font-semibold text-brand-700 underline" href={`/khpos/${school}/calendar?plan=exams#school-plan`}>Open Calendar to assign and publish invigilators <LinkPending /></Link>, or use the link beside a scheduled paper.</li>
         <li>Return here to check names and download the timetable.</li>
       </ol>
     </div>}
@@ -180,11 +190,12 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       <ul className="mt-2 space-y-2">{examConflicts.slice(0,8).map(item=><li key={item.id} className="text-sm text-amber-950">{item.firstTitle} / {item.secondTitle}: {item.reason}</li>)}</ul>
     </section>}
 
-    {!todayInvigilation && <div className="flex flex-wrap items-end gap-3"><label className="block max-w-xs text-sm font-bold">Week starting
-      <input type="date" value={from} disabled={busy} className={field} onChange={event => {
+    {!todayInvigilation && <div className="flex flex-wrap items-end gap-3"><label className="block max-w-xs text-sm font-bold">Exam or test date
+      <input type="date" value={selectedDay} disabled={busy} className={field} onChange={event => {
         if (event.target.value) {
           const selectedWeek = monday(event.target.value);
-          if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); setWeek(selectedWeek); }
+          if (selectedWeek !== from) { setEntries(null); setError(""); setEditing(null); }
+          setSelectedDay(event.target.value);
         }
       }} />
     </label>
@@ -205,16 +216,27 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
       <form {...(editing ? actionDestination : {})} id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">
         <fieldset disabled={busy || entries === null} className="grid gap-3 sm:grid-cols-2">
-          <label>Class, subject and teacher<select name="streamId" className={field} required defaultValue={editing?.stream_id ?? ""}>
+          {!editing && <p className="sm:col-span-2 text-sm font-semibold">Scheduling for {dateLabel.format(new Date(selectedDay + "T12:00:00Z"))}</p>}
+          {editing ? <label>Class, subject and teacher<select name="streamId" className={field} required defaultValue={editing?.stream_id ?? ""}>
             <option value="">Choose class and subject</option>
             {assignments.map(item => <option key={item.id} value={item.id}>{item.classLabel} · {item.subjectLabel} · {item.teacherDisplay}</option>)}
-          </select></label>
+          </select></label> : <fieldset className="sm:col-span-2 rounded-lg border p-3">
+            <legend className="px-1 text-sm font-bold">Classes and subjects</legend>
+            <p className="mb-2 text-sm text-slate-600">Tick the papers that should start and finish together. Up to 30 per save.</p>
+            <div className="grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
+              {assignments.map(item => <label key={item.id} className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={selectedStreams.includes(item.id)} disabled={selectedStreams.length >= 30 && !selectedStreams.includes(item.id)}
+                  onChange={event => setSelectedStreams(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />
+                <span>{item.classLabel} · {item.subjectLabel} · {item.teacherDisplay}</span>
+              </label>)}
+            </div>
+          </fieldset>}
           <label>Type<select name="kind" className={field} defaultValue={editing?.kind ?? "test"}><option value="test">Test</option><option value="assessment">Assessment</option><option value="exam">Exam</option></select></label>
-          <label>Paper name (optional)<input name="title" className={field} defaultValue={editing?.title} placeholder="e.g. Mathematics Paper 1" maxLength={120} /></label>
-          <label>Date<input type="date" name="day" className={field} required min={from} max={rangeEnd} defaultValue={editStart.slice(0, 10) || from} /></label>
+          <label>{editing ? "Paper name" : "Shared paper name (optional)"}<input name="title" className={field} defaultValue={editing?.title} placeholder="e.g. Mathematics Paper 1" maxLength={120} /></label>
+          {editing && <label>Reschedule date<input type="date" name="day" className={field} required defaultValue={editStart.slice(0, 10)} /></label>}
           <label>Start time (WAT)<input type="time" name="start" className={field} defaultValue={editStart.slice(11, 16)} required /></label>
           <label>End time (WAT)<input type="time" name="end" className={field} defaultValue={editEnd.slice(11, 16)} required /></label>
-          <button className={button} type="submit">{editing ? "Save changes" : "Save to timetable"}</button>
+          <button className={button} type="submit">{editing ? "Save changes" : selectedStreams.length ? `Schedule ${selectedStreams.length} paper${selectedStreams.length === 1 ? "" : "s"}` : "Save to timetable"}</button>
           {editing && <button type="button" onClick={() => setEditing(null)}>Cancel edit</button>}
         </fieldset>
       </form>
@@ -226,11 +248,17 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
         <caption className="sr-only">Tests and exams with published invigilator names</caption>
         <thead className="bg-slate-100"><tr>
           {headings.map(heading => <th key={heading} scope="col" className="px-3 py-2">{heading}</th>)}
-          {hasEditActions && <th scope="col" className="px-3 py-2">Actions</th>}
+          {hasActions && <th scope="col" className="px-3 py-2">Actions</th>}
         </tr></thead>
         <tbody className="divide-y">{timetableRows.map(({ item, cells }) => <tr key={item.id}>
           {cells.map((cell, index) => <td key={headings[index]} className={index < 2 ? "whitespace-nowrap px-3 py-2" : "px-3 py-2"}>{cell}</td>)}
-          {hasEditActions && <td className="whitespace-nowrap px-3 py-2">{item.can_edit && <button type="button" className="font-semibold text-brand-700 underline" disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}</td>}
+          {hasActions && <td className="whitespace-nowrap px-3 py-2"><div className="flex flex-wrap gap-3">
+            {item.can_manage_coverage && <Link className="inline-flex items-center gap-1 font-semibold text-brand-700 underline"
+              href={`/khpos/${school}/calendar?plan=exams&paper=${item.id}&day=${lagosLocalDay(Date.parse(item.starts_at))}#school-plan`}>
+              Assign invigilators <LinkPending />
+            </Link>}
+            {item.can_edit && assignments.length > 0 && <button type="button" className="font-semibold text-brand-700 underline" disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
+          </div></td>}
         </tr>)}</tbody>
       </table>
     </div> : <p>No tests or exams match this timetable view.</p>)}

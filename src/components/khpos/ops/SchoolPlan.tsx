@@ -28,10 +28,12 @@ function mondayOf(day: string) {
 
 const modes = { scheduled: "Run on the scheduled date", teaching: "Teaching days only", staff: "Staff working days" };
 
-export function SchoolPlan({ school, todayOnly = false, initialExamPlan = false }: { school: string; todayOnly?: boolean; initialExamPlan?: boolean }) {
-  const [from, setFrom] = useState(() => lagosLocalDay(Date.now()).slice(0, 8) + "01");
+export function SchoolPlan({ school, todayOnly = false, initialExamPlan = false, examPaper, examDay }: {
+  school: string; todayOnly?: boolean; initialExamPlan?: boolean; examPaper?: string; examDay?: string;
+}) {
+  const [from, setFrom] = useState(() => initialExamPlan && examDay ? examDay : lagosLocalDay(Date.now()).slice(0, 8) + "01");
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [editing, setEditing] = useState<PlanEntry | "new" | "document" | null>(null);
+  const [editing, setEditing] = useState<PlanEntry | "new" | "document" | null>(initialExamPlan && examPaper ? "document" : null);
   const [kind, setKind] = useState<PlanKind>("event");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -40,7 +42,7 @@ export function SchoolPlan({ school, todayOnly = false, initialExamPlan = false 
   const [selectedGroup, setSelectedGroup] = useState<number | null>(initialExamPlan ? 2 : null);
   const [limit, setLimit] = useState(pageSize);
   const [showArchive, setShowArchive] = useState(false);
-  const [includeExamPeriod, setIncludeExamPeriod] = useState(true);
+  const [includeExamPeriod, setIncludeExamPeriod] = useState(false);
   const [documentRows, setDocumentRows] = useState(1);
   const [todayLimit, setTodayLimit] = useState(10);
   const [retry, setRetry] = useState(0);
@@ -267,7 +269,8 @@ export function SchoolPlan({ school, todayOnly = false, initialExamPlan = false 
           {Array.from({ length: documentRows }, (_, index) => <fieldset key={index} className="grid gap-2 rounded-xl border p-3 sm:col-span-2 sm:grid-cols-2">
             <legend className="px-1 text-sm font-bold">{selectedGroup === 1 ? "Staff duty" : "Invigilation"} {index + 1}</legend>
             {selectedGroup === 1 ? <label>Duty<input name={`duty-${index}`} maxLength={120} className={field} /></label>
-              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field} disabled={!plan.assessments.length}>
+              : <label>Scheduled test or exam<select name={`assessment-${index}`} className={field} disabled={!plan.assessments.length}
+                defaultValue={plan.assessments.some(item => item.id === examPaper) ? examPaper : ""}>
                 <option value="">{plan.assessments.length ? "Choose an assessment" : "No scheduled assessments in this date range"}</option>
                 {plan.assessments.map(item => <option key={item.id} value={item.id}>{item.name} · {new Date(item.start).toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" })}</option>)}
               </select></label>}
