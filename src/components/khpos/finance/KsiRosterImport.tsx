@@ -10,6 +10,7 @@ type Result = { admission: string | null; name?: string; result: "synced" | "rev
 export function KsiRosterImport({ school, campus, classes, terms, term, refresh }: {
   school: string; campus: string; classes: Row[]; terms: Row[]; term: string; refresh: () => void;
 }) {
+  const [sharing,setSharing]=useState<boolean>();
   const [sources,setSources]=useState<SourceClass[]>();
   const [results,setResults]=useState<Result[]>([]);
   const [syncedCount,setSyncedCount]=useState<number>();
@@ -37,9 +38,28 @@ export function KsiRosterImport({ school, campus, classes, terms, term, refresh 
     finally {setBusy(false);}
   }
 
-  return <Expand title="Sync learners from KSI">
+  async function changeSharing() {
+    if(busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result=await request({action:"share",enabled:sharing===undefined?undefined:!sharing});
+      setSharing(result.enabled);
+    } catch(cause) {
+      setError(cause instanceof Error ? cause.message : "Could not manage sharing.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <Expand title="KSI learner roster">
     <div className="space-y-3">
       <p className="text-sm leading-relaxed text-slate-700">If KSI is your registration source, choose a class from your paired school and match it to a KHP-OS campus class and term. The sync uses admission numbers and flags conflicts for review.</p>
+      <button type="button" className={secondary} disabled={busy} onClick={()=>void changeSharing()}>
+        {busy?"Please wait…":sharing===undefined?"Check sharing with KSI":sharing?"Stop sharing this campus":"Share this campus with KSI"}
+      </button>
+      {sharing && <p className="break-all text-sm">KHP-OS school ID for KSI <code>{school}</code></p>}
+      {sharing!==undefined && <p role="status" className="text-sm font-semibold">Campus sharing is {sharing?"on":"off"}.</p>}
       {!sources && <button type="button" className={secondary} disabled={busy} onClick={()=>void load()}>{busy?"Connecting…":"Load classes from KSI"}</button>}
       {sources && <FinanceForm disabled={busy || !sources.length || !classes.length || !terms.length}
         submitLabel={busy?"Syncing…":"Sync this class"} onSubmit={async row=>{

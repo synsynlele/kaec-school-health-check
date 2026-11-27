@@ -1,8 +1,10 @@
+import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
 
 const input = z.discriminatedUnion("action", [
+  z.object({action:z.literal("share"),campus:z.uuid(),enabled:z.boolean().optional()}),
   z.object({action:z.literal("classes"),campus:z.uuid()}),
   z.object({action:z.literal("sync"),campus:z.uuid(),classId:z.uuid(),sourceClass:z.uuid(),term:z.uuid(),after:z.uuid().nullable()}),
 ]);
@@ -16,11 +18,28 @@ function json(data: unknown, status = 200) {
 export async function POST(request: Request,{params}:{params:Promise<{id:string}>}) {
   try {
     const school=z.uuid().parse((await params).id);
+    const raw=await request.text();
+    if(raw.length>4096) return json({error:"This roster request is too large."},413);
+    const body=JSON.parse(raw);
     const token=bearerTokenFromRequest(request);
+    const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    if(body?.action==="export") {
+      const key=process.env.KSI_ROSTER_BRIDGE_KEY?.trim();
+      const supplied=Buffer.from(token ?? "");
+      const expected=Buffer.from(key ?? "");
+      if(!key || key.length<32 || expected.length!==supplied.length || !timingSafeEqual(expected,supplied)) {
+        return json({error:"Roster connection unavailable."},403);
+      }
+      const query=z.object({workspace:z.uuid(),campus:z.uuid().optional(),classId:z.uuid().optional(),
+        term:z.uuid().optional(),after:z.uuid().nullable().optional()}).parse(body);
+      const {data,error}=await db.rpc("khpos_export_roster_to_ksi",{p_school:school,p_workspace:query.workspace,
+        p_campus:query.campus??null,p_class:query.classId??null,p_term:query.term??null,p_after:query.after??null});
+      if(error) return json({error:"Could not load the shared KHP-OS roster."},error.code==="42501"?403:400);
+      return json({rows:data});
+    }
     if(!token) return json({error:"Sign in to open the learner roster."},401);
     const actor=await verifyKhposAccessToken(token);
-    const selection=input.parse(await request.json());
-    const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const selection=input.parse(body);
     const scope=await db.rpc("khpos_finance_register_server",{p_actor:actor.id,p_school:school,p_campus:null,p_action:"context",p_input:{}});
     if(scope.error || !scope.data?.campuses?.some((c:{id:string;canManage:boolean})=>c.id===selection.campus && c.canManage)) {
       return json({error:"You need learner registration access for this campus."},403);
@@ -29,6 +48,12 @@ export async function POST(request: Request,{params}:{params:Promise<{id:string}
       .eq("organisation_id",school).eq("provider","ksi").eq("status","active").maybeSingle();
     if(pairError) throw pairError;
     if(!pair?.external_tenant_id) return json({error:"Pair this KHP-OS school with KSI first."},409);
+    if(selection.action==="share") {
+      const {data,error}=await db.rpc("khpos_manage_ksi_roster_share",{p_actor:actor.id,p_school:school,
+        p_campus:selection.campus,p_workspace:pair.external_tenant_id,p_enabled:selection.enabled??null});
+      if(error) return json({error:"Could not manage roster sharing for this campus."},error.code==="42501"?403:503);
+      return json({enabled:data});
+    }
     const key=process.env.KSI_ROSTER_BRIDGE_KEY?.trim();
     if(!key) return json({error:"The KSI roster connection has yet to be configured."},503);
     const endpoint=new URL(process.env.KSI_ROSTER_URL || "https://www.ksi.name.ng/api/integrations/khpos/roster");
