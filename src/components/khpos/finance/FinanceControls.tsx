@@ -78,7 +78,7 @@ export function FinanceForm({ title, submit, onSubmit, disabled, children, submi
   }
   return <form onSubmit={save} className="space-y-3">
     {title && <h3 className="font-bold text-slate-950">{title}</h3>}
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
     {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
     {submit ?? <button disabled={disabled} className={primary}>{submitLabel}</button>}
   </form>;
@@ -95,14 +95,26 @@ export function Grid({ rows, columns, empty = "No records match this view." }: {
   rows: Row[]; columns: [string,(row: Row) => ReactNode][]; empty?: string;
 }) {
   if (!rows.length) return <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700">{empty}</p>;
-  return <div className="overflow-x-auto rounded-xl border border-slate-200" tabIndex={0} role="region" aria-label="Finance records">
-    <table className="w-full text-left text-sm text-slate-900">
+  return <>
+    <ul className="space-y-3 sm:hidden" aria-label="Finance records">
+      {rows.map((row,i)=><li key={str(row.id ?? row.number) || i} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <dl className="divide-y divide-slate-100">
+          {columns.map(([label,render])=><div key={label} className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 py-2 text-sm leading-relaxed">
+            <dt className="break-words font-semibold text-slate-600">{label}</dt>
+            <dd className="min-w-0 break-words text-slate-950">{render(row)}</dd>
+          </div>)}
+        </dl>
+      </li>)}
+    </ul>
+    <div className="hidden overflow-x-auto rounded-xl border border-slate-200 sm:block" tabIndex={0} role="region" aria-label="Finance records">
+    <table className="w-full min-w-max text-left text-sm leading-relaxed text-slate-900">
       <thead className="bg-slate-100">{<tr>{columns.map(([label]) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-3">{label}</th>)}</tr>}</thead>
       <tbody className="divide-y divide-slate-100">{rows.map((row,i) => <tr key={str(row.id ?? row.number) || i}>
-        {columns.map(([label,render]) => <td key={label} className="px-3 py-2 align-middle">{render(row)}</td>)}
+        {columns.map(([label,render]) => <td key={label} className="max-w-64 whitespace-normal break-words px-3 py-2 align-top">{render(row)}</td>)}
       </tr>)}</tbody>
     </table>
-  </div>;
+    </div>
+  </>;
 }
 
 export function Pager({ offset, setOffset, more }: { offset: number; setOffset:(n: number) => void; more: boolean }) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { KsiRosterImport } from "./KsiRosterImport";
+
 import { useCallback, useState } from "react";
 import { Expand, Field, FinanceForm, Grid, LoadingState, Pager, card, financeFetch, options, primary, secondary, selectClass, str, useFinanceData,
   type FinanceCall, type Option, type Row, type Write } from "./FinanceControls";
@@ -159,7 +161,7 @@ function LearnerImport({ call, term, onImported }: { call: FinanceCall; term: st
 
 export function FinanceLearners({ call, write, refresh, busy, classes, terms, term, school, campus, campuses, onImported, onStatement }: {
   call: FinanceCall; write: Write; refresh: number; busy: boolean; classes: Row[]; terms: Row[]; term: string;
-  school: string; campus: string; campuses: Option[]; onImported: () => void; onStatement: (id: string) => void;
+  school: string; campus: string; campuses: Option[]; onImported: () => void; onStatement?: (id: string) => void;
 }) {
   const [filter,setFilter] = useState<Row>({});
   const [offset,setOffset] = useState(0);
@@ -214,6 +216,7 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
       {edit.id ? <button className={secondary + " mt-3"} onClick={() => {setEdit({});setDestination("");}}>Cancel edit</button> : null}
     </Expand>
     <LoadingState {...alternate} />
+    <KsiRosterImport key={campus} school={school} campus={campus} classes={classes} terms={terms} term={term} refresh={onImported} />
     <Expand title="Import learners from Excel or CSV">
       <LearnerImport key={term} call={call} term={term} onImported={onImported} />
     </Expand>
@@ -228,14 +231,14 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
     {data.data && <><Grid rows={data.data.slice(0,50)} columns={[
       ["Learner",row => <strong>{str(row.name)}</strong>],["Admission number",row => str(row.admission)],
       ["Class",row => [row.class,row.arm].map(str).filter(Boolean).join(" · ")],
-      ["Status",row => str(row.status) || "Existing learner"],["Actions",row => <div className="flex gap-2">
+      ["Status",row => str(row.status) || "Existing learner"],["Actions",row => <div className="flex flex-wrap gap-2">
         <button className={secondary} onClick={event => {
           setEdit(row);setDestination("");
           const section = event.currentTarget.closest("section");
           const details = section?.querySelector("details");
           if (details) { details.open = true; details.scrollIntoView({ block:"start" }); }
         }}>{row.status ? "Edit" : "Link"}</button>
-        <button className={secondary} onClick={() => onStatement(str(row.id))}>Fee statement</button>
+        {onStatement && <button className={secondary} onClick={() => onStatement(str(row.id))}>Fee statement</button>}
       </div>],
     ]} /><Pager offset={offset} setOffset={setOffset} more={data.data.length>50} /></>}
   </section>;

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSchoolMenuRoles } from "@/components/khpos/SchoolWorkspaceNav";
 import { useCallback, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { LearnerAttendanceHistory } from "./LearnerAttendanceHistory";
@@ -29,6 +31,8 @@ const button = "rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium
 const field = "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm";
 
 export function LearnerRegister({ organisationId, initialCampus, initialFilter }: { organisationId: string; initialCampus?: string; initialFilter?: string }) {
+  const roles = useSchoolMenuRoles();
+  const canManageNames = roles?.some(role => ["SCHOOL_CUSTODIAN","VISION_CUSTODIAN","FINANCE_ADMIN_OFFICER"].includes(role));
   const [roster, setRoster] = useState<Roster>();
   const [campusId, setCampus] = useState(initialCampus ?? "");
   const [className, setClass] = useState("");
@@ -126,7 +130,11 @@ export function LearnerRegister({ organisationId, initialCampus, initialFilter }
 
   return <section className="mx-auto max-w-5xl space-y-5 px-4 py-6">
     <header>
-      <h1 className="text-2xl font-semibold">Learner register</h1>
+      <h1 className="text-2xl font-semibold">Learner attendance register</h1>
+      {canManageNames && <Link href={`/khpos/${organisationId}/learners`}
+        className="mt-2 inline-flex min-h-11 items-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white">
+        Register or import learners
+      </Link>}
       <p className="text-sm text-slate-600">Take the morning roll, then confirm learners at closing and record their release.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={button} disabled={busy || Boolean(release)} aria-pressed={view === "daily"} onClick={() => setView("daily")}>Daily register</button>

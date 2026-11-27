@@ -234,5 +234,54 @@ assert.equal(typeof learnerAccount.latestReceipt,"string");
 assert.equal((await ledger("receipt",{period,id:learnerAccount.latestReceipt}))[0].kind,"payment");
 assert((await ledger("invoices",{period,learner,includeHistory:true,outstandingOnly:true})).every(row=>Number(row.balance)>0));
 await assert.rejects(ledger("statement",{period,learner},guardian),/appointment/);
+await migrate("20261128010000_finance_single_invoice_instalments");
+const newTerm = id(97);
+const newPeriod = id(98);
+await db.exec(`
+  insert into khpos_ops_academic_terms values ('${newTerm}','${school}',null,'Second term','2025/26','2026-01-01','2026-03-31','active');
+  insert into khpos_finance_periods values ('${newPeriod}','${school}','${campus}','${newTerm}','2026-01-01','2026-03-31',false);
+`);
+const planDate="2026-01-10";
+const command=(key,fields)=>({period:newPeriod,key:id(key),date:planDate,...fields});
+const newLearner = (await register("saveLearner",{...student,term:newTerm,admission:"PLAN-100",name:"Payment plan fixture"})).id;
+const plan = (await ledger("saveSchedule",command(80,{class:classId,label:"Four payment fee",amount:10000000,due:"2026-03-31",paymentLimit:4}))).id;
+assert.equal((await ledger("billSchedule",command(81,{schedule:plan,learner:newLearner}))).created,1);
+const [single] = await ledger("invoices",{period:newPeriod,learner:newLearner});
+assert.equal(single.amount,10000000);
+assert.equal(single.payment_limit,4);
+assert.equal((await ledger("billSchedule",command(82,{schedule:plan,learner:newLearner}))).created,0);
+await assert.rejects(ledger("billLearner",command(95,{learner:newLearner,label:"Second invoice",amount:100})),/already has an invoice/);
+const firstPayment = {invoice:single.id,amount:2000000,account:bank,kind:"payment"};
+const collected = await ledger("post",command(90,{...firstPayment}));
+assert.equal((await ledger("receipt",{period:newPeriod,id:collected.id}))[0].reference,"AUTO-FEE-"+id(90));
+assert.equal(await value("finance_invoice_balance",[single.id]),8000000);
+await ledger("post",command(91,{...firstPayment}));
+await ledger("post",command(92,{...firstPayment}));
+await assert.rejects(ledger("post",command(93,{...firstPayment})),/final instalment/);
+await ledger("post",command(94,{...firstPayment,amount:4000000}));
+assert.equal(await value("finance_invoice_balance",[single.id]),0);
+await assert.rejects(ledger("post",command(96,{...firstPayment})),/payment limit/);
+const ksiSchool = id(110);
+await db.exec(`
+  alter table public.khpos_ops_learner_anchors add column last_synced_at timestamptz;
+  create table public.khpos_integrations(organisation_id uuid,provider text,status text,external_tenant_id text);
+  insert into public.khpos_integrations values ('${school}','ksi','active','${ksiSchool}');
+`);
+await migrate("20261128020000_link_ksi_learner_roster");
+const sync = (rows,actor=officer,workspace=ksiSchool,session="2025/2026")=>db.query(
+  "select public.khpos_import_ksi_roster($1,$2,$3,$4,$5,$6,$7,$8) as result",
+  [actor,school,campus,workspace,classId,newTerm,session,JSON.stringify(rows)]
+).then(result=>result.rows[0].result);
+const linkedKsi = {id:id(111),name:student.name,admission:student.admission};
+const newKsi = {id:id(112),name:"KSI import fixture",admission:"KSI-112"};
+assert.deepEqual((await sync([linkedKsi,newKsi,{id:id(113),name:"Needs review"}])).map(row=>row.result),["synced","synced","review"]);
+assert.equal((await register("learners",{search:student.admission}))[0].id,learner);
+const syncedId=(await register("learners",{search:newKsi.admission}))[0].id;
+assert.equal((await sync([{...newKsi,name:"KSI corrected name"}]))[0].result,"synced");
+assert.equal((await register("learners",{search:newKsi.admission}))[0].id,syncedId);
+assert.equal((await sync([{...newKsi,id:id(114),name:"Conflicting name"}]))[0].result,"review");
+await assert.rejects(sync([newKsi],teacher),/appointment/);
+await assert.rejects(sync([newKsi],officer,id(115)),/Connect this school/);
+await assert.rejects(sync([newKsi],officer,ksiSchool,"2024/2025"),/Choose a class/);
 await db.close();
 console.log("Phase 6: finance tables deny direct access and use service-only, role-scoped database operations");

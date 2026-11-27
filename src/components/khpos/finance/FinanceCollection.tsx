@@ -16,13 +16,15 @@ export function FinanceCollection({ p, classes, initialLearner, initialInvoice }
   const [invoiceOffset, setInvoiceOffset] = useState(0);
   const [target, setTarget] = useState(initialInvoice);
   const [receiptError, setReceiptError] = useState("");
+  const [applyCredit, setApplyCredit] = useState(false);
   const [printing, setPrinting] = useState(false);
   const searching = Boolean(query || className);
   const roster = useFinanceData<Row[]>(p.call,"register","learners",{ search:query, class:className, offset },p.refresh,searching);
   const account = useFinanceData<{ name: string; class: string; admission: string; billed: number; balance: number; credit: number; latestReceipt: string | null }>(
     p.call,"ledger","statement",{ period:p.period,learner,offset:0 },p.refresh,Boolean(learner));
   const invoices = useFinanceData<Row[]>(p.call,"ledger","invoices",{ period:p.period,learner,includeHistory:true,outstandingOnly:true,offset:invoiceOffset },p.refresh,Boolean(learner));
-  const chosen = useFinanceData<Row[]>(p.call,"ledger","invoice",{ period:p.period,id:target },p.refresh,Boolean(target && target!=="credit"));
+  const selectedTarget = target || (invoices.data?.length === 1 ? str(invoices.data[0].id) : "");
+  const chosen = useFinanceData<Row[]>(p.call,"ledger","invoice",{ period:p.period,id:selectedTarget },p.refresh,Boolean(selectedTarget && selectedTarget!=="credit"));
   const invoice = chosen.data?.find(row=>row.learner_id===learner);
   const name = account.data?.name;
 
@@ -58,7 +60,7 @@ export function FinanceCollection({ p, classes, initialLearner, initialInvoice }
           {roster.data.slice(0,50).map(row=><li key={str(row.id)}>
             <button className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-slate-50 aria-pressed:bg-emerald-50"
               type="button" aria-pressed={learner===row.id} disabled={p.busy} onClick={()=>{
-                setLearner(str(row.id));setTarget("");setInvoiceOffset(0);setReceiptError("");
+                setLearner(str(row.id));setTarget("");setApplyCredit(false);setInvoiceOffset(0);setReceiptError("");
               }}>
               <span className="min-w-0 break-words"><strong className="block">{str(row.name)}</strong>
                 <span className="text-sm text-slate-600">{[row.class,row.arm,row.admission].map(str).filter(Boolean).join(" · ")}</span>
@@ -84,13 +86,14 @@ export function FinanceCollection({ p, classes, initialLearner, initialInvoice }
             <dt className="text-sm font-medium">{label}</dt><dd className="mt-1 break-words text-2xl font-bold tabular-nums">{currency(amount)}</dd>
           </div>)}
       </dl>
+      <p className="text-sm leading-relaxed text-slate-700">Available credit is money already received but still unallocated. Select an unpaid invoice and use the credit to reduce its balance.</p>
       {p.closed ? <p className="text-sm text-slate-700">This accounting period is closed. Choose an open term to record a payment.</p> :
         <div className="space-y-3 rounded-xl border border-slate-200 p-4">
           <h3 className="text-lg font-bold">Record a payment</h3>
           {!p.accounts.length && <p className="text-sm text-slate-700">Add a receiving account in School Finance settings before recording a payment.</p>}
           <LoadingState {...invoices} />
           <label className="grid gap-1 text-sm font-semibold">Apply payment to
-            <select className={selectClass} value={target} disabled={p.busy} onChange={event=>setTarget(event.target.value)}>
+            <select className={selectClass} value={selectedTarget} disabled={p.busy} onChange={event=>{setTarget(event.target.value);setApplyCredit(false);}}>
               <option value="">Choose an invoice or learner credit</option>
               {invoice && !invoices.data?.slice(0,50).some(row=>row.id===invoice.id && Number(row.balance)>0) &&
                 <option value={str(invoice.id)} disabled={Number(invoice.balance)<=0}>{str(invoice.label)} · {currency(invoice.balance)} due</option>}
@@ -102,9 +105,14 @@ export function FinanceCollection({ p, classes, initialLearner, initialInvoice }
           </label>
           {invoices.data && <Pager offset={invoiceOffset} setOffset={setInvoiceOffset} more={invoices.data.length>50} />}
           <LoadingState {...chosen} />
-          {target && target!=="credit" && chosen.data && !invoice && <p role="alert" className="text-sm text-rose-800">Choose an invoice for this learner.</p>}
-          {(target==="credit" || invoice) &&
-            <PostingForm key={learner+target} p={p} kind="payment" learner={learner} invoice={invoice} />}
+          {invoice && Number(invoice.payment_limit)>0 && <p className="text-sm leading-relaxed text-slate-700">
+            {Number(invoice.payments_used || 0)} of {Number(invoice.payment_limit)} payments used. The final payment clears the remaining balance.
+          </p>}
+          {selectedTarget && selectedTarget!=="credit" && chosen.data && !invoice && <p role="alert" className="text-sm text-rose-800">Choose an invoice for this learner.</p>}
+          {invoice && Number(invoice.balance)>0 && account.data.credit>0 && <button type="button" className={secondary} disabled={p.busy}
+            onClick={()=>setApplyCredit(value=>!value)}>{applyCredit ? "Record a new payment instead" : "Apply available credit"}</button>}
+          {(selectedTarget==="credit" || invoice) &&
+            <PostingForm key={learner+selectedTarget+applyCredit} p={p} kind={applyCredit ? "apply" : "payment"} learner={learner} invoice={invoice} />}
         </div>}
       <Expand title="Fee statement and payment history"><LearnerStatement key={learner} p={p} learner={learner} /></Expand>
     </section>}
