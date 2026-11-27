@@ -76,7 +76,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         if (!response.ok) return json({ error: "Shared admission numbering is temporarily unavailable." }, 503);
         admission = (await response.json()).number;
       }
-      if (typeof admission !== "string" || !/^KSI\/\/[js][123]\/\d{4,}$/.test(admission)) {
+      if (typeof admission !== "string" || !/^KSI\/\/[js][123]\/\d{4,}(?:\/[A-Z0-9]{2,12})?$/.test(admission)) {
         return json({ error: "Admission numbering is temporarily unavailable." }, 503);
       }
       payload = { ...register, admission };
