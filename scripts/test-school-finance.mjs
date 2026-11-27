@@ -261,5 +261,27 @@ await assert.rejects(ledger("post",command(93,{...firstPayment})),/final instalm
 await ledger("post",command(94,{...firstPayment,amount:4000000}));
 assert.equal(await value("finance_invoice_balance",[single.id]),0);
 await assert.rejects(ledger("post",command(96,{...firstPayment})),/payment limit/);
+const ksiSchool = id(110);
+await db.exec(`
+  alter table public.khpos_ops_learner_anchors add column last_synced_at timestamptz;
+  create table public.khpos_integrations(organisation_id uuid,provider text,status text,external_tenant_id text);
+  insert into public.khpos_integrations values ('${school}','ksi','active','${ksiSchool}');
+`);
+await migrate("20261128020000_link_ksi_learner_roster");
+const sync = (rows,actor=officer,workspace=ksiSchool,session="2025/2026")=>db.query(
+  "select public.khpos_import_ksi_roster($1,$2,$3,$4,$5,$6,$7,$8) as result",
+  [actor,school,campus,workspace,classId,newTerm,session,JSON.stringify(rows)]
+).then(result=>result.rows[0].result);
+const linkedKsi = {id:id(111),name:student.name,admission:student.admission};
+const newKsi = {id:id(112),name:"KSI import fixture",admission:"KSI-112"};
+assert.deepEqual((await sync([linkedKsi,newKsi,{id:id(113),name:"Needs review"}])).map(row=>row.result),["synced","synced","review"]);
+assert.equal((await register("learners",{search:student.admission}))[0].id,learner);
+const syncedId=(await register("learners",{search:newKsi.admission}))[0].id;
+assert.equal((await sync([{...newKsi,name:"KSI corrected name"}]))[0].result,"synced");
+assert.equal((await register("learners",{search:newKsi.admission}))[0].id,syncedId);
+assert.equal((await sync([{...newKsi,id:id(114),name:"Conflicting name"}]))[0].result,"review");
+await assert.rejects(sync([newKsi],teacher),/appointment/);
+await assert.rejects(sync([newKsi],officer,id(115)),/Connect this school/);
+await assert.rejects(sync([newKsi],officer,ksiSchool,"2024/2025"),/Choose a class/);
 await db.close();
 console.log("Phase 6: finance tables deny direct access and use service-only, role-scoped database operations");

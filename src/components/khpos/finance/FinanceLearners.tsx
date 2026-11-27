@@ -1,5 +1,7 @@
 "use client";
 
+import { KsiRosterImport } from "./KsiRosterImport";
+
 import { useCallback, useState } from "react";
 import { Expand, Field, FinanceForm, Grid, LoadingState, Pager, card, financeFetch, options, primary, secondary, selectClass, str, useFinanceData,
   type FinanceCall, type Option, type Row, type Write } from "./FinanceControls";
@@ -214,6 +216,7 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
       {edit.id ? <button className={secondary + " mt-3"} onClick={() => {setEdit({});setDestination("");}}>Cancel edit</button> : null}
     </Expand>
     <LoadingState {...alternate} />
+    <KsiRosterImport key={campus} school={school} campus={campus} classes={classes} terms={terms} term={term} refresh={onImported} />
     <Expand title="Import learners from Excel or CSV">
       <LearnerImport key={term} call={call} term={term} onImported={onImported} />
     </Expand>
