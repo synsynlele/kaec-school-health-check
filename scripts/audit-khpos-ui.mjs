@@ -209,7 +209,7 @@ const everyScreenReview = surfaceCoverage.map(screen => {
   };
 });
 assert.equal(everyScreenReview.length, 74, 'Every school, HQ, admin and other route must have an acceptance record');
-assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 73,
+assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 74,
   'Per-route review has duplicate destinations');
 const screenIssues = everyScreenReview.reduce((sum,row)=>sum+row.sourceReviewFlags.length,0);
 fs.mkdirSync('artifacts', {recursive: true});
@@ -225,7 +225,7 @@ fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
 const columns = [
   '# KHP-OS — every page and inner-screen acceptance register',
   '',
-  'This register audits code composition across all 73 routes. **All signed-in visual/device/role checks are intentionally unapproved** until an authorised school/HQ/admin tester exercises the screens.',
+  'This register audits code composition across all 74 routes. **All signed-in visual/device/role checks are intentionally unapproved** until an authorised school/HQ/admin tester exercises the screens.',
   '',
   '| Route | Area | Direct component(s) | Source flags | Mobile | Desktop | Workflow |',
   '|---|---|---|---|---|---|---|',
