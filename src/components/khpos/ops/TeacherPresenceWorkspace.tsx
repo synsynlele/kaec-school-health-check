@@ -368,6 +368,8 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
     (canManage ? roleStreams.map(stream => stream.id) : sectionalScheduleIds));
   const assessmentIds = new Set(data?.assessmentScheduleStreamIds ??
     (academic?.canPlan ? roleStreams.map(stream => stream.id) : sectionalScheduleIds));
+  // Learner publication uses the same roles and stream scope as assessment scheduling.
+  const canPublishTimetable = assessmentIds.size > 0;
   const observationIds = new Set(data?.observationStreamIds ??
     (academic?.canMonitor || academic?.canPlan ? roleStreams.filter(stream => !stream.isTeacher).map(stream => stream.id) : []));
   const lessonStreams = roleStreams.filter(stream => lessonIds.has(stream.id));
@@ -479,6 +481,16 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
         </div>}
 
         {tab==="lessons"&&<div className="space-y-4">
+          {canPublishTimetable && <section className={box} aria-label="Weekly timetable publishing">
+            <h2 className="text-xl font-black text-slate-900">Publish weekly timetable</h2>
+            {data.campuses.length > 1 && <label className="mt-3 block text-sm font-bold">Campus
+              <select className={field} value={timetableCampus} onChange={event=>setTimetableCampus(event.target.value)}>
+                <option value="">All campuses I can publish for</option>
+                {data.campuses.map(campus=><option key={campus.id} value={campus.id}>{campus.name}</option>)}
+              </select>
+            </label>}
+            <PublishLearnerSchedule school={organisationId} selection={{ kind: "lesson", campus: timetableCampus || null }} disabled={Boolean(busy)} />
+          </section>}
           {canSchedule&&scheduleConflicts.length>0&&<section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Timetable conflict and group review">
             <h2 className="text-lg font-black text-amber-950">Timetable checks</h2>
             <p className="text-sm text-amber-900">
@@ -536,9 +548,8 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">Weekly timetable</h2>
             {week && <p className="text-sm">Week of {week.from} to {week.to}</p>}
-            {(canManage || lessonIds.size > 0) && <PublishLearnerSchedule school={organisationId} selection={{ kind: "lesson", campus: timetableCampus || null }} />}
             {weekError && <p role="alert" className="text-sm text-red-800">{weekError}</p>}
-            {data.campuses.length > 1 && <label className="mt-3 block text-sm font-bold">Campus
+            {!canPublishTimetable && data.campuses.length > 1 && <label className="mt-3 block text-sm font-bold">Campus
               <select className={field} value={timetableCampus} onChange={event=>setTimetableCampus(event.target.value)}>
                 <option value="">All campuses I can view</option>
                 {data.campuses.map(campus=><option key={campus.id} value={campus.id}>{campus.name}</option>)}
