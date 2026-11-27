@@ -170,7 +170,6 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </Link>}
       {canEdit && <button type="button" className="min-h-10 text-left font-semibold text-brand-700 underline disabled:opacity-50"
         disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
-      {item.can_manage_coverage && <PublishLearnerSchedule school={school} kind="assessment" id={item.id} />}
       {item.can_cancel && <button type="button" className="min-h-10 text-left font-semibold text-red-700 underline disabled:opacity-50"
         disabled={busy} onClick={() => cancelPapers([item.id], lagosLocalDay(Date.parse(item.starts_at)))}>Cancel paper</button>}
     </div>;
@@ -246,6 +245,8 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </label>
       <button type="button" className={button} disabled={busy || !timetableRows.length} onClick={() => void download()}>Download timetable PDF</button>
     </div>}
+    {!todayInvigilation && entries?.some(item => !item.cancelled_at && item.can_manage_coverage) &&
+      <PublishLearnerSchedule school={school} selection={{ kind: "assessment", from, to: rangeEnd }} disabled={busy} />}
     {!todayInvigilation && assignments.length > 0 && <details className="rounded-xl border p-3" open={editing ? true : undefined}>
       <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
       <form {...(editing ? actionDestination : {})} id="assessment-schedule-form" key={editing?.id ?? from} onSubmit={add} className="mt-3">

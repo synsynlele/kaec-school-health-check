@@ -536,6 +536,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
           <section className={box}>
             <h2 className="text-xl font-black text-slate-900">Weekly timetable</h2>
             {week && <p className="text-sm">Week of {week.from} to {week.to}</p>}
+            {(canManage || lessonIds.size > 0) && <PublishLearnerSchedule school={organisationId} selection={{ kind: "lesson", campus: timetableCampus || null }} />}
             {weekError && <p role="alert" className="text-sm text-red-800">{weekError}</p>}
             {data.campuses.length > 1 && <label className="mt-3 block text-sm font-bold">Campus
               <select className={field} value={timetableCampus} onChange={event=>setTimetableCampus(event.target.value)}>
@@ -617,7 +618,6 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                     </p>
                   ))}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
-                  {currentStream && p.teachingGroupKind !== "custom" && <PublishLearnerSchedule school={organisationId} kind="lesson" id={p.id} />}
                   {currentStream && (
                     <div className="mt-3">
                       <button type="button" disabled={Boolean(busy)} aria-expanded={editingPeriod === p.id}
