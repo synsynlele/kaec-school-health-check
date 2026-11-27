@@ -5,7 +5,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { currency } from "@/lib/khpos/ops/school-finance-shared";
 
 export type Row = Record<string, unknown>;
-export type FinanceSurface = "register" | "ledger" | "report";
+export type FinanceSurface = "register" | "ledger" | "report" | "oversight";
 export type FinanceCall = <T = Row>(surface: FinanceSurface, action: string, input?: Row) => Promise<T>;
 export type Option = [string, string];
 export type Write = (surface: FinanceSurface, action: string, input: Row, notice?: string) => Promise<Row | null>;

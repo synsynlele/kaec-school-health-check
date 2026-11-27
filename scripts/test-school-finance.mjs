@@ -191,5 +191,37 @@ await db.exec("set role service_role");
 assert.equal((await register("context")).school,"Igando Test School");
 await assert.rejects(db.query("select * from khpos_finance_entries"),/permission denied/);
 await db.exec("reset role");
+
+const guardian = id(87);
+await db.exec(`
+  insert into auth.users values ('${guardian}');
+  insert into organisation_memberships values ('${school}','${guardian}','active');
+  insert into khpos_ops_roles values ('${id(88)}','${school}','SCHOOL_GUARDIAN','active');
+  insert into khpos_ops_role_assignments values ('${id(88)}','${guardian}','${campus}',null,'active','2020-01-01',null);
+`);
+await migrate("20261127140000_finance_guardian_oversight");
+const oversight = (action, input = {}, actor = guardian, org = school, scope = campus) => call("oversight",action,input,actor,org,scope);
+assert.deepEqual((await register("context",{},guardian)).campuses,[{id:campus,name:"Igando",canApprove:false,canManage:false}]);
+assert.equal((await register("context",{},officer)).campuses[0].canManage,true);
+assert.equal((await oversight("periods"))[0].id,period);
+const guardianSummary = await oversight("summary",{period});
+assert.equal(guardianSummary.expenses,overview.expenses);
+assert.equal(guardianSummary.budget,400000);
+assert.equal(guardianSummary.balance,overview.balance);
+assert.deepEqual(Object.keys(guardianSummary).sort(),["from","through","invoiced","feeReceipts","balance","overdue","otherIncome","expenses","budget"].sort());
+await assert.rejects(oversight("periods",{},guardian,school,otherCampus),/appointment/);
+await assert.rejects(oversight("summary",{period},guardian,second,foreignCampus),/appointment/);
+await assert.rejects(oversight("periods",{},teacher),/appointment/);
+await assert.rejects(oversight("saveBudget",{period}),/oversight report/);
+await assert.rejects(call("report","aged",{period},guardian),/appointment/);
+await assert.rejects(call("report","saveBudget",{period},guardian),/appointment/);
+await assert.rejects(call("ledger","post",{period},guardian),/appointment/);
+await assert.rejects(call("ledger","approveRequest",{period},guardian),/appointment/);
+await assert.rejects(document(guardian,campus,paid.id),/appointment/);
+const { rows: [oversightPrivileges] } = await db.query(
+  "select has_function_privilege('authenticated','public.khpos_finance_oversight_server(uuid,uuid,uuid,text,jsonb)','execute') as direct, has_function_privilege('service_role','public.khpos_finance_oversight_server(uuid,uuid,uuid,text,jsonb)','execute') as service"
+);
+assert.deepEqual(oversightPrivileges,{direct:false,service:true});
+
 await db.close();
 console.log("Phase 6: finance tables deny direct access and use service-only, role-scoped database operations");

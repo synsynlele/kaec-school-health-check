@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { BarChart3, BookOpen, CircleDollarSign, ClipboardList, LayoutDashboard, Settings2 } from "lucide-react";
 import { currency, toKobo } from "@/lib/khpos/ops/school-finance-shared";
 import { SchoolFinancialHealthWorkspace } from "@/components/khpos/ops/SchoolFinancialHealthWorkspace";
+import { FinanceOversight } from "./FinanceOversight";
 import { FinanceLearners } from "./FinanceLearners";
 import { Approvals, FinanceAccounts, FinanceBilling, FinanceTransactions, type OperationProps } from "./FinanceOperations";
 import { FinanceAudit, FinanceBudgets, FinanceObligations, FinanceOverview, FinanceReports, OfficialSnapshot } from "./FinanceReporting";
@@ -15,7 +16,7 @@ const tabs = [
   ["Budgets",ClipboardList],["Reports & Financial Health",BarChart3],["Settings",Settings2],
 ] as const;
 
-type Context = { campuses: { id: string; name: string; canApprove: boolean }[]; school: string; schoolWide: boolean };
+type Context = { campuses: { id: string; name: string; canApprove: boolean; canManage?: boolean }[]; school: string; schoolWide: boolean };
 type Catalog = { classes: Row[]; terms: Row[] };
 
 export function SchoolFinanceWorkspace({ organisationId }: { organisationId: string }) {
@@ -35,11 +36,12 @@ export function SchoolFinanceWorkspace({ organisationId }: { organisationId: str
   const context = useFinanceData<Context>(contextCall,"register","context",{},0);
   const campus = context.data?.campuses.find(item=>item.id===campusId) ?? context.data?.campuses[0];
   const campusKey = campus?.id ?? "";
+  const oversightOnly = campus?.canManage === false;
   const call = useCallback<FinanceCall>((surface,action,input)=>financeFetch(organisationId,campusKey || null,surface,action,input),[organisationId,campusKey]);
-  const catalog = useFinanceData<Catalog>(call,"register","catalog",{},0,Boolean(campusKey));
-  const terms = useFinanceData<Row[]>(call,"ledger","periods",{},refresh,Boolean(campusKey));
-  const accounts = useFinanceData<Row[]>(call,"ledger","accounts",{},refresh,Boolean(campusKey));
-  const controls = useFinanceData<Row>(call,"ledger","controls",{},refresh,Boolean(campusKey));
+  const catalog = useFinanceData<Catalog>(call,"register","catalog",{},0,Boolean(campusKey) && !oversightOnly);
+  const terms = useFinanceData<Row[]>(call,"ledger","periods",{},refresh,Boolean(campusKey) && !oversightOnly);
+  const accounts = useFinanceData<Row[]>(call,"ledger","accounts",{},refresh,Boolean(campusKey) && !oversightOnly);
+  const controls = useFinanceData<Row>(call,"ledger","controls",{},refresh,Boolean(campusKey) && !oversightOnly);
   const term = terms.data?.find(item=>item.term===termId) ?? terms.data?.find(item=>item.status==="active") ?? terms.data?.[0];
   const termKey = str(term?.term);
   const period = str(term?.id);
@@ -96,20 +98,21 @@ export function SchoolFinanceWorkspace({ organisationId }: { organisationId: str
             setCampus(event.target.value);setTerm("");setLearner("");setStatementId("");setNotice("");setError("");
           }}>{context.data?.campuses.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select>
         </label>
-        <label className="grid gap-1 text-sm font-bold">Academic term
+        {!oversightOnly && <label className="grid gap-1 text-sm font-bold">Academic term
           <select className={selectClass} disabled={busy || !terms.data?.length} value={termKey} onChange={event=>{
             setTerm(event.target.value);setLearner("");setStatementId("");setNotice("");setError("");
           }}>
             {!terms.data?.length && <option value="">Choose an academic term</option>}
             {terms.data?.map(item=><option key={str(item.term)} value={str(item.term)}>{str(item.session)} · {str(item.name)}{item.closed?" (closed)":""}</option>)}
           </select>
-        </label>
+        </label>}
       </div>}
     </header>
     <LoadingState {...context} />
     {context.error && !legacyView && <button className={secondary} onClick={()=>setLegacyView(true)}>Open existing Financial Health statements</button>}
     {context.error && legacyView && <SchoolFinancialHealthWorkspace organisationId={organisationId} embedded />}
-    {campus && <>
+    {campus && oversightOnly && <FinanceOversight key={campusKey} call={call} />}
+    {campus && !oversightOnly && <>
       <nav aria-label="School Finance sections" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {tabs.map(([name,Icon])=><button key={name} type="button" aria-current={tab===name?"page":undefined} disabled={busy}
           onClick={()=>changeTab(name)}

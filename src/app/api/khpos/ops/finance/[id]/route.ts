@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const surfaces = {
+  oversight: ["periods", "summary"],
   register: ["context", "catalog", "learners", "saveLearner", "previewLearners", "importLearners"],
   ledger: ["controls", "setThreshold", "periods", "accounts", "invoices", "entries", "schedules", "requests", "reconciliations", "audit",
     "invoice", "receipt", "statement", "previewOpening", "importOpening", "openPeriod", "addAccount", "closePeriod", "reopenPeriod", "saveSchedule",
