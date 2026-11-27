@@ -361,17 +361,24 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
   },[tab,localDay,selectedFrom,selectedTo,historyCategory,currentHistoryFilter.page,currentHistoryFilter.query,currentHistoryFilter.sort,historyPageSize,organisationId,authToken,attendanceRevision]);
 
   const canManage=Boolean(data?.canManage);
-  const canObserve=Boolean(academic?.canMonitor||academic?.canPlan);
   const roleStreams=(academic?.streams??[]).filter(s=>["approved","active"].includes(s.status));
-  const sectionalScheduleIds = new Set(data?.sectionalScheduleStreamIds ?? []);
-  const lessonStreams = canManage ? roleStreams : roleStreams.filter(stream => sectionalScheduleIds.has(stream.id));
-  const assessmentStreams = academic?.canPlan ? roleStreams : roleStreams.filter(stream => sectionalScheduleIds.has(stream.id));
+  const sectionalScheduleIds = data?.sectionalScheduleStreamIds ?? [];
+  const lessonIds = new Set(data?.lessonScheduleStreamIds ??
+    (canManage ? roleStreams.map(stream => stream.id) : sectionalScheduleIds));
+  const assessmentIds = new Set(data?.assessmentScheduleStreamIds ??
+    (academic?.canPlan ? roleStreams.map(stream => stream.id) : sectionalScheduleIds));
+  const observationIds = new Set(data?.observationStreamIds ??
+    (academic?.canMonitor || academic?.canPlan ? roleStreams.filter(stream => !stream.isTeacher).map(stream => stream.id) : []));
+  const lessonStreams = roleStreams.filter(stream => lessonIds.has(stream.id));
+  const assessmentStreams = roleStreams.filter(stream => assessmentIds.has(stream.id));
+  const observationStreams = roleStreams.filter(stream => observationIds.has(stream.id));
+  const canObserve = observationStreams.length > 0;
   const todays=(data?.periods??[])
     .filter(p=>p.teacherUserId===data?.userId && p.termActive && possibleToday(data?.localDay??"",p.weekday) &&
       (p.session || !data || !calendarPauses(data,p.campusId,data.localDay,true)))
     .sort((a,b)=>a.start.localeCompare(b.start));
   const observed=(data?.observations??[]);
-  const canSchedule=canManage || sectionalScheduleIds.size>0;
+  const canSchedule=canManage || lessonIds.size > 0;
   const scheduleConflicts=canSchedule?findScheduleCollisions(data?.periods??[]):[];
   const confirmedClashes=scheduleConflicts.filter(c=>c.severity==="conflict");
   const overlapsToReview=scheduleConflicts.filter(c=>c.severity==="review");
@@ -654,7 +661,14 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
 
         </div>}
 
-        {tab==="exams" && <AssessmentTimetable school={organisationId} today={data.localDay} assignments={assessmentStreams} />}
+        {tab==="exams" && <>
+          <AssessmentTimetable school={organisationId} today={data.localDay} assignments={assessmentStreams} />
+          {academic && (canManage || academic.canPlan || Boolean(academic.sectionalStreamUnitIds?.length)) && assessmentStreams.length === 0 &&
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              To schedule a test or exam, set up an approved teaching assignment for the campus or section you manage.{" "}
+              <Link className="font-bold underline" href={`/khpos/${organisationId}/academic-delivery`}>Open Teaching plans</Link>
+            </p>}
+        </>}
 
         {tab==="hqls"&&<div className="space-y-4">
           <section className={box}>
@@ -675,7 +689,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                 <div><label className="text-sm font-bold">Class and teacher</label>
                   <select className={field} value={hqlsStream} onChange={e=>{setHqlsStream(e.target.value);setHqlsSession("");}}>
                     <option value="">Select a subject stream</option>
-                    {roleStreams.filter(s=>!s.isTeacher).map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
+                    {observationStreams.map(s=><option key={s.id} value={s.id}>{s.classLabel} · {s.subjectLabel} · {s.teacherDisplay}</option>)}
                   </select></div>
                 <div><label className="text-sm font-bold">Observation type</label>
                   <select className={field} value={hqlsMode} onChange={e=>setHqlsMode(e.target.value as "full"|"walk")}>
