@@ -199,7 +199,7 @@ const leadershipRoles = new Set(["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL
 function canShowSchoolMenu(route: string, access: SchoolMenuAccess | null) {
   const executive = access?.membership === "executive";
   const roles = access?.roles ?? [];
-  if (route === "/financial-health") return roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "FINANCE_ADMIN_OFFICER"].includes(role));
+  if (route === "/financial-health") return roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "FINANCE_ADMIN_OFFICER", "SCHOOL_GUARDIAN"].includes(role));
   if (route === "/recruitment" || governanceRoutes.has(route)) return executive || roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN"].includes(role));
   if (leadershipRoutes.has(route)) return executive || roles.some(role => leadershipRoles.has(role));
   return true;
