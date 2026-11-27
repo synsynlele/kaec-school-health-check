@@ -208,7 +208,7 @@ const everyScreenReview = surfaceCoverage.map(screen => {
     roleWorkflowAcceptance: false,
   };
 });
-assert.equal(everyScreenReview.length, 73, 'Every school, HQ, admin and other route must have an acceptance record');
+assert.equal(everyScreenReview.length, 74, 'Every school, HQ, admin and other route must have an acceptance record');
 assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 73,
   'Per-route review has duplicate destinations');
 const screenIssues = everyScreenReview.reduce((sum,row)=>sum+row.sourceReviewFlags.length,0);
@@ -216,7 +216,7 @@ fs.mkdirSync('artifacts', {recursive: true});
 fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
   JSON.stringify({
     generatedAt: new Date().toISOString(),
-    scope: 'All 73 KHP-OS routes and their imported workspace components',
+    scope: 'All 74 KHP-OS routes and their imported workspace components',
     limits: 'Static structural inspection only. Role-scoped signed-in browser, screenshots, real-device interaction and visual parity are not tested.',
     routeCount: everyScreenReview.length,
     flagsNeedingManualInspection: screenIssues,
