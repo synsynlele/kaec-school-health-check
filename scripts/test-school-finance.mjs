@@ -223,5 +223,16 @@ const { rows: [oversightPrivileges] } = await db.query(
 );
 assert.deepEqual(oversightPrivileges,{direct:false,service:true});
 
+await migrate("20261128000000_finance_collection_workspace");
+await db.query("update khpos_finance_learners set guardian_name=$1 where learner_id=$2",["Finance guardian fixture",learner]);
+assert.equal((await register("learners",{search:"GUARDIAN FIXTURE"}))[0].id,learner);
+assert.deepEqual(await register("learners",{search:"GUARDIAN FIXTURE"},owner,school,otherCampus),[]);
+const learnerAccount = await ledger("statement",{period,learner});
+assert.equal(learnerAccount.name,student.name);
+assert.equal(learnerAccount.balance,learnerAccount.invoices.reduce((total,row)=>total+Number(row.balance),0));
+assert.equal(typeof learnerAccount.latestReceipt,"string");
+assert.equal((await ledger("receipt",{period,id:learnerAccount.latestReceipt}))[0].kind,"payment");
+assert((await ledger("invoices",{period,learner,includeHistory:true,outstandingOnly:true})).every(row=>Number(row.balance)>0));
+await assert.rejects(ledger("statement",{period,learner},guardian),/appointment/);
 await db.close();
 console.log("Phase 6: finance tables deny direct access and use service-only, role-scoped database operations");

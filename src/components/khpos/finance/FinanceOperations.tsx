@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { currency, financeCategories, financeDate, financeKinds, toKobo } from "@/lib/khpos/ops/school-finance-shared";
 import { Expand, Field, FinanceForm, Grid, LoadingState, Pager, Search, card, money, options, secondary, str, useFinanceData,
@@ -41,14 +42,15 @@ function Lookup({ call, select, target, refresh }: {
 const amountField = <Field label="Amount (₦)" name="amount" type="money" placeholder="0.00" />;
 const referenceField = <Field label="Unique reference" name="reference" maxLength={160} placeholder="Receipt book or deposit reference" />;
 
-function PostingForm({ p, kind, invoice, learner, original }: { p: OperationProps; kind: string; invoice?: Row; learner?: string; original?: Row }) {
+export function PostingForm({ p, kind, invoice, learner, original }: { p: OperationProps; kind: string; invoice?: Row; learner?: string; original?: Row }) {
+  const [paymentAmount,setPaymentAmount] = useState("");
   const [epoch,setEpoch] = useState(0);
   const [receipt,setReceipt] = useState("");
   const [printError,setPrintError] = useState("");
   const review = ["credit","openingDebt","discount","scholarship","waiver","refund","reverse"].includes(kind);
   const account = ["payment","income","expense","transfer"].includes(kind);
   const categories = kind === "income" || kind === "expense" ? financeCategories[kind].map((category): Option => [category,category]) : null;
-  return <div className="space-y-3"><FinanceForm key={epoch} disabled={p.busy || p.closed || (account && !p.accounts.length)}
+  return <div className="space-y-3"><FinanceForm key={epoch} disabled={p.busy || p.closed || (account && !p.accounts.length) || (kind==="payment" && Boolean(invoice) && Number(invoice?.balance)<=0)}
     submitLabel={review ? "Send for approval" : kind==="payment" ? "Record payment" : "Record transaction"}
     onSubmit={async data => {
       const result = await p.write("ledger","post",{ ...data,period:p.period,kind,invoice:invoice?.id,learner,
@@ -56,22 +58,30 @@ function PostingForm({ p, kind, invoice, learner, original }: { p: OperationProp
       review ? "Sent for School Custodian review." : "Transaction recorded.");
       if (result) {
         setEpoch(n=>n+1);
-        if (kind==="payment") setReceipt(str(result.id));
+        if (kind==="payment") { setReceipt(str(result.id)); setPaymentAmount(""); }
       }
     }}>
-    {kind==="reverse" ? <p className="text-sm font-bold">Reverse {currency(original?.amount)}</p> : amountField}
+    {kind==="reverse" ? <p className="text-sm font-bold">Reverse {currency(original?.amount)}</p> : kind==="payment" ?
+      <div className="space-y-1">
+        <label className="grid gap-1 text-sm font-semibold">Amount (₦)
+          <input name="amount" inputMode="decimal" required value={paymentAmount} onChange={event=>setPaymentAmount(event.target.value)}
+            placeholder="0.00" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base" />
+        </label>
+        {invoice && Number(invoice.balance)>0 && <button type="button" className="min-h-10 text-sm font-semibold text-brand-800 underline"
+          onClick={()=>setPaymentAmount((Number(invoice.balance)/100).toFixed(2))}>Use outstanding amount ({currency(invoice.balance)})</button>}
+      </div> : amountField}
     {account && <Field label={kind==="transfer" ? "From account" : "Cash or bank account"} name="account" choices={options(p.accounts)} value={p.accounts.length===1 ? str(p.accounts[0].id) : ""} />}
     {kind==="transfer" && <Field label="To account" name="destination" choices={options(p.accounts)} />}
     {dateField(p)}
     {kind!=="openingDebt" && referenceField}
     {categories && <Field label="Category" name="category" choices={categories} />}
     {kind==="expense" && <Field label="Department or responsibility area" name="department" required={false} />}
-    <Field label={review ? "Reason for this request" : "Description"} name="note" maxLength={1000} required={review} />
+    <Field label={review ? "Reason for this request" : kind==="payment" ? "Notes (optional)" : "Description"} name="note" maxLength={1000} required={review} />
     {kind==="expense" && Number(p.reviewThreshold)>0 && <p className="text-sm text-slate-700">Expenses from {currency(p.reviewThreshold)} require review. Add a description of at least 10 characters.</p>}
   </FinanceForm>
   {receipt && <button className={secondary} onClick={()=>{
     setPrintError("");
-    void p.call<Row>("ledger","receipt",{ period:p.period,id:receipt }).then(row=>{
+    void p.call<Row[]>("ledger","receipt",{ period:p.period,id:receipt }).then(([row])=>{
       if (!row) throw new Error("The receipt is not available yet.");
       printReceipt(row,p.school);
     }).catch(error=>setPrintError(error.message));
@@ -87,7 +97,7 @@ function printInvoice(row: Row, school: string) {
   ] }]);
 }
 
-function printReceipt(row: Row, school: string) {
+export function printReceipt(row: Row, school: string) {
   const refund = row.kind==="refund";
   printFinance((refund ? "Refund record #" : "Fee receipt #") + str(row.number),school,[{
     title:refund ? "Recorded fee refund" : "Recorded fee payment",
@@ -97,7 +107,7 @@ function printReceipt(row: Row, school: string) {
   }]);
 }
 
-function LearnerStatement({ p, learner }: { p: OperationProps; learner: string }) {
+export function LearnerStatement({ p, learner }: { p: OperationProps; learner: string }) {
   const [offset,setOffset] = useState(0);
   const [error,setError] = useState("");
   const [working,setWorking] = useState(false);
@@ -145,6 +155,11 @@ function LearnerStatement({ p, learner }: { p: OperationProps; learner: string }
     </>}
     {error && <p role="alert" className="text-sm text-rose-800">{error}</p>}
   </div>;
+}
+
+function collectionLink(p: OperationProps, learner: string, invoice = "") {
+  return `/khpos/${p.schoolId}/financial-health/fee-collection?` +
+    new URLSearchParams({ campus:p.campusId, period:p.period, learner, invoice });
 }
 
 export function FinanceBilling({ p, classes, initialLearner, reload }: {
@@ -237,7 +252,7 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
               {dateField(p)}<Field label="Due date" name="due" type="date" value={p.end} />{referenceField}
             </FinanceForm>
           </Expand>
-          <Expand title="Record a payment as learner credit"><PostingForm key={learner} p={p} kind="payment" learner={learner} /></Expand>
+          <Link className={secondary} href={collectionLink(p,learner)}>Open fee collection</Link>
           <Expand title="Request a historical opening fee balance"><PostingForm key={learner} p={p} kind="openingDebt" learner={learner} /></Expand>
           <Expand title="Request a historical opening credit"><PostingForm key={learner} p={p} kind="credit" learner={learner} /></Expand>
         </>}
@@ -251,7 +266,6 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
         <h3 className="font-bold">Invoice #{str(invoice.number)} · {str(invoice.learner_name)}</h3>
         <button className={secondary} onClick={() => setInvoice(undefined)}>Close</button>
       </div>
-      <PostingForm key={str(invoice.id)} p={p} kind="payment" invoice={invoice} />
       <Expand title="Apply credit or financial assistance">
         <div className="space-y-3">
           <label className="grid max-w-xs gap-1 text-sm font-semibold">Adjustment type
@@ -267,8 +281,9 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
     {result.data && <><Grid rows={result.data.slice(0,50)} columns={[
       ["Invoice",row=><strong>#{str(row.number)}</strong>],["Learner",row=>str(row.learner_name)],["Charge",row=>str(row.label)],
       ["Due",row=>str(row.due)],["Billed",row=>money(row,"amount")],["Outstanding",row=>money(row,"balance")],
-      ["Actions",row=><div className="flex gap-2">
-        <button className={secondary} disabled={locked} onClick={() => setInvoice(row)}>Record payment</button>
+      ["Actions",row=><div className="flex flex-wrap gap-2">
+        <Link className={secondary} href={collectionLink(p,str(row.learner_id),str(row.id))}>Collect payment</Link>
+        <button className={secondary} disabled={locked} onClick={() => setInvoice(row)}>Adjust balance</button>
         <button className={secondary} onClick={() => printInvoice(row,p.school)}>Print invoice</button>
       </div>],
     ]} empty="No invoices yet. Set up a class fee or issue an individual invoice." />
