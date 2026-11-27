@@ -243,7 +243,7 @@ console.log('Every-screen source review: '+everyScreenReview.length+' routes; '+
   ' targeted human-review flags. Screens remain unapproved for signed-in visual/device QA.');
 
 assert.equal(surfaceCoverage.length, routes.length, 'Every KHP-OS page must appear in the UI coverage matrix');
-assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 58,
+assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 59,
   'All school pages must be source-reviewed');
 assert.equal(surfaceCoverage.filter(r => r.family === 'hq').length, 6,
   'All six corporate HQ pages must be source-reviewed');
