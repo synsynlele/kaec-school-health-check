@@ -208,15 +208,15 @@ const everyScreenReview = surfaceCoverage.map(screen => {
     roleWorkflowAcceptance: false,
   };
 });
-assert.equal(everyScreenReview.length, 74, 'Every school, HQ, admin and other route must have an acceptance record');
-assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 74,
+assert.equal(everyScreenReview.length, 75, 'Every school, HQ, admin and other route must have an acceptance record');
+assert.equal(new Set(everyScreenReview.map(row => row.route)).size, 75,
   'Per-route review has duplicate destinations');
 const screenIssues = everyScreenReview.reduce((sum,row)=>sum+row.sourceReviewFlags.length,0);
 fs.mkdirSync('artifacts', {recursive: true});
 fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
   JSON.stringify({
     generatedAt: new Date().toISOString(),
-    scope: 'All 74 KHP-OS routes and their imported workspace components',
+    scope: 'All 75 KHP-OS routes and their imported workspace components',
     limits: 'Static structural inspection only. Role-scoped signed-in browser, screenshots, real-device interaction and visual parity are not tested.',
     routeCount: everyScreenReview.length,
     flagsNeedingManualInspection: screenIssues,
@@ -225,7 +225,7 @@ fs.writeFileSync('artifacts/khpos-every-screen-source-review.json',
 const columns = [
   '# KHP-OS — every page and inner-screen acceptance register',
   '',
-  'This register audits code composition across all 74 routes. **All signed-in visual/device/role checks are intentionally unapproved** until an authorised school/HQ/admin tester exercises the screens.',
+  'This register audits code composition across all 75 routes. **All signed-in visual/device/role checks are intentionally unapproved** until an authorised school/HQ/admin tester exercises the screens.',
   '',
   '| Route | Area | Direct component(s) | Source flags | Mobile | Desktop | Workflow |',
   '|---|---|---|---|---|---|---|',
@@ -243,7 +243,7 @@ console.log('Every-screen source review: '+everyScreenReview.length+' routes; '+
   ' targeted human-review flags. Screens remain unapproved for signed-in visual/device QA.');
 
 assert.equal(surfaceCoverage.length, routes.length, 'Every KHP-OS page must appear in the UI coverage matrix');
-assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 59,
+assert.equal(surfaceCoverage.filter(r => r.family === 'school').length, 60,
   'All school pages must be source-reviewed');
 assert.equal(surfaceCoverage.filter(r => r.family === 'hq').length, 6,
   'All six corporate HQ pages must be source-reviewed');

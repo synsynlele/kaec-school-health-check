@@ -39,6 +39,7 @@ function Lookup({ call, select, target, refresh }: {
   </div>;
 }
 
+const paymentPlans: Option[] = [["1","One payment"],["2","Up to 2 instalments"],["3","Up to 3 instalments"],["4","Up to 4 instalments"]];
 const amountField = <Field label="Amount (₦)" name="amount" type="money" placeholder="0.00" />;
 const referenceField = <Field label="Unique reference" name="reference" maxLength={160} placeholder="Receipt book or deposit reference" />;
 
@@ -51,11 +52,11 @@ export function PostingForm({ p, kind, invoice, learner, original }: { p: Operat
   const account = ["payment","income","expense","transfer"].includes(kind);
   const categories = kind === "income" || kind === "expense" ? financeCategories[kind].map((category): Option => [category,category]) : null;
   return <div className="space-y-3"><FinanceForm key={epoch} disabled={p.busy || p.closed || (account && !p.accounts.length) || (kind==="payment" && Boolean(invoice) && Number(invoice?.balance)<=0)}
-    submitLabel={review ? "Send for approval" : kind==="payment" ? "Record payment" : "Record transaction"}
+    submitLabel={review ? "Send for approval" : kind==="payment" ? "Record payment" : kind==="apply" ? "Apply credit" : "Record transaction"}
     onSubmit={async data => {
       const result = await p.write("ledger","post",{ ...data,period:p.period,kind,invoice:invoice?.id,learner,
         original:original?.id,amount:kind==="reverse" ? str(original?.amount) : toKobo(data.amount) },
-      review ? "Sent for School Custodian review." : "Transaction recorded.");
+      review ? "Sent for School Custodian review." : kind==="apply" ? "Credit applied to the invoice." : "Transaction recorded.");
       if (result) {
         setEpoch(n=>n+1);
         if (kind==="payment") { setReceipt(str(result.id)); setPaymentAmount(""); }
@@ -73,7 +74,8 @@ export function PostingForm({ p, kind, invoice, learner, original }: { p: Operat
     {account && <Field label={kind==="transfer" ? "From account" : "Cash or bank account"} name="account" choices={options(p.accounts)} value={p.accounts.length===1 ? str(p.accounts[0].id) : ""} />}
     {kind==="transfer" && <Field label="To account" name="destination" choices={options(p.accounts)} />}
     {dateField(p)}
-    {kind!=="openingDebt" && referenceField}
+    {!["openingDebt","payment","apply"].includes(kind) && referenceField}
+
     {categories && <Field label="Category" name="category" choices={categories} />}
     {kind==="expense" && <Field label="Department or responsibility area" name="department" required={false} />}
     <Field label={review ? "Reason for this request" : kind==="payment" ? "Notes (optional)" : "Description"} name="note" maxLength={1000} required={review} />
@@ -173,7 +175,7 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
   const [scheduleOffset,setScheduleOffset] = useState(0);
   const [running,setRunning] = useState(false);
   const [progress,setProgress] = useState("");
-  const [instalments,setInstalments] = useState(0);
+
   const [billingDate,setBillingDate] = useState(defaultDate(p.start,p.end));
   const [bulkError,setBulkError] = useState("");
   const result = useFinanceData<Row[]>(p.call,"ledger","invoices",{ period:p.period,search,offset },p.refresh);
@@ -203,8 +205,7 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
     <Expand title="Fee schedules and bulk billing">
       <div className="space-y-4">
         <FinanceForm title="Create or revise a class fee" disabled={locked || !classes.length} submitLabel="Save fee schedule" onSubmit={async row => {
-          const plan = Array.from({ length:instalments },(_,i) => ({ amount:toKobo(row["amount"+i]),due:row["due"+i] }));
-          await p.write("ledger","saveSchedule",{ ...row,period:p.period,amount:toKobo(row.amount),annual:row.annual==="true",instalments:plan });
+          await p.write("ledger","saveSchedule",{ ...row,period:p.period,amount:toKobo(row.amount),annual:row.annual==="true",paymentLimit:Number(row.paymentLimit) });
         }}>
           <Field label="Class and arm" name="class" choices={classChoices(classes)} />
           <Field label="Fee name" name="label" placeholder="Tuition" maxLength={140} />
@@ -212,15 +213,7 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
           <Field label="Due date" name="due" type="date" value={p.end} />
           <Field label="Fee category" name="feeCategory" required={false} placeholder="Use the learner’s fee category" />
           <label className="flex items-center gap-2 text-sm"><input name="annual" type="checkbox" value="true" /> Bill once per academic session</label>
-          <label className="grid gap-1 text-sm font-semibold">Scheduled instalments
-            <select className={secondary} value={instalments} onChange={event => setInstalments(Number(event.target.value))}>
-              <option value={0}>Single bill</option>{Array.from({length:11},(_,i) => <option key={i} value={i+2}>{i+2} instalments</option>)}
-            </select>
-          </label>
-          {Array.from({length:instalments},(_,i) => [
-            <Field key={"amount"+i} label={"Instalment " + (i+1) + " amount (₦)"} name={"amount"+i} type="money" />,
-            <Field key={"due"+i} label={"Instalment " + (i+1) + " due date"} name={"due"+i} type="date" />,
-          ])}
+          <Field label="Maximum payments on one invoice" name="paymentLimit" choices={paymentPlans} value="1" />
         </FinanceForm>
         <label className="grid max-w-xs gap-1 text-sm font-semibold">Bulk invoice issue date
           <input type="date" className={secondary} value={billingDate} onChange={event => setBillingDate(event.target.value)} />
@@ -246,10 +239,11 @@ export function FinanceBilling({ p, classes, initialLearner, reload }: {
           <LearnerStatement key={learner} p={p} learner={learner} />
           <Expand title="Issue an individual invoice">
             <FinanceForm key={learner} disabled={locked} submitLabel="Issue invoice" onSubmit={async row => {
-              await p.write("ledger","billLearner",{ ...row,period:p.period,learner,amount:toKobo(row.amount) },"Invoice issued.");
+              await p.write("ledger","billLearner",{ ...row,period:p.period,learner,amount:toKobo(row.amount),paymentLimit:Number(row.paymentLimit) },"Invoice issued.");
             }}>
               <Field label="Charge" name="label" />{amountField}
-              {dateField(p)}<Field label="Due date" name="due" type="date" value={p.end} />{referenceField}
+              {dateField(p)}<Field label="Due date" name="due" type="date" value={p.end} />
+              <Field label="Maximum payments on one invoice" name="paymentLimit" choices={paymentPlans} value="1" />
             </FinanceForm>
           </Expand>
           <Link className={secondary} href={collectionLink(p,learner)}>Open fee collection</Link>

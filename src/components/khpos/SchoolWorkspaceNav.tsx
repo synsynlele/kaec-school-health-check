@@ -106,6 +106,7 @@ const operationsLinks = [
   { suffix: "/staff-transition", label: "Staff changes & leaving", icon: GitBranch },
   { suffix: "/academic-delivery", label: "Teaching plans", icon: GraduationCap },
   { suffix: "/teaching-presence", label: "Attendance & lessons", icon: BookOpen },
+  { suffix: "/learners", label: "Learners", icon: GraduationCap },
   { suffix: "/learner-register", label: "Learner register", icon: FileCheck2 },
   { suffix: "/visitors", label: "Gate & visitors", icon: ShieldCheck },
   { suffix: "/academic-assurance", label: "Assessments & exams", icon: ShieldCheck },
@@ -169,7 +170,7 @@ const schoolAreas = [
 ] as const;
 const navigationGroups = [
   { title: "Work & approvals", icon: CheckCircle2, description: "Tasks that need a decision or follow-up", links: [operation("/issues"), operation("/decisions")] },
-  { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/learner-register"), operation("/availability"), operation("/visitors")] },
+  { title: "People & gate", icon: UsersRound, description: "Staff, outings and visitors", links: [operation("/people"), operation("/learners"), operation("/learner-register"), operation("/availability"), operation("/visitors")] },
   { title: "Teaching & learners", icon: GraduationCap, description: "Lessons, assessment and learner growth", links: [calendarLink, operation("/potential-development")] },
   { title: "Care & families", icon: ShieldCheck, description: "Wellbeing, safeguarding and parents", links: [operation("/student-culture"), operation("/safeguarding"), operation("/parents")] },
   { title: "School management", icon: Building2, description: "Finance, improvement, results and school settings", links: [byRoute("/financial-health"), byRoute("/priorities"), operation("/performance"), operation("/schools-campuses"), activationLink] },
@@ -199,6 +200,7 @@ const leadershipRoles = new Set(["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL
 function canShowSchoolMenu(route: string, access: SchoolMenuAccess | null) {
   const executive = access?.membership === "executive";
   const roles = access?.roles ?? [];
+  if (route === "/learners") return roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "FINANCE_ADMIN_OFFICER"].includes(role));
   if (route === "/financial-health") return roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "FINANCE_ADMIN_OFFICER", "SCHOOL_GUARDIAN"].includes(role));
   if (route === "/recruitment" || governanceRoutes.has(route)) return executive || roles.some(role => ["SCHOOL_CUSTODIAN", "VISION_CUSTODIAN", "SCHOOL_GUARDIAN"].includes(role));
   if (leadershipRoutes.has(route)) return executive || roles.some(role => leadershipRoles.has(role));

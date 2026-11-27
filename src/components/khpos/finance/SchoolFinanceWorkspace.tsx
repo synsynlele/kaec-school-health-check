@@ -21,11 +21,11 @@ const tabs = [
 type Context = { campuses: { id: string; name: string; canApprove: boolean; canManage?: boolean }[]; school: string; schoolWide: boolean };
 type Catalog = { classes: Row[]; terms: Row[] };
 
-export function SchoolFinanceWorkspace({ organisationId, collection }: { organisationId: string; collection?: { campus: string; period: string; learner: string; invoice: string } }) {
+export function SchoolFinanceWorkspace({ organisationId, collection, directory = false }: { organisationId: string; directory?: boolean; collection?: { campus: string; period: string; learner: string; invoice: string } }) {
   const [campusId,setCampus] = useState(collection?.campus ?? "");
   const [termId,setTerm] = useState("");
   const [useLinkedTerm,setUseLinkedTerm] = useState(true);
-  const [tab,setTab] = useState<string>(() => typeof window!=="undefined" && (window.location.hash==="#health" || window.location.hash==="#approvals") ? (window.location.hash==="#health" ? "Reports & Financial Health" : "Income & Expenses") : "Overview");
+  const [tab,setTab] = useState<string>(() => directory ? "Learners" : !collection && typeof window!=="undefined" && ["#health","#approvals","#learners"].includes(window.location.hash) ? (window.location.hash==="#health" ? "Reports & Financial Health" : window.location.hash==="#learners" ? "Learners" : "Income & Expenses") : "Overview");
   const [learner,setLearner] = useState("");
   const [refresh,setRefresh] = useState(0);
   const [busy,setBusy] = useState(false);
@@ -93,12 +93,12 @@ export function SchoolFinanceWorkspace({ organisationId, collection }: { organis
 
   const financeUrl = `/khpos/${organisationId}/financial-health`;
 
-  return <main className="khpos-interface-page mx-auto max-w-7xl space-y-4 px-4 py-5 pb-24 text-slate-950 sm:px-6">
+  return <main className="khpos-interface-page mx-auto max-w-7xl min-w-0 space-y-4 break-words leading-relaxed px-4 py-5 pb-24 text-slate-950 sm:px-6">
     <header className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 sm:p-7">
       {school && <p className="text-sm font-semibold text-emerald-800">{school}</p>}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{collection ? "Fee Collection" : "School Finance"}</h1>
-        {campus && !oversightOnly && (collection
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{directory ? "Learners" : collection ? "Fee Collection" : "School Finance"}</h1>
+        {campus && !oversightOnly && (directory || collection
           ? <Link className={secondary+" inline-flex items-center"} href={financeUrl}>Back to School Finance</Link>
           : <Link className={primary+" inline-flex items-center gap-2"} href={financeUrl+"/fee-collection?"+new URLSearchParams({campus:campusKey,period})}>
               <ReceiptText className="size-4 shrink-0" aria-hidden="true" /> Fee Collection
@@ -121,11 +121,12 @@ export function SchoolFinanceWorkspace({ organisationId, collection }: { organis
       </div>}
     </header>
     <LoadingState {...context} />
-    {context.error && !legacyView && <button className={secondary} onClick={()=>setLegacyView(true)}>Open existing Financial Health statements</button>}
-    {context.error && legacyView && <SchoolFinancialHealthWorkspace organisationId={organisationId} embedded />}
-    {campus && oversightOnly && <FinanceOversight key={campusKey} call={call} />}
+    {!directory && context.error && !legacyView && <button className={secondary} onClick={()=>setLegacyView(true)}>Open existing Financial Health statements</button>}
+    {!directory && context.error && legacyView && <SchoolFinancialHealthWorkspace organisationId={organisationId} embedded />}
+    {directory && campus && oversightOnly && <p role="status">Ask an authorised School Custodian or Finance/Admin Officer to manage learner records.</p>}
+    {!directory && campus && oversightOnly && <FinanceOversight key={campusKey} call={call} />}
     {campus && !oversightOnly && <>
-      {!collection && <nav aria-label="School Finance sections" className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-3 xl:grid-cols-7">
+      {!directory && !collection && <nav aria-label="School Finance sections" className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-3 xl:grid-cols-7">
         {tabs.map(([name,Icon])=><button key={name} type="button" aria-current={tab===name?"page":undefined} disabled={busy}
           onClick={()=>changeTab(name)}
           className={"flex min-h-12 min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm font-semibold leading-snug "+
@@ -136,7 +137,7 @@ export function SchoolFinanceWorkspace({ organisationId, collection }: { organis
       {notice && <p className="rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-950" role="status">{notice}</p>}
       {error && <p className="rounded-lg bg-rose-50 p-3 text-sm font-bold text-rose-900" role="alert">{error}</p>}
       {terms.loading || terms.error ? <LoadingState {...terms} /> : <>
-        {!period && tab!=="Settings" && <section className={card}>
+        {!directory && !period && tab!=="Settings" && <section className={card}>
           <h2 className="text-lg font-bold">{term ? "Open this accounting period" : "Set up the academic calendar"}</h2>
           <p className="text-sm text-slate-700">{term ? "Open this term’s accounting period to start billing and recording transactions." :
             "Create an academic term in Academic Delivery or the school calendar, then return to Finance."}</p>
@@ -153,7 +154,7 @@ export function SchoolFinanceWorkspace({ organisationId, collection }: { organis
           <LoadingState {...catalog} />
           {catalog.data && <FinanceLearners call={call} write={write} refresh={refresh} busy={busy} classes={catalog.data.classes}
             terms={catalog.data.terms} term={termKey} school={organisationId} campus={campusKey}
-            campuses={context.data?.campuses.map(item=>[item.id,item.name])??[]} onImported={reload} onStatement={id=>{
+            campuses={context.data?.campuses.map(item=>[item.id,item.name])??[]} onImported={reload} onStatement={directory ? undefined : id=>{
               setLearner(id);
               changeTab("Billing");
             }} />}
