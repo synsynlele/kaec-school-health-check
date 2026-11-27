@@ -15,6 +15,7 @@ export function KsiRosterImport({ school, campus, classes, terms, term, refresh 
   const [results,setResults]=useState<Result[]>([]);
   const [syncedCount,setSyncedCount]=useState<number>();
   const [busy,setBusy]=useState(false);
+  const [scheduleMessage,setScheduleMessage]=useState("");
   const [error,setError]=useState("");
 
   async function request(input:object) {
@@ -62,7 +63,7 @@ export function KsiRosterImport({ school, campus, classes, terms, term, refresh 
       {sharing!==undefined && <p role="status" className="text-sm font-semibold">Campus sharing is {sharing?"on":"off"}.</p>}
       {!sources && <button type="button" className={secondary} disabled={busy} onClick={()=>void load()}>{busy?"Connecting…":"Load classes from KSI"}</button>}
       {sources && <FinanceForm disabled={busy || !sources.length || !classes.length || !terms.length}
-        submitLabel={busy?"Syncing…":"Sync this class"} onSubmit={async row=>{
+        submitLabel={busy?"Working…":"Continue"} onSubmit={async row=>{
           if(busy) return;
           const source=sources.find(item=>item.id===row.sourceClass);
           const destination=terms.find(item=>item.id===row.term);
@@ -70,7 +71,18 @@ export function KsiRosterImport({ school, campus, classes, terms, term, refresh 
           if(!source?.session || sessionKey(source.session)!==sessionKey(str(destination?.session))) {
             throw new Error("Choose a KHP-OS term in the same academic session as the KSI class.");
           }
-          setBusy(true);setError("");setResults([]);setSyncedCount(undefined);
+          setBusy(true);setError("");setResults([]);setSyncedCount(undefined);setScheduleMessage("");
+          if(row.operation && row.operation!=="manual") {
+            try {
+              const {schedule}=await request({action:"schedule",classId:row.classId,sourceClass:row.sourceClass,
+                term:row.term,enabled:row.operation==="check"?undefined:row.operation==="enable"});
+              setScheduleMessage(schedule ? [schedule.enabled?"Daily sync is on.":"Daily sync is paused.",schedule.last_status,
+              schedule.last_run?"Last run "+new Date(schedule.last_run).toLocaleString():null,
+              schedule.review_count?schedule.review_count+" to review. Run a manual import for details.":null].filter(Boolean).join(" ")
+              : "Daily sync has yet to be set up for this class.");
+            } finally {setBusy(false);}
+            return;
+          }
           let count=0;
           const review:Result[]=[];
           let after:string|null=null;
@@ -91,7 +103,11 @@ export function KsiRosterImport({ school, campus, classes, terms, term, refresh 
         <Field label="KSI class" name="sourceClass" choices={sources.map(item=>[item.id,[item.name,item.session].filter(Boolean).join(" · ")])} />
         <Field label="KHP-OS class and arm" name="classId" choices={classes.map(item=>[str(item.id),[str(item.name),str(item.arm)].filter(Boolean).join(" · ")])} />
         <Field label="KHP-OS term" name="term" value={term} choices={terms.map(item=>[str(item.id),str(item.session)+" · "+str(item.name)])} />
+        <Field label="What would you like to do?" name="operation" value="manual" choices={[
+          ["manual","Sync now"],["check","Check daily sync status"],["enable","Enable daily sync"],["pause","Pause daily sync"],
+        ]} />
       </FinanceForm>}
+      {scheduleMessage && <p role="status" className="text-sm font-semibold">{scheduleMessage}</p>}
       {error && <p role="alert" className="text-sm text-rose-800">{error}</p>}
       {syncedCount!==undefined && <p role="status" className="text-sm font-semibold">{syncedCount} synced · {results.length} to review</p>}
       {!!results.length && <ul className="max-h-64 space-y-2 overflow-auto">

@@ -1,11 +1,12 @@
+import { rosterSchedule, rosterServiceClient, fetchRosterPage } from "@/lib/khpos/roster-schedule";
 import { timingSafeEqual } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "@/lib/khpos/auth";
 
 const input = z.discriminatedUnion("action", [
   z.object({action:z.literal("share"),campus:z.uuid(),enabled:z.boolean().optional()}),
   z.object({action:z.literal("classes"),campus:z.uuid()}),
+  z.object({action:z.literal("schedule"),campus:z.uuid(),classId:z.uuid(),sourceClass:z.uuid(),term:z.uuid(),enabled:z.boolean().optional()}),
   z.object({action:z.literal("sync"),campus:z.uuid(),classId:z.uuid(),sourceClass:z.uuid(),term:z.uuid(),after:z.uuid().nullable()}),
 ]);
 const schools = z.array(z.object({id:z.uuid(), name:z.string(), session:z.string().nullable()}));
@@ -22,7 +23,7 @@ export async function POST(request: Request,{params}:{params:Promise<{id:string}
     if(raw.length>4096) return json({error:"This roster request is too large."},413);
     const body=JSON.parse(raw);
     const token=bearerTokenFromRequest(request);
-    const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const db=rosterServiceClient();
     if(body?.action==="export") {
       const key=process.env.KSI_ROSTER_BRIDGE_KEY?.trim();
       const supplied=Buffer.from(token ?? "");
@@ -54,16 +55,16 @@ export async function POST(request: Request,{params}:{params:Promise<{id:string}
       if(error) return json({error:"Could not manage roster sharing for this campus."},error.code==="42501"?403:503);
       return json({enabled:data});
     }
+    if(selection.action==="schedule") {
+      const schedule=await rosterSchedule({school_id:school,campus_id:selection.campus,
+        workspace_id:pair.external_tenant_id,source_class_id:selection.sourceClass,
+        destination_class_id:selection.classId,term_id:selection.term},actor.id,selection.enabled);
+      return json({schedule});
+    }
     const key=process.env.KSI_ROSTER_BRIDGE_KEY?.trim();
     if(!key) return json({error:"The KSI roster connection has yet to be configured."},503);
-    const endpoint=new URL(process.env.KSI_ROSTER_URL || "https://www.ksi.name.ng/api/integrations/khpos/roster");
-    if(endpoint.protocol!=="https:") throw new Error("HTTPS is required");
-    const response=await fetch(endpoint,{
-      method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},
-      body:JSON.stringify({action:"export",workspace:pair.external_tenant_id,
-        ...(selection.action==="sync" ? {classId:selection.sourceClass,after:selection.after} : {})}),
-      redirect:"error",cache:"no-store",signal:AbortSignal.timeout(8000),
-    });
+    const response=await fetchRosterPage({workspace:pair.external_tenant_id,
+      ...(selection.action==="sync"?{classId:selection.sourceClass,after:selection.after}:{})});
     if(!response.ok) return json({error:response.status===403 ?
       "Ask your KSI school owner to enable roster sharing in Academic Setup." : "Could not load the KSI roster."},response.status===403?403:503);
     const payload=await response.json();
