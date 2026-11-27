@@ -480,6 +480,17 @@ export function AcademicDeliveryWorkspace({
           />
         </section>
 
+        {(workspace.canPlan || sectionalUnits.length > 0) && (
+          <div className="flex flex-wrap gap-3">
+            <Link href={`/khpos/${organisationId}/teaching-presence?tab=lessons`} className="rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-bold text-brand-800">
+              Weekly timetable
+            </Link>
+            <Link href={`/khpos/${organisationId}/teaching-presence?tab=exams`} className="rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-bold text-brand-800">
+              Tests and exams timetable
+            </Link>
+          </div>
+        )}
+
         {workspace.canPlan && <ClassSubjectSetup catalog={catalog} campuses={workspace.campuses} />}
         {(workspace.canPlan || sectionalUnits.length > 0) && (
           <section className="grid gap-5 xl:grid-cols-2">
