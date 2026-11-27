@@ -21,7 +21,7 @@ begin
   end if;
   select coalesce(max((split_part(substring(ref from length(prefix)+1),'/',1))::bigint),0) into highest
     from (select admission_number as ref from public.khpos_finance_learners where school_id=school union all select external_learner_reference from public.khpos_ops_learner_anchors where organisation_id=school) records
-    where ref ~* ('^'||prefix||'[0-9]{1,12}('||suffix||')?);
+    where ref ~* ('^'||prefix||'[0-9]{1,12}('||suffix||')?$');
   highest := greatest(highest,minimum);
   insert into khpos_private.admission_sequences as seq(school_id,class_code,allocation)
     values(school,code,highest+1)
@@ -30,17 +30,7 @@ begin
     returning allocation into allocated;
   return prefix||lpad(allocated::text,greatest(4,length(allocated::text)),'0')||suffix;
 end
-$$;);
-  highest := greatest(highest,minimum);
-  insert into khpos_private.admission_sequences as seq(school_id,class_code,allocation)
-    values(school,code,highest+1)
-    on conflict(school_id,class_code) do update
-      set allocation=greatest(seq.allocation,excluded.allocation-1)+1
-    returning allocation into allocated;
-  return prefix||lpad(allocated::text,greatest(4,length(allocated::text)),'0');
-end
 $$;
-
 create or replace function public.khpos_prepare_learner_admission(p_actor uuid,p_school uuid,p_campus uuid,p_class uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare
@@ -61,10 +51,7 @@ begin
   select coalesce(max(split_part(substring(ref from length(prefix)+1),'/',1)::bigint),0) into floor from (
     select admission_number as ref from public.khpos_finance_learners where school_id=p_school
     union all select external_learner_reference from public.khpos_ops_learner_anchors where organisation_id=p_school
-  ) refs where ref ~* ('^'||prefix||'[0-9]{1,12}('||suffix||')?);
-  return jsonb_build_object('workspace',workspace,'code',code,'minimum',floor);
-end
-$$;);
+  ) refs where ref ~* ('^'||prefix||'[0-9]{1,12}('||suffix||')?$');
   return jsonb_build_object('workspace',workspace,'code',code,'minimum',floor);
 end
 $$;
