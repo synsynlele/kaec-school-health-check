@@ -4,8 +4,8 @@ import { bearerTokenFromRequest, KhposAuthError, verifyKhposAccessToken } from "
 
 const input = z.union([
   z.object({ kind: z.enum(["lesson", "assessment"]), sourceId: z.uuid() }),
-  z.object({ kind: z.literal("lesson"), campus: z.uuid().nullable() }),
-  z.object({ kind: z.literal("assessment"), from: z.iso.date(), to: z.iso.date() }),
+  z.object({ action: z.enum(["publish", "unpublish"]).optional(), kind: z.literal("lesson"), campus: z.uuid().nullable() }),
+  z.object({ action: z.enum(["publish", "unpublish"]).optional(), kind: z.literal("assessment"), from: z.iso.date(), to: z.iso.date() }),
 ]);
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const scope = { p_actor: actor.id, p_school: school, p_kind: entry.kind };
     const { data: count, error } = "sourceId" in entry
       ? await db.rpc("khpos_publish_learner_timetable", { ...scope, p_id: entry.sourceId })
-      : await db.rpc("khpos_publish_learner_timetable_batch", {
+      : await db.rpc(entry.action === "unpublish" ? "khpos_unpublish_learner_timetable_batch" : "khpos_publish_learner_timetable_batch", {
           ...scope,
           p_campus: entry.kind === "lesson" ? entry.campus : null,
           p_from: entry.kind === "assessment" ? entry.from : null,
@@ -32,6 +32,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (error) {
     if (error instanceof KhposAuthError) return Response.json({ error: error.message }, { status: error.status });
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError;
-    return Response.json({ error: invalid ? "Check the timetable entry." : "The timetable could not be published." }, { status: invalid ? 400 : 503 });
+    return Response.json({ error: invalid ? "Check the timetable entry." : "The learner timetable could not be updated." }, { status: invalid ? 400 : 503 });
   }
 }

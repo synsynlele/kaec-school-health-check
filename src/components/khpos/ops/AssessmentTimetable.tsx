@@ -245,7 +245,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </label>
       <button type="button" className={button} disabled={busy || !timetableRows.length} onClick={() => void download()}>Download timetable PDF</button>
     </div>}
-    {!todayInvigilation && entries?.some(item => !item.cancelled_at && item.can_manage_coverage) &&
+    {!todayInvigilation && (assignments.length > 0 || entries?.some(item => item.can_manage_coverage)) &&
       <PublishLearnerSchedule school={school} selection={{ kind: "assessment", from, to: rangeEnd }} disabled={busy} />}
     {!todayInvigilation && assignments.length > 0 && <details className="rounded-xl border p-3" open={editing ? true : undefined}>
       <summary className="cursor-pointer font-bold">{editing ? "Edit test, assessment or exam" : "Add a test, assessment or exam"}</summary>
