@@ -45,8 +45,44 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) return json({ error: "School Finance is temporarily unavailable." }, 503);
     const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    const register = input as Record<string, unknown>;
+    let payload = input;
+    if (surface === "register" && action === "saveLearner" && !register.id &&
+        (register.admission == null || (typeof register.admission === "string" && !register.admission.trim()))) {
+      if (!campus || typeof register.class !== "string" || !UUID_RE.test(register.class)) {
+        return json({ error: "Choose a campus and class to generate the admission number." }, 400);
+      }
+      const { data: prepared, error: allocationError } = await db.rpc("khpos_prepare_learner_admission", {
+        p_actor: user.id, p_school: id, p_campus: campus, p_class: register.class,
+      });
+      if (allocationError) {
+        if (allocationError.code === "42501") return json({ error: "Your appointment does not permit learner registration." }, 403);
+        if (allocationError.code === "22023") return json({ error: allocationError.message }, 400);
+        return json({ error: "Admission numbering is temporarily unavailable." }, 503);
+      }
+      let admission = prepared.number;
+      if (!admission) {
+        const bridgeKey = process.env.KSI_ROSTER_BRIDGE_KEY?.trim();
+        const endpoint = new URL("/api/integrations/khpos/admission",
+          process.env.KSI_ROSTER_URL || "https://www.ksi.name.ng");
+        if (!bridgeKey || bridgeKey.length < 32 || endpoint.protocol !== "https:") {
+          return json({ error: "Shared admission numbering is temporarily unavailable." }, 503);
+        }
+        const response = await fetch(endpoint, {
+          method: "POST", signal: AbortSignal.timeout(8000), cache: "no-store", redirect: "error",
+          headers: { Authorization: "Bearer " + bridgeKey, "Content-Type": "application/json" },
+          body: JSON.stringify(prepared),
+        });
+        if (!response.ok) return json({ error: "Shared admission numbering is temporarily unavailable." }, 503);
+        admission = (await response.json()).number;
+      }
+      if (typeof admission !== "string" || !/^KSI\/\/[js][123]\/\d{4,}$/.test(admission)) {
+        return json({ error: "Admission numbering is temporarily unavailable." }, 503);
+      }
+      payload = { ...register, admission };
+    }
     const { data: result, error } = await db.rpc("khpos_finance_" + surface + "_server", {
-      p_actor: user.id, p_school: id, p_campus: campus, p_action: action, p_input: input,
+      p_actor: user.id, p_school: id, p_campus: campus, p_action: action, p_input: payload,
     });
     if (!error) return json({ result });
     if (error.code === "42501") return json({ error: "Your school or campus appointment does not permit this finance action." }, 403);

@@ -200,7 +200,7 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
           if (result) {setEdit({});setDestination("");}
         }}>
         <Field label="Learner name" name="name" value={str(edit.name)} />
-        <Field label="Admission number" name="admission" value={str(edit.admission)} maxLength={120} />
+        <Field label={edit.id ? "Admission number" : "Admission number (generated for JSS and SS if blank)"} name="admission" value={str(edit.admission)} required={!!edit.id} maxLength={120} />
         {edit.id && campuses.length>1 ? <label className="grid gap-1 text-sm font-semibold">Campus
           <select className={selectClass} value={destination || campus} disabled={busy} onChange={event=>setDestination(event.target.value)}>
             {campuses.map(([id,name])=><option key={id} value={id}>{name}</option>)}
