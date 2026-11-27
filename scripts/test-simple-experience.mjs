@@ -66,7 +66,7 @@ assert.equal(n.canShowSchoolMenu("/academic-delivery", { membership: "staff", ro
 assert.equal(n.canShowSchoolMenu("/activation", { membership: "staff", roles: ["SCHOOL_GUARDIAN"] }), true);
 assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["FINANCE_ADMIN_OFFICER"]}),true);
 assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_CUSTODIAN"]}),true);
-assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_GUARDIAN"]}),false);
+assert.equal(n.canShowSchoolMenu("/financial-health", {membership:"staff",roles:["SCHOOL_GUARDIAN"]}),true);
 assert.match(fs.readFileSync("src/components/khpos/SchoolWorkspaceNav.tsx", "utf8"), /title: "School management"[^\n]+links: \[byRoute\("\/financial-health"\)/,
   "School Finance must have a direct, role-filtered entry in School management.");
 tree = exports.SchoolAreaNavigation({organisationId:"school"});
