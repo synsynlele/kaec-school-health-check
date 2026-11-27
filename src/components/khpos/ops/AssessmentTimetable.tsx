@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { LinkPending } from "@/components/navigation/LinkPending";
 import { actionDestination } from "@/components/khpos/actionDestination";
+import { PublishLearnerSchedule } from "./PublishLearnerSchedule";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -169,6 +170,7 @@ export function AssessmentTimetable({ school, today, assignments = [], todayInvi
       </Link>}
       {canEdit && <button type="button" className="min-h-10 text-left font-semibold text-brand-700 underline disabled:opacity-50"
         disabled={busy} onClick={() => setEditing(item)}>Edit schedule</button>}
+      {item.can_manage_coverage && <PublishLearnerSchedule school={school} kind="assessment" id={item.id} />}
       {item.can_cancel && <button type="button" className="min-h-10 text-left font-semibold text-red-700 underline disabled:opacity-50"
         disabled={busy} onClick={() => cancelPapers([item.id], lagosLocalDay(Date.parse(item.starts_at)))}>Cancel paper</button>}
     </div>;

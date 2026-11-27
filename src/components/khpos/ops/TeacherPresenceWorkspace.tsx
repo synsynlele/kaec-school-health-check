@@ -6,6 +6,7 @@ import { LoadingScreen } from "@/components/navigation/LoadingScreen";
 import { calendarPauses, calendarPauseForDay, nextRegularLessonDay, openClassToday, missedClassCheckouts } from "@/lib/khpos/ops/attendance-guidance";
 
 import { TeacherAttendanceSettings } from "./TeacherAttendanceSettings";
+import { PublishLearnerSchedule } from "./PublishLearnerSchedule";
 import { ActionFeedback } from "./ActionFeedback";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -616,6 +617,7 @@ export function TeacherPresenceWorkspace({organisationId,initialTab="day"}:{orga
                     </p>
                   ))}
                   {p.session&&<p className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mr-1 inline size-4"/> Class check-in: {dateTime(p.session.in)}<br/>Class check-out: {dateTime(p.session.out)} {p.session.administrativelyClosed?"(administratively closed)":""}<br/>Outcome: {p.session.outcome||"In progress"} · {p.session.topic||"No topic recorded"}</p>}
+                  {currentStream && p.teachingGroupKind !== "custom" && <PublishLearnerSchedule school={organisationId} kind="lesson" id={p.id} />}
                   {currentStream && (
                     <div className="mt-3">
                       <button type="button" disabled={Boolean(busy)} aria-expanded={editingPeriod === p.id}
