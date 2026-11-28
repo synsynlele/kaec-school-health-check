@@ -165,11 +165,14 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
 }) {
   const [filter,setFilter] = useState<Row>({});
   const [offset,setOffset] = useState(0);
+  const [pageSize,setPageSize] = useState(20);
+  const [view,setView] = useState<"current" | "alumni">("current");
   const [edit,setEdit] = useState<Row>({});
   const [destination,setDestination] = useState("");
   const [downloadError,setDownloadError] = useState("");
   const [exporting,setExporting] = useState(false);
-  const data = useFinanceData<Row[]>(call,"register","learners",{ ...filter,offset },refresh);
+  const criteria = { ...filter, view };
+  const data = useFinanceData<Row[]>(call,"register","learners",{ ...criteria,offset,pageSize },refresh);
   const destinationCall = useCallback<FinanceCall>((surface,action,input)=>financeFetch(school,destination,surface,action,input),[school,destination]);
   const alternate = useFinanceData<{ classes: Row[]; terms: Row[] }>(destinationCall,"register","catalog",{},0,Boolean(destination && destination!==campus));
   const editClasses = destination && destination!==campus ? alternate.data?.classes ?? [] : classes;
@@ -181,23 +184,31 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
   async function exportLearners() {
     setDownloadError("");setExporting(true);
     try {
-      const rows = await allPages(offset => call<Row[]>("register","learners",{ ...filter,offset }));
-      await excel("learners",[{ title:"Learners",rows:[fields.map(([,label]) => label),...rows.map(row => fields.map(([key]) => str(row[key])))] }]);
+      const rows = await allPages(offset => call<Row[]>("register","learners",{ ...criteria,offset }));
+      await excel(view==="alumni" ? "alumni" : "learners",[{ title:view==="alumni" ? "Alumni" : "Current learners",rows:[fields.map(([,label]) => label),...rows.map(row => fields.map(([key]) => str(row[key])))] }]);
     } catch (cause) { setDownloadError(cause instanceof Error ? cause.message : "Export could not be completed."); }
     finally { setExporting(false); }
   }
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-xl font-bold">Learner register</h2>
-      <button className={secondary} disabled={exporting} onClick={() => void exportLearners()}>{exporting ? "Preparing export…" : "Export learner list"}</button>
+      <button className={secondary} disabled={exporting} onClick={() => void exportLearners()}>{exporting ? "Preparing export…" : (view==="alumni" ? "Export alumni" : "Export learner list")}</button>
+    </div>
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Learner views">
+      {([["current","Current learners"],["alumni","Alumni"]] as const).map(([value,label]) =>
+        <button key={value} type="button" className={view===value ? primary : secondary} aria-pressed={view===value}
+          onClick={() => {
+            if (view===value) return;
+            setView(value);setFilter({});setOffset(0);setEdit({});setDestination("");setDownloadError("");
+          }}>{label}</button>)}
     </div>
     {downloadError && <p role="alert" className="text-sm text-rose-800">{downloadError}</p>}
-    {!classes.length && <p className="text-sm text-slate-700">Add your campus classes in Academic Delivery before registering learners.</p>}
-    <Expand title={edit.id ? "Edit " + str(edit.name) : "Register a learner"}>
+    {view==="current" && !classes.length && <p className="text-sm text-slate-700">Add your campus classes in Academic Delivery before registering learners.</p>}
+    {(view==="current" || Boolean(edit.id)) && <Expand open={view==="alumni" ? true : undefined} title={edit.id ? "Edit " + str(edit.name) : "Register a learner"}>
       <FinanceForm key={str(edit.id || term)+destination+editClasses.length} disabled={busy || !editClasses.length} submitLabel={edit.id ? "Save learner changes" : "Register learner"}
         onSubmit={async row => {
           const result = await write("register","saveLearner",{ ...row,id:edit.id,destinationCampus:destination });
-          if (result) {setEdit({});setDestination("");}
+          if (result) {setEdit({});setDestination("");setOffset(0);}
         }}>
         <Field label="Learner name" name="name" value={str(edit.name)} />
         <Field label={edit.id ? "Admission number" : "Admission number (generated for JSS and SS if blank)"} name="admission" value={str(edit.admission)} required={!!edit.id} maxLength={120} />
@@ -214,21 +225,28 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
         {!edit.id && <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="confirmDistinct" value="true" /> Confirm separate learner if the name matches</label>}
       </FinanceForm>
       {edit.id ? <button className={secondary + " mt-3"} onClick={() => {setEdit({});setDestination("");}}>Cancel edit</button> : null}
-    </Expand>
+    </Expand>}
     <LoadingState {...alternate} />
+    {view==="current" && <>
     <KsiRosterImport key={campus} school={school} campus={campus} classes={classes} terms={terms} term={term} refresh={onImported} />
     <Expand title="Import learners from Excel or CSV">
       <LearnerImport key={term} call={call} term={term} onImported={onImported} />
     </Expand>
-    <FinanceForm disabled={false} submitLabel="Apply filters" onSubmit={row => { setFilter(row);setOffset(0); }}>
+    </>}
+    <FinanceForm key={view} disabled={false} submitLabel="Apply filters" onSubmit={row => { setFilter(row);setOffset(0); }}>
       <Field label="Search name or admission number" name="search" required={false} />
       <Field label="Filter by class" name="class" required={false} choices={Array.from(new Set(classes.map(row => str(row.name)))).map(name => [name,name])} />
       <Field label="Filter by session" name="session" required={false} choices={Array.from(new Set(terms.map(row => str(row.session)))).map(name => [name,name])} />
-      <Field label="Filter by status" name="status" required={false} choices={statuses} />
+      {view==="alumni" && <Field label="Filter by status" name="status" required={false} choices={statuses.filter(([status])=>status!=="active")} />}
       <Field label="Sort learners" name="sort" choices={[["name","Name"],["admission","Admission number"],["recent","Recently updated"]]} value="name" />
     </FinanceForm>
+    <label className="flex flex-wrap items-center gap-2 text-sm font-semibold">Records per page
+      <select className={selectClass} value={pageSize} onChange={event => {setPageSize(Number(event.target.value));setOffset(0);}}>
+        {[20,50,100].map(size => <option key={size} value={size}>{size}</option>)}
+      </select>
+    </label>
     <LoadingState {...data} />
-    {data.data && <><Grid rows={data.data.slice(0,50)} columns={[
+    {data.data && <><Grid rows={data.data.slice(0,pageSize)} columns={[
       ["Learner",row => <strong>{str(row.name)}</strong>],["Admission number",row => str(row.admission)],
       ["Class",row => [row.class,row.arm].map(str).filter(Boolean).join(" · ")],
       ["Status",row => str(row.status) || "Existing learner"],["Actions",row => <div className="flex flex-wrap gap-2">
@@ -240,7 +258,7 @@ export function FinanceLearners({ call, write, refresh, busy, classes, terms, te
         }}>{row.status ? "Edit" : "Link"}</button>
         {onStatement && <button className={secondary} onClick={() => onStatement(str(row.id))}>Fee statement</button>}
       </div>],
-    ]} /><Pager offset={offset} setOffset={setOffset} more={data.data.length>50} /></>}
+    ]} /><Pager offset={offset} setOffset={setOffset} pageSize={pageSize} more={data.data.length>pageSize} /></>}
   </section>;
 }
 
