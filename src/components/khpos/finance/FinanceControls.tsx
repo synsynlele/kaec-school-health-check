@@ -84,8 +84,8 @@ export function FinanceForm({ title, submit, onSubmit, disabled, children, submi
   </form>;
 }
 
-export function Expand({ title, children }: { title: string; children: ReactNode }) {
-  return <details className="rounded-xl border border-slate-200 bg-slate-50">
+export function Expand({ title, children, open }: { title: string; children: ReactNode; open?: boolean }) {
+  return <details open={open} className="rounded-xl border border-slate-200 bg-slate-50">
     <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold text-slate-900">{title}</summary>
     <div className="border-t border-slate-200 p-4">{children}</div>
   </details>;
@@ -117,12 +117,12 @@ export function Grid({ rows, columns, empty = "No records match this view." }: {
   </>;
 }
 
-export function Pager({ offset, setOffset, more }: { offset: number; setOffset:(n: number) => void; more: boolean }) {
+export function Pager({ offset, setOffset, more, pageSize = 50 }: { offset: number; setOffset:(n: number) => void; more: boolean; pageSize?: number }) {
   if (!offset && !more) return null;
   return <nav aria-label="Result pages" className="flex flex-wrap items-center gap-2">
-    <button className={secondary} disabled={!offset} onClick={() => setOffset(offset - 50)}>Previous</button>
-    <span className="px-2 text-sm text-slate-700">Page {offset / 50 + 1}</span>
-    <button className={secondary} disabled={!more} onClick={() => setOffset(offset + 50)}>Next</button>
+    <button className={secondary} disabled={!offset} onClick={() => setOffset(offset - pageSize)}>Previous</button>
+    <span className="px-2 text-sm text-slate-700">Page {offset / pageSize + 1}</span>
+    <button className={secondary} disabled={!more} onClick={() => setOffset(offset + pageSize)}>Next</button>
   </nav>;
 }
 
